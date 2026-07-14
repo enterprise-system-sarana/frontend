@@ -123,7 +123,7 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
                             options={Object.entries(Status).map(([, value]) => ({
                                 value: value,
                                 label: value,
-                             }))}
+                            }))}
                         />
                     </FieldGroup>
                 </form>

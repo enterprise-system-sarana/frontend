@@ -1,16 +1,24 @@
 "use client"
 import * as React from "react"
 import {
-    AudioWaveform,
-    BookOpen,
-    Bot,
-    Command,
-    Frame,
-    GalleryVerticalEnd,
-    Map,
-    PieChart,
-    Settings2,
-    SquareTerminal,
+    Package,
+    LayoutGrid,
+    Layers,
+    Scale,
+    Box,
+    PlusCircle,
+    ShoppingCart,
+    Truck,
+    Shield,
+    User,
+    UserCog,
+    Key,
+    Warehouse,
+    Store,
+    Boxes,
+    StoreIcon,
+    Wallet,
+    Coins
 } from "lucide-react"
 
 import { NavMain } from "@/components/layout/nav-main"
@@ -49,8 +57,22 @@ const data = {
                     permission: PERMISSION.PRODUCT.READ,
                 },
                 {
-                    title: "Settings",
-                    url: "#",
+                    title: "Unit",
+                    url: "/unit",
+                    icon: Scale,
+                    permission: PERMISSION.UNIT.READ,
+                },
+                {
+                    title: "Product",
+                    url: "/product",
+                    icon: Box,
+                    permission: PERMISSION.PRODUCT.READ,
+                },
+                {
+                    title: "Create Product",
+                    url: "/product/create",
+                    icon: PlusCircle,
+                    permission: PERMISSION.PRODUCT.CREATE,
                 },
             ],
         },
@@ -60,17 +82,47 @@ const data = {
             icon: ShoppingCart,
             items: [
                 {
-                    title: "Genesis",
-                    url: "#",
+                    title: "Supplier",
+                    url: "/supplier",
+                    icon: Truck,
+                    permission: PERMISSION.SUPPLIER.READ,
+                },
+
+
+            ],
+        },
+        {
+            title: "Inventory",
+            url: "#",
+            icon: Warehouse,
+            items: [
+                {
+                    title: "Store",
+                    url: "/store",
+                    icon: StoreIcon,
+                    permission: PERMISSION.STORE.READ,
+                },
+
+            ],
+        },
+        {
+            title: "Finance",
+            url: "#",
+            icon: Wallet,
+            items: [
+                {
+                    title: "Bank",
+                    url: "/bank",
+                    icon: Wallet,
+                    permission: PERMISSION.BANK.READ,
                 },
                 {
-                    title: "Explorer",
-                    url: "#",
+                    title: "Currency",
+                    url: "/currency",
+                    icon: Coins,
+                    permission: PERMISSION.CURRENCY.READ,
                 },
-                {
-                    title: "Quantum",
-                    url: "#",
-                },
+
 
             ],
         },
@@ -103,6 +155,7 @@ const data = {
                     icon: Key,
                     permission: PERMISSION.PERMISSION.READ
                 },
+
             ],
         },
 
