@@ -16,7 +16,9 @@ import {
     Warehouse,
     Store,
     Boxes,
-    StoreIcon
+    StoreIcon,
+    Wallet,
+    Coins
 } from "lucide-react"
 
 import { NavMain } from "@/components/layout/nav-main"
@@ -64,7 +66,7 @@ const data = {
                     title: "Product",
                     url: "/product",
                     icon: Box,
-                    permission: PERMISSION.UNIT.READ,
+                    permission: PERMISSION.PRODUCT.READ,
                 },
                 {
                     title: "Create Product",
@@ -101,6 +103,25 @@ const data = {
                     permission: PERMISSION.STORE.READ,
                 },
 
+            ],
+        },
+        {
+            title: "Finance",
+            url: "#",
+            icon: Wallet,
+            items: [
+                {
+                    title: "Bank",
+                    url: "/bank",
+                    icon: Wallet,
+                    permission: PERMISSION.BANK.READ,
+                },
+                {
+                    title: "Currency",
+                    url: "/currency",
+                    icon: Coins,
+                    permission: PERMISSION.CURRENCY.READ,
+                },
             ],
         },
         {

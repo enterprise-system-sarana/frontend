@@ -1,5 +1,5 @@
 import DashboardLayout from "@/components/layout/Dashboard";
-import { CategoryPage, LoginPage, PermissionPage, GroupPermissionPage, ProductPage, ProductForm, RolePage, SubCategoryPage, UnitPage, UserPage, SupplierPage, StorePage } from "@/pages";
+import { CategoryPage, LoginPage, PermissionPage, GroupPermissionPage, ProductPage, ProductForm, RolePage, SubCategoryPage, UnitPage, UserPage, SupplierPage, StorePage, BankPage, CurrencyPage } from "@/pages";
 import PrivateRoute from "@/utils/privateRoute";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
@@ -70,6 +70,15 @@ const router = createBrowserRouter([
                     {
                         path: "permission-groups",
                         element: <GroupPermissionPage />
+                    },
+                    // finance
+                    {
+                        path: "bank",
+                        element: <BankPage />
+                    },
+                    {
+                        path: "currency",
+                        element: <CurrencyPage />
                     }
                 ],
             },

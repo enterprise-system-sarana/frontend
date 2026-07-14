@@ -27,3 +27,7 @@ export { StorePage } from "@/pages/inventory/store/StorePage"
 
 // purchase 
 export { SupplierPage } from "@/pages/purchases/supplier/SupplierPage"
+
+// Finance
+export { default as BankPage } from "@/pages/finance/bank/BankPage";
+export { default as CurrencyPage } from "@/pages/finance/currency/CurrencyPage";

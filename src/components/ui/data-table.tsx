@@ -69,10 +69,10 @@ export function DataTable<TData, TValue>({
   };
 
   return (
-    <div className="space-y-4">
+    <div className="">
 
       {/* Table */}
-      <div className="overflow-hidden rounded-md border">
+      <div className=" ">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (
