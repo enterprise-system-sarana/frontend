@@ -1,0 +1,309 @@
+import { Card } from '@/components/ui/card';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { useState, useEffect, useMemo } from "react";
+import { toast } from "sonner";
+import { Search, Shield, Save } from "lucide-react";
+import { useAllRoles, useRolePermissions, useUpdateRolePermissions } from "@/hooks/users/useRole";
+import { usePermission } from "@/hooks/users/usePermission";
+import { QueryBoundary } from "@/components/ui/query-boundary";
+import { usePermission as useAppPermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+
+export const PermissionPage = () => {
+    const { Can } = useAppPermission();
+    const canRead = Can(PERMISSION.PERMISSION.READ) || Can(PERMISSION.ROLES.READ);
+    const canUpdate = Can(PERMISSION.PERMISSION.UPDATE) || Can(PERMISSION.ROLES.UPDATE);
+
+    const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+    const [permissions, setPermissions] = useState<any[]>([]);
+    const [searchTerm, setSearchTerm] = useState("");
+
+    const { data: rolesData, isLoading: isLoadingRoles, isError: isErrorRoles } = useAllRoles();
+    const { data: allPermissionsData, isLoading: isLoadingAllPerms, isError: isErrorAllPerms } = usePermission.useFindAll();
+    const { data: rolePermissionsData, isLoading: isLoadingRolePerms, isError: isErrorRolePerms } = useRolePermissions(
+        selectedRoleId ? Number(selectedRoleId) : null
+    );
+    const updatePermissionsMutation = useUpdateRolePermissions();
+
+    const roles = rolesData?.payload || [];
+
+    if (!canRead) {
+        return (
+            <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
+                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
+                <p className="text-muted-foreground">You do not have permission to view group permissions.</p>
+            </div>
+        );
+    }
+
+    const isLoading = isLoadingRoles || (selectedRoleId ? isLoadingRolePerms : isLoadingAllPerms);
+    const isError = isErrorRoles || (selectedRoleId ? isErrorRolePerms : isErrorAllPerms);
+
+    useEffect(() => {
+        if (selectedRoleId) {
+            if (rolePermissionsData?.payload) {
+                setPermissions(rolePermissionsData.payload);
+            }
+        } else {
+            if (allPermissionsData?.payload) {
+                setPermissions(allPermissionsData.payload.map((p: any) => ({ ...p, checked: false })));
+            } else {
+                setPermissions([]);
+            }
+        }
+    }, [selectedRoleId, rolePermissionsData, allPermissionsData]);
+
+    const grouped = useMemo(() => {
+        const groups: Record<string, any[]> = {};
+        permissions.forEach((p) => {
+            const groupName = p.groupName || "Other";
+            if (!groups[groupName]) {
+                groups[groupName] = [];
+            }
+            groups[groupName].push(p);
+        });
+        return groups;
+    }, [permissions]);
+
+    const handleGroupToggle = (groupName: string, checked: boolean) => {
+        setPermissions((prev) =>
+            prev.map((p) => {
+                if (p.groupName === groupName) {
+                    return { ...p, checked };
+                }
+                return p;
+            })
+        );
+    };
+
+    const handleSingleToggle = (id: number) => {
+        setPermissions((prev) =>
+            prev.map((p) => {
+                if (p.id === id) {
+                    return { ...p, checked: !p.checked };
+                }
+                return p;
+            })
+        );
+    };
+
+    const handleSave = () => {
+        if (!selectedRoleId) {
+            toast.error("Please select a role first!");
+            return;
+        }
+        const checkedIds = permissions.filter((p) => p.checked).map((p) => p.id);
+        updatePermissionsMutation.mutate({
+            id: Number(selectedRoleId),
+            permissionIds: checkedIds,
+        });
+    };
+
+    const filteredGroups = useMemo(() => {
+        const result: Record<string, any[]> = {};
+        Object.entries(grouped).forEach(([groupName, list]) => {
+            if (groupName.toLowerCase().includes(searchTerm.toLowerCase())) {
+                result[groupName] = list;
+            }
+        });
+        return result;
+    }, [grouped, searchTerm]);
+
+    return (
+        <div className="space-y-6">
+            {/* Header section */}
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
+                <div>
+                    <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
+                        <Shield className="h-6 w-6 text-primary" />
+                        Group Permissions
+                    </h1>
+                    <p className="text-sm text-muted-foreground">Manage and filter access permissions grouped by system modules.</p>
+                </div>
+            </div>
+
+            {/* Selection and Filter toolbar */}
+            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl px-2">
+                {/* Role Selector */}
+                <div className="flex flex-col gap-1.5 w-[240px]">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Role</span>
+                    <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                        <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
+                            <SelectValue placeholder="Select Role..." />
+                        </SelectTrigger>
+                        <SelectContent>
+                            {roles.map((role: any) => (
+                                <SelectItem key={role.id} value={role.id.toString()}>
+                                    {role.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                </div>
+
+                {/* Module Search Filter */}
+                <div className="flex flex-col gap-1.5 flex-1">
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filter Modules</span>
+                    <div className="relative flex-1">
+                        <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
+                        <Input
+                            type="text"
+                            className="pl-9 h-9 border-border/80 rounded-lg focus-visible:ring-primary/20 bg-background"
+                            placeholder="Filter by Module Name..."
+                            value={searchTerm}
+                            onChange={(e) => setSearchTerm(e.target.value)}
+                        />
+                    </div>
+                </div>
+            </div>
+
+            {/* Matrix Table */}
+            <QueryBoundary isLoading={isLoading} isError={isError} fullScreen={false}>
+                <Card className="border border-border/70 overflow-hidden shadow-xs">
+                <div className="overflow-x-auto">
+                    <table className="w-full border-collapse text-left text-sm">
+                        <thead className="bg-primary text-primary-foreground border-b border-border/50">
+                            <tr>
+                                <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase min-w-[200px]">Module Name</th>
+                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">READ</th>
+                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">WRITE</th>
+                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">EDIT</th>
+                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">DELETE</th>
+                                <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase">Other Permissions</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-border/60">
+                            {Object.entries(filteredGroups).map(([groupName, groupPermissions]) => {
+                                // Extract standard CRUD permissions
+                                const viewPerm = groupPermissions.find(p => p.code.endsWith(':read') || p.code.endsWith(':view'));
+                                const addPerm = groupPermissions.find(p => p.code.endsWith(':create') || p.code.endsWith(':add'));
+                                const editPerm = groupPermissions.find(p => p.code.endsWith(':update') || p.code.endsWith(':edit'));
+                                const deletePerm = groupPermissions.find(p => p.code.endsWith(':delete') || p.code.endsWith(':remove'));
+
+                                // Gather custom / action permissions
+                                const otherPerms = groupPermissions.filter(
+                                    p => p !== viewPerm && p !== addPerm && p !== editPerm && p !== deletePerm
+                                );
+
+                                // Check if all permissions inside this group are checked
+                                const allChecked = groupPermissions.every(p => p.checked);
+
+                                return (
+                                    <tr key={groupName} className="hover:bg-muted/20 dark:hover:bg-muted/10 transition-colors">
+                                        {/* Column 1: Module Name & Toggle Group Checkbox */}
+                                        <td className="px-6 py-4 font-medium text-foreground">
+                                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                                <Checkbox
+                                                    checked={allChecked}
+                                                    onChange={(e) => handleGroupToggle(groupName, e.target.checked)}
+                                                    disabled={!canUpdate}
+                                                />
+                                                <span className="font-semibold text-foreground/90">{groupName}</span>
+                                            </label>
+                                        </td>
+
+                                        {/* Column 2: View (Read) */}
+                                        <td className="px-4 py-4 text-center">
+                                            {viewPerm ? (
+                                                <Checkbox
+                                                    checked={viewPerm.checked}
+                                                    onChange={() => handleSingleToggle(viewPerm.id)}
+                                                    className="mx-auto"
+                                                    disabled={!canUpdate}
+                                                />
+                                            ) : (
+                                                <span className="text-muted-foreground/30 text-xs">—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Column 3: Add (Create) */}
+                                        <td className="px-4 py-4 text-center">
+                                            {addPerm ? (
+                                                <Checkbox
+                                                    checked={addPerm.checked}
+                                                    onChange={() => handleSingleToggle(addPerm.id)}
+                                                    className="mx-auto"
+                                                    disabled={!canUpdate}
+                                                />
+                                            ) : (
+                                                <span className="text-muted-foreground/30 text-xs">—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Column 4: Edit (Update) */}
+                                        <td className="px-4 py-4 text-center">
+                                            {editPerm ? (
+                                                <Checkbox
+                                                    checked={editPerm.checked}
+                                                    onChange={() => handleSingleToggle(editPerm.id)}
+                                                    className="mx-auto"
+                                                    disabled={!canUpdate}
+                                                />
+                                            ) : (
+                                                <span className="text-muted-foreground/30 text-xs">—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Column 5: Delete */}
+                                        <td className="px-4 py-4 text-center">
+                                            {deletePerm ? (
+                                                <Checkbox
+                                                    checked={deletePerm.checked}
+                                                    onChange={() => handleSingleToggle(deletePerm.id)}
+                                                    className="mx-auto"
+                                                    disabled={!canUpdate}
+                                                />
+                                            ) : (
+                                                <span className="text-muted-foreground/30 text-xs">—</span>
+                                            )}
+                                        </td>
+
+                                        {/* Column 6: Custom / Extra Permissions */}
+                                        <td className="px-6 py-4">
+                                            {otherPerms.length > 0 ? (
+                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                                    {otherPerms.map((perm) => (
+                                                        <label
+                                                            key={perm.id}
+                                                            className="flex items-center gap-2 cursor-pointer group text-xs text-foreground/80 hover:text-primary transition-colors"
+                                                        >
+                                                            <Checkbox
+                                                                checked={perm.checked}
+                                                                onChange={() => handleSingleToggle(perm.id)}
+                                                                disabled={!canUpdate}
+                                                            />
+                                                            <span className="font-medium">{perm.name}</span>
+                                                        </label>
+                                                    ))}
+                                                </div>
+                                            ) : (
+                                                <span className="text-muted-foreground/40 text-xs italic">No other actions</span>
+                                            )}
+                                        </td>
+                                    </tr>
+                                );
+                            })}
+                        </tbody>
+                    </table>
+                </div>
+                </Card>
+            </QueryBoundary>
+
+            {/* Bottom Actions footer */}
+            <div className="flex items-center justify-start gap-4 px-2">
+                <Button
+                    onClick={handleSave}
+                    disabled={!canUpdate}
+                    size="default"
+                    className="h-10 px-6 gap-1.5 font-semibold bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                    <Save className="h-4 w-4" />
+                    Update
+                </Button>
+            </div>
+        </div>
+    );
+};

@@ -5,19 +5,21 @@ import { Status } from "../enum/status";
 export type CategoryResponse = {
   id: number;
   name: string;
-  description: string;
+  code: string;
+  imageUrl: string;
   status: Status;
 };
 
 export const CategorySchema = z.object({
   name: z.string().min(1, "Category name is required"),
-  description: z.string().optional().nullable(),
-  status: z.enum([Status.ACTIVE, Status.INACTIVE]),
+  code: z.string().min(1, "Category code is required"),
+  imageUrl: z.any().optional(),
+  status: z.enum([Status.Active, Status.Inactive]),
 });
 
 export interface CategoryFilter extends PageFilter {
   name?: string;
-  status?: Status;
+  code?: string
 }
 
 export type CategoryRequest = z.infer<typeof CategorySchema>;
