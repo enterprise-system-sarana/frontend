@@ -1,6 +1,6 @@
 export const Status = {
-    ACTIVE: "ACTIVE",
-    INACTIVE: "INACTIVE",
+    Active: "ACTIVE",
+    Inactive: "INACTIVE"
 } as const;
 
 export type Status = typeof Status[keyof typeof Status];

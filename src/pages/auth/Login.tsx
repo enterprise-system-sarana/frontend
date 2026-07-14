@@ -3,7 +3,6 @@ import { Button } from "@/components/ui/button"
 import {
     Card,
     CardContent,
-    CardDescription,
     CardHeader,
     CardTitle,
 } from "@/components/ui/card"
@@ -53,10 +52,10 @@ export default function LoginPage({
                 <div className={cn("flex flex-col gap-6", className)} {...props}>
                     <Card>
                         <CardHeader>
-                            <CardTitle>Login to your account</CardTitle>
-                            <CardDescription>
-                                Enter your email below to login to your account
-                            </CardDescription>
+                            <CardTitle className="text-center">Login to your account</CardTitle>
+                            {/*<CardDescription>*/}
+                            {/*    Enter your email below to login to your account*/}
+                            {/*</CardDescription>*/}
                         </CardHeader>
                         <CardContent>
                             <form onSubmit={handleSubmit}>

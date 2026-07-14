@@ -5,7 +5,9 @@ const REFRESH_TOKEN_KEY = import.meta.env.VITE_REFRESH_TOKEN_KEY || "refresh_tok
 const USER_KEY = import.meta.env.VITE_USER_KEY || "auth_user";
 
 export const getAccessToken = (): string | null => {
-  return localStorage.getItem(ACCESS_TOKEN_KEY);
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
+  if (!token || token === "undefined" || token === "null") return null;
+  return token;
 };
 
 export const setAccessToken = (token: string): void => {
@@ -13,7 +15,9 @@ export const setAccessToken = (token: string): void => {
 };
 
 export const getRefreshToken = (): string | null => {
-  return localStorage.getItem(REFRESH_TOKEN_KEY);
+  const token = localStorage.getItem(REFRESH_TOKEN_KEY);
+  if (!token || token === "undefined" || token === "null") return null;
+  return token;
 };
 
 export const setRefreshToken = (token: string): void => {
@@ -22,7 +26,7 @@ export const setRefreshToken = (token: string): void => {
 
 export const getUser = (): AuthUser | null => {
   const userStr = localStorage.getItem(USER_KEY);
-  if (!userStr) return null;
+  if (!userStr || userStr === "undefined" || userStr === "null") return null;
   try {
     return JSON.parse(userStr) as AuthUser;
   } catch (e) {
@@ -40,8 +44,30 @@ export const clearAuth = (): void => {
   localStorage.removeItem(USER_KEY);
 };
 
+export const isTokenExpired = (token: string): boolean => {
+  try {
+    const parts = token.split(".");
+    if (parts.length !== 3) return true; // Not a valid JWT
+    const base64Url = parts[1];
+    const base64 = base64Url.replace(/-/g, "+").replace(/_/g, "/");
+    const jsonPayload = decodeURIComponent(
+      window
+        .atob(base64)
+        .split("")
+        .map((c) => "%" + ("00" + c.charCodeAt(0).toString(16)).slice(-2))
+        .join("")
+    );
+    const { exp } = JSON.parse(jsonPayload);
+    if (!exp) return false;
+    return Date.now() >= exp * 1000;
+  } catch (e) {
+    return true;
+  }
+};
+
 export const isAuthenticated = (): boolean => {
-  return !!getAccessToken();
+  const token = getAccessToken();
+  return !!token && !isTokenExpired(token);
 };
 
 export const hasRole = (role: string): boolean => {

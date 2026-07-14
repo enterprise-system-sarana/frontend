@@ -1,186 +1,186 @@
 "use client"
-
 import * as React from "react"
 import {
-    AudioWaveform,
-    BookOpen,
-    Bot,
-    Command,
-    Frame,
-    GalleryVerticalEnd,
-    Map,
-    PieChart,
-    Settings2,
-    SquareTerminal,
+    Package,
+    LayoutGrid,
+    Layers,
+    Scale,
+    Box,
+    PlusCircle,
+    ShoppingCart,
+    Truck,
+    Shield,
+    User,
+    UserCog,
+    Key,
+    Warehouse,
+    Store,
+    Boxes,
+    StoreIcon
 } from "lucide-react"
 
 import { NavMain } from "@/components/layout/nav-main"
-import { NavProjects } from "@/components/layout/nav-projects"
-import { NavUser } from "@/components/layout/nav-user"
-import { TeamSwitcher } from "@/components/layout/team-switcher"
 import {
     Sidebar,
     SidebarContent,
-    SidebarFooter,
     SidebarHeader,
-    SidebarRail,
-} from "@/components/ui/sidebar"
+} from "@/components/ui/sidebar";
+import { PERMISSION } from "@/constants/Permission";
+import { usePermission } from "@/utils/UsePermission";
 
-// This is sample data.
 const data = {
     user: {
         name: "shadcn",
         email: "m@example.com",
         avatar: "/avatars/shadcn.jpg",
     },
-    teams: [
-        {
-            name: "Acme Inc",
-            logo: GalleryVerticalEnd,
-            plan: "Enterprise",
-        },
-        {
-            name: "Acme Corp.",
-            logo: AudioWaveform,
-            plan: "Startup",
-        },
-        {
-            name: "Evil Corp.",
-            logo: Command,
-            plan: "Free",
-        },
-    ],
+
     navMain: [
         {
-            title: "Playground",
+            title: "Products",
             url: "#",
-            icon: SquareTerminal,
+            icon: Package,
             isActive: true,
             items: [
                 {
                     title: "Category",
                     url: "/category",
+                    icon: LayoutGrid,
+                    permission: PERMISSION.CATEGORY.READ,
                 },
                 {
-                    title: "CategoryPage",
-                    url: "/categoryPage",
+                    title: "SubCategory",
+                    url: "/sub-category",
+                    icon: Layers,
+                    permission: PERMISSION.PRODUCT.READ,
                 },
                 {
-                    title: "Settings",
-                    url: "#",
+                    title: "Unit",
+                    url: "/unit",
+                    icon: Scale,
+                    permission: PERMISSION.UNIT.READ,
+                },
+                {
+                    title: "Product",
+                    url: "/product",
+                    icon: Box,
+                    permission: PERMISSION.UNIT.READ,
+                },
+                {
+                    title: "Create Product",
+                    url: "/product/create",
+                    icon: PlusCircle,
+                    permission: PERMISSION.PRODUCT.CREATE,
                 },
             ],
         },
         {
-            title: "Models",
+            title: "Purchases",
             url: "#",
-            icon: Bot,
+            icon: ShoppingCart,
             items: [
                 {
-                    title: "Genesis",
-                    url: "#",
+                    title: "Supplier",
+                    url: "/supplier",
+                    icon: Truck,
+                    permission: PERMISSION.SUPPLIER.READ,
                 },
-                {
-                    title: "Explorer",
-                    url: "#",
-                },
-                {
-                    title: "Quantum",
-                    url: "#",
-                },
+
+
             ],
         },
         {
-            title: "Documentation",
+            title: "Inventory",
             url: "#",
-            icon: BookOpen,
+            icon: Warehouse,
             items: [
                 {
-                    title: "Introduction",
-                    url: "#",
+                    title: "Store",
+                    url: "/store",
+                    icon: StoreIcon,
+                    permission: PERMISSION.STORE.READ,
                 },
-                {
-                    title: "Get Started",
-                    url: "#",
-                },
-                {
-                    title: "Tutorials",
-                    url: "#",
-                },
-                {
-                    title: "Changelog",
-                    url: "#",
-                },
+
             ],
         },
         {
-            title: "Settings",
+            title: "Security",
             url: "#",
-            icon: Settings2,
+            icon: Shield,
             items: [
                 {
-                    title: "General",
-                    url: "#",
+                    title: "User",
+                    url: "/users",
+                    icon: User,
+                    permission: PERMISSION.USER.READ
                 },
                 {
-                    title: "Team",
-                    url: "#",
+                    title: "Role",
+                    url: "/roles",
+                    icon: UserCog,
+                    permission: PERMISSION.ROLE.READ
                 },
                 {
-                    title: "Billing",
-                    url: "#",
+                    title: "Permission Groups",
+                    url: "/permission-groups",
+                    icon: Shield,
+                    permission: PERMISSION.PERMISSION_GROUP.READ
                 },
                 {
-                    title: "Limits",
-                    url: "#",
+                    title: "Role Permissions",
+                    url: "/role-permissions",
+                    icon: Key,
+                    permission: PERMISSION.PERMISSION.READ
                 },
             ],
         },
+
+        // inventory 
+        {
+            title: "Inventory",
+            url: "#",
+            icon: Warehouse,
+            items: [
+                {
+                    title: "Store",
+                    url: "/store",
+                    icon: Store,
+                    permission: PERMISSION.STORE.READ,
+                },
+                {
+                    title: "Stock",
+                    url: "/stock",
+                    icon: Boxes,
+                    permission: PERMISSION.STOCK.READ,
+                },
+            ],
+        },
+
     ],
-    // projects: [
-    //     {
-    //         name: "Design Engineering",
-    //         url: "#",
-    //         icon: Frame,
-    //     },
-    //     {
-    //         name: "Sales & Marketing",
-    //         url: "#",
-    //         icon: PieChart,
-    //     },
-    //     {
-    //         name: "Travel",
-    //         url: "#",
-    //         icon: Map,
-    //     },
-    // ],
 }
 
-import { useAppSelector } from "@/store/store"
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
-    const currentUser = useAppSelector((state) => state.auth.user)
-    const user = currentUser
-        ? {
-            name: currentUser.username,
-            email: currentUser.email,
-            avatar: "",
-        }
-        : data.user
+    const { Can } = usePermission()
 
+    // Filter navigation main menu items based on permissions
+    const filteredNavMain = data.navMain
+        .map((group) => {
+            const filteredItems = group.items?.filter((subItem: any) => {
+                return !subItem.permission || Can(subItem.permission)
+            })
+            return { ...group, items: filteredItems }
+        })
+        .filter((group) => !group.items || group.items.length > 0)
     return (
         <Sidebar collapsible="icon" {...props}>
             <SidebarHeader>
-                <TeamSwitcher teams={data.teams} />
+                <img src="/logo-sarana.png" alt="logo" className="w-full h-full object-cover" />
             </SidebarHeader>
+
             <SidebarContent>
-                <NavMain items={data.navMain} />
-                {/* <NavProjects projects={data.projects} /> */}
+                <NavMain items={filteredNavMain} />
             </SidebarContent>
-            <SidebarFooter>
-                <NavUser user={user} />
-            </SidebarFooter>
-            <SidebarRail />
         </Sidebar>
     )
 }

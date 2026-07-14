@@ -8,6 +8,7 @@ import {
     setRefreshToken as saveRefreshToken,
     setUser as saveUser,
     clearAuth as clearStorage,
+    isTokenExpired,
 } from "@/utils/Auth";
 
 export interface AuthState {
@@ -16,11 +17,20 @@ export interface AuthState {
     refreshToken: string | null;
     isAuthenticated: boolean;
 }
+
+const token = getAccessToken();
+const user = getUser();
+const isExpired = token ? isTokenExpired(token) : true;
+
+if (token && isExpired) {
+    clearStorage();
+}
+
 const initialState: AuthState = {
-    user: getUser(),
-    accessToken: getAccessToken(),
-    refreshToken: getRefreshToken(),
-    isAuthenticated: !!getAccessToken(),
+    user: isExpired ? null : user,
+    accessToken: isExpired ? null : token,
+    refreshToken: isExpired ? null : getRefreshToken(),
+    isAuthenticated: !isExpired,
 };
 
 const authSlice = createSlice({
