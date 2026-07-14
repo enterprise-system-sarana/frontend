@@ -15,11 +15,11 @@ interface ProductColumnsProps {
 
 
 export const ProductColumns = ({ onEdit, onDelete, canEdit, canDelete }: ProductColumnsProps): ColumnDef<ProductResponse>[] => [
-    {
-        accessorKey: "id",
-        header: "Id",
-        cell: ({ row }) => <p>{row.original.id}</p>
-    },
+    // {
+    //     accessorKey: "id",
+    //     header: "Id",
+    //     cell: ({ row }) => <p>{row.original.id}</p>
+    // },
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title="Name" />,
@@ -42,17 +42,17 @@ export const ProductColumns = ({ onEdit, onDelete, canEdit, canDelete }: Product
     },
     {
         accessorKey: "alertQuantity",
-        header: ({ column }) => <SortableHeader column={column} title="AlertQuantity" />,
+        header: ({ column }) => <SortableHeader column={column} title="AlertQTY" />,
         cell: ({ row }) => <p>{row.original.alertQuantity}</p>
     },
     {
         accessorKey: "categoryName",
-        header: ({ column }) => <SortableHeader column={column} title="CategoryName" />,
+        header: ({ column }) => <SortableHeader column={column} title="CATNAME" />,
         cell: ({ row }) => <p>{row.original.categoryName}</p>
     },
     {
         accessorKey: "subCategoryName",
-        header: ({ column }) => <SortableHeader column={column} title="SubCategoryName" />,
+        header: ({ column }) => <SortableHeader column={column} title="SCNAME" />,
         cell: ({ row }) => <p>{row.original.subCategoryName}</p>
     },
     {
@@ -60,21 +60,21 @@ export const ProductColumns = ({ onEdit, onDelete, canEdit, canDelete }: Product
         header: ({ column }) => <SortableHeader column={column} title="UnitName" />,
         cell: ({ row }) => <p>{row.original.unitName}</p>
     },
-    {
-        accessorKey: "defaultSaleUnit",
-        header: "defaultSaleUnit",
-        cell: ({ row }) => <p>{row.original.defaultSaleUnit}</p>
-    },
-    {
-        accessorKey: "defaultPurchaseUnit",
-        header: "defaultPurchaseUnit",
-        cell: ({ row }) => <p>{row.original.defaultPurchaseUnit}</p>
-    },
-    {
-        accessorKey: "printer",
-        header: "Printer",
-        cell: ({ row }) => <p>{row.original.printer}</p>
-    },
+    // {
+    //     accessorKey: "defaultSaleUnit",
+    //     header: "defaultSaleUnit",
+    //     cell: ({ row }) => <p>{row.original.defaultSaleUnit}</p>
+    // },
+    // {
+    //     accessorKey: "defaultPurchaseUnit",
+    //     header: "defaultPurchaseUnit",
+    //     cell: ({ row }) => <p>{row.original.defaultPurchaseUnit}</p>
+    // },
+    // {
+    //     accessorKey: "printer",
+    //     header: "Printer",
+    //     cell: ({ row }) => <p>{row.original.printer}</p>
+    // },
     // {
     //     accessorKey: "image",
     //     header: "Image",

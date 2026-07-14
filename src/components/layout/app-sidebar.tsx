@@ -1,22 +1,16 @@
 "use client"
 import * as React from "react"
 import {
-    Package,
-    LayoutGrid,
-    Layers,
-    Scale,
-    Box,
-    PlusCircle,
-    ShoppingCart,
-    Truck,
-    Shield,
-    User,
-    UserCog,
-    Key,
-    Warehouse,
-    Store,
-    Boxes,
-    StoreIcon
+    AudioWaveform,
+    BookOpen,
+    Bot,
+    Command,
+    Frame,
+    GalleryVerticalEnd,
+    Map,
+    PieChart,
+    Settings2,
+    SquareTerminal,
 } from "lucide-react"
 
 import { NavMain } from "@/components/layout/nav-main"
@@ -55,22 +49,8 @@ const data = {
                     permission: PERMISSION.PRODUCT.READ,
                 },
                 {
-                    title: "Unit",
-                    url: "/unit",
-                    icon: Scale,
-                    permission: PERMISSION.UNIT.READ,
-                },
-                {
-                    title: "Product",
-                    url: "/product",
-                    icon: Box,
-                    permission: PERMISSION.UNIT.READ,
-                },
-                {
-                    title: "Create Product",
-                    url: "/product/create",
-                    icon: PlusCircle,
-                    permission: PERMISSION.PRODUCT.CREATE,
+                    title: "Settings",
+                    url: "#",
                 },
             ],
         },
@@ -80,25 +60,16 @@ const data = {
             icon: ShoppingCart,
             items: [
                 {
-                    title: "Supplier",
-                    url: "/supplier",
-                    icon: Truck,
-                    permission: PERMISSION.SUPPLIER.READ,
+                    title: "Genesis",
+                    url: "#",
                 },
-
-
-            ],
-        },
-        {
-            title: "Inventory",
-            url: "#",
-            icon: Warehouse,
-            items: [
                 {
-                    title: "Store",
-                    url: "/store",
-                    icon: StoreIcon,
-                    permission: PERMISSION.STORE.READ,
+                    title: "Explorer",
+                    url: "#",
+                },
+                {
+                    title: "Quantum",
+                    url: "#",
                 },
 
             ],
