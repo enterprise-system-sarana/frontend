@@ -10,62 +10,61 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useEffect } from "react";
-import { CategorySchema } from "@/types/product/Category";
-import type { CategoryResponse, CategoryRequest } from "@/types/product/Category";
-import { Status } from "@/types/enum/status";
-import { useCreateCategory, useUpdateCategory } from "@/hooks/product/useCategory";
+import { RoleSchema } from "@/types/users/Role";
+import type { RoleResponse, RoleRequest } from "@/types/users/Role";
+import { useCreateRole, useUpdateRole } from "@/hooks/users/useRole";
 import FormTextField from "@/components/ui/FormTextField";
 
-type FormCategoryProps = {
+type FormRoleProps = {
     open: boolean;
     setOpen: (open: boolean) => void;
-    category: CategoryResponse | null;
+    role: RoleResponse | null;
 };
 
-const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
-    const { mutate: createCategoryMutate, isPending: isCreating } = useCreateCategory();
-    const { mutate: updateCategoryMutate, isPending: isUpdating } = useUpdateCategory();
+const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
+    const { mutate: createRoleMutate, isPending: isCreating } = useCreateRole();
+    const { mutate: updateRoleMutate, isPending: isUpdating } = useUpdateRole();
 
     const isPending = isCreating || isUpdating;
     const form = useForm({
         defaultValues: {
-            name: category?.name || "",
-            description: category?.description || "",
-            status: category?.status || Status.ACTIVE,
-        } as CategoryRequest,
+            code: role?.code || "",
+            name: role?.name || "",
+            description: role?.description || "",
+        } as RoleRequest,
         validators: {
-            onSubmit: CategorySchema,
+            onSubmit: RoleSchema,
         },
         onSubmit: async ({ value }) => {
-            const payload = value as CategoryRequest;
+            const payload = value as RoleRequest;
             const handleSuccess = () => {
                 setOpen(false);
                 form.reset();
             };
 
-            if (category) {
-                updateCategoryMutate(
-                    { id: category.id, request: payload },
+            if (role) {
+                updateRoleMutate(
+                    { id: role.id, request: payload },
                     { onSuccess: handleSuccess },
                 );
             } else {
-                createCategoryMutate(payload, { onSuccess: handleSuccess });
+                createRoleMutate(payload, { onSuccess: handleSuccess });
             }
         },
     });
 
     useEffect(() => {
         form.reset();
-    }, [category, open]);
+    }, [role, open]);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="sm:max-w-sm">
+            <DialogContent className="min-w-[400px]">
                 <DialogHeader>
-                    <DialogTitle>{category ? "Edit" : "Create"} category</DialogTitle>
+                    <DialogTitle>{role ? "Edit" : "Create"} Role</DialogTitle>
                 </DialogHeader>
                 <form
-                    id="category-form"
+                    id="role-form"
                     onSubmit={(e) => {
                         e.preventDefault();
                         form.handleSubmit();
@@ -74,9 +73,17 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
                     <FieldGroup>
                         <FormTextField
                             form={form}
+                            name="code"
+                            label="Code"
+                            placeholder="Enter role code"
+                            type="text"
+                            autoComplete="off"
+                        />
+                        <FormTextField
+                            form={form}
                             name="name"
                             label="Name"
-                            placeholder="Enter Category Name"
+                            placeholder="Enter role name"
                             type="text"
                             autoComplete="off"
                         />
@@ -84,15 +91,7 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
                             form={form}
                             name="description"
                             label="Description"
-                            placeholder="Enter Category Description"
-                            type="text"
-                            autoComplete="off"
-                        />
-                        <FormTextField
-                            form={form}
-                            name="status"
-                            label="Status"
-                            placeholder="Enter Category Status"
+                            placeholder="Enter role description"
                             type="text"
                             autoComplete="off"
                         />
@@ -104,10 +103,10 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
                     </DialogClose>
                     <Button
                         type="submit"
-                        form="category-form"
+                        form="role-form"
                         disabled={isPending}
                     >
-                        {isPending ? "Saving..." : (category ? "Update" : "Create")}
+                        {isPending ? "Saving..." : (role ? "Update" : "Create")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
@@ -115,4 +114,4 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
     );
 };
 
-export default FormCategory;
+export default FormRole;

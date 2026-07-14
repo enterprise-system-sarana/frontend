@@ -1,3 +1,5 @@
+import type { Status } from "./enum/status";
+
 export interface Pagination {
     pageSize: number;
     pageNumber: number;
@@ -23,8 +25,10 @@ export interface ApiResponse<T> {
 }
 
 
-
 export interface PageFilter {
+    status?: Status
     page: number
     size: number
 }
+
+export const DEFAULT_FILTER = { page: 1, size: 10 } as PageFilter
