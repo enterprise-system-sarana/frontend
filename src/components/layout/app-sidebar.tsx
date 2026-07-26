@@ -18,7 +18,9 @@ import {
     Boxes,
     StoreIcon,
     Wallet,
-    Coins
+    Coins,
+    ShoppingBag,
+    CreditCard
 } from "lucide-react"
 
 import { NavMain } from "@/components/layout/nav-main"
@@ -29,6 +31,7 @@ import {
 } from "@/components/ui/sidebar";
 import { PERMISSION } from "@/constants/Permission";
 import { usePermission } from "@/utils/UsePermission";
+import { url } from "zod";
 
 const data = {
     user: {
@@ -87,6 +90,24 @@ const data = {
                     icon: Truck,
                     permission: PERMISSION.SUPPLIER.READ,
                 },
+                {
+                    title: "Purchase",
+                    url: "/purchase",
+                    icon: ShoppingBag,
+                    Permission: PERMISSION.PURCHASE.CREATE
+                },
+                {
+                    title: "Create Purchase",
+                    url: "/purchase/create",
+                    icon: PlusCircle,
+                    permission: PERMISSION.PURCHASE.CREATE,
+                },
+                {
+                    title: "Purchase Payment",
+                    url: "/purchase/payment",
+                    icon: CreditCard,
+                    permission: PERMISSION.PURCHASE.CREATE,
+                }
 
 
             ],
