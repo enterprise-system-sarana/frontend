@@ -1,5 +1,8 @@
 import DashboardLayout from "@/components/layout/Dashboard";
 import { CategoryPage, LoginPage, PermissionPage, GroupPermissionPage, ProductPage, ProductForm, RolePage, SubCategoryPage, UnitPage, UserPage, SupplierPage, StorePage, BankPage, CurrencyPage } from "@/pages";
+import PurchaseForm from "@/pages/purchases/purchase/PurchaseForm";
+import { PurchasePage } from "@/pages/purchases/purchase/PurchasePage";
+import {PurchasePaymentPage} from "@/pages/purchases/purchase/PurchasePayment";
 import PrivateRoute from "@/utils/privateRoute";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
@@ -48,6 +51,22 @@ const router = createBrowserRouter([
                     {
                         path: "supplier",
                         element: <SupplierPage />
+                    },
+                    {
+                        path: "purchase",
+                        element: <PurchasePage />
+                    },
+                    {
+                        path: "purchase/create",
+                        element: <PurchaseForm /> 
+                    },
+                    {
+                        path: "purchase/edit/:id",
+                        element: <PurchaseForm />
+                    },
+                    {
+                        path: "purchase/payment",
+                        element: <PurchasePaymentPage/>
                     },
                     {
                         path: "store",
