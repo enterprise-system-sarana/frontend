@@ -22,6 +22,7 @@ export { default as GroupPermissionPage } from "@/pages/users/groupPermission/Gr
 
 // Inventory 
 export { StorePage } from "@/pages/inventory/store/StorePage"
+export { AdjustmentPage } from "@/pages/inventory/adjustment/AdjustmentPage"
 
 
 

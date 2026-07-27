@@ -1,5 +1,6 @@
 import DashboardLayout from "@/components/layout/Dashboard";
 import { CategoryPage, LoginPage, PermissionPage, GroupPermissionPage, ProductPage, ProductForm, RolePage, SubCategoryPage, UnitPage, UserPage, SupplierPage, StorePage, BankPage, CurrencyPage } from "@/pages";
+import AdjustmentPage from "@/pages/inventory/adjustment/AdjustmentPage";
 import PrivateRoute from "@/utils/privateRoute";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 
@@ -52,6 +53,10 @@ const router = createBrowserRouter([
                     {
                         path: "store",
                         element: <StorePage />
+                    },
+                    {
+                        path: "adjustment",
+                        element:<AdjustmentPage/>
                     },
                     // role permission 
                     {

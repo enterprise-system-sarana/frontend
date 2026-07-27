@@ -26,6 +26,12 @@ export const PERMISSION = {
     UPDATE: "category:update",
     DELETE: "category:delete",
   },
+  ADJUSTMENT: {
+    READ: "adjustment:read",
+    CREATE: "adjustment:create",
+    UPDATE: "adjustment:update",
+    DELETE: "adjustment:delete",
+  },
   SUBCATEGORY: {
     READ: "subCategory:read",
     CREATE: "subCategory:create",
@@ -69,12 +75,7 @@ export const PERMISSION = {
   },
 
   // ================= INVENTORY PERMISSION ==========================
-  ADJUSTMENT: {
-    READ: "adjustment:read",
-    CREATE: "adjustment:create",
-    UPDATE: "adjustment:update",
-    DELETE: "adjustment:delete",
-  },
+
   STOCK: {
     READ: "stock:read",
     UPDATE: "stock:update",
@@ -94,7 +95,6 @@ export const PERMISSION = {
     COMPLETED: "transfer:completed",
     CANCEL: "transfer:cancel",
   },
-
   // ================== PERMISSION SALES ==========================
   CUSTOMER: {
     READ: "customer:read",

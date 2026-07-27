@@ -177,6 +177,12 @@ const data = {
                     icon: Boxes,
                     permission: PERMISSION.STOCK.READ,
                 },
+                {
+                    title: "Adjustment",
+                    url: "/adjustment",
+                    icon: Boxes,
+                    permission: PERMISSION.ADJUSTMENT.READ,
+                }
             ],
         },
 
