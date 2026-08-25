@@ -1,13 +1,12 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
-@import "@fontsource-variable/geist";
 
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-    --font-heading: var(--font-sans);
-    --font-sans: "Geist Variable", sans-serif;
+    --font-sans: "Noto Sans", "Noto Sans Khmer", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    --font-heading: "Noto Sans", "Noto Sans Khmer", sans-serif;
 
     /* Colors */
     --color-background: var(--background);
@@ -61,118 +60,116 @@
     --radius-xl: calc(var(--radius) * 1.4);
     --radius-2xl: calc(var(--radius) * 1.8);
     --radius-3xl: calc(var(--radius) * 2.2);
-    --radius-4xl: calc(var(--radius) * 2.6);
 
     /* Custom Palette */
-    --color-forest: #2e6f40;
-    --color-mint: #cfffdc;
-    --color-leaf: #68ba7f;
-    --color-dark-forest: #253d2c;
+    --color-indigo-brand: #6366f1;
+    --color-indigo-hover: #4f46e5;
+    --color-emerald-brand: #10b981;
 }
 
 :root {
     /* Base */
-    --background: #ffffff;
-    --foreground: #253d2c;
+    --background: #f8fafc;
+    --foreground: #334155;
 
     --card: #ffffff;
-    --card-foreground: #253d2c;
+    --card-foreground: #1e293b;
 
     --popover: #ffffff;
-    --popover-foreground: #253d2c;
+    --popover-foreground: #1e293b;
 
-    /* Brand */
-    --primary: #2e6f40;
+    /* Brand - Modern Indigo Palette */
+    --primary: #6366f1;
     --primary-foreground: #ffffff;
 
-    --secondary: #cfffdc;
-    --secondary-foreground: #253d2c;
-
-    --muted: #f4fff7;
-    --muted-foreground: #557260;
-
-    --accent: #68ba7f;
-    --accent-foreground: #ffffff;
-
-    --destructive: #dc2626;
-
-    --border: #d6eedc;
-    --input: #d6eedc;
-    --ring: #68ba7f;
-
-    /* Charts */
-    --chart-1: #2e6f40;
-    --chart-2: #68ba7f;
-    --chart-3: #95d5a7;
-    --chart-4: #cfffdc;
-    --chart-5: #253d2c;
-
-    /* Radius */
-    --radius: 0.75rem;
-
-    /* Sidebar */
-    --sidebar: #ffffff;
-    --sidebar-foreground: #253d2c;
-
-    --sidebar-primary: #2e6f40;
-    --sidebar-primary-foreground: #ffffff;
-
-    --sidebar-accent: #cfffdc;
-    --sidebar-accent-foreground: #253d2c;
-
-    --sidebar-border: #d6eedc;
-    --sidebar-ring: #68ba7f;
-}
-
-.dark {
-    /* Base */
-    --background: #253d2c;
-    --foreground: #f5fff8;
-
-    --card: #2b4935;
-    --card-foreground: #f5fff8;
-
-    --popover: #2b4935;
-    --popover-foreground: #f5fff8;
-
-    /* Brand */
-    --primary: #68ba7f;
-    --primary-foreground: #253d2c;
-
-    --secondary: #355943;
+    --secondary: #64748b;
     --secondary-foreground: #ffffff;
 
-    --muted: #304d38;
-    --muted-foreground: #cfe7d6;
+    --muted: #f1f5f9;
+    --muted-foreground: #64748b;
 
-    --accent: #2e6f40;
+    --accent: #6366f1;
     --accent-foreground: #ffffff;
 
     --destructive: #ef4444;
 
-    --border: rgba(255, 255, 255, 0.08);
-    --input: rgba(255, 255, 255, 0.12);
-    --ring: #68ba7f;
+    --border: #e2e8f0;
+    --input: #cbd5e1;
+    --ring: #6366f1;
 
     /* Charts */
-    --chart-1: #68ba7f;
-    --chart-2: #cfffdc;
-    --chart-3: #2e6f40;
-    --chart-4: #95d5a7;
-    --chart-5: #f5fff8;
+    --chart-1: #6366f1;
+    --chart-2: #06b6d4;
+    --chart-3: #10b981;
+    --chart-4: #f59e0b;
+    --chart-5: #ef4444;
+
+    /* Radius */
+    --radius: 0.625rem;
 
     /* Sidebar */
-    --sidebar: #253d2c;
-    --sidebar-foreground: #f5fff8;
+    --sidebar: #ffffff;
+    --sidebar-foreground: #1e293b;
 
-    --sidebar-primary: #68ba7f;
-    --sidebar-primary-foreground: #253d2c;
+    --sidebar-primary: #6366f1;
+    --sidebar-primary-foreground: #ffffff;
 
-    --sidebar-accent: #355943;
-    --sidebar-accent-foreground: #ffffff;
+    --sidebar-accent: rgba(99, 102, 241, 0.08);
+    --sidebar-accent-foreground: #6366f1;
 
-    --sidebar-border: rgba(255, 255, 255, 0.08);
-    --sidebar-ring: #68ba7f;
+    --sidebar-border: #e2e8f0;
+    --sidebar-ring: #6366f1;
+}
+
+.dark {
+    /* Base - Modern Deep Slate */
+    --background: #0f172a;
+    --foreground: #94a3b8;
+
+    --card: #1e293b;
+    --card-foreground: #f8fafc;
+
+    --popover: #1e293b;
+    --popover-foreground: #f8fafc;
+
+    /* Brand */
+    --primary: #6366f1;
+    --primary-foreground: #ffffff;
+
+    --secondary: #334155;
+    --secondary-foreground: #f8fafc;
+
+    --muted: #1e293b;
+    --muted-foreground: #64748b;
+
+    --accent: #6366f1;
+    --accent-foreground: #ffffff;
+
+    --destructive: #ef4444;
+
+    --border: #334155;
+    --input: #334155;
+    --ring: #6366f1;
+
+    /* Charts */
+    --chart-1: #818cf8;
+    --chart-2: #22d3ee;
+    --chart-3: #34d399;
+    --chart-4: #fbbf24;
+    --chart-5: #f87171;
+
+    /* Sidebar */
+    --sidebar: #0f172a;
+    --sidebar-foreground: #e2e8f0;
+
+    --sidebar-primary: #6366f1;
+    --sidebar-primary-foreground: #ffffff;
+
+    --sidebar-accent: rgba(99, 102, 241, 0.16);
+    --sidebar-accent-foreground: #818cf8;
+
+    --sidebar-border: #1e293b;
+    --sidebar-ring: #6366f1;
 }
 
 @layer base {
@@ -183,33 +180,43 @@
     html {
         @apply font-sans;
         scroll-behavior: smooth;
+        -webkit-tap-highlight-color: transparent;
     }
 
     body {
         @apply bg-background text-foreground antialiased;
-        font-feature-settings: "rlig" 1, "calt" 1;
+        font-feature-settings: "cv02", "cv03", "cv04", "cv11", "calt" 1;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+        text-rendering: optimizeLegibility;
+        letter-spacing: -0.01em;
+    }
+
+    h1, h2, h3, h4, h5, h6 {
+        font-family: var(--font-heading);
+        letter-spacing: -0.02em;
     }
 
     ::selection {
-        background: #68ba7f;
+        background: #6366f1;
         color: white;
     }
 
     ::-webkit-scrollbar {
-        width: 8px;
-        height: 8px;
+        width: 6px;
+        height: 6px;
     }
 
     ::-webkit-scrollbar-thumb {
-        background: #68ba7f;
+        background: rgba(148, 163, 184, 0.4);
         border-radius: 999px;
     }
 
     ::-webkit-scrollbar-thumb:hover {
-        background: #2e6f40;
+        background: rgba(99, 102, 241, 0.7);
     }
 
     ::-webkit-scrollbar-track {
         background: transparent;
     }
-}
+}

@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { Button } from "@/components/ui/button";
-import { FieldGroup, } from "@/components/ui/field";
+import { FieldGroup } from "@/components/ui/field";
 import {
     Dialog,
     DialogClose,
@@ -12,9 +12,10 @@ import {
 import { useEffect } from "react";
 import { CategorySchema } from "@/types/product/Category";
 import type { CategoryResponse, CategoryRequest } from "@/types/product/Category";
-import { Status } from "@/types/enum/status";
-import { useCreateCategory, useUpdateCategory } from "@/hooks/product/useCategory";
-import FormTextField, { FormImageUpload, FormSelectField } from "@/components/ui/FormTextField";
+import { StatusOptions, Status } from "@/types/enum/status";
+import FormTextField, { FormRadioGroupField } from "@/components/ui/FormTextField";
+import FileUpload from "@/pages/FileUpload";
+import { useCategory } from "@/hooks/product/useCategory";
 
 type FormCategoryProps = {
     open: boolean;
@@ -23,8 +24,8 @@ type FormCategoryProps = {
 };
 
 const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
-    const { mutate: createCategoryMutate, isPending: isCreating } = useCreateCategory();
-    const { mutate: updateCategoryMutate, isPending: isUpdating } = useUpdateCategory();
+    const { mutate: createCategoryMutate, isPending: isCreating } = useCategory.useCreateCategory();
+    const { mutate: updateCategoryMutate, isPending: isUpdating } = useCategory.useUpdateCategory();
 
     const isPending = isCreating || isUpdating;
     const form = useForm({
@@ -32,7 +33,7 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
             name: category?.name || "",
             code: category?.code || "",
             imageUrl: category?.imageUrl || "",
-            status: category?.status || Status.Active,
+            status: category?.status || Status.ACTIVE,
         } as CategoryRequest,
         validators: {
             onSubmit: CategorySchema,
@@ -46,7 +47,7 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
 
             if (category) {
                 updateCategoryMutate(
-                    { id: category.id, request: payload },
+                    { id: category.id, req: payload },
                     { onSuccess: handleSuccess },
                 );
             } else {
@@ -57,16 +58,16 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
 
     useEffect(() => {
         form.reset();
-    }, [category, open]);
+    }, [category, open, form]);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="md:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle>{category ? "Edit" : "Create"} category</DialogTitle>
+                    <DialogTitle>{category ? "Edit" : "Create"} brand</DialogTitle>
                 </DialogHeader>
                 <form
-                    id="category-form"
+                    id="brand-form"
                     onSubmit={(e) => {
                         e.preventDefault();
                         form.handleSubmit();
@@ -78,7 +79,7 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
                             name="name"
                             label="Name"
                             required={true}
-                            placeholder="Enter Category Name"
+                            placeholder="Name"
                             type="text"
                         />
                         <FormTextField
@@ -86,24 +87,27 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
                             name="code"
                             label="Code"
                             required={true}
-                            placeholder="Enter Category Code"
+                            placeholder="Code"
                             type="text"
                         />
-                        <FormImageUpload
-                            form={form}
-                            name="imageUrl"
-                            label="Image"
+
+                        <FileUpload
+                            label="Category Image"
+                            value={form.state.values.imageUrl || category?.imageUrl}
+                            onUploaded={(fileName) => {
+                                form.setFieldValue("imageUrl", fileName);
+                            }}
+                            onRemove={() => {
+                                form.setFieldValue("imageUrl", "");
+                            }}
+                            defaultBucket="category"
                         />
-                        <FormSelectField
+                        <FormRadioGroupField
                             form={form}
                             name="status"
                             label="Status"
                             required={true}
-                            placeholder="Select Status"
-                            options={Object.entries(Status).map(([, value]) => ({
-                                value: value,
-                                label: value,
-                            })) || []}
+                            options={StatusOptions}
                         />
                     </FieldGroup>
                 </form>
@@ -113,7 +117,7 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
                     </DialogClose>
                     <Button
                         type="submit"
-                        form="category-form"
+                        form="brand-form"
                         disabled={isPending}
                     >
                         {isPending ? "Saving..." : (category ? "Update" : "Create")}

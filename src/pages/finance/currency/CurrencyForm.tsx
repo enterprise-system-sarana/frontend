@@ -34,10 +34,10 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
             operation: currency?.operation || "",
             rate: currency?.rate || 1.0,
             symbol: currency?.symbol || "",
-            status: (currency?.status as any) || Status.Active,
+            status: currency?.status || Status.ACTIVE,
         } as CurrencyRequest,
         validators: {
-            onSubmit: CurrencySchema,
+            onSubmit: CurrencySchema as any,
         },
         onSubmit: async ({ value }) => {
             const payload = value as CurrencyRequest;

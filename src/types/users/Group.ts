@@ -1,11 +1,13 @@
-import {z} from "zod"
+import { z } from "zod";
+import type { BaseResponse } from "../pagination";
 
-export type GroupPermission = {
-    id: number;
+export interface GroupPermission extends BaseResponse {
     code: string;
     name: string;
     description: string;
 }
+
+export type GroupPermissionResponse = GroupPermission;
 
 export const GroupShema = z.object({
     code : z.string().min(1, "Code is required"),

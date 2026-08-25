@@ -13,6 +13,8 @@ import {
   ChevronsRight,
 } from "lucide-react";
 
+import { useLanguage } from "@/i18n/LanguageContext";
+
 export interface CustomPaginationProps {
   currentPage: number; // 1-based index
   pageSize: number;
@@ -32,6 +34,7 @@ export function CustomPagination({
   onPageSizeChange,
   pageSizeOptions = [10, 20, 30, 50, 100],
 }: CustomPaginationProps) {
+  const { t } = useLanguage();
   // Safe default calculations
   const total = totalElements || 0;
   const pagesCount = totalPages || 1;
@@ -76,29 +79,29 @@ export function CustomPagination({
   };
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2 py-4">
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-border/60">
       {/* Showing range details */}
-      <div className="text-sm text-muted-foreground font-medium">
-        Showing <span className="text-foreground font-semibold">{startRow}</span> to{" "}
-        <span className="text-foreground font-semibold">{endRow}</span> of{" "}
-        <span className="text-foreground font-semibold">{total}</span> entries
+      <div className="text-xs text-muted-foreground font-medium">
+        {t("common.showing")} <span className="font-semibold text-foreground">{startRow}</span> {t("common.to")}{" "}
+        <span className="font-semibold text-foreground">{endRow}</span> {t("common.of")}{" "}
+        <span className="font-semibold text-foreground">{total}</span> {t("common.entries")}
       </div>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-6">
+      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
         {/* Rows per page select */}
         {onPageSizeChange && (
           <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground whitespace-nowrap">
-              Rows per page
+            <span className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+              {t("common.rows_per_page")}
             </span>
             <Select
               value={String(pageSize)}
               onValueChange={(val) => onPageSizeChange(Number(val))}
             >
-              <SelectTrigger className="h-8 w-[70px] border-border/80 focus:ring-primary/20">
+              <SelectTrigger className="h-8 w-[72px] rounded-lg border-border/70 text-xs font-medium text-foreground focus:ring-primary/20 focus:border-primary">
                 <SelectValue placeholder={String(pageSize)} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="rounded-xl border-border/70">
                 {pageSizeOptions.map((opt) => (
                   <SelectItem key={opt} value={String(opt)}>
                     {opt}
@@ -109,13 +112,13 @@ export function CustomPagination({
           </div>
         )}
 
-        {/* Buttons Controls */}
-        <div className="flex items-center gap-1.5">
+        {/* Page Controls */}
+        <div className="flex items-center gap-1">
           {/* First Page */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8 transition-all hover:bg-muted active:scale-95 disabled:opacity-50"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
             onClick={() => onPageChange(1)}
             disabled={currentPage === 1}
           >
@@ -124,9 +127,9 @@ export function CustomPagination({
 
           {/* Previous Page */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8 transition-all hover:bg-muted active:scale-95 disabled:opacity-50"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
             onClick={() => onPageChange(currentPage - 1)}
             disabled={currentPage === 1}
           >
@@ -140,9 +143,9 @@ export function CustomPagination({
                 return (
                   <span
                     key={`ellipsis-${idx}`}
-                    className="flex h-8 w-8 items-center justify-center text-sm text-muted-foreground select-none"
+                    className="flex h-8 w-8 items-center justify-center text-xs text-muted-foreground select-none"
                   >
-                    ...
+                    ···
                   </span>
                 );
               }
@@ -151,10 +154,10 @@ export function CustomPagination({
               return (
                 <Button
                   key={`page-${pageNum}`}
-                  variant={isActive ? "default" : "outline"}
-                  className={`h-8 w-8 p-0 text-sm font-medium transition-all duration-200 active:scale-95 ${isActive
-                      ? "bg-primary text-primary-foreground hover:bg-primary/95 shadow-xs"
-                      : "hover:bg-muted dark:hover:bg-muted/30"
+                  variant="ghost"
+                  className={`h-8 w-8 p-0 rounded-lg text-xs font-semibold transition-all duration-200 ${isActive
+                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30 hover:bg-primary/90 hover:text-primary-foreground"
+                    : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
                     }`}
                   onClick={() => onPageChange(Number(pageNum))}
                 >
@@ -166,9 +169,9 @@ export function CustomPagination({
 
           {/* Next Page */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8 transition-all hover:bg-muted active:scale-95 disabled:opacity-50"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
             onClick={() => onPageChange(currentPage + 1)}
             disabled={currentPage === pagesCount}
           >
@@ -177,9 +180,9 @@ export function CustomPagination({
 
           {/* Last Page */}
           <Button
-            variant="outline"
+            variant="ghost"
             size="icon"
-            className="h-8 w-8 transition-all hover:bg-muted active:scale-95 disabled:opacity-50"
+            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
             onClick={() => onPageChange(pagesCount)}
             disabled={currentPage === pagesCount}
           >

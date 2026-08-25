@@ -1,59 +1,51 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { findAll, create, update, deleteCategory } from "@/services/product/category.service";
-import type { CategoryRequest, CategoryFilter } from "@/types/product/Category";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mutationHandler } from "../handleMutaion";
-
-export const categoryKeys = {
-    key: "categories",
-    list: (filter: CategoryFilter) => [categoryKeys.key, "list", { ...filter }],
-};
+import type { CategoryFilter, CategoryRequest } from "@/types/product/Category";
+import { CategoryService } from "@/services/product/category.service";
 
 
-export const useGetAllCategory = (filter: CategoryFilter) => {
-    return useQuery({
-        queryKey: [categoryKeys.key],
-        queryFn: () => findAll(filter),
-    })
-}
 
-
-export const useCategory = (filter: CategoryFilter = { page: 1, size: 10 }) => {
-    return useQuery({
-        queryKey: categoryKeys.list(filter),
-        queryFn: () => findAll(filter),
-    })
-}
-
-export const useCreateCategory = () => {
-    const queryClient = useQueryClient()
-    return useMutation({
-        mutationFn: create,
-        ...mutationHandler({
-            queryClient,
-            queryKey: [categoryKeys.key],
-        }),
-    })
-}
-
-export const useUpdateCategory = () => {
-    const queryClient = useQueryClient()
-    return useMutation({
-        mutationFn: ({ id, request }: { id: number; request: CategoryRequest }) => update(id, request),
-        ...mutationHandler({
-            queryClient,
-            queryKey: [categoryKeys.key],
-        }),
-    })
-}
-
-export const useDeleteCategory = () => {
-    const queryClient = useQueryClient()
-    return useMutation({
-        mutationFn: ({ id }: { id: number }) => deleteCategory(id),
-
-        ...mutationHandler({
-            queryClient,
-            queryKey: [categoryKeys.key],
-        }),
-    })
+export const useCategory = {
+    categoryKey: {
+        all: ["category"],
+        list: (filter: CategoryFilter) => [...useCategory.categoryKey.all, "list", { ...filter }],
+        detail: (id: number) => [...useCategory.categoryKey.all, "detail", id]
+    },
+    useGetAllCategory: (filter: CategoryFilter = { page: 1, size: 10 }) => {
+        return useQuery({
+            queryKey: useCategory.categoryKey.list(filter),
+            queryFn: () => CategoryService.findAll(filter),
+            retry: 1
+        });
+    },
+    useCreateCategory: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: (req: CategoryRequest) => CategoryService.create(req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useCategory.categoryKey.all
+            })
+        });
+    },
+    useUpdateCategory: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id, req }: { id: number; req: CategoryRequest }) => CategoryService.update(id, req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useCategory.categoryKey.all
+            })
+        });
+    },
+    useDeleteCategory: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id }: { id: number }) => CategoryService.delete(id),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useCategory.categoryKey.all
+            })
+        });
+    }
 }

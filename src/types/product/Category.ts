@@ -1,25 +1,25 @@
 import { z } from "zod";
-import type { PageFilter } from "../pagination";
+import type { BaseResponse, PageFilter } from "../pagination";
 import { Status } from "../enum/status";
+import { validateString } from "../validator";
 
-export type CategoryResponse = {
-  id: number;
+export interface CategoryResponse extends BaseResponse {
   name: string;
   code: string;
-  imageUrl: string;
+  imageUrl?: string;
   status: Status;
-};
+}
 
 export const CategorySchema = z.object({
-  name: z.string().min(1, "Category name is required"),
-  code: z.string().min(1, "Category code is required"),
+  name: validateString("Name"),
+  code: validateString("Code"),
   imageUrl: z.any().optional(),
-  status: z.enum([Status.Active, Status.Inactive]),
+  status: validateString("Status"),
 });
 
 export interface CategoryFilter extends PageFilter {
   name?: string;
-  code?: string
+  code?: string;
 }
 
 export type CategoryRequest = z.infer<typeof CategorySchema>;

@@ -5,12 +5,15 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
-import { Search, Shield, Save } from "lucide-react";
+import { Search, Shield, Save, X } from "lucide-react";
 import { useAllRoles, useRolePermissions, useUpdateRolePermissions } from "@/hooks/users/useRole";
 import { usePermission } from "@/hooks/users/usePermission";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import { usePermission as useAppPermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
+
+import { AccessDenied } from "@/components/ui/access-denied";
+import { PageHeader } from "@/components/ui/page-header";
 
 export const PermissionPage = () => {
     const { Can } = useAppPermission();
@@ -31,12 +34,7 @@ export const PermissionPage = () => {
     const roles = rolesData?.payload || [];
 
     if (!canRead) {
-        return (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
-                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">You do not have permission to view group permissions.</p>
-            </div>
-        );
+        return <AccessDenied resource="permissions" showBackButton />;
     }
 
     const isLoading = isLoadingRoles || (selectedRoleId ? isLoadingRolePerms : isLoadingAllPerms);
@@ -115,15 +113,12 @@ export const PermissionPage = () => {
     return (
         <div className="space-y-6">
             {/* Header section */}
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 px-2">
-                <div>
-                    <h1 className="text-2xl font-bold tracking-tight text-foreground flex items-center gap-2">
-                        <Shield className="h-6 w-6 text-primary" />
-                        Group Permissions
-                    </h1>
-                    <p className="text-sm text-muted-foreground">Manage and filter access permissions grouped by system modules.</p>
-                </div>
-            </div>
+            <PageHeader
+                title="Group Permissions"
+                titleIcon={<Shield className="h-6 w-6 text-primary" />}
+                description="Manage and filter access permissions grouped by system modules."
+                className="px-2"
+            />
 
             {/* Selection and Filter toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 max-w-2xl px-2">
@@ -151,11 +146,21 @@ export const PermissionPage = () => {
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <Input
                             type="text"
-                            className="pl-9 h-9 border-border/80 rounded-lg focus-visible:ring-primary/20 bg-background"
+                            className="pl-9 pr-8 h-9 border-border/80 rounded-lg focus-visible:ring-primary/20 bg-background"
                             placeholder="Filter by Module Name..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
+                        {searchTerm && (
+                            <button
+                                type="button"
+                                onClick={() => setSearchTerm("")}
+                                className="absolute right-2.5 top-2.5 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                                title="Clear search"
+                            >
+                                <X className="h-3.5 w-3.5" />
+                            </button>
+                        )}
                     </div>
                 </div>
             </div>

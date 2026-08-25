@@ -1,57 +1,95 @@
-import type { ProductFilter, ProductRequest } from "@/types/product/Product";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mutationHandler } from "../handleMutaion";
-import { productService } from "@/services/product/product..service";
+import type { ProductFilter, ProductRequest } from "@/types/product/Product";
+import { ProductService } from "@/services/product/product.service";
+
 
 export const useProduct = {
     keys: {
         all: ["product"],
-        list: (filter: ProductFilter) => [...useProduct.keys.all, 'list', { ...filter }],
+        list: (filter: ProductFilter) => [...useProduct.keys.all, "list", { ...filter }],
         detail: (id: number) => [...useProduct.keys.all, "detail", id]
     },
-    useGetAllProduct: (filter: ProductFilter) => {
+    useGetAllProduct: (filter: ProductFilter = { page: 1, size: 10 }) => {
         return useQuery({
             queryKey: useProduct.keys.list(filter),
-            queryFn: () => productService.findAll(filter),
+            queryFn: () => ProductService.findAll(filter),
             retry: 1
-        })
+        });
+    },
+    GetAllProduct: (filter: ProductFilter = { page: 1, size: 10 }) => {
+        return useQuery({
+            queryKey: useProduct.keys.list(filter),
+            queryFn: () => ProductService.findAll(filter),
+            retry: 1
+        });
     },
     useGetProductById: (id: number, enabled: boolean = true) => {
         return useQuery({
             queryKey: useProduct.keys.detail(id),
-            queryFn: () => productService.findById(id),
-            enabled: enabled && !!id,
+            queryFn: () => ProductService.findById(id),
+            enabled: enabled && !isNaN(id) && id > 0,
             retry: 1
-        })
+        });
     },
     useCreateProduct: () => {
         const queryClient = useQueryClient();
         return useMutation({
-            mutationFn: (req: ProductRequest) => productService.create(req),
+            mutationFn: (req: ProductRequest) => ProductService.create(req),
             ...mutationHandler({
                 queryClient,
                 queryKey: useProduct.keys.all
             })
-        })
+        });
+    },
+    CreateModel: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: (req: ProductRequest) => ProductService.create(req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useProduct.keys.all
+            })
+        });
     },
     useUpdateProduct: () => {
         const queryClient = useQueryClient();
         return useMutation({
-            mutationFn: ({ id, req }: { id: number, req: ProductRequest }) => productService.update(id, req),
+            mutationFn: ({ id, req }: { id: number; req: ProductRequest }) => ProductService.update(id, req),
             ...mutationHandler({
                 queryClient,
                 queryKey: useProduct.keys.all
             })
-        })
+        });
+    },
+    UpdateModel: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id, req }: { id: number; req: ProductRequest }) => ProductService.update(id, req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useProduct.keys.all
+            })
+        });
     },
     useDeleteProduct: () => {
         const queryClient = useQueryClient();
         return useMutation({
-            mutationFn: (id: number) => productService.delete(id),
+            mutationFn: ({ id }: { id: number }) => ProductService.delete(id),
             ...mutationHandler({
                 queryClient,
                 queryKey: useProduct.keys.all
             })
-        })
+        });
+    },
+    DeleteModel: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id }: { id: number }) => ProductService.delete(id),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useProduct.keys.all
+            })
+        });
     }
 }

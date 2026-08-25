@@ -1,17 +1,23 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { VisibilityState } from "@tanstack/react-table";
 import type { RoleResponse } from "@/types/users/Role";
 import { useRole, useDeleteRole } from "@/hooks/users/useRole";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { RoleColumns } from "./RoleColumn";
-import { Button } from "@/components/ui/button";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import FormRole from "./FormRole";
+import ConfirmDelete from "@/components/ui/confirmDelete";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { useSearch } from "@/utils/useSearch";
 import { PageFilter } from "@/utils/PageFilter";
+import { PageHeader } from "@/components/ui/page-header";
+import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const RolePage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.ROLES.CREATE);
     const canRead = Can(PERMISSION.ROLES.READ);
@@ -20,62 +26,150 @@ const RolePage = () => {
 
     const [open, setOpen] = useState(false);
     const [role, setRole] = useState<RoleResponse | null>(null);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState(10);
     const [search, setSearch] = useState("");
-    const { data, isError, isLoading } = useRole({ page: 1, size: 10 });
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+
+    const { data, isError, isLoading } = useRole({ page, size });
     const { mutate: deleteRoleMutate } = useDeleteRole();
 
-    const filteredRoles = useSearch<RoleResponse>(data?.payload, search, ["name", "code", "description"]);
+    const handleColumnToggle = (columnId: string) => {
+        setColumnVisibility((prev) => ({
+            ...prev,
+            [columnId]: prev[columnId] === false ? true : false,
+        }));
+    };
 
-    const handleEdit = (role: RoleResponse) => {
-        setRole(role);
+    const handleReset = () => {
+        setSearch("");
+        setPage(1);
+    };
+
+    const searchedRoles = useSearch<RoleResponse>(
+        data?.payload?.data,
+        search,
+        ["name", "code", "description"]
+    );
+
+    const handleEdit = (r: RoleResponse) => {
+        setRole(r);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
-        if (confirm("Are you sure you want to delete this role?")) {
-            deleteRoleMutate(id);
+        const selected = data?.payload?.data?.find((r: RoleResponse) => r.id === id);
+        if (selected) {
+            setRole(selected);
+            setOpenConfirmDelete(true);
         }
     };
 
+    const confirmDelete = () => {
+        if (role?.id) {
+            deleteRoleMutate(role.id, {
+                onSuccess: () => {
+                    toast.success("Role deleted successfully");
+                    setOpenConfirmDelete(false);
+                    setRole(null);
+                },
+                onError: (err: any) => {
+                    toast.error(err?.message || "Failed to delete role");
+                },
+            });
+        }
+    };
+
+    const columns = useMemo(
+        () =>
+            RoleColumns({
+                onEdit: handleEdit,
+                onDelete: handleDelete,
+                canEdit: canUpdate,
+                canDelete: canDelete,
+                t,
+            }),
+        [canUpdate, canDelete, t]
+    );
+
+    const handleExportCsv = () => {
+        exportTableToCsv(searchedRoles, columns, "roles");
+    };
+
+    const handleDownloadPdf = () => {
+        exportTableToPdf(searchedRoles, columns, "roles", "Roles List");
+    };
+
+    const handlePrintPdf = () => {
+        printTable("Roles List");
+    };
+
     if (!canRead) {
-        return (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
-                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">You do not have permission to view roles.</p>
-            </div>
-        );
+        return <AccessDenied resource="roles" showBackButton />;
     }
 
     return (
         <>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Roles</h1>
-                {canCreate && (
-                    <Button onClick={() => { setRole(null); setOpen(true); }}>+ Add Role</Button>
-                )}
-            </div>
-            <PageFilter
-                search={search}
-                onSearchChange={setSearch}
-                searchPlaceholder="Search roles..."
-                onReset={() => setSearch("")}
-            />
-            <QueryBoundary isLoading={isLoading} isError={isError}>
-                <DataTable
-                    columns={RoleColumns({
-                        onEdit: handleEdit,
-                        onDelete: handleDelete,
-                        canEdit: canUpdate,
-                        canDelete: canDelete,
-                    })}
-                    data={filteredRoles}
+            <div className="space-y-4">
+                {/* Top Header */}
+                <PageHeader
+                    title={t("nav.role")}
+                    featureName={t("nav.role")}
+                    onCreate={canCreate ? () => { setRole(null); setOpen(true); } : undefined}
+                    hideButton={!canCreate}
                 />
-            </QueryBoundary>
+
+                {/* Main Card with Toolbar & Table */}
+                <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+                    {/* Toolbar row with Search, Columns, Print, CSV */}
+                    <div className="p-4 border-b border-border/60">
+                        <PageFilter
+                            search={search}
+                            onSearchChange={setSearch}
+                            searchPlaceholder="Search roles by name, code, description..."
+                            columns={getColumnsForVisibility(columns, columnVisibility)}
+                            onColumnToggle={handleColumnToggle}
+                            onPrintPdf={handlePrintPdf}
+                            onDownloadPdf={handleDownloadPdf}
+                            onDownloadCsv={handleExportCsv}
+                            onReset={handleReset}
+                        />
+                    </div>
+
+                    {/* Table View */}
+                    <div className="px-0">
+                        <QueryBoundary isLoading={isLoading} isError={isError}>
+                            <DataTable
+                                columns={columns}
+                                data={searchedRoles}
+                                columnVisibility={columnVisibility}
+                                onColumnVisibilityChange={setColumnVisibility}
+                                pagination={{
+                                    currentPage: page,
+                                    pageSize: size,
+                                    totalElements: data?.payload?.pagination?.totalElements || searchedRoles.length,
+                                    totalPages: data?.payload?.pagination?.totalPages || 1,
+                                    onPageChange: setPage,
+                                    onPageSizeChange: setSize,
+                                }}
+                            />
+                        </QueryBoundary>
+                    </div>
+                </div>
+            </div>
 
             <FormRole
                 open={open}
                 setOpen={setOpen}
                 role={role}
+            />
+
+            <ConfirmDelete
+                isOpen={openConfirmDelete}
+                setIsOpen={setOpenConfirmDelete}
+                entityName="Role"
+                confirmDelete={confirmDelete}
             />
         </>
     );

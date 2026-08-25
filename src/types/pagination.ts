@@ -1,4 +1,11 @@
-import type { Status } from "./enum/status";
+export interface BaseResponse {
+    id: number;
+    status?: string;
+    createdAt?: Date | string;
+    createdBy?: string;
+    updatedAt?: Date | string;
+    updatedBy?: string;
+}
 
 export interface Pagination {
     pageSize: number;
@@ -26,7 +33,7 @@ export interface ApiResponse<T> {
 
 
 export interface PageFilter {
-    status?: Status
+    status?:string
     page: number
     size: number
 }

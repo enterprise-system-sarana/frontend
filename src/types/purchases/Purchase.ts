@@ -2,10 +2,9 @@ import z from "zod";
 import { Status } from "../enum/status";
 import { PurchaseStatus } from "../enum/purchaseStatus";
 import { PurchasePaymentStatus } from "../enum/purchasePaymentStatus";
-import type { PageFilter } from "../pagination";
+import type { BaseResponse, PageFilter } from "../pagination";
 
-export type PurchaseItemResponse = {
-  id: number;
+export interface PurchaseItemResponse extends BaseResponse {
   productId: number;
   productName: string;
   productCode: string;
@@ -15,7 +14,7 @@ export type PurchaseItemResponse = {
   subtotal: number;
   unitName: string;
   unitId?: number;
-};
+}
 
 export type PurchaseItem = {
   productId: number;
@@ -27,8 +26,7 @@ export type PurchaseItem = {
   productName?: string;
 };
 
-export type PurchaseResponse = {
-  id: number;
+export interface PurchaseResponse extends BaseResponse {
   reference: string;
   date: string;
   note: string;
@@ -46,7 +44,7 @@ export type PurchaseResponse = {
   paymentStatus: string;
   status: string;
   items: PurchaseItemResponse[];
-};
+}
 
 export const PurchaseSchema = z.object({
   reference: z.string().trim().min(1, "Reference is required"),
@@ -73,7 +71,7 @@ export const PurchaseSchema = z.object({
     PurchasePaymentStatus.Paid,
     PurchasePaymentStatus.Partial,
   ]),
-  status: z.enum([Status.Active, Status.Inactive]),
+  status: z.enum([Status.ACTIVE, Status.INACTIVE]),
   items: z
     .array(
       z.object({

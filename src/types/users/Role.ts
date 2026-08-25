@@ -1,13 +1,12 @@
 import { z } from "zod";
-import type { PageFilter } from "../pagination";
+import type { BaseResponse, PageFilter } from "../pagination";
 
-export type RoleResponse = {
-  id: number;
+export interface RoleResponse extends BaseResponse {
   code: string;
   name: string;
   description: string;
   permissionIds: number[];
-};
+}
 
 
 

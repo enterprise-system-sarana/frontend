@@ -1,27 +1,34 @@
 import { z } from "zod";
-import { Status } from "../enum/status";
+import { validateString } from "../validator";
+import type { BaseResponse, PageFilter } from "../pagination";
 
-export type BankResponse = {
-    id: number;
+export interface BankResponse extends BaseResponse {
     name: string;
-    number: string;
-    amount: string;
-    isDefault: string;
-    statement: string;
+    accountName: string;
+    accountNumber: string;
+    openingBalance: string;
+    currentBalance: string;
     status: string;
-    fromTime?: string;
-    toTime?: string;
-};
+}
 
 export const BankSchema = z.object({
-    name: z.string().min(3, "Name must be between 3 and 100 characters").max(100, "Name must be between 3 and 100 characters"),
-    number: z.string().min(1, "Number is required").max(50, "Number must be less than 50 characters"),
-    amount: z.string().optional().nullable(),
-    isDefault: z.string().max(50).optional().nullable(),
-    statement: z.string().max(520).optional().nullable(),
-    fromTime: z.string().optional().nullable(),
-    toTime: z.string().optional().nullable(),
-    status: z.enum([Status.Active, Status.Inactive]).default(Status.Active),
+    name: validateString("Name"),
+    accountName: validateString("Account Name"),
+    accountNumber: validateString("Account Number"),
+    openingBalance: validateString("Opening Balance"),
+    currentBalance: validateString("Current Balance"),
+    status: validateString("Status"),
 });
 
+
+
+
+export interface BankFilter extends PageFilter {
+    name?: string;
+    accountName?: string;
+    accountNumber?: string;
+}
+
 export type BankRequest = z.infer<typeof BankSchema>;
+
+

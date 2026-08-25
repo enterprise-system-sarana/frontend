@@ -4,13 +4,14 @@ import { QueryBoundary } from "@/components/ui/query-boundary";
 import ConfirmDelete from "@/components/ui/confirmDelete";
 import type { GroupPermission } from "@/types/users/Group";
 import { useSearch } from "@/utils/useSearch";
-import PageHeader from "@/components/ui/page-header";
 import { PageFilter } from "@/utils/PageFilter";
 import { useGroupPermission } from "@/hooks/users/useGroupPermision";
 import FormGroupPermission from "./GroupPermissionForm";
 import { GroupPermissionColumns } from "./GroupPermissionColumn";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
+import { PageHeader } from "@/components/ui/page-header";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 export const GroupPermissionPage = () => {
     const { Can } = usePermission();
@@ -21,27 +22,35 @@ export const GroupPermissionPage = () => {
 
     const [open, setOpen] = useState(false);
     const [group, setGroup] = useState<GroupPermission | null>(null);
+    const [page, setPage] = useState(1);
+    const [size, setSize] = useState(10);
     const [search, setSearch] = useState("");
-
-    // Backend doesn't support pagination directly in GroupPermissionController, it returns a List
-    const { data, isError, isLoading } = useGroupPermission.useFindAll();
-    const { mutate: deleteGroupMutate } = useGroupPermission.useDelete();
     const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
 
-    // Filter using search utility
+    const { data, isError, isLoading } = useGroupPermission.useGetAllGroupPermission({ page, size });
+    const { mutate: deleteGroupMutate } = useGroupPermission.useDeleteGroupPermission();
+
+    const groupList: GroupPermission[] = Array.isArray(data?.payload?.data)
+        ? data.payload.data
+        : Array.isArray(data?.payload)
+        ? data.payload
+        : Array.isArray(data?.data)
+        ? data.data
+        : [];
+
     const filteredGroups = useSearch<GroupPermission>(
-        data?.payload || [], 
-        search, 
+        groupList,
+        search,
         ["name", "code", "description"]
     );
 
-    const handleEdit = (group: GroupPermission) => {
-        setGroup(group);
+    const handleEdit = (g: GroupPermission) => {
+        setGroup(g);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
-        const selected = data?.payload?.find((g: GroupPermission) => g.id === id);
+        const selected = data?.payload?.data?.find((u: GroupPermission) => u.id === id);
         if (selected) {
             setGroup(selected);
             setOpenConfirmDelete(true);
@@ -59,39 +68,53 @@ export const GroupPermissionPage = () => {
     };
 
     if (!canRead) {
-        return (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
-                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">You do not have permission to view permission groups.</p>
-            </div>
-        );
+        return <AccessDenied resource="permission groups" showBackButton />;
     }
 
     return (
         <>
-            <PageHeader
-                title="Permission Groups"
-                buttonText={canCreate ? "Add Permission Group" : undefined}
-                onButtonClick={canCreate ? () => { setGroup(null); setOpen(true); } : undefined}
-            />
-            <PageFilter
-                search={search}
-                onSearchChange={setSearch}
-                searchPlaceholder="Search permission groups..."
-                onReset={() => setSearch("")}
-            />
-
-            <QueryBoundary isLoading={isLoading} isError={isError}>
-                <DataTable
-                    columns={GroupPermissionColumns({
-                        onEdit: handleEdit,
-                        onDelete: handleDelete,
-                        canEdit: canUpdate,
-                        canDelete: canDelete,
-                    })}
-                    data={filteredGroups}
+            <div className="space-y-4">
+                {/* Top Header */}
+                <PageHeader
+                    title="Permission Groups"
+                    buttonLabel="Add Permission Group"
+                    onCreate={canCreate ? () => { setGroup(null); setOpen(true); } : undefined}
+                    hideButton={!canCreate}
                 />
-            </QueryBoundary>
+
+                <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+                    <div className="p-4 border-b border-border/60">
+                        <PageFilter
+                            search={search}
+                            onSearchChange={setSearch}
+                            searchPlaceholder="Search permission groups..."
+                            onReset={() => setSearch("")}
+                        />
+                    </div>
+
+                    <div className="px-0">
+                        <QueryBoundary isLoading={isLoading} isError={isError}>
+                            <DataTable
+                                columns={GroupPermissionColumns({
+                                    onEdit: handleEdit,
+                                    onDelete: handleDelete,
+                                    canEdit: canUpdate,
+                                    canDelete: canDelete,
+                                })}
+                                data={filteredGroups}
+                                pagination={data?.payload?.pagination ? {
+                                    currentPage: page,
+                                    pageSize: size,
+                                    totalElements: data?.payload?.pagination?.totalElements || 0,
+                                    totalPages: data?.payload?.pagination?.totalPages || 1,
+                                    onPageChange: setPage,
+                                    onPageSizeChange: setSize,
+                                } : undefined}
+                            />
+                        </QueryBoundary>
+                    </div>
+                </div>
+            </div>
 
             <FormGroupPermission
                 open={open}

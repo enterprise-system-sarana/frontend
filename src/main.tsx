@@ -7,15 +7,19 @@ import { Provider } from 'react-redux'
 import { store } from './store/store'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+import { LanguageProvider } from '@/i18n/LanguageContext'
+
 const queryClient = new QueryClient()
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <Provider store={store}>
       <QueryClientProvider client={queryClient}>
-        <TooltipProvider>
-          <App />
-        </TooltipProvider>
+        <LanguageProvider>
+          <TooltipProvider>
+            <App />
+          </TooltipProvider>
+        </LanguageProvider>
       </QueryClientProvider>
     </Provider>
   </StrictMode>,

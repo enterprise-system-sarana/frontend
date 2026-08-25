@@ -239,6 +239,8 @@ type FormSelectFieldProps = {
   options: Option[];
   disabled?: boolean;
   required?: boolean;
+  className?: string;
+  size?: "sm" | "default" | "lg";
 };
 
 export const FormSelectField = ({
@@ -249,6 +251,8 @@ export const FormSelectField = ({
   options,
   disabled = false,
   required = false,
+  className,
+  size = "default",
 }: FormSelectFieldProps) => {
   return (
     <form.Field
@@ -267,7 +271,11 @@ export const FormSelectField = ({
 
             <Select
               value={
-                field.state.value !== undefined && field.state.value !== null
+                field.state.value !== undefined &&
+                field.state.value !== null &&
+                field.state.value !== 0 &&
+                field.state.value !== "0" &&
+                field.state.value !== ""
                   ? String(field.state.value)
                   : ""
               }
@@ -283,8 +291,10 @@ export const FormSelectField = ({
             >
               <SelectTrigger
                 id={name}
+                size={size}
                 aria-invalid={isInvalid}
                 onBlur={field.handleBlur}
+                className={className}
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
@@ -351,6 +361,74 @@ export const FormTextareaField = ({
               disabled={disabled}
               required={required}
             />
+
+            {isInvalid && <FieldError errors={field.state.meta.errors} />}
+          </Field>
+        );
+      }}
+    />
+  );
+};
+
+type FormRadioGroupFieldProps = {
+  form: any;
+  name: string;
+  label: string;
+  options: { label: string; value: string }[];
+  disabled?: boolean;
+  required?: boolean;
+};
+
+export const FormRadioGroupField = ({
+  form,
+  name,
+  label,
+  options,
+  disabled = false,
+  required = false,
+}: FormRadioGroupFieldProps) => {
+  return (
+    <form.Field
+      name={name}
+      children={(field: any) => {
+        const isInvalid =
+          (field.state.meta.isTouched || form.state.submissionAttempts > 0) &&
+          !field.state.meta.isValid;
+
+        return (
+          <Field data-invalid={isInvalid}>
+            <FieldLabel>
+              {label}
+              {required && <span className="text-destructive"> *</span>}
+            </FieldLabel>
+
+            <div className="flex flex-wrap items-center gap-4 pt-1">
+              {options.map((option) => {
+                const isSelected = field.state.value === option.value;
+                return (
+                  <label
+                    key={option.value}
+                    className={`flex items-center gap-2 cursor-pointer select-none text-xs font-medium px-3.5 py-2 rounded-xl border transition-all ${
+                      isSelected
+                        ? "border-primary bg-primary/10 text-primary font-semibold shadow-xs"
+                        : "border-border/60 bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                    } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                  >
+                    <input
+                      type="radio"
+                      name={name}
+                      value={option.value}
+                      checked={isSelected}
+                      disabled={disabled}
+                      onChange={() => field.handleChange(option.value)}
+                      onBlur={field.handleBlur}
+                      className="h-4 w-4 accent-primary cursor-pointer"
+                    />
+                    <span>{option.label}</span>
+                  </label>
+                );
+              })}
+            </div>
 
             {isInvalid && <FieldError errors={field.state.meta.errors} />}
           </Field>

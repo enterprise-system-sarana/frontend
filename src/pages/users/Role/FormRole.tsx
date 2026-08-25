@@ -13,7 +13,9 @@ import { useEffect } from "react";
 import { RoleSchema } from "@/types/users/Role";
 import type { RoleResponse, RoleRequest } from "@/types/users/Role";
 import { useCreateRole, useUpdateRole } from "@/hooks/users/useRole";
-import FormTextField from "@/components/ui/FormTextField";
+import FormTextField, { FormTextareaField } from "@/components/ui/FormTextField";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 type FormRoleProps = {
     open: boolean;
@@ -22,6 +24,7 @@ type FormRoleProps = {
 };
 
 const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
+    const { t } = useLanguage();
     const { mutate: createRoleMutate, isPending: isCreating } = useCreateRole();
     const { mutate: updateRoleMutate, isPending: isUpdating } = useUpdateRole();
 
@@ -45,23 +48,45 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
             if (role) {
                 updateRoleMutate(
                     { id: role.id, request: payload },
-                    { onSuccess: handleSuccess },
+                    {
+                        onSuccess: () => {
+                            toast.success("Role updated successfully");
+                            handleSuccess();
+                        },
+                        onError: (err: any) => {
+                            toast.error(err?.message || "Failed to update role");
+                        },
+                    }
                 );
             } else {
-                createRoleMutate(payload, { onSuccess: handleSuccess });
+                createRoleMutate(payload, {
+                    onSuccess: () => {
+                        toast.success("Role created successfully");
+                        handleSuccess();
+                    },
+                    onError: (err: any) => {
+                        toast.error(err?.message || "Failed to create role");
+                    },
+                });
             }
         },
     });
 
     useEffect(() => {
-        form.reset();
+        if (role) {
+            form.setFieldValue("code", role.code || "");
+            form.setFieldValue("name", role.name || "");
+            form.setFieldValue("description", role.description || "");
+        } else {
+            form.reset();
+        }
     }, [role, open]);
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="min-w-[400px]">
+            <DialogContent className="md:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle>{role ? "Edit" : "Create"} Role</DialogTitle>
+                    <DialogTitle>{role ? t("common.edit") : t("common.add")} {t("nav.role")}</DialogTitle>
                 </DialogHeader>
                 <form
                     id="role-form"
@@ -74,39 +99,39 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
                         <FormTextField
                             form={form}
                             name="code"
-                            label="Code"
-                            placeholder="Enter role code"
+                            label={t("common.code")}
+                            placeholder="e.g. ROLE_ADMIN"
                             type="text"
+                            required={true}
                             autoComplete="off"
                         />
                         <FormTextField
                             form={form}
                             name="name"
-                            label="Name"
-                            placeholder="Enter role name"
+                            label={t("common.name")}
+                            placeholder="e.g. Admin"
                             type="text"
+                            required={true}
                             autoComplete="off"
                         />
-                        <FormTextField
+                        <FormTextareaField
                             form={form}
                             name="description"
-                            label="Description"
-                            placeholder="Enter role description"
-                            type="text"
-                            autoComplete="off"
+                            label={t("common.description")}
+                            placeholder="Role description..."
                         />
                     </FieldGroup>
                 </form>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="outline">{t("common.cancel")}</Button>
                     </DialogClose>
                     <Button
                         type="submit"
                         form="role-form"
                         disabled={isPending}
                     >
-                        {isPending ? "Saving..." : (role ? "Update" : "Create")}
+                        {isPending ? t("common.saving") : role ? t("common.save") : t("common.add")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

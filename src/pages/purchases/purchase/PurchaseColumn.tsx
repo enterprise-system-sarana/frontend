@@ -12,10 +12,12 @@ import {
 import {
   CheckCircle2,
   CheckSquare,
-  MoreHorizontal,
+  MoreVertical,
   PencilIcon,
   Trash2,
 } from "lucide-react";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatDate } from "@/utils/formatDate";
 
 interface PurchaseColumnProps {
   onEdit: (purchase: PurchaseResponse) => void;
@@ -26,7 +28,7 @@ interface PurchaseColumnProps {
   canDelete: boolean;
 }
 
-const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
+const formatCurrency = (value: number) => `$${(value || 0).toFixed(2)}`;
 
 export const PurchaseColumns = ({
   onEdit,
@@ -40,39 +42,47 @@ export const PurchaseColumns = ({
     accessorKey: "date",
     header: "Date",
     cell: ({ row }) => (
-      <p>
-        {row.original.date
-          ? new Date(row.original.date).toLocaleString()
-          : new Date().toLocaleString()}
-      </p>
+      <span className="text-[#697a8d]">
+        {formatDate(row.original.date)}
+      </span>
     ),
   },
   {
     accessorKey: "store",
     header: ({ column }) => <SortableHeader column={column} title="Store" />,
-    cell: ({ row }) => <p>{row.original.storeName}</p>,
+    cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.storeName}</span>,
   },
   {
     accessorKey: "supplier",
     header: ({ column }) => <SortableHeader column={column} title="Supplier" />,
-    cell: ({ row }) => <p>{row.original.supplierName}</p>,
+    cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.supplierName}</span>,
   },
   {
     accessorKey: "reference",
     header: ({ column }) => (
       <SortableHeader column={column} title="Reference" />
     ),
-    cell: ({ row }) => <p>{row.original.reference}</p>,
+    cell: ({ row }) => <span className="font-mono text-xs text-[#696cff]">{row.original.reference}</span>,
   },
   {
     accessorKey: "purchasesStatus",
     header: "Purchases Status",
-    cell: ({ row }) => <p>{row.original.purchasesStatus}</p>,
+    cell: ({ row }) => {
+      const pStatus = row.original.purchasesStatus?.toUpperCase();
+      let colorClass = "bg-[#696cff]/10 text-[#696cff] border-[#696cff]/20";
+      if (pStatus === "APPROVED") colorClass = "bg-[#03c3ec]/10 text-[#03c3ec] border-[#03c3ec]/20";
+      if (pStatus === "COMPLETED") colorClass = "bg-[#71dd37]/10 text-[#71dd37] border-[#71dd37]/20";
+      return (
+        <Badge variant="outline" className={`font-semibold ${colorClass}`}>
+          {row.original.purchasesStatus}
+        </Badge>
+      );
+    },
   },
   {
     accessorKey: "grandTotal",
     header: "Grand Total",
-    cell: ({ row }) => <p>{formatCurrency(row.original.grandTotal)}</p>,
+    cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{formatCurrency(row.original.grandTotal)}</span>,
   },
   {
     accessorKey: "paid",
@@ -82,7 +92,7 @@ export const PurchaseColumns = ({
         row.original.paymentStatus?.toUpperCase() === "PAID"
           ? row.original.grandTotal
           : 0;
-      return <p>{formatCurrency(paid)}</p>;
+      return <span className="text-[#71dd37] font-medium">{formatCurrency(paid)}</span>;
     },
   },
   {
@@ -93,37 +103,35 @@ export const PurchaseColumns = ({
         row.original.paymentStatus?.toUpperCase() === "PAID"
           ? 0
           : row.original.grandTotal;
-      return <p>{formatCurrency(balance)}</p>;
+      return <span className="text-[#ff3e1d] font-medium">{formatCurrency(balance)}</span>;
     },
   },
   {
     accessorKey: "paymentStatus",
     header: "Payment Status",
-    cell: ({ row }) => <p>{row.original.paymentStatus}</p>,
-  },
-  {
-    accessorKey: "status",
-    header: "Status",
     cell: ({ row }) => {
-      const status = row.original.status?.toLowerCase();
-      const variantClass =
-        status === "active"
-          ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
-          : "bg-red-500/15 text-red-600 border-red-500/25";
-
+      const status = row.original.paymentStatus?.toUpperCase();
+      const isPaid = status === "PAID";
       return (
-        <Badge variant="outline" className={variantClass}>
-          {row.original.status}
+        <Badge variant="outline" className={isPaid ? "bg-[#71dd37]/10 text-[#71dd37] border-[#71dd37]/20" : "bg-[#ffab00]/10 text-[#ffab00] border-[#ffab00]/20"}>
+          {row.original.paymentStatus}
         </Badge>
       );
     },
   },
   {
-    accessorKey: "note",
-    header: "Note",
+    accessorKey: "createdAt",
+    header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
     cell: ({ row }) => (
-      <p className="max-w-55 truncate">{row.original.note || "-"}</p>
+      <span className="text-xs text-[#697a8d]">
+        {formatDate(row.original.createdAt)}
+      </span>
     ),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }) => <StatusBadge status={row.original.status as any} />,
   },
   {
     accessorKey: "Action",
@@ -131,22 +139,22 @@ export const PurchaseColumns = ({
     enableHiding: false,
     cell: ({ row }) => {
       if (!canEdit && !canDelete) {
-        return <span className="text-muted-foreground text-sm">-</span>;
+        return <span className="text-[#a1acb8] text-sm">-</span>;
       }
       const currentStatus = row.original.purchasesStatus?.toUpperCase();
 
       return (
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="h-8 w-8 p-0">
+            <Button variant="ghost" className="h-8 w-8 p-0 text-[#697a8d] hover:text-[#566a7f] hover:bg-[#f5f5f9]">
               <span className="sr-only">Open menu</span>
-              <MoreHorizontal className="h-4 w-4" />
+              <MoreVertical className="h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="end">
+          <DropdownMenuContent align="end" className="w-40 shadow-[0_3px_12px_rgba(67,89,113,0.15)] border-[#e7e7e8]">
             {onApprove && currentStatus === "ORDERED" && (
               <DropdownMenuItem
-                className="cursor-pointer text-blue-600"
+                className="cursor-pointer text-[#03c3ec] focus:text-[#03c3ec] focus:bg-[#03c3ec]/8"
                 onClick={() => onApprove(row.original.id)}
               >
                 <CheckCircle2 className="mr-2 h-4 w-4" /> Approve
@@ -155,7 +163,7 @@ export const PurchaseColumns = ({
 
             {onComplete && currentStatus === "APPROVED" && (
               <DropdownMenuItem
-                className="cursor-pointer text-emerald-600"
+                className="cursor-pointer text-[#71dd37] focus:text-[#71dd37] focus:bg-[#71dd37]/8"
                 onClick={() => onComplete(row.original.id)}
               >
                 <CheckSquare className="mr-2 h-4 w-4" /> Complete
@@ -163,7 +171,7 @@ export const PurchaseColumns = ({
             )}
             {canEdit && (
               <DropdownMenuItem
-                className="cursor-pointer"
+                className="cursor-pointer text-[#697a8d] focus:text-[#696cff] focus:bg-[#696cff]/8"
                 onClick={() => onEdit(row.original)}
               >
                 <PencilIcon className="mr-2 h-4 w-4" /> Edit
@@ -171,7 +179,7 @@ export const PurchaseColumns = ({
             )}
             {canDelete && (
               <DropdownMenuItem
-                className="cursor-pointer text-destructive"
+                className="cursor-pointer text-[#ff3e1d] focus:text-[#ff3e1d] focus:bg-[#ff3e1d]/8"
                 onClick={() => onDelete(row.original.id)}
               >
                 <Trash2 className="mr-2 h-4 w-4" /> Delete

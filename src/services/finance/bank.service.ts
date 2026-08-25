@@ -1,8 +1,8 @@
-import type { BankRequest } from "@/types/finance/Bank";
+import type { BankFilter, BankRequest } from "@/types/finance/Bank";
 import api from "../lib/axios";
 
 export const bankService = {
-    findAll(filter: any) {
+    findAll(filter: BankFilter) {
         return api.get("/bank", { params: filter }).then((res) => res.data);
     },
 

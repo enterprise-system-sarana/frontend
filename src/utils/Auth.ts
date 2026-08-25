@@ -30,7 +30,7 @@ export const getUser = (): AuthUser | null => {
   try {
     return JSON.parse(userStr) as AuthUser;
   } catch (e) {
-    return null;
+    console.log(e);
   }
 };
 

@@ -1,82 +1,79 @@
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { CategoryResponse } from "@/types/product/Category";
-
 import { Button } from "@/components/ui/button";
 import { StatusBadge } from "@/components/ui/status-badge";
-
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, PencilIcon, Trash2 } from "lucide-react";
+import { MoreVertical, PencilIcon, Trash2 } from "lucide-react";
 import { SortableHeader } from "@/utils/sort-table-header";
-
+import ImageCell from "@/components/file/ImageCell";
+import { formatDate } from "@/utils/formatDate";
 
 interface CategoryColumnsProps {
     onEdit: (category: CategoryResponse) => void;
     onDelete: (id: number) => void;
-    canEdit: boolean;
-    canDelete: boolean;
+    // canEdit: boolean;
+    // canDelete: boolean;
 }
 
-export const CategoryColumns = ({ onEdit, onDelete, canEdit, canDelete }: CategoryColumnsProps): ColumnDef<CategoryResponse>[] => [
-    {
-        accessorKey: "id",
-        header: "Id",
-        cell: ({ row }) => <p>{row.original.id}</p>
-    },
-    {
-        accessorKey: "name",
-        header: ({ column }) => <SortableHeader column={column} title="Code" />,
-        cell: ({ row }) => <p>{row.original.name}</p>
-    },
-    {
-        accessorKey: "code",
-        header: ({ column }) => <SortableHeader column={column} title="Code" />,
-        cell: ({ row }) => <p>{row.original.code}</p>
-    },
-    {
-        accessorKey: "imageUrl",
-        header: "Image",
-        cell: ({ row }) => {
-            const url = row.original.imageUrl;
-            return url ? (
-                <img src={url} alt={row.original.name} className="w-10 h-10 rounded-md object-cover border" />
-            ) : (
-                <div className="w-10 h-10 rounded-md bg-muted flex items-center justify-center text-[10px] text-muted-foreground border">
-                    No img
-                </div>
-            );
-        }
-    },
-    {
-        accessorKey: "status",
-        header: "Status",
-        cell: ({ row }) => <StatusBadge status={row.original.status} />,
-    },
-    {
-        accessorKey: "Action",
-        header: "Action",
-        enableHiding: false,
-        cell: ({ row }) => {
-            if (!canEdit && !canDelete) {
-                return <span className="text-muted-foreground text-sm">-</span>;
-            }
-            return (
-                <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                            <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                        {canEdit && (
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(row.original)}><PencilIcon className="mr-2 h-4 w-4" /> Edit</DropdownMenuItem>
-                        )}
-                        {canDelete && (
-                            <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => onDelete(row.original.id)}><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            );
+export const CategoryColumns = ({ onEdit, onDelete
+}: CategoryColumnsProps): ColumnDef<CategoryResponse>[] => [
+        {
+            accessorKey: "id",
+            header: "Id",
+            cell: ({ row }) => <span className="font-semibold text-[#566a7f]">#{row.original.id}</span>
         },
-    }
-]
+        {
+            accessorKey: "name",
+            header: ({ column }) => <SortableHeader column={column} title="Name" />,
+            cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>
+        },
+        {
+            accessorKey: "imageUrl",
+            header: "Image",
+            cell: ({ row }) => (
+                <ImageCell fileName={row.original.imageUrl} name={row.original.name} bucketName="category" />
+            )
+        },
+        {
+            accessorKey: "createdAt",
+            header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+            cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
+        },
+        {
+            accessorKey: "status",
+            header: "Status",
+            cell: ({ row }) => <StatusBadge status={row.original.status} />,
+        },
+        {
+            accessorKey: "Action",
+            header: "Action",
+            enableHiding: false,
+            cell: ({ row }) => {
+                // if (!canEdit && !canDelete) {
+                //     return <span className="text-[#a1acb8] text-sm">-</span>;
+                // }
+                return (
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0 text-[#697a8d] hover:text-[#566a7f] hover:bg-[#f5f5f9]">
+                                <span className="sr-only">Open menu</span>
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-40 shadow-[0_3px_12px_rgba(67,89,113,0.15)] border-[#e7e7e8]">
+                            {/* {canEdit && ( */}
+                            <DropdownMenuItem className="cursor-pointer text-[#697a8d] focus:text-[#696cff] focus:bg-[#696cff]/8" onClick={() => onEdit(row.original)}>
+                                <PencilIcon className="mr-2 h-4 w-4" /> Edit
+                            </DropdownMenuItem>
+                            {/* )} */}
+                            {/* {canDelete && ( */}
+                            <DropdownMenuItem className="cursor-pointer text-[#ff3e1d] focus:text-[#ff3e1d] focus:bg-[#ff3e1d]/8" onClick={() => onDelete(row.original.id)}>
+                                <Trash2 className="mr-2 h-4 w-4" /> Delete
+                            </DropdownMenuItem>
+                            {/* )} */}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                );
+            },
+        }
+    ];

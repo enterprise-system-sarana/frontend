@@ -1,103 +1,144 @@
 import DashboardLayout from "@/components/layout/Dashboard";
-import { CategoryPage, LoginPage, PermissionPage, GroupPermissionPage, ProductPage, ProductForm, RolePage, SubCategoryPage, UnitPage, UserPage, SupplierPage, StorePage, BankPage, CurrencyPage } from "@/pages";
-import PurchaseForm from "@/pages/purchases/purchase/PurchaseForm";
+import {
+    CategoryPage, BrandPage, LoginPage, RegisterPage, ForgotPasswordPage,
+    ChangePasswordPage, PermissionPage, GroupPermissionPage, RolePage, UserPage,
+    SupplierPage, StorePage, StockPage, BankPage, CurrencyPage, FileUploadPage,
+    ModelPage, VariantTypePage, VariantValuePage, CustomerPage, ProductPage,
+    ProductForm, ExpensePage, ExpenseTypePage
+} from "@/pages";
 import { PurchasePage } from "@/pages/purchases/purchase/PurchasePage";
-import {PurchasePaymentPage} from "@/pages/purchases/purchase/PurchasePayment";
+import { PurchasePaymentPage } from "@/pages/purchases/purchase/PurchasePayment";
 import PrivateRoute from "@/utils/privateRoute";
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { ROUTERS } from "@/constants/Route";
 
 const router = createBrowserRouter([
     {
-        path: "/login",
+        path: ROUTERS.LOGIN,
         element: <LoginPage />,
+    },
+    {
+        path: ROUTERS.REGISTER,
+        element: <RegisterPage />,
+    },
+    {
+        path: ROUTERS.FORGOT_PASSWORD,
+        element: <ForgotPasswordPage />,
     },
 
     {
         element: <PrivateRoute />,
         children: [
             {
-                path: "/",
+                path: ROUTERS.DASHBOARD,
                 element: <DashboardLayout />,
                 children: [
                     {
                         index: true,
-                        element: <Navigate to="/category" replace />,
+                        element: <Navigate to={ROUTERS.CATEGORY} replace />,
                     },
                     {
-                        path: "category",
+                        path: ROUTERS.CATEGORY,
                         element: <CategoryPage />,
                     },
                     {
-                        path: "sub-category",
-                        element: <SubCategoryPage />,
+                        path: ROUTERS.BRAND,
+                        element: <BrandPage />,
                     },
                     {
-                        path: "unit",
-                        element: <UnitPage />
+                        path: ROUTERS.MODEL,
+                        element: <ModelPage />,
                     },
                     {
-                        path: "product",
-                        element: <ProductPage />
+                        path: ROUTERS.VARIANT_TYPE,
+                        element: <VariantTypePage />,
                     },
                     {
-                        path: "product/create",
-                        element: <ProductForm />
+                        path: ROUTERS.VARIANT_VALUE,
+                        element: <VariantValuePage />,
                     },
                     {
-                        path: "product/edit/:id",
-                        element: <ProductForm />
+                        path: ROUTERS.PRODUCT,
+                        element: <ProductPage />,
                     },
-                    //  inventory 
                     {
-                        path: "supplier",
+                        path: ROUTERS.PRODUCT_CREATE,
+                        element: <ProductForm />,
+                    },
+                    {
+                        path: ROUTERS.PRODUCT_EDIT,
+                        element: <ProductForm />,
+                    },
+
+                    {
+                        path: ROUTERS.SUPPLIER,
                         element: <SupplierPage />
                     },
                     {
-                        path: "purchase",
+                        path: ROUTERS.PURCHASE,
                         element: <PurchasePage />
                     },
+
                     {
-                        path: "purchase/create",
-                        element: <PurchaseForm /> 
+                        path: ROUTERS.PURCHASE_PAYMENT,
+                        element: <PurchasePaymentPage />
                     },
                     {
-                        path: "purchase/edit/:id",
-                        element: <PurchaseForm />
-                    },
-                    {
-                        path: "purchase/payment",
-                        element: <PurchasePaymentPage/>
-                    },
-                    {
-                        path: "store",
+                        path: ROUTERS.STORE,
                         element: <StorePage />
+                    },
+                    {
+                        path: ROUTERS.STOCK,
+                        element: <StockPage />
+                    },
+                    // sales
+                    {
+                        path: ROUTERS.CUSTOMER,
+                        element: <CustomerPage />
                     },
                     // role permission 
                     {
-                        path: "roles",
+                        path: ROUTERS.ROLE,
                         element: <RolePage />,
                     },
 
                     {
-                        path: "users",
+                        path: ROUTERS.USER,
                         element: <UserPage />,
                     },
                     {
-                        path: "role-permissions",
+                        path: ROUTERS.ROLE_PERMISSIONS,
                         element: <PermissionPage />
                     },
                     {
-                        path: "permission-groups",
+                        path: ROUTERS.GROUP_PERMISSION,
                         element: <GroupPermissionPage />
                     },
                     // finance
                     {
-                        path: "bank",
+                        path: ROUTERS.BANK,
                         element: <BankPage />
                     },
                     {
-                        path: "currency",
+                        path: ROUTERS.CURRENCY,
                         element: <CurrencyPage />
+                    },
+                    // expenses
+                    {
+                        path: ROUTERS.EXPENSE,
+                        element: <ExpensePage />
+                    },
+                    {
+                        path: ROUTERS.EXPENSE_TYPE,
+                        element: <ExpenseTypePage />
+                    },
+                    {
+                        path: ROUTERS.CHANGE_PASSWORD,
+                        element: <ChangePasswordPage />
+                    },
+                    {
+                        path: ROUTERS.FILE_UPLOAD,
+                        element: <FileUploadPage />
                     }
                 ],
             },

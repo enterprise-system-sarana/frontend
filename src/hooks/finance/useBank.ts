@@ -1,59 +1,50 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { BankRequest } from "@/types/finance/Bank";
-import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mutationHandler } from "../handleMutaion";
 import { bankService } from "@/services/finance/bank.service";
+import type { BankFilter, BankRequest } from "@/types/finance/Bank";
 
-export const bankKeys = {
-    all: ["banks"],
-    list: (filter: any) => [...bankKeys.all, "list", { ...filter }],
-    details: (id: number) => [...bankKeys.all, "detail", id],
-};
 
-export const useBank = (filter: any) => {
-    return useQuery({
-        queryKey: bankKeys.list(filter),
-        queryFn: () => bankService.findAll(filter),
-    });
-};
-
-export const useCreateBank = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: bankService.create,
-        onSuccess: (res: any) => {
-            queryClient.invalidateQueries({ queryKey: bankKeys.all });
-            toast.success(res?.message || "Bank created successfully");
-        },
-        onError: (error: any) => {
-            toast.error(error?.message || "Failed to create bank");
-        },
-    });
-};
-
-export const useUpdateBank = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: ({ id, request }: { id: number; request: BankRequest }) => bankService.update(id, request),
-        onSuccess: (res: any) => {
-            queryClient.invalidateQueries({ queryKey: bankKeys.all });
-            toast.success(res?.message || "Bank updated successfully");
-        },
-        onError: (error: any) => {
-            toast.error(error?.message || "Failed to update bank");
-        },
-    });
-};
-
-export const useDeleteBank = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: bankService.delete,
-        onSuccess: (res: any) => {
-            queryClient.invalidateQueries({ queryKey: bankKeys.all });
-            toast.success(res?.message || "Bank deleted successfully");
-        },
-        onError: (error: any) => {
-            toast.error(error?.message || "Failed to delete bank");
-        },
-    });
-};
+export const useBank = {
+    bankkey: {
+        all: ["bank"],
+        list: (filter: BankFilter) => [...useBank.bankkey.all, "list", { ...filter }],
+        detail: (id: number) => [...useBank.bankkey.all, "detail", id]
+    },
+    useGetAllBank: (filter: BankFilter = { page: 1, size: 10 }) => {
+        return useQuery({
+            queryKey: useBank.bankkey.list(filter),
+            queryFn: () => bankService.findAll(filter),
+            retry: 1
+        });
+    },
+    useCreateBank: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: (req: BankRequest) => bankService.create(req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useBank.bankkey.all
+            })
+        });
+    },
+    useUpdateBank: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id, req }: { id: number; req: BankRequest }) => bankService.update(id, req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useBank.bankkey.all
+            })
+        });
+    },
+    useDeleteBank: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id }: { id: number }) => bankService.delete(id),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useBank.bankkey.all
+            })
+        });
+    }
+}

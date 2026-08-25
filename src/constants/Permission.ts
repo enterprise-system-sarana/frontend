@@ -26,6 +26,12 @@ export const PERMISSION = {
     UPDATE: "category:update",
     DELETE: "category:delete",
   },
+  BRAND: {
+    READ: "brand:read",
+    CREATE: "brand:create",
+    UPDATE: "brand:update",
+    DELETE: "brand:delete",
+  },
   SUBCATEGORY: {
     READ: "subCategory:read",
     CREATE: "subCategory:create",

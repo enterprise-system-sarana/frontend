@@ -1,17 +1,24 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
+import type { VisibilityState } from "@tanstack/react-table";
 import type { UserResponse } from "@/types/users/Users";
 import { useUser, useDeleteUser } from "@/hooks/users/useUser";
-import { DataTable } from "@/components/ui/data-table";
+import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { UserColumns } from "./UserColumn";
-import { Button } from "@/components/ui/button";
+import { PageHeader } from "@/components/ui/page-header";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import FormUser from "./FormUser";
+import ConfirmDelete from "@/components/ui/confirmDelete";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { useSearch } from "@/utils/useSearch";
-import { PageFilter } from "@/utils/PageFilter";
+import { PageFilter, type FilterGroup } from "@/utils/PageFilter";
+import { AccessDenied } from "@/components/ui/access-denied";
+import { Status } from "@/types/enum/status";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const UserPage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.USERS.CREATE);
     const canRead = Can(PERMISSION.USERS.READ);
@@ -23,81 +30,192 @@ const UserPage = () => {
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
     const [search, setSearch] = useState("");
-    const { data, isError, isLoading } = useUser({ page, size, });
+    const [filterValues, setFilterValues] = useState<Record<string, string>>({});
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+
+    const { data, isError, isLoading } = useUser({ page, size });
     const { mutate: deleteUserMutate } = useDeleteUser();
 
-    const filteredUsers = useSearch<UserResponse>(data?.payload?.data, search, ["username", "email"]);
+    // Filter Groups for Filter +
+    const filterGroups: FilterGroup[] = useMemo(() => [
+        {
+            key: "status",
+            label: t("common.status"),
+            options: [
+                { label: t("common.active"), value: Status.ACTIVE },
+                { label: t("common.inactive"), value: Status.INACTIVE },
+            ],
+        },
+    ], [t]);
 
-    const handleEdit = (user: UserResponse) => {
-        setUser(user);
+    const handleColumnToggle = (columnId: string) => {
+        setColumnVisibility((prev) => ({
+            ...prev,
+            [columnId]: prev[columnId] === false ? true : false,
+        }));
+    };
+
+    const handleFilterChange = (key: string, value: string) => {
+        setFilterValues((prev) => {
+            const next = { ...prev };
+            if (!value) {
+                delete next[key];
+            } else {
+                next[key] = value;
+            }
+            return next;
+        });
+        setPage(1);
+    };
+
+    const handleReset = () => {
+        setSearch("");
+        setFilterValues({});
+        setPage(1);
+    };
+
+    const searchedUsers = useSearch<UserResponse>(
+        data?.payload?.data,
+        search,
+        ["username", "email", "storeName"]
+    );
+
+    const filteredUsers = useMemo(() => {
+        return searchedUsers.filter((item) => {
+            if (filterValues.status) {
+                const itemStatus =
+                    item.isActive === "ACT" || item.isActive === "ACTIVE" || item.isActive === "true" || (item.isActive as any) === true
+                        ? Status.ACTIVE
+                        : Status.INACTIVE;
+                if (itemStatus !== filterValues.status) {
+                    return false;
+                }
+            }
+            return true;
+        });
+    }, [searchedUsers, filterValues]);
+
+    const handleEdit = (u: UserResponse) => {
+        setUser(u);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
-        if (confirm("Are you sure you want to delete this user?")) {
-            deleteUserMutate(id);
+        const selected = data?.payload?.data?.find((u: UserResponse) => u.id === id);
+        if (selected) {
+            setUser(selected);
+            setOpenConfirmDelete(true);
         }
     };
 
-    // const handleFilterChange = (newFilters: Record<string, string>) => {
-    //     setFilters(newFilters);
-    //     setPage(1);
-    // };
+    const confirmDelete = () => {
+        if (user?.id) {
+            deleteUserMutate(user.id, {
+                onSuccess: () => {
+                    toast.success("User deleted successfully");
+                    setOpenConfirmDelete(false);
+                    setUser(null);
+                },
+                onError: (err: any) => {
+                    toast.error(err?.message || "Failed to delete user");
+                },
+            });
+        }
+    };
 
-    // const searchFields = [
-    //     { key: "username", label: "Username", placeholder: "Search by username..." },
-    //     { key: "email", label: "Email", placeholder: "Search by email..." },
-    // ];
+    const columns = useMemo(
+        () =>
+            UserColumns({
+                onEdit: handleEdit,
+                onDelete: handleDelete,
+                canEdit: canUpdate,
+                canDelete: canDelete,
+                t,
+            }),
+        [canUpdate, canDelete, t]
+    );
+
+    const handleExportCsv = () => {
+        exportTableToCsv(filteredUsers, columns, "users");
+    };
+
+    const handleDownloadPdf = () => {
+        exportTableToPdf(filteredUsers, columns, "users", "Users List");
+    };
+
+    const handlePrintPdf = () => {
+        printTable("Users List");
+    };
 
     if (!canRead) {
-        return (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
-                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">You do not have permission to view users.</p>
-            </div>
-        );
+        return <AccessDenied resource="users" showBackButton />;
     }
 
     return (
         <>
-            <div className="flex justify-between items-center mb-4">
-                <h1 className="text-2xl font-bold">Users</h1>
-                {canCreate && (
-                    <Button onClick={() => { setUser(null); setOpen(true); }}>+ Add User</Button>
-                )}
-            </div>
-            <PageFilter
-                search={search}
-                onSearchChange={setSearch}
-                searchPlaceholder="Search users..."
-                onReset={() => setSearch("")}
-            />
-            <QueryBoundary isLoading={isLoading} isError={isError}>
-                <DataTable
-                    columns={UserColumns({
-                        onEdit: handleEdit,
-                        onDelete: handleDelete,
-                        canEdit: canUpdate,
-                        canDelete: canDelete,
-                    })}
-                    data={filteredUsers}
-                    pagination={{
-                        currentPage: page,
-                        pageSize: size,
-                        totalElements: data?.payload?.pagination?.totalElements || 0,
-                        totalPages: data?.payload?.pagination?.totalPages || 1,
-                        onPageChange: setPage,
-                        onPageSizeChange: setSize,
-                    }}
-                // searchFields={searchFields}
-                // onFilterChange={handleFilterChange}
+            <div className="space-y-4">
+                {/* Top Header */}
+                <PageHeader
+                    title={t("nav.user")}
+                    featureName={t("nav.user")}
+                    onCreate={canCreate ? () => { setUser(null); setOpen(true); } : undefined}
+                    hideButton={!canCreate}
                 />
-            </QueryBoundary>
+
+                {/* Main Card with Toolbar & Table */}
+                <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+                    {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
+                    <div className="p-4 border-b border-border/60">
+                        <PageFilter
+                            search={search}
+                            onSearchChange={setSearch}
+                            searchPlaceholder="Search users by name, email..."
+                            filterGroups={filterGroups}
+                            filterValues={filterValues}
+                            onFilterChange={handleFilterChange}
+                            columns={getColumnsForVisibility(columns, columnVisibility)}
+                            onColumnToggle={handleColumnToggle}
+                            onPrintPdf={handlePrintPdf}
+                            onDownloadPdf={handleDownloadPdf}
+                            onDownloadCsv={handleExportCsv}
+                            onReset={handleReset}
+                        />
+                    </div>
+
+                    {/* Table View */}
+                    <div className="px-0">
+                        <QueryBoundary isLoading={isLoading} isError={isError}>
+                            <DataTable
+                                columns={columns}
+                                data={filteredUsers}
+                                columnVisibility={columnVisibility}
+                                onColumnVisibilityChange={setColumnVisibility}
+                                pagination={{
+                                    currentPage: page,
+                                    pageSize: size,
+                                    totalElements: data?.payload?.pagination?.totalElements || filteredUsers.length,
+                                    totalPages: data?.payload?.pagination?.totalPages || 1,
+                                    onPageChange: setPage,
+                                    onPageSizeChange: setSize,
+                                }}
+                            />
+                        </QueryBoundary>
+                    </div>
+                </div>
+            </div>
 
             <FormUser
                 open={open}
                 setOpen={setOpen}
                 user={user}
+            />
+
+            <ConfirmDelete
+                isOpen={openConfirmDelete}
+                setIsOpen={setOpenConfirmDelete}
+                entityName="User"
+                confirmDelete={confirmDelete}
             />
         </>
     );

@@ -1,5 +1,4 @@
 import { DataTable } from "@/components/ui/data-table";
-import PageHeader from "@/components/ui/page-header";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import { PERMISSION } from "@/constants/Permission";
 import { usePurchase } from "@/hooks/purchases/usePurchase";
@@ -15,6 +14,8 @@ import { PageFilter } from "@/utils/PageFilter";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import type { Status } from "@/types/enum/status";
+import { PageHeader } from "@/components/ui/page-header";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 export const PurchasePage = () => {
   const navigate = useNavigate();
@@ -171,58 +172,58 @@ export const PurchasePage = () => {
   };
 
   if (!canRead) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
-        <h2 className="text-xl font-semibold text-destructive mb-2">
-          Access Denied
-        </h2>
-        <p className="text-muted-foreground">
-          You do not have permission to view purchases.
-        </p>
-      </div>
-    );
+    return <AccessDenied resource="purchases" showBackButton />;
   }
 
   return (
     <>
-      <PageHeader
-        title="Purchases"
-        buttonText={canCreate ? "Add Purchase" : undefined}
-        onButtonClick={
-          canCreate ? () => navigate("/purchase/create") : undefined
-        }
-      />
-      <PageFilter
-        search={search}
-        onSearchChange={setSearch}
-        searchPlaceholder="Search reference..."
-        dropdowns={dropdowns}
-        dropdownValues={dropdownValues}
-        onDropdownChange={handleDropdownChange}
-        onReset={handleReset}
-      />
-
-      <QueryBoundary isLoading={isLoading} isError={isError}>
-        <DataTable
-          columns={PurchaseColumns({
-            onEdit: handleEdit,
-            onDelete: handleDelete,
-            onApprove: handleApprove,
-            onComplete: handleComplete,
-            canEdit: canUpdate,
-            canDelete: canDelete,
-          })}
-          data={filteredPurchases}
-          pagination={{
-            currentPage: page,
-            pageSize: size,
-            totalElements: data?.payload?.pagination?.totalElements || 0,
-            totalPages: data?.payload?.pagination?.totalPages || 1,
-            onPageChange: setPage,
-            onPageSizeChange: setSize,
-          }}
+      <div className="space-y-4">
+        {/* Top Header */}
+        <PageHeader
+          title="Purchases"
+          buttonLabel="Add Purchase"
+          onCreate={canCreate ? () => navigate("/purchase/create") : undefined}
+          hideButton={!canCreate}
         />
-      </QueryBoundary>
+
+        <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+          <div className="p-4 border-b border-border/60">
+            <PageFilter
+              search={search}
+              onSearchChange={setSearch}
+              searchPlaceholder="Search reference..."
+              dropdowns={dropdowns}
+              dropdownValues={dropdownValues}
+              onDropdownChange={handleDropdownChange}
+              onReset={handleReset}
+            />
+          </div>
+
+        <div className="px-0">
+          <QueryBoundary isLoading={isLoading} isError={isError}>
+            <DataTable
+              columns={PurchaseColumns({
+                onEdit: handleEdit,
+                onDelete: handleDelete,
+                onApprove: handleApprove,
+                onComplete: handleComplete,
+                canEdit: canUpdate,
+                canDelete: canDelete,
+              })}
+              data={filteredPurchases}
+              pagination={{
+                currentPage: page,
+                pageSize: size,
+                totalElements: data?.payload?.pagination?.totalElements || 0,
+                totalPages: data?.payload?.pagination?.totalPages || 1,
+                onPageChange: setPage,
+                onPageSizeChange: setSize,
+              }}
+            />
+          </QueryBoundary>
+        </div>
+      </div>
+    </div>
 
       <ConfirmDelete
         isOpen={openConfirmDelete}

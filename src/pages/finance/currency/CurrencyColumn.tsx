@@ -2,9 +2,10 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { CurrencyResponse } from "@/types/finance/Currency";
 import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, PencilIcon, Trash2 } from "lucide-react";
+import { MoreVertical, PencilIcon, Trash2 } from "lucide-react";
 import { SortableHeader } from "@/utils/sort-table-header";
-import { Badge } from "@/components/ui/badge";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { formatDate } from "@/utils/formatDate";
 
 interface CurrencyColumnsProps {
     onEdit: (currency: CurrencyResponse) => void;
@@ -17,41 +18,37 @@ export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete }: Curren
     {
         accessorKey: "id",
         header: "Id",
-        cell: ({ row }) => <p>{row.original.id}</p>,
+        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">#{row.original.id}</span>,
     },
     {
         accessorKey: "code",
         header: ({ column }) => <SortableHeader column={column} title="Code" />,
-        cell: ({ row }) => <p className="font-semibold">{row.original.code}</p>,
+        cell: ({ row }) => <span className="font-mono text-xs text-[#696cff] font-bold">{row.original.code}</span>,
     },
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title="Currency Name" />,
-        cell: ({ row }) => <p>{row.original.name}</p>,
-    },
-    {
-        accessorKey: "operation",
-        header: "Operation",
-        cell: ({ row }) => <p>{row.original.operation || "-"}</p>,
+        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
     },
     {
         accessorKey: "rate",
         header: "Exchange Rate",
-        cell: ({ row }) => <p>{row.original.rate}</p>,
+        cell: ({ row }) => <span className="font-medium text-[#71dd37]">{row.original.rate}</span>,
     },
     {
         accessorKey: "symbol",
         header: "Symbol",
-        cell: ({ row }) => <p className="font-mono">{row.original.symbol || "-"}</p>,
+        cell: ({ row }) => <span className="font-mono text-sm font-semibold text-[#566a7f]">{row.original.symbol || "-"}</span>,
+    },
+    {
+        accessorKey: "createdAt",
+        header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
     },
     {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => (
-            <Badge variant={row.original.status === "ACTIVE" ? "success" : "destructive"}>
-                {row.original.status}
-            </Badge>
-        ),
+        cell: ({ row }) => <StatusBadge status={row.original.status as any} />,
     },
     {
         accessorKey: "Action",
@@ -59,24 +56,24 @@ export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete }: Curren
         enableHiding: false,
         cell: ({ row }) => {
             if (!canEdit && !canDelete) {
-                return <span className="text-muted-foreground text-sm">-</span>;
+                return <span className="text-[#a1acb8] text-sm">-</span>;
             }
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-8 w-8 p-0 text-[#697a8d] hover:text-[#566a7f] hover:bg-[#f5f5f9]">
                             <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-40 shadow-[0_3px_12px_rgba(67,89,113,0.15)] border-[#e7e7e8]">
                         {canEdit && (
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(row.original)}>
+                            <DropdownMenuItem className="cursor-pointer text-[#697a8d] focus:text-[#696cff] focus:bg-[#696cff]/8" onClick={() => onEdit(row.original)}>
                                 <PencilIcon className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
                         )}
                         {canDelete && (
-                            <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => onDelete(row.original.id)}>
+                            <DropdownMenuItem className="cursor-pointer text-[#ff3e1d] focus:text-[#ff3e1d] focus:bg-[#ff3e1d]/8" onClick={() => onDelete(row.original.id)}>
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                             </DropdownMenuItem>
                         )}

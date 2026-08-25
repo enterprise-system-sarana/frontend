@@ -1,298 +1,386 @@
-import { FieldGroup } from "@/components/ui/field";
-import { useProduct } from "@/hooks/product/useProduct";
-import { Status } from "@/types/enum/status";
-import { ProductShema, type ProductFormValues } from "@/types/product/Product";
-import { useForm, useStore } from "@tanstack/react-form";
-import { useEffect, useMemo } from "react";
-import FormTextField, { FormSelectField } from "@/components/ui/FormTextField";
-import { Button } from "@/components/ui/button";
-import { useGetAllCategory } from "@/hooks/product/useCategory";
-import { useSubCategory } from "@/hooks/product/useSubCategory";
-import { useUnit } from "@/hooks/product/useUnit";
+import { useForm } from "@tanstack/react-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft } from "lucide-react";
-import { usePermission } from "@/utils/UsePermission";
-import { PERMISSION } from "@/constants/Permission";
+import { useEffect } from "react";
+import { useProduct } from "@/hooks/product/useProduct";
+import { ProductSchema, type ProductRequest } from "@/types/product/Product";
 
-export const ProductForm = () => {
-    const { Can } = usePermission();
-    const { id } = useParams<{ id: string }>();
+import { ROUTERS } from "@/constants/Route";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
+import { Input } from "@/components/ui/input";
+import FileUpload from "@/pages/FileUpload";
+import FormTextField, { FormRadioGroupField, FormSelectField, FormTextareaField } from "@/components/ui/FormTextField";
+import { ArrowLeft, Loader2 } from "lucide-react";
+import { toast } from "sonner";
+import { Status, StatusOptions } from "@/types/enum/status";
+import { useModel } from "@/hooks/product/useModel";
+import type { ModelResponse } from "@/types/product/Model";
+import { useCategory } from "@/hooks/product/useCategory";
+import { useBrand } from "@/hooks/product/useBrand";
+import { useVariantType } from "@/hooks/product/useVariantType";
+import type { VariantTypeResponse, VariantValueItem } from "@/types/product/VariantType";
+import { useLanguage } from "@/i18n/LanguageContext";
+
+const ProductForm = () => {
     const navigate = useNavigate();
-    const productId = id ? Number(id) : undefined;
-    const isEdit = !!productId;
+    const { t } = useLanguage();
+    const { id } = useParams<{ id: string }>();
 
-    const canAccess = isEdit ? Can(PERMISSION.PRODUCT.UPDATE) : Can(PERMISSION.PRODUCT.CREATE);
+    // Fetch product details when editing
+    const { data: productDetailData, isLoading: isLoadingProduct } = useProduct.useGetProductById(
+        Number(id),
+        Boolean(id && !isNaN(Number(id)))
+    );
+    const product = productDetailData?.payload?.data || productDetailData?.payload || productDetailData?.data || productDetailData;
 
+    // Mutations & Queries
     const { mutate: createProduct, isPending: isCreating } = useProduct.useCreateProduct();
     const { mutate: updateProduct, isPending: isUpdating } = useProduct.useUpdateProduct();
-    const isPending = isCreating || isUpdating;
+    const { data: modelData } = useModel.GetAllModel({ page: 1, size: 100 });
+    const { data: categoryData } = useCategory.useGetAllCategory({ page: 1, size: 100 });
+    const { data: brandData } = useBrand.useGetAllBrand({ page: 1, size: 100 });
+    const { data: variantData } = useVariantType.useGetAllVariantType({ page: 1, size: 100 });
 
-    if (!canAccess) {
-        return (
-            <div className="flex flex-col items-center justify-center h-[50vh] text-center p-4">
-                <h2 className="text-xl font-semibold text-destructive mb-2">Access Denied</h2>
-                <p className="text-muted-foreground">You do not have permission to access this page.</p>
-            </div>
-        );
-    }
+    const modelOptions = (modelData?.payload?.data || []).map((m: ModelResponse) => ({
+        label: m.name,
+        value: String(m.id),
+    }));
 
-    const { data: categoryData } = useGetAllCategory({ page: 1, size: 100 });
-    const { data: subCategoryData } = useSubCategory.useGetAllSubCategory({ page: 1, size: 100 });
-    const { data: unitData } = useUnit.useUnitGetAll({ page: 1, size: 100 });
-
-    const categories = categoryData?.payload?.data || [];
-    const subCategories = subCategoryData?.payload?.data || [];
-    const units = unitData?.payload?.data || [];
-
-    // Fetch product details if editing
-    const { data: productDetail, isLoading: isLoadingProduct } = useProduct.useGetProductById(
-        productId || 0,
-        !!productId
-    );
-    const product = productDetail?.payload || null;
+    const isPending = isCreating || isUpdating || isLoadingProduct;
 
     const form = useForm({
         defaultValues: {
-            name: product?.name || "",
-            code: product?.code || "",
-            salePrice: product?.salePrice || 0,
-            costPrice: product?.costPrice || 0,
-            alertQuantity: product?.alertQuantity || 0,
-            categoryId: product?.categoryId || 0,
-            subCategoryId: product?.subCategoryId || 0,
-            unitId: product?.unitId || 0,
-            defaultSaleUnit: product?.defaultSaleUnit || 0,
-            defaultPurchaseUnit: product?.defaultPurchaseUnit || 0,
-            printer: product?.printer || 0,
-            status: product?.status || Status.Active,
-            type: product?.type || "",
-            details: product?.details || "",
-        } as ProductFormValues,
+            code: "",
+            noted: "",
+            imageUrl: "",
+            status: Status.ACTIVE,
+            reorderLevel: 5,
+            modelId: 0,
+            variantValueIds: [] as number[],
+        } as ProductRequest,
         validators: {
-            onSubmit: ProductShema,
+            onSubmit: ProductSchema,
         },
         onSubmit: async ({ value }) => {
-            const payload = ProductShema.parse(value);
+            const payload = value as ProductRequest;
             const handleSuccess = () => {
-                navigate("/product");
+                form.reset();
+                navigate(ROUTERS.PRODUCT);
             };
-            if (product) {
-                updateProduct({ id: product.id, req: payload }, { onSuccess: handleSuccess });
+
+            if (id) {
+                updateProduct(
+                    { id: Number(id), req: payload },
+                    {
+                        onSuccess: () => {
+                            toast.success(t("product.update_success"));
+                            handleSuccess();
+                        },
+                        onError: (err: any) => {
+                            toast.error(err?.response?.data?.message || t("product.update_failed"));
+                        },
+                    }
+                );
             } else {
-                createProduct(payload, { onSuccess: handleSuccess });
+                createProduct(payload, {
+                    onSuccess: () => {
+                        toast.success(t("product.create_success"));
+                        handleSuccess();
+                    },
+                    onError: (err: any) => {
+                        toast.error(err?.response?.data?.message || t("product.create_failed"));
+                    },
+                });
             }
-        }
+        },
     });
 
-    const categoryId = useStore(form.store, (state) => state.values.categoryId);
-
-    // Filter subcategories belonging to the selected category
-    const filteredSubCategories = useMemo(() => {
-        if (!categoryId) return [];
-        return subCategories.filter((sub: any) => String(sub.categoryId) === String(categoryId));
-    }, [subCategories, categoryId]);
-
-    // Reset subCategoryId if it's not valid for the selected category anymore
+    // Populate form values when editing
     useEffect(() => {
-        const subCategoryId = form.state.values.subCategoryId;
-        if (subCategoryId && !filteredSubCategories.some((sub: any) => String(sub.id) === String(subCategoryId))) {
-            form.setFieldValue("subCategoryId", 0);
-        }
-    }, [categoryId, filteredSubCategories, form]);
+        if (product && typeof product === "object") {
+            form.setFieldValue("code", product.code || "");
+            form.setFieldValue("noted", product.noted || "");
+            form.setFieldValue("imageUrl", product.imageUrl || "");
+            form.setFieldValue("status", product.status || Status.ACTIVE);
+            form.setFieldValue("reorderLevel", product.reorderLevel ?? 5);
+            form.setFieldValue("modelId", Number(product.modelId || product.model?.id || 0));
 
-    useEffect(() => {
-        if (product) {
-            form.reset();
-        }
-    }, [product, form]);
+            const variantIds: number[] = Array.isArray(product.variantValues)
+                ? product.variantValues.map((v: any) => (typeof v === "object" && v !== null ? v.id : Number(v)))
+                : Array.isArray(product.variantValueIds)
+                ? product.variantValueIds.map(Number)
+                : [];
 
-    if (productId && isLoadingProduct) {
-        return (
-            <div className="flex h-64 items-center justify-center">
-                <div className="text-muted-foreground animate-pulse text-lg">Loading product details...</div>
-            </div>
-        );
-    }
+            form.setFieldValue("variantValueIds", variantIds);
+        }
+    }, [product]);
 
     return (
-        <div className="container max-w-full">
-            <div className="flex items-center gap-4 mb-6">
-                <Button variant="ghost" size="icon" onClick={() => navigate("/product")}>
-                    <ArrowLeft className="h-4 w-4" />
-                </Button>
-                <h1 className="text-2xl font-bold tracking-tight">
-                    {product ? "Edit Product" : "Create Product"}
-                </h1>
+        <div className="space-y-6 w-full pb-16">
+            {/* Header */}
+            <div className="flex items-center justify-between pb-3 border-b border-border/60">
+                <div className="flex items-center gap-3">
+                    <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={() => navigate(ROUTERS.PRODUCT)}
+                        className="h-9 w-9 rounded-xl border-border/60 hover:bg-muted/60"
+                        title={t("common.back")}
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                    </Button>
+                    <h2 className="text-lg font-semibold tracking-tight">
+                        {id ? t("product.edit") : t("product.create")}
+                    </h2>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>{product ? "Edit Product Specifications" : "Create New Product"}</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <form
-                        id="product-form"
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            form.handleSubmit();
-                        }}
-                    >
-                        <FieldGroup>
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormTextField
-                                    form={form}
-                                    name="name"
-                                    label="Name"
-                                    required={true}
-                                    placeholder="Enter Product Name"
-                                    type="text"
-                                />
-                                <FormTextField
-                                    form={form}
-                                    name="code"
-                                    label="Code"
-                                    required={true}
-                                    placeholder="Enter Product Code"
-                                    type="text"
-                                />
-                            </div>
+            {/* Form */}
+            <form
+                id="product-form"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    form.handleSubmit();
+                }}
+            >
+                <div className="space-y-6">
+                    {/* Basic Info Card */}
+                    <Card className="rounded-2xl border-border/60 shadow-2xs">
+                        <CardContent className="space-y-5">
+                            <FieldGroup>
+                                {/* Model Selection */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                                    <FormSelectField
+                                        form={form}
+                                        name="modelId"
+                                        label={t("product.model")}
+                                        required={true}
+                                        placeholder={t("product.select_model")}
+                                        options={modelOptions}
+                                    />
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormTextField
-                                    form={form}
-                                    name="salePrice"
-                                    label="Sale Price"
-                                    required={true}
-                                    placeholder="Enter Sale Price"
-                                    type="number"
-                                />
-                                <FormTextField
-                                    form={form}
-                                    name="costPrice"
-                                    label="Cost Price"
-                                    required={true}
-                                    placeholder="Enter Cost Price"
-                                    type="number"
-                                />
-                            </div>
+                                    {/* Dynamic Category & Brand */}
+                                    <form.Subscribe selector={(state) => [state.values.modelId]}>
+                                        {([modelId]) => {
+                                            const selectedModel = (modelData?.payload?.data || []).find(
+                                                (m: ModelResponse) => m.id === Number(modelId)
+                                            );
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormTextField
-                                    form={form}
-                                    name="alertQuantity"
-                                    label="Alert Quantity"
-                                    required={true}
-                                    placeholder="Enter Alert Quantity"
-                                    type="number"
-                                />
-                                <FormTextField
-                                    form={form}
-                                    name="details"
-                                    label="Details"
-                                    required={true}
-                                    placeholder="Enter Details"
-                                    type="text"
-                                />
-                            </div>
+                                            if (!selectedModel) return null;
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormSelectField
-                                    form={form}
-                                    name="categoryId"
-                                    label="Category"
-                                    placeholder="Select Category"
-                                    options={categories.map((category: any) => ({
-                                        value: String(category.id),
-                                        label: category.name,
-                                    }))}
-                                    required={true}
-                                />
+                                            const categoryName =
+                                                selectedModel.categoryName ||
+                                                categoryData?.payload?.data?.find(
+                                                    (c: any) => c.id === selectedModel.categoryId
+                                                )?.name ||
+                                                "-";
+                                            const brandName =
+                                                selectedModel.brandName ||
+                                                brandData?.payload?.data?.find(
+                                                    (b: any) => b.id === selectedModel.brandId
+                                                )?.name ||
+                                                "-";
 
-                                <FormSelectField
-                                    form={form}
-                                    name="subCategoryId"
-                                    label="Sub Category"
-                                    placeholder={categoryId && Number(categoryId) !== 0 ? "Select Sub Category" : "Select Category first"}
-                                    options={filteredSubCategories.map((subCategory: any) => ({
-                                        value: String(subCategory.id),
-                                        label: subCategory.name,
-                                    }))}
-                                    required={true}
-                                    disabled={!categoryId || Number(categoryId) === 0}
-                                />
-                            </div>
+                                            return (
+                                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start animate-in fade-in-50 duration-200">
+                                                    <Field>
+                                                        <FieldLabel>{t("product.category")}</FieldLabel>
+                                                        <Input
+                                                            value={categoryName}
+                                                            disabled
+                                                            readOnly
+                                                            className="bg-muted/40 text-foreground font-medium cursor-not-allowed select-none"
+                                                        />
+                                                    </Field>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormSelectField
-                                    form={form}
-                                    name="unitId"
-                                    label="Unit"
-                                    placeholder={units.length > 0 ? "Select Unit" : "No Units available"}
-                                    options={units.map((unit: any) => ({
-                                        value: String(unit.id),
-                                        label: unit.name,
-                                    }))}
-                                    required={true}
-                                />
-                                <FormTextField
-                                    form={form}
-                                    name="defaultSaleUnit"
-                                    label="Default Sale Unit"
-                                    required={true}
-                                    placeholder="Enter Default Sale Unit"
-                                    type="number"
-                                />
-                            </div>
+                                                    <Field>
+                                                        <FieldLabel>{t("product.brand")}</FieldLabel>
+                                                        <Input
+                                                            value={brandName}
+                                                            disabled
+                                                            readOnly
+                                                            className="bg-muted/40 text-foreground font-medium cursor-not-allowed select-none"
+                                                        />
+                                                    </Field>
+                                                </div>
+                                            );
+                                        }}
+                                    </form.Subscribe>
+                                </div>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormTextField
-                                    form={form}
-                                    name="defaultPurchaseUnit"
-                                    label="Default Purchase Unit"
-                                    required={true}
-                                    placeholder="Enter Default Purchase Unit"
-                                    type="number"
-                                />
-                                <FormTextField
-                                    form={form}
-                                    name="printer"
-                                    label="Printer"
-                                    required={true}
-                                    placeholder="Enter Printer"
-                                    type="number"
-                                />
-                            </div>
+                                {/* Code and Reorder Level */}
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
+                                    <FormTextField
+                                        form={form}
+                                        name="code"
+                                        label={t("product.code")}
+                                        type="text"
+                                        placeholder="e.g. PRD-001"
+                                        required={true}
+                                    />
+                                    <FormTextField
+                                        form={form}
+                                        name="reorderLevel"
+                                        label={t("product.reorder_level")}
+                                        type="number"
+                                        placeholder="5"
+                                        required={true}
+                                    />
+                                </div>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
 
-                            <div className="grid grid-cols-2 gap-4">
-                                <FormSelectField
+                    {/* Product Variants Card */}
+                    {variantData?.payload?.data && variantData.payload.data.length > 0 && (
+                        <Card className="rounded-2xl border-border/60 shadow-2xs">
+                            <CardContent className="space-y-6">
+                                <div className="border-b border-border/40 pb-2">
+                                    <h3 className="text-base font-semibold text-foreground tracking-tight">
+                                        {t("product.variants")}
+                                    </h3>
+                                </div>
+
+                                <form.Subscribe selector={(state) => [state.values.variantValueIds]}>
+                                    {([variantValueIds = []]) => {
+                                        const variantTypes: VariantTypeResponse[] = variantData?.payload?.data || [];
+
+                                        return (
+                                            <div className="space-y-5">
+                                                {variantTypes.map((vt: VariantTypeResponse) => {
+                                                    const typeValueIds = (vt.values || []).map((v) => v.id);
+                                                    const selectedValueId = (variantValueIds as number[]).find(
+                                                        (valId: number) => typeValueIds.includes(valId)
+                                                    );
+
+                                                    return (
+                                                        <div key={vt.id} className="space-y-2.5">
+                                                            <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                                                                {vt.name}
+                                                            </div>
+
+                                                            <div className="flex flex-wrap gap-2.5 items-center">
+                                                                {(vt.values || []).map((val: VariantValueItem) => {
+                                                                    const isSelected = selectedValueId === val.id;
+
+                                                                    return (
+                                                                        <button
+                                                                            key={val.id}
+                                                                            type="button"
+                                                                            onClick={() => {
+                                                                                const filtered = (
+                                                                                    variantValueIds as number[]
+                                                                                ).filter(
+                                                                                    (valId: number) =>
+                                                                                        !typeValueIds.includes(valId)
+                                                                                );
+
+                                                                                if (isSelected) {
+                                                                                    form.setFieldValue(
+                                                                                        "variantValueIds",
+                                                                                        filtered
+                                                                                    );
+                                                                                } else {
+                                                                                    form.setFieldValue(
+                                                                                        "variantValueIds",
+                                                                                        [...filtered, val.id]
+                                                                                    );
+                                                                                }
+                                                                            }}
+                                                                            className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer select-none border ${isSelected
+                                                                                    ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
+                                                                                    : "border-border/70 bg-card/60 hover:bg-muted/70 hover:border-foreground/30 text-foreground/90 hover:text-foreground"
+                                                                                }`}
+                                                                        >
+                                                                            {val.name}
+                                                                        </button>
+                                                                    );
+                                                                })}
+                                                            </div>
+                                                        </div>
+                                                    );
+                                                })}
+                                            </div>
+                                        );
+                                    }}
+                                </form.Subscribe>
+                            </CardContent>
+                        </Card>
+                    )}
+
+                    {/* Image & Remarks Card */}
+                    <Card className="rounded-2xl border-border/60 shadow-2xs">
+                        <CardContent className="space-y-5">
+                            <FieldGroup>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <form.Subscribe selector={(state) => [state.values.imageUrl]}>
+                                        {([imageUrl]) => (
+                                            <FileUpload
+                                                label={t("product.image")}
+                                                value={imageUrl || ""}
+                                                onUploaded={(fileName) => {
+                                                    form.setFieldValue("imageUrl", fileName);
+                                                }}
+                                                onRemove={() => {
+                                                    form.setFieldValue("imageUrl", "");
+                                                }}
+                                                defaultBucket="product"
+                                            />
+                                        )}
+                                    </form.Subscribe>
+
+                                    <FormTextareaField
+                                        form={form}
+                                        name="noted"
+                                        label={t("product.noted")}
+                                        placeholder={t("product.noted_placeholder")}
+                                    />
+                                </div>
+
+                                <FormRadioGroupField
                                     form={form}
                                     name="status"
-                                    label="Status"
+                                    label={t("common.status")}
                                     required={true}
-                                    placeholder="Select Status"
-                                    options={Object.entries(Status).map(([, value]) => ({
-                                        value: value,
-                                        label: value,
-                                    }))}
+                                    options={[
+                                        { value: Status.ACTIVE, label: t("common.active") },
+                                        { value: Status.INACTIVE, label: t("common.inactive") },
+                                        { value: Status.DELETE, label: t("common.delete") },
+                                    ]}
                                 />
-                            </div>
-                        </FieldGroup>
-                    </form>
-                </CardContent>
-                <CardFooter className="flex justify-end gap-4 border-t py-4">
-                    <Button variant="outline" type="button" onClick={() => navigate("/product")}>
-                        Cancel
-                    </Button>
-                    <Button
-                        type="submit"
-                        form="product-form"
-                        disabled={isPending}
-                    >
-                        {isPending ? "Saving..." : (product ? "Update Product" : "Create Product")}
-                    </Button>
-                </CardFooter>
-            </Card>
+                            </FieldGroup>
+                        </CardContent>
+                    </Card>
+
+                    {/* Actions */}
+                    <div className="flex items-center justify-end gap-3 pt-2">
+                        <Button
+                            type="button"
+                            variant="outline"
+                            onClick={() => navigate(ROUTERS.PRODUCT)}
+                            disabled={isPending}
+                        >
+                            {t("common.cancel")}
+                        </Button>
+                        <Button type="submit" disabled={isPending} className="min-w-[140px]">
+                            {isPending ? (
+                                <span className="flex items-center gap-1.5">
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                    {t("common.saving")}
+                                </span>
+                            ) : id ? (
+                                t("product.edit")
+                            ) : (
+                                t("product.create")
+                            )}
+                        </Button>
+                    </div>
+                </div>
+            </form>
         </div>
     );
 };
+
+export default ProductForm;

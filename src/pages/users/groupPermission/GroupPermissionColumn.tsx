@@ -2,8 +2,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import type { GroupPermission } from "@/types/users/Group";
 import { Button } from "@/components/ui/button";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreHorizontal, PencilIcon, Trash2 } from "lucide-react";
+import { MoreVertical, PencilIcon, Trash2 } from "lucide-react";
 import { SortableHeader } from "@/utils/sort-table-header";
+import { formatDate } from "@/utils/formatDate";
 
 interface GroupPermissionColumnsProps {
     onEdit: (group: GroupPermission) => void;
@@ -16,22 +17,27 @@ export const GroupPermissionColumns = ({ onEdit, onDelete, canEdit, canDelete }:
     {
         accessorKey: "id",
         header: "Id",
-        cell: ({ row }) => <p>{row.original.id}</p>,
+        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">#{row.original.id}</span>,
     },
     {
         accessorKey: "code",
         header: ({ column }) => <SortableHeader column={column} title="Code" />,
-        cell: ({ row }) => <p>{row.original.code}</p>,
+        cell: ({ row }) => <span className="font-mono text-xs text-[#696cff] font-bold">{row.original.code}</span>,
     },
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title="Name" />,
-        cell: ({ row }) => <p>{row.original.name}</p>,
+        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
     },
     {
         accessorKey: "description",
         header: "Description",
-        cell: ({ row }) => <p className="truncate max-w-48">{row.original.description || "-"}</p>,
+        cell: ({ row }) => <span className="truncate max-w-48 text-[#697a8d]">{row.original.description || "-"}</span>,
+    },
+    {
+        accessorKey: "createdAt",
+        header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
     },
     {
         accessorKey: "Action",
@@ -39,24 +45,24 @@ export const GroupPermissionColumns = ({ onEdit, onDelete, canEdit, canDelete }:
         enableHiding: false,
         cell: ({ row }) => {
             if (!canEdit && !canDelete) {
-                return <span className="text-muted-foreground text-sm">-</span>;
+                return <span className="text-[#a1acb8] text-sm">-</span>;
             }
             return (
                 <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
+                        <Button variant="ghost" className="h-8 w-8 p-0 text-[#697a8d] hover:text-[#566a7f] hover:bg-[#f5f5f9]">
                             <span className="sr-only">Open menu</span>
-                            <MoreHorizontal className="h-4 w-4" />
+                            <MoreVertical className="h-4 w-4" />
                         </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="w-40 shadow-[0_3px_12px_rgba(67,89,113,0.15)] border-[#e7e7e8]">
                         {canEdit && (
-                            <DropdownMenuItem className="cursor-pointer" onClick={() => onEdit(row.original)}>
+                            <DropdownMenuItem className="cursor-pointer text-[#697a8d] focus:text-[#696cff] focus:bg-[#696cff]/8" onClick={() => onEdit(row.original)}>
                                 <PencilIcon className="mr-2 h-4 w-4" /> Edit
                             </DropdownMenuItem>
                         )}
                         {canDelete && (
-                            <DropdownMenuItem className="cursor-pointer text-destructive" onClick={() => onDelete(row.original.id)}>
+                            <DropdownMenuItem className="cursor-pointer text-[#ff3e1d] focus:text-[#ff3e1d] focus:bg-[#ff3e1d]/8" onClick={() => onDelete(row.original.id)}>
                                 <Trash2 className="mr-2 h-4 w-4" /> Delete
                             </DropdownMenuItem>
                         )}

@@ -2,8 +2,8 @@ import type { GroupPermissionRequest } from "@/types/users/Group"
 import api from "../lib/axios"
 
 export const groupPermissionService = {
-    findAll: async () => {
-        return api.get("/permission-group").then((res) => res.data)
+    findAll: async (filter?: { page?: number; size?: number }) => {
+        return api.get("/permission-group", { params: filter }).then((res) => res.data)
     },
     create: async (request: GroupPermissionRequest) => {
         return api.post("/permission-group", request).then((res) => res.data)

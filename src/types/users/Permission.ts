@@ -1,13 +1,13 @@
-import z from "zod"
+import z from "zod";
+import type { BaseResponse } from "../pagination";
 
-export type PermissionResponse = {
-    id:number
-    code:string
-    name : string
-    description:string
-    groupId:number
-    groupCode:string
-    groupName:string
+export interface PermissionResponse extends BaseResponse {
+    code: string;
+    name: string;
+    description: string;
+    groupId: number;
+    groupCode: string;
+    groupName: string;
 }
 
 export const PermissionSchema = z.object({
