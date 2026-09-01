@@ -1,6 +1,6 @@
 import { useForm } from "@tanstack/react-form";
 import { useNavigate, useParams } from "react-router-dom";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useProduct } from "@/hooks/product/useProduct";
 import { ProductSchema, type ProductRequest } from "@/types/product/Product";
 
@@ -11,20 +11,24 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import FileUpload from "@/pages/FileUpload";
 import FormTextField, { FormRadioGroupField, FormSelectField, FormTextareaField } from "@/components/ui/FormTextField";
-import { ArrowLeft, Loader2 } from "lucide-react";
+import { ArrowLeft, Barcode, Loader2 } from "lucide-react";
 import { toast } from "sonner";
-import { Status, StatusOptions } from "@/types/enum/status";
+import { Status } from "@/types/enum/status";
 import { useModel } from "@/hooks/product/useModel";
 import type { ModelResponse } from "@/types/product/Model";
+import ModelForm from "@/pages/product/model/ModelForm";
 import { useCategory } from "@/hooks/product/useCategory";
 import { useBrand } from "@/hooks/product/useBrand";
 import { useVariantType } from "@/hooks/product/useVariantType";
 import type { VariantTypeResponse, VariantValueItem } from "@/types/product/VariantType";
 import { useLanguage } from "@/i18n/LanguageContext";
+import type { CategoryResponse } from "@/types/product/Category";
+import type { BrandResponse } from "@/types/product/Brand";
 
 const ProductForm = () => {
     const navigate = useNavigate();
     const { t } = useLanguage();
+    const [modelFormOpen, setModelFormOpen] = useState(false);
     const { id } = useParams<{ id: string }>();
 
     // Fetch product details when editing
@@ -33,7 +37,7 @@ const ProductForm = () => {
         Boolean(id && !isNaN(Number(id)))
     );
     const product = productDetailData?.payload?.data || productDetailData?.payload || productDetailData?.data || productDetailData;
-
+    console.log("Product", product)
     // Mutations & Queries
     const { mutate: createProduct, isPending: isCreating } = useProduct.useCreateProduct();
     const { mutate: updateProduct, isPending: isUpdating } = useProduct.useUpdateProduct();
@@ -55,6 +59,8 @@ const ProductForm = () => {
             noted: "",
             imageUrl: "",
             status: Status.ACTIVE,
+            costPrice: 0,
+            salePrice: 0,
             reorderLevel: 5,
             modelId: 0,
             variantValueIds: [] as number[],
@@ -103,14 +109,16 @@ const ProductForm = () => {
             form.setFieldValue("noted", product.noted || "");
             form.setFieldValue("imageUrl", product.imageUrl || "");
             form.setFieldValue("status", product.status || Status.ACTIVE);
-            form.setFieldValue("reorderLevel", product.reorderLevel ?? 5);
+            form.setFieldValue("costPrice", Number(product.costPrice || 0));
+            form.setFieldValue("salePrice", Number(product.salePrice || 0));
+            form.setFieldValue("reorderLevel", Number(product.reorderLevel || 5));
             form.setFieldValue("modelId", Number(product.modelId || product.model?.id || 0));
 
             const variantIds: number[] = Array.isArray(product.variantValues)
                 ? product.variantValues.map((v: any) => (typeof v === "object" && v !== null ? v.id : Number(v)))
                 : Array.isArray(product.variantValueIds)
-                ? product.variantValueIds.map(Number)
-                : [];
+                    ? product.variantValueIds.map(Number)
+                    : [];
 
             form.setFieldValue("variantValueIds", variantIds);
         }
@@ -151,7 +159,7 @@ const ProductForm = () => {
                         <CardContent className="space-y-5">
                             <FieldGroup>
                                 {/* Model Selection */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-start">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-start">
                                     <FormSelectField
                                         form={form}
                                         name="modelId"
@@ -159,8 +167,16 @@ const ProductForm = () => {
                                         required={true}
                                         placeholder={t("product.select_model")}
                                         options={modelOptions}
+                                        onAdd={() => setModelFormOpen(true)}
                                     />
-
+                                    <FormTextField
+                                        form={form}
+                                        name="reorderLevel"
+                                        label={t("product.reorder_level")}
+                                        type="number"
+                                        placeholder="5"
+                                        required={true}
+                                    />
                                     {/* Dynamic Category & Brand */}
                                     <form.Subscribe selector={(state) => [state.values.modelId]}>
                                         {([modelId]) => {
@@ -173,13 +189,13 @@ const ProductForm = () => {
                                             const categoryName =
                                                 selectedModel.categoryName ||
                                                 categoryData?.payload?.data?.find(
-                                                    (c: any) => c.id === selectedModel.categoryId
+                                                    (c: CategoryResponse) => c.id === selectedModel.categoryId
                                                 )?.name ||
                                                 "-";
                                             const brandName =
                                                 selectedModel.brandName ||
                                                 brandData?.payload?.data?.find(
-                                                    (b: any) => b.id === selectedModel.brandId
+                                                    (b: BrandResponse) => b.id === selectedModel.brandId
                                                 )?.name ||
                                                 "-";
 
@@ -211,23 +227,49 @@ const ProductForm = () => {
                                 </div>
 
                                 {/* Code and Reorder Level */}
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-5 items-center">
+                                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
+                                    <div className="space-y-1.5 flex gap-2 justify-center items-center">
+                                        <FormTextField
+                                            form={form}
+                                            name="code"
+                                            label={t("product.code")}
+                                            type="text"
+                                            placeholder="e.g. PRD-001"
+                                            required={true}
+                                        />
+                                        <Button
+                                            type="button"
+                                            variant="outline"
+                                            size="sm"
+                                            className="gap-1.5 text-xs"
+                                            onClick={() => {
+                                                const timestamp = Date.now().toString(36).toUpperCase();
+                                                const random = Math.random().toString(36).substring(2, 6).toUpperCase();
+                                                const barcode = `PRD-${timestamp}-${random}`;
+                                                form.setFieldValue("code", barcode);
+                                            }}
+                                        >
+                                            <Barcode className="h-3.5 w-3.5" />
+                                            Generate Barcode
+                                        </Button>
+                                    </div>
                                     <FormTextField
                                         form={form}
-                                        name="code"
-                                        label={t("product.code")}
-                                        type="text"
-                                        placeholder="e.g. PRD-001"
-                                        required={true}
-                                    />
-                                    <FormTextField
-                                        form={form}
-                                        name="reorderLevel"
-                                        label={t("product.reorder_level")}
+                                        name="costPrice"
+                                        label="costPrice"
                                         type="number"
                                         placeholder="5"
                                         required={true}
                                     />
+                                    <FormTextField
+                                        form={form}
+                                        name="salePrice"
+                                        label="salePrice"
+                                        type="number"
+                                        placeholder="5"
+                                        required={true}
+                                    />
+
                                 </div>
                             </FieldGroup>
                         </CardContent>
@@ -290,8 +332,8 @@ const ProductForm = () => {
                                                                                 }
                                                                             }}
                                                                             className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer select-none border ${isSelected
-                                                                                    ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
-                                                                                    : "border-border/70 bg-card/60 hover:bg-muted/70 hover:border-foreground/30 text-foreground/90 hover:text-foreground"
+                                                                                ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
+                                                                                : "border-border/70 bg-card/60 hover:bg-muted/70 hover:border-foreground/30 text-foreground/90 hover:text-foreground"
                                                                                 }`}
                                                                         >
                                                                             {val.name}
@@ -379,6 +421,13 @@ const ProductForm = () => {
                     </div>
                 </div>
             </form>
+
+            {/* Inline Model Creation Dialog */}
+            <ModelForm
+                open={modelFormOpen}
+                setOpen={setModelFormOpen}
+                model={null}
+            />
         </div>
     );
 };

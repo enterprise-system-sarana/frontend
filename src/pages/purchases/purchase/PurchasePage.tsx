@@ -12,12 +12,14 @@ import { PurchaseColumns } from "./PurchaseColumn";
 import ConfirmDelete from "@/components/ui/confirmDelete";
 import { PageFilter } from "@/utils/PageFilter";
 import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 import type { Status } from "@/types/enum/status";
 import { PageHeader } from "@/components/ui/page-header";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { ROUTERS } from "@/constants/Route";
+import type { StoreResponse } from "@/types/inventory/Store";
+import type { SupplierResponse } from "@/types/purchases/Supplier";
 
-export const PurchasePage = () => {
+const PurchasePage = () => {
   const navigate = useNavigate();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.PURCHASE.CREATE);
@@ -33,6 +35,7 @@ export const PurchasePage = () => {
   const [storeId, setStoreId] = useState("");
   const [status, setStatus] = useState<Status | undefined>(undefined);
 
+  // console.log("purchase : ", purchase)
   useEffect(() => {
     const handler = setTimeout(() => {
       setPage(1);
@@ -45,28 +48,29 @@ export const PurchasePage = () => {
 
   const suppliers = supplierData?.payload?.data || [];
   const stores = storeData?.payload?.data || [];
-  const { data, isError, isLoading } = usePurchase.useGetAllPurchase({
+  const { data, isError, isLoading } = usePurchase.GetAll({
     page,
     size,
-    reference: search || undefined,
+    referenceNo: search || undefined,
     supplierId:
       supplierId && supplierId !== "all" ? Number(supplierId) : undefined,
     storeId: storeId && storeId !== "all" ? Number(storeId) : undefined,
     status: status,
   });
 
-  const { mutate: deletePurchaseMutate } = usePurchase.useDeletePurchase();
-  const { mutate: approvePurchaseMutate } =
-    usePurchase.useApprovePurchase?.() || { mutate: () => {} };
-  const { mutate: completePurchaseMutate } =
-    usePurchase.useCompletePurchase?.() || { mutate: () => {} };
+  const { mutate: deletePurchaseMutate } = usePurchase.Delete();
+  // const { mutate: approvePurchaseMutate } =
+  //   usePurchase.Approve() || { mutate: () => { } };
+  // const { mutate: completePurchaseMutate } =
+  //   usePurchase.Complete() || { mutate: () => { } };
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
 
   const filteredPurchases = useSearch<PurchaseResponse>(
     data?.payload?.data,
     search,
-    ["reference", "supplierName", "storeName"],
+    ["referenceNo", "supplierName", "storeName"],
   );
+  console.log("filteredPurchases", filteredPurchases);
 
   const dropdowns = useMemo(
     () => [
@@ -74,7 +78,7 @@ export const PurchasePage = () => {
         key: "supplierId",
         placeholder: "Filter by Supplier",
         allLabel: "All Suppliers",
-        options: suppliers.map((sup: any) => ({
+        options: suppliers.map((sup: SupplierResponse) => ({
           label: sup.name,
           value: String(sup.id),
         })),
@@ -83,7 +87,7 @@ export const PurchasePage = () => {
         key: "storeId",
         placeholder: "Filter by Store",
         allLabel: "All Stores",
-        options: stores.map((store: any) => ({
+        options: stores.map((store: StoreResponse) => ({
           label: store.name,
           value: String(store.id),
         })),
@@ -106,7 +110,7 @@ export const PurchasePage = () => {
     () => ({
       supplierId: supplierId || "all",
       storeId: storeId || "all",
-      status: status || ("all" as any),
+      status: status || "all",
     }),
     [supplierId, storeId, status],
   );
@@ -131,8 +135,13 @@ export const PurchasePage = () => {
     setPage(1);
   };
 
+  const handlePageSizeChange = (newSize: number) => {
+    setPage(1);
+    setSize(newSize);
+  };
+
   const handleEdit = (purchase: PurchaseResponse) => {
-    navigate(`/purchase/edit/${purchase.id}`);
+    navigate(ROUTERS.PURCHASE_EDIT.replace(":id", String(purchase.id)));
   };
 
   const handleDelete = (id: number) => {
@@ -144,22 +153,7 @@ export const PurchasePage = () => {
       setOpenConfirmDelete(true);
     }
   };
-
-  const handleApprove = (id: number) => {
-    approvePurchaseMutate(id, {
-      onError: (error: any) => {
-        toast.error(error?.message || "Failed to approve purchase");
-      },
-    });
-  };
-
-  const handleComplete = (id: number) => {
-    completePurchaseMutate(id, {
-      onError: (error: any) => {
-        toast.error(error?.message || "Failed to complete purchase");
-      },
-    });
-  };
+  console.log(purchase);
 
   const confirmDelete = () => {
     if (purchase?.id) {
@@ -182,7 +176,9 @@ export const PurchasePage = () => {
         <PageHeader
           title="Purchases"
           buttonLabel="Add Purchase"
-          onCreate={canCreate ? () => navigate("/purchase/create") : undefined}
+          onCreate={
+            canCreate ? () => navigate(ROUTERS.PURCHASE_CREATE) : undefined
+          }
           hideButton={!canCreate}
         />
 
@@ -192,38 +188,42 @@ export const PurchasePage = () => {
               search={search}
               onSearchChange={setSearch}
               searchPlaceholder="Search reference..."
-              dropdowns={dropdowns}
-              dropdownValues={dropdownValues}
-              onDropdownChange={handleDropdownChange}
+              filterGroups={dropdowns.map((dropdown) => ({
+                key: dropdown.key,
+                label: dropdown.placeholder.replace("Filter by ", ""),
+                options: dropdown.options,
+              }))}
+              filterValues={dropdownValues}
+              onFilterChange={handleDropdownChange}
               onReset={handleReset}
             />
           </div>
 
-        <div className="px-0">
-          <QueryBoundary isLoading={isLoading} isError={isError}>
-            <DataTable
-              columns={PurchaseColumns({
-                onEdit: handleEdit,
-                onDelete: handleDelete,
-                onApprove: handleApprove,
-                onComplete: handleComplete,
-                canEdit: canUpdate,
-                canDelete: canDelete,
-              })}
-              data={filteredPurchases}
-              pagination={{
-                currentPage: page,
-                pageSize: size,
-                totalElements: data?.payload?.pagination?.totalElements || 0,
-                totalPages: data?.payload?.pagination?.totalPages || 1,
-                onPageChange: setPage,
-                onPageSizeChange: setSize,
-              }}
-            />
-          </QueryBoundary>
+          <div className="px-0">
+            <QueryBoundary isLoading={isLoading} isError={isError}>
+              <DataTable
+                columns={PurchaseColumns({
+                  onEdit: handleEdit,
+                  onDelete: handleDelete,
+                  // onApprove: handleApprove,
+                  // onComplete: handleComplete,
+                  canEdit: canUpdate,
+                  canDelete: canDelete,
+                })}
+                data={filteredPurchases}
+                pagination={{
+                  currentPage: page,
+                  pageSize: size,
+                  totalElements: data?.payload?.pagination?.totalElements || 0,
+                  totalPages: data?.payload?.pagination?.totalPages || 1,
+                  onPageChange: setPage,
+                  onPageSizeChange: handlePageSizeChange,
+                }}
+              />
+            </QueryBoundary>
+          </div>
         </div>
       </div>
-    </div>
 
       <ConfirmDelete
         isOpen={openConfirmDelete}
@@ -234,3 +234,5 @@ export const PurchasePage = () => {
     </>
   );
 };
+
+export default PurchasePage;

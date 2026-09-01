@@ -10,9 +10,6 @@ import {
   ShoppingCart,
   Truck,
   Shield,
-  User,
-  UserCog,
-  Key,
   Warehouse,
   StoreIcon,
   Wallet,
@@ -20,10 +17,11 @@ import {
   ShoppingBag,
   CreditCard,
   Boxes,
-
   Users,
   BadgeDollarSign,
   Settings,
+  CircleSmall,
+  LayoutDashboard,
 } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
@@ -40,13 +38,18 @@ import { ROUTERS } from "@/constants/Route";
 const data = {
   navMain: [
     {
+      title: "Dashboard",
+      url: ROUTERS.DASHBOARD,
+      icon: LayoutDashboard,
+      // permission: PERMISSION.DASHBOARD.READ,
+    },
+    {
       title: "Products",
       url: "#",
       icon: Package,
       isActive: true,
       badge: undefined as string | undefined,
       items: [
-
         {
           title: "List Product",
           url: ROUTERS.PRODUCT,
@@ -60,8 +63,7 @@ const data = {
           // permission: PERMISSION.PRODUCT.CREATE,
         },
       ],
-    }
-    ,
+    },
     {
       title: "Expenses",
       url: "#",
@@ -115,9 +117,8 @@ const data = {
           icon: Layers,
           // permission: PERMISSION.PRODUCT.READ,
         },
-      ]
-    }
-    ,
+      ],
+    },
     {
       title: "Purchases",
       url: "#",
@@ -201,7 +202,7 @@ const data = {
           url: ROUTERS.CURRENCY,
           icon: Coins,
           permission: PERMISSION.CURRENCY.READ,
-        }
+        },
       ],
     },
     {
@@ -213,25 +214,26 @@ const data = {
         {
           title: "User",
           url: ROUTERS.USER,
-          icon: User,
+          icon: CircleSmall,
           permission: PERMISSION.USER.READ,
         },
         {
           title: "Role",
           url: ROUTERS.ROLE,
-          icon: UserCog,
+          icon: CircleSmall,
           permission: PERMISSION.ROLE.READ,
         },
-        {
-          title: "Permission Groups",
-          url: ROUTERS.GROUP_PERMISSION,
-          icon: Shield,
-          permission: PERMISSION.PERMISSION_GROUP.READ,
-        },
+        // {
+        //   title: "Permission Groups",
+        //   url: ROUTERS.GROUP_PERMISSION,
+        //   icon: CircleSmall,
+        //   permission: PERMISSION.PERMISSION_GROUP.READ,
+        // },
+        // <CircleSmall />
         {
           title: "Role Permissions",
           url: ROUTERS.ROLE_PERMISSIONS,
-          icon: Key,
+          icon: CircleSmall,
           permission: PERMISSION.PERMISSION.READ,
         },
       ],
@@ -259,28 +261,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="border-r border-sidebar-border/60 bg-sidebar shadow-none"
     >
       {/* Brand Logo Header */}
-      <SidebarHeader className="border-b-0 px-5 py-5">
+      <SidebarHeader className="border-b-0 px-5 py-3">
         <div className="flex items-center gap-3 px-2">
-          <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 ring-1 ring-primary/10">
-            <img
-              src="/logo.png"
-              alt="Logo"
-              className="size-7 object-contain"
-            />
+          <div className="">
+            <img src="/logo.png" alt="Logo" className="size-7 object-contain" />
           </div>
 
           <div className="min-w-0">
-            <p className="truncate text-sm font-bold tracking-tight text-foreground">
+            <p className="text-sm font-bold tracking-tight text-foreground">
               360System
             </p>
-            <p className="truncate text-[11px] font-medium text-muted-foreground">
+            <p className="text-[11px] font-medium text-muted-foreground">
               Inventory Management
             </p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent className="px-3 py-2 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-muted">
+      <SidebarContent>
         <NavMain items={filteredNavMain} />
       </SidebarContent>
     </Sidebar>

@@ -71,9 +71,9 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
         defaultValues: {
             reference: expense?.reference || "",
             amount: expense?.amount ?? 0,
-            expenseTypeId: expense?.expenseTypeId || 0,
-            storeId: expense?.storeId || 0,
-            bankId: expense?.bankId || 0,
+            expenseTypeId: expense?.expenseTypeId || 1,
+            storeId: expense?.storeId || 1,
+            bankId: expense?.bankId || 1,
             note: expense?.note || "",
             description: expense?.description || "",
             status: expense?.status || Status.ACTIVE,

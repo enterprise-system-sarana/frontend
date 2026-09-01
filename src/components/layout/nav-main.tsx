@@ -6,7 +6,6 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
-  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -39,16 +38,19 @@ export function NavMain({
   const { t } = useLanguage();
 
   // Find the menu item that contains the currently active route
-  const activeMenuTitle = items.find((item) =>
-    item.items?.some(
-      (subItem) =>
-        location.pathname === subItem.url ||
-        location.pathname.startsWith(subItem.url),
-    )
-  )?.title || null;
+  const activeMenuTitle =
+    items.find((item) =>
+      item.items?.some(
+        (subItem) =>
+          location.pathname === subItem.url ||
+          location.pathname.startsWith(subItem.url),
+      ),
+    )?.title || null;
 
   // Single open menu state (accordion behavior)
-  const [openMenuKey, setOpenMenuKey] = useState<string | null>(activeMenuTitle);
+  const [openMenuKey, setOpenMenuKey] = useState<string | null>(
+    activeMenuTitle,
+  );
 
   // Keep open menu in sync when route changes
   useEffect(() => {
@@ -59,38 +61,38 @@ export function NavMain({
 
   const translateTitle = (title: string) => {
     const map: Record<string, string> = {
-      "Dashboard": t("nav.dashboard"),
-      "Products": t("nav.products"),
+      Dashboard: t("nav.dashboard"),
+      Products: t("nav.products"),
       "List Product": t("nav.list_product"),
-      "Product": t("nav.product"),
+      Product: t("nav.product"),
       "Create Product": t("nav.create_product"),
       "Edit Product": t("nav.edit_product"),
-      "Category": t("nav.category"),
-      "Brand": t("nav.brand"),
-      "Model": t("nav.model"),
+      Category: t("nav.category"),
+      Brand: t("nav.brand"),
+      Model: t("nav.model"),
       "Variant Type": t("nav.variant_type"),
       "Variant Value": t("nav.variant_value"),
-      "SubCategory": t("nav.sub_category"),
-      "Unit": t("nav.unit"),
-      "Expenses": t("nav.expenses"),
-      "Expense": t("nav.expense"),
+      SubCategory: t("nav.sub_category"),
+      Unit: t("nav.unit"),
+      Expenses: t("nav.expenses"),
+      Expense: t("nav.expense"),
       "Expense Type": t("nav.expense_type"),
-      "Setting": t("nav.settings"),
-      "Settings": t("nav.settings"),
-      "Purchases": t("nav.purchases"),
-      "Supplier": t("nav.supplier"),
-      "Purchase": t("nav.purchase"),
+      Setting: t("nav.settings"),
+      Settings: t("nav.settings"),
+      Purchases: t("nav.purchases"),
+      Supplier: t("nav.supplier"),
+      Purchase: t("nav.purchase"),
       "Create Purchase": t("nav.create_purchase"),
       "Purchase Payment": t("nav.purchase_payment"),
-      "Inventory": t("nav.inventory"),
-      "Store": t("nav.store"),
-      "Stock": t("nav.stock"),
-      "Finance": t("nav.finance"),
-      "Bank": t("nav.bank"),
-      "Currency": t("nav.currency"),
-      "Security": t("nav.security"),
-      "User": t("nav.user"),
-      "Role": t("nav.role"),
+      Inventory: t("nav.inventory"),
+      Store: t("nav.store"),
+      Stock: t("nav.stock"),
+      Finance: t("nav.finance"),
+      Bank: t("nav.bank"),
+      Currency: t("nav.currency"),
+      Security: t("nav.security"),
+      User: t("nav.user"),
+      Role: t("nav.role"),
       "Group Permission": t("nav.group_permission"),
       "Permission Groups": t("nav.permission_groups"),
       "Role Permissions": t("nav.role_permissions"),
@@ -119,18 +121,69 @@ export function NavMain({
     <>
       {groupedItems.map((group) => (
         <SidebarGroup key={group.label} className="space-y-0.5 py-1">
-          <SidebarGroupLabel className="mb-1 px-4 text-[11px] font-semibold uppercase tracking-[0.15em] text-sidebar-foreground/50">
-            {translateTitle(group.label)}
-          </SidebarGroupLabel>
-
           <SidebarMenu className="space-y-0.5">
             {group.items.map((item) => {
+              const hasSubItems = Boolean(item.items && item.items.length > 0);
+
+              // Direct route check for items without children (e.g., Dashboard)
+              const isDirectActive =
+                !hasSubItems &&
+                (location.pathname === item.url ||
+                  (item.url !== "#" && location.pathname.startsWith(item.url)));
+
               const hasActiveChild = item.items?.some(
                 (subItem) =>
                   location.pathname === subItem.url ||
                   location.pathname.startsWith(subItem.url),
               );
 
+              // ----------------------------------------------------
+              // 1. RENDER DIRECT LINK (FOR ITEMS WITHOUT SUB-ITEMS)
+              // ----------------------------------------------------
+              if (!hasSubItems) {
+                const ItemIcon = item.icon;
+                return (
+                  <SidebarMenuItem key={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      tooltip={translateTitle(item.title)}
+                      isActive={isDirectActive}
+                      className={`
+                        group/btn relative mx-1 h-/[42px] rounded-xl px-3 text-[14px] font-medium
+                        shadow-none transition-all duration-200
+                        ${isDirectActive
+                          ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-/[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                          : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        }
+                      `}
+                    >
+                      <Link to={item.url} className="flex items-center gap-2.5 w-full">
+                        {ItemIcon && (
+                          <ItemIcon
+                            className={`h-5 w-5 shrink-0 ${isDirectActive
+                              ? "text-primary"
+                              : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
+                              }`}
+                            strokeWidth={1.75}
+                          />
+                        )}
+                        <span className="flex-1 truncate">
+                          {translateTitle(item.title)}
+                        </span>
+                        {item.badge && (
+                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                            {item.badge}
+                          </span>
+                        )}
+                      </Link>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              }
+
+              // ----------------------------------------------------
+              // 2. RENDER COLLAPSIBLE DROPDOWN (FOR ITEMS WITH SUB-ITEMS)
+              // ----------------------------------------------------
               const isOpen = openMenuKey === item.title;
 
               return (
@@ -149,10 +202,10 @@ export function NavMain({
                         tooltip={translateTitle(item.title)}
                         isActive={Boolean(hasActiveChild)}
                         className={`
-                          group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
+                          group/btn relative mx-1 h-/[42px] rounded-xl px-3 text-[14px] font-medium
                           shadow-none transition-all duration-200
                           ${hasActiveChild
-                            ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                            ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-/[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
                             : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                           }
                         `}
@@ -166,7 +219,9 @@ export function NavMain({
                             strokeWidth={1.75}
                           />
                         )}
-                        <span className="flex-1 truncate">{translateTitle(item.title)}</span>
+                        <span className="flex-1 truncate">
+                          {translateTitle(item.title)}
+                        </span>
                         {item.badge && (
                           <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
                             {item.badge}
@@ -182,7 +237,7 @@ export function NavMain({
                     </CollapsibleTrigger>
 
                     <CollapsibleContent>
-                      <SidebarMenuSub className="mt-0.5 ml-[18px] border-l border-border/40 py-0.5 pl-3">
+                      <SidebarMenuSub className="mt-0.5 ml-/[18px] border-l border-border/40 py-0.5 pl-3">
                         {item.items?.map((subItem) => {
                           const isActive =
                             location.pathname === subItem.url ||
@@ -195,7 +250,7 @@ export function NavMain({
                                 asChild
                                 isActive={isActive}
                                 className={`
-                                  h-[34px] rounded-lg px-2.5 text-[13px] font-medium
+                                  h-/[34px] rounded-lg px-2.5 text-[13px] font-medium
                                   transition-all duration-150
                                   ${isActive
                                     ? "bg-primary/8 text-primary font-semibold"
@@ -218,7 +273,7 @@ export function NavMain({
                                   ) : (
                                     <span
                                       className={`
-                                        inline-flex h-[5px] w-[5px] shrink-0 rounded-full
+                                        inline-flex h-/[5px] w-/[5px] shrink-0 rounded-full
                                         transition-all duration-150
                                         ${isActive
                                           ? "bg-primary"

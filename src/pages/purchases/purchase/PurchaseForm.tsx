@@ -1,763 +1,821 @@
-// import { useEffect, useMemo, useState } from "react";
-// import { useForm } from "@tanstack/react-form";
-// import { useNavigate, useParams } from "react-router-dom";
-// import { Button } from "@/components/ui/button";
-// import { FieldGroup } from "@/components/ui/field";
-// import FormTextField, { FormSelectField } from "@/components/ui/FormTextField";
-// import { Status } from "@/types/enum/status";
-// import { PurchaseStatus } from "@/types/enum/purchaseStatus";
-// import { PurchasePaymentStatus } from "@/types/enum/purchasePaymentStatus";
-// import {
-//   PurchaseSchema,
-//   type PurchaseFormValues,
-//   type PurchaseItem,
-//   type PurchaseRequest,
-// } from "@/types/purchases/Purchase";
-// import { usePurchase } from "@/hooks/purchases/usePurchase";
-// import { useSupplier } from "@/hooks/purchases/useSupplier";
-// import { useStore } from "@/hooks/inventory/useStore";
-// import { useProduct } from "@/hooks/product/useProduct";
-// import {
-//   Table,
-//   TableBody,
-//   TableCell,
-//   TableHead,
-//   TableHeader,
-//   TableRow,
-// } from "@/components/ui/table";
-// import { Input } from "@/components/ui/input";
-// import {
-//   Select,
-//   SelectContent,
-//   SelectItem,
-//   SelectTrigger,
-//   SelectValue,
-// } from "@/components/ui/select";
-// import { AlertCircle,Package, Plus, Trash2 } from "lucide-react";
-// import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from "react";
+import { useForm, useStore as useFormStore } from "@tanstack/react-form";
+import { useNavigate, useParams } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { FieldGroup } from "@/components/ui/field";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { Plus, ScanLine, Search, Trash2 } from "lucide-react";
+import FormTextField, { FormSelectField } from "@/components/ui/FormTextField";
+import { Status } from "@/types/enum/status";
+import {
+  PurchaseSchema,
+  type PurchaseFormValues,
+} from "@/types/purchases/Purchase";
+import { usePurchase } from "@/hooks/purchases/usePurchase";
+import { useSupplier } from "@/hooks/purchases/useSupplier";
+import { useStore } from "@/hooks/inventory/useStore";
+import { useProduct } from "@/hooks/product/useProduct";
+import FormSupplier from "@/pages/purchases/supplier/SupplierForm";
+import { ROUTERS } from "@/constants/Route";
+import type { StoreResponse } from "@/types/inventory/Store";
+import type { SupplierResponse } from "@/types/purchases/Supplier";
+import type { ProductResponse } from "@/types/product/Product";
+import { useBank } from "@/hooks/finance/useBank";
+import FormBank from "@/pages/finance/bank/BankForm";
 
-// type ProductUnit = { id: number; name: string; costPrice?: number };
+function formatCurrency(value: number) {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+  }).format(value || 0);
+}
 
-// const getProductUnits = (product: any): ProductUnit[] => {
-//   if (Array.isArray(product?.units) && product.units.length > 0) {
-//     return product.units.map((u: any) => ({
-//       id: Number(u.id ?? u.unitId),
-//       name: u.name ?? u.unitName ?? "",
-//       costPrice: u.costPrice != null ? Number(u.costPrice) : undefined,
-//     }));
-//   }
-//   if (product?.unitId) {
-//     return [
-//       {
-//         id: Number(product.unitId),
-//         name: product.unitName || "",
-//         costPrice:
-//           product.costPrice != null ? Number(product.costPrice) : undefined,
-//       },
-//     ];
-//   }
-//   return [];
-// };
+function emptyItem() {
+  return {
+    productId: 0,
+    quantity: 1,
+    cost: 0,
+    price: 0,
+    subtotal: 0,
+    serialNumbers: [] as string[],
+  };
+}
 
-// type EditableItem = PurchaseItem & { uid: string };
+function getTodayDate() {
+  const now = new Date();
+  const pad = (value: number) => String(value).padStart(2, "0");
+  return `${now.getFullYear()}-${pad(now.getMonth() + 1)}-${pad(now.getDate())}`;
+}
 
-// const genUid = () =>
-//   typeof crypto !== "undefined" && "randomUUID" in crypto
-//     ? crypto.randomUUID()
-//     : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+export default function PurchaseForm() {
+  const { id } = useParams<{ id: string }>();
+  const isEditing = Boolean(id);
+  const navigate = useNavigate();
 
-// const emptyItem = (): EditableItem => ({
-//   uid: genUid(),
-//   productId: 0,
-//   unitId: 0,
-//   quantity: 1,
-//   costPrice: 0,
-//   totalDiscount: 0,
-//   unitName: "",
-//   productName: "",
-// });
+  // Loaders
+  const { data: suppliers } = useSupplier.useGetAllSupplier({
+    page: 0,
+    size: 1000,
+  });
 
-// const formatCurrency = (value: number) =>
-//   Number.isFinite(value) ? `$${value.toFixed(2)}` : "$0.00";
+  const { data: banks } = useBank.useGetAllBank({
+    page: 0,
+    size: 1000,
+  });
+  const [bankFormOpen, setBankFormOpen] = useState(false);
+  const { data: stores } = useStore.useGetAllStore({ page: 0, size: 1000 });
+  const { data: products } = useProduct.useGetAllProduct({
+    page: 0,
+    size: 1000,
+  });
+  const productList: ProductResponse[] = products?.payload?.data ?? [];
 
-// const summarizeZodErrors = (error: any): string[] => {
-//   const messages = new Set<string>();
-//   for (const issue of error.issues) {
-//     const path = issue.path;
-//     if (path[0] === "items" && typeof path[1] === "number") {
-//       messages.add(`Item ${Number(path[1]) + 1}: ${issue.message}`);
-//     } else {
-//       messages.add(issue.message);
-//     }
-//   }
-//   return Array.from(messages);
-// };
+  const { data: existingPurchase } = usePurchase.GetPurchaseById(Number(id), {
+    enabled: isEditing,
+  });
+  const purchaseDetail =
+    existingPurchase?.payload?.data ??
+    existingPurchase?.payload ??
+    existingPurchase?.data ??
+    existingPurchase;
 
-// export default function PurchaseForm() {
-//   const navigate = useNavigate();
-//   const { id } = useParams();
-//   const isEditing = Boolean(id);
-//   const { data: purchaseData } = usePurchase.useGetPurchaseById(Number(id));
-//   const purchase = purchaseData?.payload;
-//   console.log("Data", purchase);
+  const createPurchase = usePurchase.Create();
+  const updatePurchase = usePurchase.Update();
+  const isPending = createPurchase.isPending || updatePurchase.isPending;
+  const [productSearch, setProductSearch] = useState("");
+  const [serialError, setSerialError] = useState("");
+  const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
 
-//   const { mutate: createPurchaseMutate, isPending: isCreating } =
-//     usePurchase.useCreatePurchase();
-//   const { mutate: updatePurchaseMutate, isPending: isUpdating } =
-//     usePurchase.useUpdatePurchase();
+  const form = useForm({
+    defaultValues: {
+      referenceNo: "",
+      purchaseDate: getTodayDate(),
+      note: "",
+      supplierId: 0,
+      storeId: 1,
+      bankId: 1,
+      discount: 0,
+      total: 0,
+      grandTotal: 0,
+      paidAmount: 0,
+      paymentStatus: "PENDING",
+      status: Status.ACTIVE,
+      items: [emptyItem()],
+    } as PurchaseFormValues,
+    validators: {
+      onSubmit: PurchaseSchema,
+    },
+    onSubmit: async ({ value }) => {
+      console.log("Submitting form with value:", value);
+      const missingSerials = value.items.some((item: any) => {
+        const serials = (item.serialNumbers ?? [])
+          .map((serial: string) => serial.trim())
+          .filter(Boolean);
+        const itemQuantity = Math.max(0, Number(item.quantity) || 0);
+        return (
+          serials.length !== itemQuantity ||
+          new Set(serials).size !== serials.length
+        );
+      });
 
-//   const isPending = isCreating || isUpdating;
+      if (missingSerials) {
+        setSerialError("Each item requires one unique serial number per unit.");
+        return;
+      }
+      setSerialError("");
+      const items = value.items.map((item: any) => ({
+        productId: Number(item.productId),
+        quantity: Number(item.quantity),
+        costPrice: Number(item.cost),
+        price: Number(item.price) || 0,
+        serialNumbers: (item.serialNumbers ?? []).filter(Boolean),
+      }));
+      const total = items.reduce(
+        (sum: number, item: any) => sum + item.costPrice * item.quantity,
+        0,
+      );
+      const discount = Number(value.discount) || 0;
+      const grandTotal = Math.max(total - discount, 0);
+      const paidAmount = Number(value.paidAmount) || 0;
+      // const paymentStatus =
+      //   grandTotal > 0 && paidAmount >= grandTotal
+      //     ? PurchasePaymentStatus.Paid
+      //     : PurchasePaymentStatus.Pending;
 
-//   const { data: suppliersData } = useSupplier.useGetAllSupplier();
-//   const { data: storesData } = useStore.useGetAllStore();
-//   const { data: productsData } = useProduct.useGetAllProduct({page:1 , size: 10});
+      const payload = {
+        ...value,
+        supplierId: Number(value.supplierId),
+        storeId: Number(value.storeId),
+        bankId: Number(value.bankId),
+        discount,
+        paidAmount,
+        paymentStatus: value.paymentStatus,
+        total,
+        grandTotal,
+        items,
+      };
 
-//   const suppliers = suppliersData?.payload?.data || [];
-//   const stores = storesData?.payload?.data || [];
-//   const products = productsData?.payload?.data || [];
+      if (isEditing && id) {
+        await updatePurchase.mutateAsync({ id: Number(id), request: payload });
+      } else {
+        await createPurchase.mutateAsync(payload);
+      }
+      navigate(ROUTERS.PURCHASE);
+    },
+  });
 
-//   const [items, setItems] = useState<EditableItem[]>([]);
-//   const [itemsInitialized, setItemsInitialized] = useState(false);
-//   const [itemsTouched, setItemsTouched] = useState(false);
-//   const [formErrors, setFormErrors] = useState<string[]>([]);
+  // Track active form values for totals calculation and status sync
+  const formValues = useFormStore(form.store, (state) => state.values);
 
-//   const form = useForm({
-//     defaultValues: {
-//       reference: purchase?.reference || "",
-//       date: purchase?.date
-//         ? purchase.date.split("T")[0]
-//         : new Date().toISOString().split("T")[0],
-//       note: purchase?.note || "",
-//       supplierId: purchase?.supplierId ? String(purchase.supplierId) : "",
-//       storeId: purchase?.storeId ? String(purchase.storeId) : "",
-//       sellerId: purchase?.sellerId ? String(purchase.sellerId) : "",
-//       orderDiscount: purchase?.orderDiscount ?? 0,
-//       total: purchase?.total || 0,
-//       totalDiscount: purchase?.totalDiscount || 0,
-//       grandTotal: purchase?.grandTotal || 0,
-//       purchasesStatus: purchase?.purchasesStatus || PurchaseStatus.Ordered,
-//       paymentStatus: purchase?.paymentStatus || PurchasePaymentStatus.Pending,
-//       status: purchase?.status || Status.Active,
-//       items: [],
-//     } as PurchaseFormValues,
-//     validators: {
-//       onSubmit: PurchaseSchema,
-//     },
-//     onSubmitInvalid: ({ formApi }) => {
-//       const result = PurchaseSchema.safeParse(formApi.state.values);
-//       setFormErrors(
-//         !result.success
-//           ? summarizeZodErrors(result.error)
-//           : ["Please check every field, including items, and try again."],
-//       );
-//     },
-//     onSubmit: async ({ value }) => {
-//       setFormErrors([]);
+  // Auto-sync Grand Total, Paid Amount, and Payment Status
+  useEffect(() => {
+    const itemsTotal = (formValues.items || []).reduce(
+      (sum: number, item: any) =>
+        sum + (Number(item.cost) || 0) * (Number(item.quantity) || 0),
+      0,
+    );
 
-//       const itemsTotal = value.items.reduce(
-//         (sum, item: any) =>
-//           sum + Number(item.costPrice || 0) * Number(item.quantity || 0),
-//         0,
-//       );
-//       const itemsDiscount = value.items.reduce(
-//         (sum, item: any) => sum + Number(item.totalDiscount || 0),
-//         0,
-//       );
-//       const orderDiscount = Number(value.orderDiscount ?? 0);
-//       const grandTotal = Math.max(
-//         0,
-//         itemsTotal - itemsDiscount - orderDiscount,
-//       );
+    const discount = Number(formValues.discount) || 0;
+    const computedGrandTotal = Math.max(itemsTotal - discount, 0);
+    const paidAmount = Number(formValues.paidAmount) || 0;
 
-//       const payload: PurchaseRequest = {
-//         reference: String(value.reference),
-//         date: value.date
-//           ? new Date(value.date).toISOString()
-//           : new Date().toISOString(),
-//         note: value.note ? String(value.note) : undefined,
-//         supplierId: Number(value.supplierId),
-//         storeId: Number(value.storeId),
-//         sellerId: Number(value.sellerId ?? 0),
-//         orderDiscount,
-//         total: itemsTotal,
-//         totalDiscount: itemsDiscount,
-//         grandTotal,
-//         purchasesStatus: value.purchasesStatus,
-//         paymentStatus: value.paymentStatus,
-//         status: value.status,
-//         items: value.items.map((item: any) => ({
-//           productId: Number(item.productId),
-//           unitId: Number(item.unitId),
-//           quantity: Number(item.quantity),
-//           costPrice: Number(item.costPrice),
-//           totalDiscount: Number(item.totalDiscount),
-//           productName: item.productName,
-//           unitName: item.unitName,
-//         })),
-//       };
+    if (!isEditing && (paidAmount === 0 || paidAmount === computedGrandTotal)) {
+      form.setFieldValue("paidAmount", computedGrandTotal);
+    }
 
-//       const handleSuccess = () => navigate("/purchase");
+    // const currentPaid =
+    //   !isEditing && paidAmount === 0 ? computedGrandTotal : paidAmount;
 
-//       if (isEditing && purchase) {
-//         updatePurchaseMutate(
-//           { id: purchase.id, request: payload },
-//           { onSuccess: handleSuccess },
-//         );
-//       } else {
-//         createPurchaseMutate(payload, { onSuccess: handleSuccess });
-//       }
-//     },
-//   });
+    // const computedStatus =
+    //   computedGrandTotal > 0 && currentPaid >= computedGrandTotal
+    //     ? PurchasePaymentStatus.Paid
+    //     : PurchasePaymentStatus.Pending;
 
-//   useEffect(() => {
-//     if (purchase && !itemsInitialized) {
-//       const matchedSupplier = suppliers.find(
-//         (s: any) => s.name === purchase.supplierName,
-//       );
-//       const matchedStore = stores.find(
-//         (s: any) => s.name === purchase.storeName,
-//       );
+    // if (formValues.paymentStatus !== computedStatus) {
+    //   form.setFieldValue("paymentStatus", computedStatus);
+    // }
+  }, [formValues.items, formValues.discount, formValues.paidAmount, isEditing]);
 
-//       form.setFieldValue("reference", purchase.reference || "");
-//       form.setFieldValue(
-//         "date",
-//         purchase.date ? purchase.date.split("T")[0] : "",
-//       );
-//       form.setFieldValue(
-//         "supplierId",
-//         matchedSupplier ? String(matchedSupplier.id) : "",
-//       );
-//       form.setFieldValue(
-//         "storeId",
-//         matchedStore ? String(matchedStore.id) : "",
-//       );
-//       form.setFieldValue("note", purchase.note || "");
-//       form.setFieldValue(
-//         "purchasesStatus",
-//         purchase.purchasesStatus || PurchaseStatus.Ordered,
-//       );
-//       form.setFieldValue(
-//         "paymentStatus",
-//         purchase.paymentStatus || PurchasePaymentStatus.Pending,
-//       );
-//       form.setFieldValue("status", purchase.status || Status.Active);
-//       if (purchase.items && purchase.items.length > 0) {
-//         const mappedItems = purchase.items.map((item: any) => {
-//           const product = products.find(
-//             (p: any) => p.id === Number(item.productId),
-//           );
-//           const units = getProductUnits(product);
-//           const matchedUnit = units.find(
-//             (u) =>
-//               u.id === Number(item.unitId) ||
-//               u.name.toLowerCase() === (item.unitName || "").toLowerCase(),
-//           );
-//           const resolvedUnitId = matchedUnit
-//             ? matchedUnit.id
-//             : units[0]?.id || Number(item.unitId || 0);
+  // Prefill form in edit mode
+  useEffect(() => {
+    const purchase = purchaseDetail;
+    if (!purchase || typeof purchase !== "object") return;
 
-//           return {
-//             uid: genUid(),
-//             productId: Number(item.productId),
-//             unitId: Number(resolvedUnitId),
-//             quantity: Number(item.quantity ?? 1),
-//             costPrice: Number(item.costPrice ?? 0),
-//             totalDiscount: Number(item.totalDiscount ?? 0),
-//             productName: item.productName || product?.name || "",
-//             unitName:
-//               matchedUnit?.name || item.unitName || units[0]?.name || "",
-//           };
-//         });
+    const supplierId = purchase.supplierId ?? purchase.supplier?.id ?? 0;
+    const storeId = purchase.storeId ?? purchase.store?.id ?? 1;
+    const bankId = purchase.bankId ?? purchase.bank?.id ?? 1;
 
-//         setItems(mappedItems);
-//         form.setFieldValue("items", mappedItems as any);
-//       }
+    const formattedDate = purchase.purchaseDate
+      ? String(purchase.purchaseDate).split("T")[0]
+      : getTodayDate();
 
-//       setItemsInitialized(true);
-//     }
-//   }, [purchase, itemsInitialized, suppliers, stores, products, form]);
-//   useEffect(() => {
-//     const normalized = items.map((item) => ({
-//       productId: Number(item.productId),
-//       unitId: Number(item.unitId),
-//       quantity: Number(item.quantity),
-//       costPrice: Number(item.costPrice),
-//       totalDiscount: Number(item.totalDiscount),
-//       productName: item.productName,
-//       unitName: item.unitName,
-//     }));
-//     form.setFieldValue("items", normalized as any);
+    form.reset({
+      referenceNo: purchase.referenceNo ?? "",
+      purchaseDate: formattedDate,
+      note: purchase.note ?? "",
+      supplierId,
+      storeId,
+      bankId,
+      discount: purchase.discount ?? 0,
+      total: purchase.total ?? 0,
+      grandTotal: purchase.grandTotal ?? 0,
+      paidAmount: purchase.paidAmount ?? 0,
+      paymentStatus: purchase.paymentStatus ?? "PENDING",
+      status: purchase.status ?? Status.ACTIVE,
+      items: purchase.items?.length
+        ? purchase.items.map((item: any) => ({
+            productId: item.productId ?? item.product?.id ?? 0,
+            quantity: item.quantity ?? 1,
+            cost: item.costPrice ?? item.cost ?? item.product?.costPrice ?? 0,
+            price: item.price ?? item.product?.salePrice ?? 0,
+            subtotal:
+              (item.costPrice ?? item.cost ?? item.product?.costPrice ?? 0) *
+              (item.quantity ?? 1),
+            serialNumbers: item.serialNumbers ?? [],
+          }))
+        : [emptyItem()],
+    });
+  }, [purchaseDetail, form]);
 
-//     const itemsTotal = normalized.reduce(
-//       (sum, item) => sum + item.costPrice * item.quantity,
-//       0,
-//     );
-//     const itemsDiscount = normalized.reduce(
-//       (sum, item) => sum + item.totalDiscount,
-//       0,
-//     );
-//     const orderDiscount = Number(form.state.values.orderDiscount ?? 0);
-//     form.setFieldValue("total", itemsTotal);
-//     form.setFieldValue("totalDiscount", itemsDiscount);
-//     form.setFieldValue(
-//       "grandTotal",
-//       Math.max(0, itemsTotal - itemsDiscount - orderDiscount),
-//     );
-//   }, [items]);
+  return (
+    <div className="py-2 pb-12">
+      <div className="flex items-center justify-between mb-6 pb-4 border-b">
+        <div className="flex items-center gap-3">
+          <h1 className="text-2xl font-bold">
+            {isEditing ? "Edit Purchase" : "Create New Purchase"}
+          </h1>
+        </div>
+      </div>
 
-//   const addItem = () => setItems((prev) => [...prev, emptyItem()]);
-//   const removeItem = (uid: string) =>
-//     setItems((prev) => prev.filter((item) => item.uid !== uid));
-//   const updateItem = (uid: string, patch: Partial<EditableItem>) =>
-//     setItems((prev) =>
-//       prev.map((item) => (item.uid === uid ? { ...item, ...patch } : item)),
-//     );
+      <form
+        id="purchase-form"
+        onSubmit={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          form.handleSubmit();
+        }}
+      >
+        <section className="mb-8 bg-card border rounded-md p-6 shadow-xs">
+          <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
+            <FormTextField
+              form={form}
+              name="referenceNo"
+              label="Reference Number"
+              placeholder="Purchase reference number"
+              type="text"
+            />
+            <FormTextField
+              form={form}
+              name="purchaseDate"
+              label="Purchase Date"
+              placeholder="Select date"
+              type="date"
+              required
+            />
+            <FormSelectField
+              form={form}
+              name="supplierId"
+              label="Supplier"
+              placeholder="Select supplier"
+              options={suppliers?.payload?.data.map(
+                (supplier: SupplierResponse) => ({
+                  value: String(supplier.id),
+                  label: supplier.name,
+                }),
+              )}
+              required
+              onAdd={() => setIsSupplierDialogOpen(true)}
+            />
+            <FormSelectField
+              form={form}
+              name="storeId"
+              label="Store"
+              placeholder="Select store"
+              options={stores?.payload?.data.map((store: StoreResponse) => ({
+                value: String(store.id),
+                label: store.name,
+              }))}
+              required
+              onAdd={() => window.open(ROUTERS.STORE_CREATE, "_blank")}
+            />
 
-//   const selectProduct = (uid: string, productIdStr: string) => {
-//     const product = products.find((p: any) => p.id === Number(productIdStr));
-//     const units = getProductUnits(product);
-//     const defaultUnit = units[0];
-//     updateItem(uid, {
-//       productId: Number(productIdStr),
-//       unitId: defaultUnit ? Number(defaultUnit.id) : 0,
-//       productName: product?.name || "",
-//       unitName: defaultUnit?.name || "",
-//       costPrice: Number(defaultUnit?.costPrice ?? product?.costPrice ?? 0),
-//     });
-//   };
+            <FormTextField
+              form={form}
+              name="note"
+              label="Note"
+              placeholder="Enter notes (optional)"
+              type="text"
+            />
+          </FieldGroup>
+        </section>
 
-//   const selectUnit = (uid: string, productIdStr: string, unitIdStr: string) => {
-//     const product = products.find((p: any) => p.id === Number(productIdStr));
-//     const units = getProductUnits(product);
-//     const unit = units.find((u) => u.id === Number(unitIdStr));
-//     updateItem(uid, {
-//       unitId: unit ? Number(unit.id) : 0,
-//       unitName: unit?.name || "",
-//       ...(unit?.costPrice != null ? { costPrice: Number(unit.costPrice) } : {}),
-//     });
-//   };
+        <FormSupplier
+          open={isSupplierDialogOpen}
+          setOpen={setIsSupplierDialogOpen}
+          supplier={null}
+          onCreated={(response) => {
+            const supplier = (response as any)?.payload ?? response;
+            if (supplier?.id) form.setFieldValue("supplierId", supplier.id);
+          }}
+        />
 
-//   const orderDiscountLive = form.state.values.orderDiscount ?? 0;
-//   const { itemsTotal, itemsDiscount, grandTotal } = useMemo(() => {
-//     const itemsTotal = items.reduce(
-//       (sum, item) => sum + item.costPrice * item.quantity,
-//       0,
-//     );
-//     const itemsDiscount = items.reduce(
-//       (sum, item) => sum + item.totalDiscount,
-//       0,
-//     );
-//     const grandTotal = Math.max(
-//       0,
-//       itemsTotal - itemsDiscount - Number(orderDiscountLive || 0),
-//     );
-//     return { itemsTotal, itemsDiscount, grandTotal };
-//   }, [items, orderDiscountLive]);
+        {/* --------------- items --------------- */}
+        <section className="mb-8 bg-card border rounded-md p-3 shadow-xs">
+          <div className="flex items-center justify-between mb-2">
+            <div>
+              <h2 className="text-lg font-semibold">Items</h2>
+            </div>
+          </div>
 
-//   const showItemsError = itemsTouched && items.length === 0;
+          <form.Field name="items" mode="array">
+            {(itemsField) => (
+              <div className="flex flex-col gap-2 sm:flex-row">
+                <div className="relative flex-1 mb-5">
+                  <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                  <Input
+                    value={productSearch}
+                    onChange={(event) => setProductSearch(event.target.value)}
+                    onKeyDown={(event) => {
+                      if (event.key !== "Enter") return;
+                      event.preventDefault();
+                      const search = productSearch.trim().toLowerCase();
+                      if (!search) return;
+                      const product = productList.find((item) =>
+                        [
+                          item.code,
+                          item.modelName,
+                          item.brandName,
+                          item.categoryName,
+                        ]
+                          .filter(Boolean)
+                          .some((value) =>
+                            value.toLowerCase().includes(search),
+                          ),
+                      );
+                      if (!product) return;
+                      const cost = Number(product.costPrice ?? 0);
+                      itemsField.pushValue({
+                        ...emptyItem(),
+                        productId: product.id,
+                        cost,
+                        price: Number(product.salePrice ?? 0),
+                        subtotal: cost * 1,
+                      });
+                      setProductSearch("");
+                    }}
+                    placeholder="Search product and press Enter"
+                    className="pl-9"
+                  />
+                </div>
 
-//   return (
-//     <div className="py-2 pb-12">
-//       <div className="flex items-center justify-between mb-6 pb-4 border-b">
-//         <div className="flex items-center gap-3">
-//           <h1 className="text-2xl font-bold">
-//             {isEditing ? "Edit Purchase" : "Create New Purchase"}
-//           </h1>
-//         </div>
-//       </div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => itemsField.pushValue(emptyItem())}
+                >
+                  <Plus />
+                  Add item
+                </Button>
+              </div>
+            )}
+          </form.Field>
 
-//       <form
-//         id="purchase-form"
-//         onSubmit={(e) => {
-//           e.preventDefault();
-//           e.stopPropagation();
-//           setItemsTouched(true);
-//           form.handleSubmit();
-//         }}
-//       >
-//         {formErrors.length > 0 && (
-//           <div className="mb-6 rounded-lg border border-destructive/40 bg-destructive/5 p-4">
-//             <div className="flex items-center gap-1.5 text-sm font-medium text-destructive mb-1">
-//               <AlertCircle className="h-4 w-4" />
-//               Please fix the following before saving
-//             </div>
-//             <ul className="list-disc pl-6 text-sm text-destructive/90 space-y-0.5">
-//               {formErrors.map((message) => (
-//                 <li key={message}>{message}</li>
-//               ))}
-//             </ul>
-//           </div>
-//         )}
+          {serialError && (
+            <p className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-sm text-destructive">
+              {serialError}
+            </p>
+          )}
 
-//         <section className="mb-8 bg-card border rounded-xl p-6 shadow-sm">
-//           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-//             Details
-//           </h3>
-//           <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-4">
-//             <FormTextField
-//               form={form}
-//               name="reference"
-//               label="Reference"
-//               placeholder="Enter purchase reference"
-//               type="text"
-//               required
-//             />
-//             <FormTextField
-//               form={form}
-//               name="date"
-//               label="Date"
-//               placeholder="Select date"
-//               type="date"
-//               required
-//             />
-//             <FormSelectField
-//               form={form}
-//               name="supplierId"
-//               label="Supplier"
-//               placeholder="Select supplier"
-//               options={suppliers.map((supplier: any) => ({
-//                 value: String(supplier.id),
-//                 label: supplier.name,
-//               }))}
-//               required
-//             />
-//             <FormSelectField
-//               form={form}
-//               name="storeId"
-//               label="Store"
-//               placeholder="Select store"
-//               options={stores.map((store: any) => ({
-//                 value: String(store.id),
-//                 label: store.name,
-//               }))}
-//               required
-//             />
-//             <FormTextField
-//               form={form}
-//               name="sellerId"
-//               label="Seller ID"
-//               placeholder="Enter seller ID"
-//               type="number"
-//             />
-//             <FormTextField
-//               form={form}
-//               name="orderDiscount"
-//               label="Order Discount"
-//               placeholder="0.00"
-//               type="number"
-//             />
-//             <div className="sm:col-span-2">
-//               <FormTextField
-//                 form={form}
-//                 name="note"
-//                 label="Note"
-//                 placeholder="Enter notes (optional)"
-//                 type="text"
-//               />
-//             </div>
-//           </FieldGroup>
-//         </section>
+          <form.Field name="items" mode="array">
+            {(itemsField) => (
+              <div className="space-y-4">
+                {itemsField.state.value.length === 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    No items added yet.
+                  </p>
+                )}
+                {itemsField.state.value.map((_: any, index: number) => (
+                  <PurchaseItemRow
+                    key={index}
+                    form={form}
+                    index={index}
+                    products={productList}
+                    onRemove={() => itemsField.removeValue(index)}
+                  />
+                ))}
+              </div>
+            )}
+          </form.Field>
+        </section>
 
-//         <section className="mb-8 bg-card border rounded-xl p-6 shadow-sm">
-//           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide mb-4">
-//             Status
-//           </h3>
-//           <FieldGroup className="grid grid-cols-1 sm:grid-cols-3 gap-x-6 gap-y-4">
-//             <FormSelectField
-//               form={form}
-//               name="purchasesStatus"
-//               label="Purchase Status"
-//               placeholder="Select status"
-//               options={Object.entries(PurchaseStatus).map(([, value]) => ({
-//                 value: value,
-//                 label: value,
-//               }))}
-//               required
-//             />
-//             <FormSelectField
-//               form={form}
-//               name="paymentStatus"
-//               label="Payment Status"
-//               placeholder="Select status"
-//               options={Object.entries(PurchasePaymentStatus).map(
-//                 ([, value]) => ({
-//                   value: value,
-//                   label: value,
-//                 }),
-//               )}
-//               required
-//             />
-//             <FormSelectField
-//               form={form}
-//               name="status"
-//               label="Record Status"
-//               placeholder="Select status"
-//               options={Object.entries(Status).map(([, value]) => ({
-//                 value: value,
-//                 label: value,
-//               }))}
-//               required
-//             />
-//           </FieldGroup>
-//         </section>
+        {/* --------------- totals & payment --------------- */}
+        <form.Subscribe
+          selector={(state) =>
+            [
+              state.values.items,
+              state.values.discount,
+              state.values.paidAmount,
+              state.values.paymentStatus,
+            ] as const
+          }
+        >
+          {([items, discount, paidAmount, paymentStatus]) => {
+            const itemsTotal = (items || []).reduce(
+              (sum: number, i: PurchaseFormValues["items"][number]) =>
+                sum + (Number(i.cost) || 0) * (Number(i.quantity) || 0),
+              0,
+            );
+            const grandTotal = Math.max(
+              itemsTotal - (Number(discount) || 0),
+              0,
+            );
+            const paid = Number(paidAmount) || 0;
+            const balance = Math.max(grandTotal - paid, 0);
 
-//         <section className="mb-8 bg-card border rounded-xl p-6 shadow-sm">
-//           <div className="flex justify-between items-center mb-4">
-//             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wide">
-//               Items
-//             </h3>
-//             <Button type="button" size="sm" onClick={addItem} variant="outline">
-//               <Plus className="h-4 w-4 mr-1.5" />
-//               Add Item
-//             </Button>
-//           </div>
+            return (
+              <section className="rounded-md bg-muted/40 border p-6 shadow-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 text-sm items-end">
+                  <FormSelectField
+                    form={form}
+                    name="bankId"
+                    label="Bank"
+                    placeholder="Select bank"
+                    options={banks?.payload?.data.map((bank: any) => ({
+                      value: String(bank.id),
+                      label: bank.name,
+                    }))}
+                    required
+                    onAdd={() => setBankFormOpen(true)}
+                  />
 
-//           {items.length > 0 ? (
-//             <div
-//               className={cn(
-//                 "border rounded-xl overflow-hidden",
-//                 showItemsError && "border-destructive",
-//               )}
-//             >
-//               <Table>
-//                 <TableHeader>
-//                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-//                     <TableHead className="min-w-45">Product</TableHead>
-//                     <TableHead className="min-w-32.5">Unit</TableHead>
-//                     <TableHead className="w-24">Qty</TableHead>
-//                     <TableHead className="w-28">Cost Price</TableHead>
-//                     <TableHead className="w-28">Discount</TableHead>
-//                     <TableHead className="w-28 text-right">Subtotal</TableHead>
-//                     <TableHead className="w-12" />
-//                   </TableRow>
-//                 </TableHeader>
-//                 <TableBody>
-//                   {items.map((item) => {
-//                     const subtotal = Math.max(
-//                       0,
-//                       item.costPrice * item.quantity - item.totalDiscount,
-//                     );
-//                     const product = products.find(
-//                       (p: any) => p.id === item.productId,
-//                     );
-//                     const units = getProductUnits(product);
-//                     const incompleteProduct = !item.productId;
-//                     const incompleteUnit = !item.unitId;
+                  <FormTextField
+                    form={form}
+                    name="discount"
+                    label="Discount"
+                    placeholder="0.00"
+                    type="number"
+                  />
 
-//                     return (
-//                       <TableRow key={item.uid}>
-//                         <TableCell>
-//                           <Select
-//                             value={item.productId ? String(item.productId) : ""}
-//                             onValueChange={(value) =>
-//                               selectProduct(item.uid, value)
-//                             }
-//                           >
-//                             <SelectTrigger
-//                               className={cn(
-//                                 "w-full",
-//                                 incompleteProduct &&
-//                                   itemsTouched &&
-//                                   "border-destructive",
-//                               )}
-//                             >
-//                               <SelectValue placeholder="Select product" />
-//                             </SelectTrigger>
-//                             <SelectContent>
-//                               {products.map((p: any) => (
-//                                 <SelectItem key={p.id} value={String(p.id)}>
-//                                   {p.name}
-//                                 </SelectItem>
-//                               ))}
-//                             </SelectContent>
-//                           </Select>
-//                         </TableCell>
-//                         <TableCell>
-//                           {units.length > 1 ? (
-//                             <Select
-//                               value={item.unitId ? String(item.unitId) : ""}
-//                               onValueChange={(value) =>
-//                                 selectUnit(
-//                                   item.uid,
-//                                   String(item.productId),
-//                                   value,
-//                                 )
-//                               }
-//                               disabled={!item.productId}
-//                             >
-//                               <SelectTrigger
-//                                 className={cn(
-//                                   "w-full",
-//                                   incompleteUnit &&
-//                                     itemsTouched &&
-//                                     "border-destructive",
-//                                 )}
-//                               >
-//                                 <SelectValue placeholder="Select unit" />
-//                               </SelectTrigger>
-//                               <SelectContent>
-//                                 {units.map((unit) => (
-//                                   <SelectItem
-//                                     key={unit.id}
-//                                     value={String(unit.id)}
-//                                   >
-//                                     {unit.name}
-//                                   </SelectItem>
-//                                 ))}
-//                               </SelectContent>
-//                             </Select>
-//                           ) : (
-//                             <span
-//                               className={cn(
-//                                 "text-sm text-muted-foreground",
-//                                 incompleteUnit &&
-//                                   !incompleteProduct &&
-//                                   itemsTouched &&
-//                                   "text-destructive",
-//                               )}
-//                             >
-//                               {item.unitName ||
-//                                 (incompleteUnit && !incompleteProduct
-//                                   ? "missing unit"
-//                                   : "-")}
-//                             </span>
-//                           )}
-//                         </TableCell>
-//                         <TableCell>
-//                           <Input
-//                             type="number"
-//                             min="0.01"
-//                             step="0.01"
-//                             value={item.quantity}
-//                             onChange={(e) =>
-//                               updateItem(item.uid, {
-//                                 quantity: Number(e.target.value) || 0,
-//                               })
-//                             }
-//                             className={cn(
-//                               "w-full",
-//                               item.quantity <= 0 &&
-//                                 itemsTouched &&
-//                                 "border-destructive",
-//                             )}
-//                           />
-//                         </TableCell>
-//                         <TableCell>
-//                           <Input
-//                             type="number"
-//                             min="0"
-//                             step="0.01"
-//                             value={item.costPrice}
-//                             onChange={(e) =>
-//                               updateItem(item.uid, {
-//                                 costPrice: Number(e.target.value) || 0,
-//                               })
-//                             }
-//                           />
-//                         </TableCell>
-//                         <TableCell>
-//                           <Input
-//                             type="number"
-//                             min="0"
-//                             step="0.01"
-//                             value={item.totalDiscount}
-//                             onChange={(e) =>
-//                               updateItem(item.uid, {
-//                                 totalDiscount: Number(e.target.value) || 0,
-//                               })
-//                             }
-//                           />
-//                         </TableCell>
-//                         <TableCell className="text-right text-sm font-medium">
-//                           {formatCurrency(subtotal)}
-//                         </TableCell>
-//                         <TableCell>
-//                           <Button
-//                             type="button"
-//                             size="icon"
-//                             variant="ghost"
-//                             className="text-destructive hover:text-destructive"
-//                             onClick={() => removeItem(item.uid)}
-//                           >
-//                             <Trash2 className="h-4 w-4" />
-//                           </Button>
-//                         </TableCell>
-//                       </TableRow>
-//                     );
-//                   })}
-//                 </TableBody>
-//               </Table>
-//             </div>
-//           ) : (
-//             <div
-//               className={cn(
-//                 "border border-dashed rounded-xl p-10 text-center flex flex-col items-center gap-2",
-//                 showItemsError
-//                   ? "border-destructive"
-//                   : "border-muted-foreground/30",
-//               )}
-//             >
-//               <Package className="h-6 w-6 text-muted-foreground" />
-//               <p className="text-sm text-muted-foreground">
-//                 No items yet. Add at least one product to this purchase.
-//               </p>
-//               <Button
-//                 type="button"
-//                 size="sm"
-//                 onClick={addItem}
-//                 variant="outline"
-//                 className="mt-1"
-//               >
-//                 <Plus className="h-4 w-4 mr-1.5" />
-//                 Add Item
-//               </Button>
-//             </div>
-//           )}
+                  <FormTextField
+                    form={form}
+                    name="paidAmount"
+                    label="Paid Amount"
+                    placeholder="0.00"
+                    type="number"
+                  />
 
-//           {showItemsError && (
-//             <p className="mt-2 flex items-center gap-1.5 text-sm text-destructive">
-//               <AlertCircle className="h-3.5 w-3.5" />
-//               Add at least one item before saving.
-//             </p>
-//           )}
-//         </section>
+                  <FormBank
+                    open={bankFormOpen}
+                    setOpen={setBankFormOpen}
+                    bank={null}
+                  />
 
-//         <section className="rounded-xl bg-muted/40 border p-6 shadow-sm">
-//           <div className="grid grid-cols-1 sm:grid-cols-3 gap-y-2 text-sm">
-//             <div className="flex justify-between sm:block">
-//               <span className="text-muted-foreground">Items Total</span>
-//               <div className="font-semibold sm:mt-0.5">
-//                 {formatCurrency(itemsTotal)}
-//               </div>
-//             </div>
-//             <div className="flex justify-between sm:block">
-//               <span className="text-muted-foreground">Total Discount</span>
-//               <div className="font-semibold sm:mt-0.5">
-//                 {formatCurrency(itemsDiscount + Number(orderDiscountLive || 0))}
-//               </div>
-//             </div>
-//             <div className="flex justify-between sm:block">
-//               <span className="text-muted-foreground">Grand Total</span>
-//               <div className="font-bold text-base sm:mt-0.5">
-//                 {formatCurrency(grandTotal)}
-//               </div>
-//             </div>
-//           </div>
-//         </section>
-//       </form>
+                  <div className="mt-4 flex items-center gap-3 pt-4 border-t">
+                    <span className="text-sm font-medium">Payment</span>
+                    <span
+                      className={`px-3 py-1 text-xs font-semibold rounded-full border ${
+                        paymentStatus === "PENDING"
+                          ? "bg-yellow-100 text-yellow-800 border-yellow-300 dark:bg-yellow-950 dark:text-yellow-300 dark:border-yellow-800"
+                          : "bg-green-100 text-green-800 border-green-300 dark:bg-green-950 dark:text-green-300 dark:border-green-800"
+                      }`}
+                    >
+                      {paymentStatus || "PENDING"}
+                    </span>
+                  </div>
 
-//       <div className="flex gap-2 float-end mt-6">
-//         <Button variant="outline" onClick={() => navigate("/purchase")}>
-//           Cancel
-//         </Button>
-//         <Button type="submit" form="purchase-form" disabled={isPending}>
-//           {isPending
-//             ? "Saving..."
-//             : isEditing
-//               ? "Update Purchase"
-//               : "Create Purchase"}
-//         </Button>
-//       </div>
-//     </div>
-//   );
-// }
+                  <div className="flex flex-col justify-center">
+                    <span className="text-muted-foreground">Grand Total</span>
+                    <div className="font-bold text-base mt-0.5">
+                      {formatCurrency(grandTotal)}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col justify-center">
+                    <span className="text-muted-foreground">Balance Due</span>
+                    <div className="font-bold text-base mt-0.5 text-destructive">
+                      {formatCurrency(balance)}
+                    </div>
+                  </div>
+                </div>
+              </section>
+            );
+          }}
+        </form.Subscribe>
+      </form>
+
+      <div className="flex gap-2 justify-end mt-6">
+        <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+          Cancel
+        </Button>
+        <Button type="submit" form="purchase-form" disabled={isPending}>
+          {isPending
+            ? "Saving..."
+            : isEditing
+              ? "Update Purchase"
+              : "Create Purchase"}
+        </Button>
+      </div>
+    </div>
+  );
+}
+
+/* ---------------- item row ---------------- */
+
+function PurchaseItemRow({
+  form,
+  index,
+  products,
+  onRemove,
+}: {
+  form: any;
+  index: number;
+  products: ProductResponse[];
+  onRemove: () => void;
+}) {
+  const productId = useFormStore(
+    form.store,
+    (state: any) => state.values.items[index]?.productId,
+  );
+  const quantity = useFormStore(
+    form.store,
+    (state: any) => state.values.items[index]?.quantity,
+  );
+  const cost = useFormStore(
+    form.store,
+    (state: any) => Number(state.values.items[index]?.cost) || 0,
+  );
+  const serialNumbers = useFormStore(form.store, (state: any) =>
+    Array.isArray(state.values.items[index]?.serialNumbers)
+      ? state.values.items[index].serialNumbers
+      : [],
+  );
+  const [isSerialDialogOpen, setIsSerialDialogOpen] = useState(false);
+  const [scanValue, setScanValue] = useState("");
+  const [serialDialogError, setSerialDialogError] = useState("");
+  const previousProductIdRef = useRef<number | null>(null);
+
+  const selectedProduct = products.find((p) => p.id === Number(productId));
+  const normalizedSerialNumbers = Array.isArray(serialNumbers)
+    ? serialNumbers.map((serial) =>
+        typeof serial === "string"
+          ? serial
+          : serial == null
+            ? ""
+            : String(serial),
+      )
+    : [];
+  const expectedSerialCount = Math.max(0, Number(quantity) || 0);
+  const enteredSerialCount = normalizedSerialNumbers.filter((serial: string) =>
+    serial.trim(),
+  ).length;
+
+  const addSerialNumber = () => {
+    const serial = scanValue.trim();
+    if (!serial) {
+      setSerialDialogError("Enter or scan a serial number.");
+      return;
+    }
+    const current = normalizedSerialNumbers;
+    if (
+      current.some(
+        (value: string) => value.trim().toLowerCase() === serial.toLowerCase(),
+      )
+    ) {
+      setSerialDialogError("This serial number has already been added.");
+      return;
+    }
+    const nextIndex = current.findIndex((value: string) => !value.trim());
+    if (nextIndex === -1) {
+      setSerialDialogError(
+        "All serial numbers for this quantity are already added.",
+      );
+      return;
+    }
+    form.setFieldValue(`items[${index}].serialNumbers[${nextIndex}]`, serial);
+    setScanValue("");
+    setSerialDialogError("");
+  };
+
+  // Sync cost and subtotal only when the selected product actually changes.
+  useEffect(() => {
+    if (!productId || !selectedProduct) return;
+
+    const nextProductId = Number(productId);
+    if (previousProductIdRef.current === nextProductId) return;
+
+    previousProductIdRef.current = nextProductId;
+
+    const itemCost = selectedProduct.costPrice ?? 0;
+    form.setFieldValue(`items[${index}].cost`, itemCost);
+    form.setFieldValue(
+      `items[${index}].subtotal`,
+      itemCost * (Number(quantity) || 0),
+    );
+
+    setSerialDialogError("");
+    setScanValue("");
+  }, [productId, selectedProduct, quantity, index, form]);
+
+  // Recalculate subtotal on cost or quantity change
+  useEffect(() => {
+    form.setFieldValue(
+      `items[${index}].subtotal`,
+      cost * (Number(quantity) || 0),
+    );
+  }, [quantity, cost]);
+
+  // Sync array length for serial numbers when quantity updates
+  useEffect(() => {
+    const qty = Math.max(0, Number(quantity) || 0);
+    form.setFieldValue(
+      `items[${index}].serialNumbers`,
+      (old: string[] = []) => {
+        const next = old.slice(0, qty);
+        while (next.length < qty) next.push("");
+        return next;
+      },
+    );
+  }, [quantity]);
+
+  return (
+    <div className="rounded-lg border border-border/70 bg-background/50 p-4 shadow-sm">
+      <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 items-end">
+        <FormSelectField
+          form={form}
+          name={`items[${index}].productId`}
+          label="Product"
+          placeholder="Select product"
+          options={products.map((p) => ({
+            value: String(p.id),
+            label: `${p.modelName}`,
+          }))}
+        />
+
+        <FormTextField
+          form={form}
+          name={`items[${index}].quantity`}
+          label="Quantity"
+          type="number"
+        />
+        <FormTextField
+          form={form}
+          name={`items[${index}].cost`}
+          label="Cost"
+          type="number"
+        />
+        <FormTextField
+          form={form}
+          name={`items[${index}].subtotal`}
+          label="Subtotal"
+          type="number"
+          // readOnly
+        />
+
+        <div className="flex items-center justify-end gap-2">
+          <Button
+            type="button"
+            variant="ghost"
+            className="text-destructive"
+            onClick={onRemove}
+          >
+            <Trash2 />
+          </Button>
+        </div>
+      </div>
+
+      {productId > 0 && (
+        <div className="mt-3">
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="text-sm font-medium">Serial numbers</span>
+              <p className="text-xs text-muted-foreground">
+                {enteredSerialCount} of {expectedSerialCount} scanned
+              </p>
+            </div>
+            <Button
+              type="button"
+              variant="outline"
+              title="Add serial number"
+              onClick={() => {
+                setSerialDialogError("");
+                setIsSerialDialogOpen(true);
+              }}
+            >
+              <Plus />
+              Add serial number
+            </Button>
+          </div>
+          <form.Field name={`items[${index}].serialNumbers`} mode="array">
+            {(serialField: any) => (
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 mt-1">
+                {(Array.isArray(serialField.state.value)
+                  ? serialField.state.value
+                  : []
+                ).map((_: string, sIdx: number) => (
+                  <form.Field
+                    key={sIdx}
+                    name={`items[${index}].serialNumbers[${sIdx}]`}
+                  >
+                    {(sf: any) => (
+                      <input
+                        className="border rounded px-2 py-1 text-sm"
+                        placeholder={`Serial #${sIdx + 1}`}
+                        value={sf.state.value ?? ""}
+                        onChange={(e) => sf.handleChange(e.target.value)}
+                      />
+                    )}
+                  </form.Field>
+                ))}
+              </div>
+            )}
+          </form.Field>
+
+          <Dialog
+            open={isSerialDialogOpen}
+            onOpenChange={setIsSerialDialogOpen}
+          >
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Add serial number</DialogTitle>
+                <DialogDescription>
+                  Scan a barcode or enter the serial number manually.
+                </DialogDescription>
+              </DialogHeader>
+              <div className="flex items-center gap-2">
+                <ScanLine className="size-5 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  value={scanValue}
+                  onChange={(event) => setScanValue(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      event.preventDefault();
+                      addSerialNumber();
+                    }
+                  }}
+                  placeholder="Scan serial number"
+                />
+              </div>
+              {serialDialogError && (
+                <p className="text-sm text-destructive">{serialDialogError}</p>
+              )}
+              <div className="max-h-40 space-y-2 overflow-y-auto">
+                {normalizedSerialNumbers.map(
+                  (serial: string, serialIndex: number) => (
+                    <div key={serialIndex} className="flex items-center gap-2">
+                      <Input
+                        value={serial}
+                        readOnly
+                        placeholder={`Serial #${serialIndex + 1}`}
+                      />
+                      {serial && (
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          title="Remove serial number"
+                          onClick={() =>
+                            form.setFieldValue(
+                              `items[${index}].serialNumbers[${serialIndex}]`,
+                              "",
+                            )
+                          }
+                        >
+                          <Trash2 />
+                        </Button>
+                      )}
+                    </div>
+                  ),
+                )}
+              </div>
+              <DialogFooter>
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={addSerialNumber}
+                >
+                  <Plus />
+                  Add serial
+                </Button>
+                <Button
+                  type="button"
+                  onClick={() => setIsSerialDialogOpen(false)}
+                >
+                  Done
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+        </div>
+      )}
+    </div>
+  );
+}

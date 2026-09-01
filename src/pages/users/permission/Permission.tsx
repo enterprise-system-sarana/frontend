@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useState, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import { Search, Shield, Save, X } from "lucide-react";
-import { useAllRoles, useRolePermissions, useUpdateRolePermissions } from "@/hooks/users/useRole";
+// import { useAllRoles, useRolePermissions, useUpdateRolePermissions } from "@/hooks/users/useRole";
 import { usePermission } from "@/hooks/users/usePermission";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import { usePermission as useAppPermission } from "@/utils/UsePermission";
@@ -14,6 +14,7 @@ import { PERMISSION } from "@/constants/Permission";
 
 import { AccessDenied } from "@/components/ui/access-denied";
 import { PageHeader } from "@/components/ui/page-header";
+import { useRole } from '@/hooks/users/useRole';
 
 export const PermissionPage = () => {
     const { Can } = useAppPermission();
@@ -24,15 +25,16 @@ export const PermissionPage = () => {
     const [permissions, setPermissions] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
-    const { data: rolesData, isLoading: isLoadingRoles, isError: isErrorRoles } = useAllRoles();
+    const { data: rolesData, isLoading: isLoadingRoles, isError: isErrorRoles } = useRole.GetAllRole({ page: 1, size: 200 });
+    console.log("roleDate ", rolesData)
     const { data: allPermissionsData, isLoading: isLoadingAllPerms, isError: isErrorAllPerms } = usePermission.useFindAll();
-    const { data: rolePermissionsData, isLoading: isLoadingRolePerms, isError: isErrorRolePerms } = useRolePermissions(
+    const { data: rolePermissionsData, isLoading: isLoadingRolePerms, isError: isErrorRolePerms } = useRole.GetRolePermission(
         selectedRoleId ? Number(selectedRoleId) : null
     );
-    const updatePermissionsMutation = useUpdateRolePermissions();
+    const updatePermissionsMutation = useRole.UpdateRolePermissions();
 
-    const roles = rolesData?.payload || [];
-
+    const roles = rolesData?.payload?.data || [];
+    console.log("roles : ", roles)
     if (!canRead) {
         return <AccessDenied resource="permissions" showBackButton />;
     }
@@ -113,12 +115,7 @@ export const PermissionPage = () => {
     return (
         <div className="space-y-6">
             {/* Header section */}
-            <PageHeader
-                title="Group Permissions"
-                titleIcon={<Shield className="h-6 w-6 text-primary" />}
-                description="Manage and filter access permissions grouped by system modules."
-                className="px-2"
-            />
+
 
             {/* Selection and Filter toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 max-w-2xl px-2">
@@ -168,132 +165,132 @@ export const PermissionPage = () => {
             {/* Matrix Table */}
             <QueryBoundary isLoading={isLoading} isError={isError} fullScreen={false}>
                 <Card className="border border-border/70 overflow-hidden shadow-xs">
-                <div className="overflow-x-auto">
-                    <table className="w-full border-collapse text-left text-sm">
-                        <thead className="bg-primary text-primary-foreground border-b border-border/50">
-                            <tr>
-                                <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase min-w-[200px]">Module Name</th>
-                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">READ</th>
-                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">WRITE</th>
-                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">EDIT</th>
-                                <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">DELETE</th>
-                                <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase">Other Permissions</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-border/60">
-                            {Object.entries(filteredGroups).map(([groupName, groupPermissions]) => {
-                                // Extract standard CRUD permissions
-                                const viewPerm = groupPermissions.find(p => p.code.endsWith(':read') || p.code.endsWith(':view'));
-                                const addPerm = groupPermissions.find(p => p.code.endsWith(':create') || p.code.endsWith(':add'));
-                                const editPerm = groupPermissions.find(p => p.code.endsWith(':update') || p.code.endsWith(':edit'));
-                                const deletePerm = groupPermissions.find(p => p.code.endsWith(':delete') || p.code.endsWith(':remove'));
+                    <div className="overflow-x-auto">
+                        <table className="w-full border-collapse text-left text-sm">
+                            <thead className="bg-primary text-primary-foreground border-b border-border/50">
+                                <tr>
+                                    <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase min-w-[200px]">Module Name</th>
+                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">READ</th>
+                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">WRITE</th>
+                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">EDIT</th>
+                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">DELETE</th>
+                                    <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase">Other Permissions</th>
+                                </tr>
+                            </thead>
+                            <tbody className="divide-y divide-border/60">
+                                {Object.entries(filteredGroups).map(([groupName, groupPermissions]) => {
+                                    // Extract standard CRUD permissions
+                                    const viewPerm = groupPermissions.find(p => p.code.endsWith(':read') || p.code.endsWith(':view'));
+                                    const addPerm = groupPermissions.find(p => p.code.endsWith(':create') || p.code.endsWith(':add'));
+                                    const editPerm = groupPermissions.find(p => p.code.endsWith(':update') || p.code.endsWith(':edit'));
+                                    const deletePerm = groupPermissions.find(p => p.code.endsWith(':delete') || p.code.endsWith(':remove'));
 
-                                // Gather custom / action permissions
-                                const otherPerms = groupPermissions.filter(
-                                    p => p !== viewPerm && p !== addPerm && p !== editPerm && p !== deletePerm
-                                );
+                                    // Gather custom / action permissions
+                                    const otherPerms = groupPermissions.filter(
+                                        p => p !== viewPerm && p !== addPerm && p !== editPerm && p !== deletePerm
+                                    );
 
-                                // Check if all permissions inside this group are checked
-                                const allChecked = groupPermissions.every(p => p.checked);
+                                    // Check if all permissions inside this group are checked
+                                    const allChecked = groupPermissions.every(p => p.checked);
 
-                                return (
-                                    <tr key={groupName} className="hover:bg-muted/20 dark:hover:bg-muted/10 transition-colors">
-                                        {/* Column 1: Module Name & Toggle Group Checkbox */}
-                                        <td className="px-6 py-4 font-medium text-foreground">
-                                            <label className="flex items-center gap-2.5 cursor-pointer select-none">
-                                                <Checkbox
-                                                    checked={allChecked}
-                                                    onChange={(e) => handleGroupToggle(groupName, e.target.checked)}
-                                                    disabled={!canUpdate}
-                                                />
-                                                <span className="font-semibold text-foreground/90">{groupName}</span>
-                                            </label>
-                                        </td>
+                                    return (
+                                        <tr key={groupName} className="hover:bg-muted/20 dark:hover:bg-muted/10 transition-colors">
+                                            {/* Column 1: Module Name & Toggle Group Checkbox */}
+                                            <td className="px-6 py-4 font-medium text-foreground">
+                                                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                                                    <Checkbox
+                                                        checked={allChecked}
+                                                        onChange={(e) => handleGroupToggle(groupName, e.target.checked)}
+                                                        disabled={!canUpdate}
+                                                    />
+                                                    <span className="font-semibold text-foreground/90">{groupName}</span>
+                                                </label>
+                                            </td>
 
-                                        {/* Column 2: View (Read) */}
-                                        <td className="px-4 py-4 text-center">
-                                            {viewPerm ? (
-                                                <Checkbox
-                                                    checked={viewPerm.checked}
-                                                    onChange={() => handleSingleToggle(viewPerm.id)}
-                                                    className="mx-auto"
-                                                    disabled={!canUpdate}
-                                                />
-                                            ) : (
-                                                <span className="text-muted-foreground/30 text-xs">—</span>
-                                            )}
-                                        </td>
+                                            {/* Column 2: View (Read) */}
+                                            <td className="px-4 py-4 text-center">
+                                                {viewPerm ? (
+                                                    <Checkbox
+                                                        checked={viewPerm.checked}
+                                                        onChange={() => handleSingleToggle(viewPerm.id)}
+                                                        className="mx-auto"
+                                                        disabled={!canUpdate}
+                                                    />
+                                                ) : (
+                                                    <span className="text-muted-foreground/30 text-xs">—</span>
+                                                )}
+                                            </td>
 
-                                        {/* Column 3: Add (Create) */}
-                                        <td className="px-4 py-4 text-center">
-                                            {addPerm ? (
-                                                <Checkbox
-                                                    checked={addPerm.checked}
-                                                    onChange={() => handleSingleToggle(addPerm.id)}
-                                                    className="mx-auto"
-                                                    disabled={!canUpdate}
-                                                />
-                                            ) : (
-                                                <span className="text-muted-foreground/30 text-xs">—</span>
-                                            )}
-                                        </td>
+                                            {/* Column 3: Add (Create) */}
+                                            <td className="px-4 py-4 text-center">
+                                                {addPerm ? (
+                                                    <Checkbox
+                                                        checked={addPerm.checked}
+                                                        onChange={() => handleSingleToggle(addPerm.id)}
+                                                        className="mx-auto"
+                                                        disabled={!canUpdate}
+                                                    />
+                                                ) : (
+                                                    <span className="text-muted-foreground/30 text-xs">—</span>
+                                                )}
+                                            </td>
 
-                                        {/* Column 4: Edit (Update) */}
-                                        <td className="px-4 py-4 text-center">
-                                            {editPerm ? (
-                                                <Checkbox
-                                                    checked={editPerm.checked}
-                                                    onChange={() => handleSingleToggle(editPerm.id)}
-                                                    className="mx-auto"
-                                                    disabled={!canUpdate}
-                                                />
-                                            ) : (
-                                                <span className="text-muted-foreground/30 text-xs">—</span>
-                                            )}
-                                        </td>
+                                            {/* Column 4: Edit (Update) */}
+                                            <td className="px-4 py-4 text-center">
+                                                {editPerm ? (
+                                                    <Checkbox
+                                                        checked={editPerm.checked}
+                                                        onChange={() => handleSingleToggle(editPerm.id)}
+                                                        className="mx-auto"
+                                                        disabled={!canUpdate}
+                                                    />
+                                                ) : (
+                                                    <span className="text-muted-foreground/30 text-xs">—</span>
+                                                )}
+                                            </td>
 
-                                        {/* Column 5: Delete */}
-                                        <td className="px-4 py-4 text-center">
-                                            {deletePerm ? (
-                                                <Checkbox
-                                                    checked={deletePerm.checked}
-                                                    onChange={() => handleSingleToggle(deletePerm.id)}
-                                                    className="mx-auto"
-                                                    disabled={!canUpdate}
-                                                />
-                                            ) : (
-                                                <span className="text-muted-foreground/30 text-xs">—</span>
-                                            )}
-                                        </td>
+                                            {/* Column 5: Delete */}
+                                            <td className="px-4 py-4 text-center">
+                                                {deletePerm ? (
+                                                    <Checkbox
+                                                        checked={deletePerm.checked}
+                                                        onChange={() => handleSingleToggle(deletePerm.id)}
+                                                        className="mx-auto"
+                                                        disabled={!canUpdate}
+                                                    />
+                                                ) : (
+                                                    <span className="text-muted-foreground/30 text-xs">—</span>
+                                                )}
+                                            </td>
 
-                                        {/* Column 6: Custom / Extra Permissions */}
-                                        <td className="px-6 py-4">
-                                            {otherPerms.length > 0 ? (
-                                                <div className="flex flex-wrap gap-x-6 gap-y-2">
-                                                    {otherPerms.map((perm) => (
-                                                        <label
-                                                            key={perm.id}
-                                                            className="flex items-center gap-2 cursor-pointer group text-xs text-foreground/80 hover:text-primary transition-colors"
-                                                        >
-                                                            <Checkbox
-                                                                checked={perm.checked}
-                                                                onChange={() => handleSingleToggle(perm.id)}
-                                                                disabled={!canUpdate}
-                                                            />
-                                                            <span className="font-medium">{perm.name}</span>
-                                                        </label>
-                                                    ))}
-                                                </div>
-                                            ) : (
-                                                <span className="text-muted-foreground/40 text-xs italic">No other actions</span>
-                                            )}
-                                        </td>
-                                    </tr>
-                                );
-                            })}
-                        </tbody>
-                    </table>
-                </div>
+                                            {/* Column 6: Custom / Extra Permissions */}
+                                            <td className="px-6 py-4">
+                                                {otherPerms.length > 0 ? (
+                                                    <div className="flex flex-wrap gap-x-6 gap-y-2">
+                                                        {otherPerms.map((perm) => (
+                                                            <label
+                                                                key={perm.id}
+                                                                className="flex items-center gap-2 cursor-pointer group text-xs text-foreground/80 hover:text-primary transition-colors"
+                                                            >
+                                                                <Checkbox
+                                                                    checked={perm.checked}
+                                                                    onChange={() => handleSingleToggle(perm.id)}
+                                                                    disabled={!canUpdate}
+                                                                />
+                                                                <span className="font-medium">{perm.name}</span>
+                                                            </label>
+                                                        ))}
+                                                    </div>
+                                                ) : (
+                                                    <span className="text-muted-foreground/40 text-xs italic">No other actions</span>
+                                                )}
+                                            </td>
+                                        </tr>
+                                    );
+                                })}
+                            </tbody>
+                        </table>
+                    </div>
                 </Card>
             </QueryBoundary>
 

@@ -12,10 +12,9 @@ import {
 import { useEffect } from "react";
 import { RoleSchema } from "@/types/users/Role";
 import type { RoleResponse, RoleRequest } from "@/types/users/Role";
-import { useCreateRole, useUpdateRole } from "@/hooks/users/useRole";
 import FormTextField, { FormTextareaField } from "@/components/ui/FormTextField";
 import { useLanguage } from "@/i18n/LanguageContext";
-import { toast } from "sonner";
+import { useRole } from "@/hooks/users/useRole";
 
 type FormRoleProps = {
     open: boolean;
@@ -25,8 +24,8 @@ type FormRoleProps = {
 
 const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
     const { t } = useLanguage();
-    const { mutate: createRoleMutate, isPending: isCreating } = useCreateRole();
-    const { mutate: updateRoleMutate, isPending: isUpdating } = useUpdateRole();
+    const { mutate: createRoleMutate, isPending: isCreating } = useRole.CreateRole();
+    const { mutate: updateRoleMutate, isPending: isUpdating } = useRole.UpdateRole();
 
     const isPending = isCreating || isUpdating;
     const form = useForm({
@@ -46,28 +45,10 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
             };
 
             if (role) {
-                updateRoleMutate(
-                    { id: role.id, request: payload },
-                    {
-                        onSuccess: () => {
-                            toast.success("Role updated successfully");
-                            handleSuccess();
-                        },
-                        onError: (err: any) => {
-                            toast.error(err?.message || "Failed to update role");
-                        },
-                    }
-                );
+                updateRoleMutate({ id: role.id, req: payload });
+                handleSuccess();
             } else {
-                createRoleMutate(payload, {
-                    onSuccess: () => {
-                        toast.success("Role created successfully");
-                        handleSuccess();
-                    },
-                    onError: (err: any) => {
-                        toast.error(err?.message || "Failed to create role");
-                    },
-                });
+                createRoleMutate(payload);
             }
         },
     });
@@ -84,7 +65,7 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="md:max-w-[450px]">
+            <DialogContent className="md:max-w-2xl">
                 <DialogHeader>
                     <DialogTitle>{role ? t("common.edit") : t("common.add")} {t("nav.role")}</DialogTitle>
                 </DialogHeader>

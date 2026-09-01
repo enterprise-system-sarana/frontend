@@ -6,7 +6,7 @@ import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsFo
 import { UserColumns } from "./UserColumn";
 import { PageHeader } from "@/components/ui/page-header";
 import { QueryBoundary } from "@/components/ui/query-boundary";
-import FormUser from "./FormUser";
+import FormUser from "./userForm";
 import ConfirmDelete from "@/components/ui/confirmDelete";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";

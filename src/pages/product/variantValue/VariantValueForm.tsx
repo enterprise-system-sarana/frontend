@@ -9,13 +9,14 @@ import {
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { StatusOptions, Status } from "@/types/enum/status";
 import FormTextField, { FormRadioGroupField, FormSelectField } from "@/components/ui/FormTextField";
 import { VariantValueSchema, type VariantValueRequest, type VariantValueResponse } from "@/types/product/VariantValue";
 import { useVariantValue } from "@/hooks/product/useVariantValue";
 import { useVariantType } from "@/hooks/product/useVariantType";
 import type { VariantTypeResponse } from "@/types/product/VariantType";
+import VariantTypeForm from "../variantType/VariantTypeForm";
 
 type FormVariantValueProps = {
     open: boolean;
@@ -24,6 +25,8 @@ type FormVariantValueProps = {
 };
 
 const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps) => {
+    const [varaintTypeFormOpen, setvaraintTypeFormOpen] = useState(false);
+
     const { mutate: createVariantValueMutate, isPending: isCreating } = useVariantValue.useCreateVariantValue();
     const { mutate: updateVariantValueMutate, isPending: isUpdating } = useVariantValue.useUpdateVariantValue();
 
@@ -110,8 +113,16 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
                             required={true}
                             placeholder="Select Variant Type"
                             options={variantTypeOptions}
+                            onAdd={() => setvaraintTypeFormOpen(true)}
+                        />
+                        {/* VariatType form  */}
+                        <VariantTypeForm
+                            open={varaintTypeFormOpen}
+                            setOpen={setvaraintTypeFormOpen}
+                            variantType={null}
                         />
 
+                        {/* end of variant form */}
                         <FormRadioGroupField
                             form={form}
                             name="status"

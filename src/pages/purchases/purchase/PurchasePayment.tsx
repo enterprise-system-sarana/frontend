@@ -17,6 +17,10 @@ import { toast } from "sonner";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useSupplier } from "@/hooks/purchases/useSupplier";
 import { usePurchase } from "@/hooks/purchases/usePurchase";
+import {
+  normalizePurchasePaymentStatus,
+  PurchasePaymentStatus,
+} from "@/types/enum/purchasePaymentStatus";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { SupplierResponse } from "@/types/purchases/Supplier";
 
@@ -42,12 +46,12 @@ export const PurchasePaymentPage = () => {
   const { data: storesData } = useStore.useGetAllStore();
   const { data: supplierData } = useSupplier.useGetAllSupplier();
 
-  const { data: purchaseData } = usePurchase.useGetAllPurchase({
+  const { data: purchaseData } = usePurchase.GetAll({
     page: 1,
     size: 100,
   });
 
-  const completePurchase = usePurchase.useCompletePurchase();
+  const completePurchase = usePurchase.Complete();
 
   const stores = storesData?.payload?.data || [];
   const suppliers: SupplierResponse[] = supplierData?.payload?.data || [];
@@ -82,26 +86,35 @@ export const PurchasePaymentPage = () => {
           selectedSupplier &&
           purchaseSupplierName === String(selectedSupplier.name).toLowerCase();
 
+        const paymentStatus = normalizePurchasePaymentStatus(
+          purchase.paymentStatus,
+        );
         const isPending =
-          String(purchase.paymentStatus || "").toUpperCase() === "PENDING";
+          paymentStatus === PurchasePaymentStatus.Pending ||
+          paymentStatus === PurchasePaymentStatus.Partial;
         const isApprove =
-          String(purchase.purchasesStatus || "").toUpperCase() === "APPROVED";
+          String(purchase.status || "").toUpperCase() === "APPROVED" ||
+          String(purchase.status || "").toUpperCase() === "ACT";
 
         return (matchesId || matchesName) && isPending && isApprove;
       })
       .map((purchase: any) => ({
         id: purchase.id,
-        date: purchase.date ? purchase.date.split("T")[0] : "",
-        reference: purchase.reference || "",
+        date: purchase.purchaseDate ? purchase.purchaseDate.split("T")[0] : "",
+        reference: purchase.referenceNo || purchase.reference || "",
         grandTotal: purchase.grandTotal || 0,
         balance:
-          purchase.balance !== undefined
-            ? purchase.balance
-            : purchase.grandTotal || 0,
+          purchase.dueAmount !== undefined
+            ? purchase.dueAmount
+            : purchase.balance !== undefined
+              ? purchase.balance
+              : purchase.grandTotal || 0,
         amountPaid:
-          purchase.balance !== undefined
-            ? purchase.balance
-            : purchase.grandTotal || 0,
+          purchase.dueAmount !== undefined
+            ? purchase.dueAmount
+            : purchase.balance !== undefined
+              ? purchase.balance
+              : purchase.grandTotal || 0,
         selected: true,
       }));
 
@@ -125,7 +138,6 @@ export const PurchasePaymentPage = () => {
       ),
     );
   };
-
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

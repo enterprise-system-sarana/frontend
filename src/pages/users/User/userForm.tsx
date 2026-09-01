@@ -16,9 +16,11 @@ import { Status } from "@/types/enum/status";
 import { useCreateUser, useUpdateUser } from "@/hooks/users/useUser";
 import FormTextField, { FormRadioGroupField, FormSelectField } from "@/components/ui/FormTextField";
 import { useStore } from "@/hooks/inventory/useStore";
-import { useAllRoles } from "@/hooks/users/useRole";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { toast } from "sonner";
+import { useRole } from "@/hooks/users/useRole";
+import type { StoreResponse } from "@/types/inventory/Store";
+import type { RoleResponse } from "@/types/users/Role";
 
 type FormUserProps = {
     open: boolean;
@@ -32,15 +34,15 @@ const FormUser = ({ open, setOpen, user }: FormUserProps) => {
     const { mutate: updateUserMutate, isPending: isUpdating } = useUpdateUser();
 
     const { data: storeData } = useStore.useGetAllStore({ page: 1, size: 100 });
-    const { data: rolesData } = useAllRoles();
+    const { data: rolesData } = useRole.GetAllRole({ page: 1, size: 100 });
 
-    const storeOptions = (storeData?.payload?.data || []).map((s: any) => ({
+    const storeOptions = (storeData?.payload?.data || []).map((s: StoreResponse) => ({
         label: s.name,
         value: String(s.id),
     }));
 
     const roleList = rolesData?.payload?.data || rolesData?.payload || [];
-    const roleOptions = (Array.isArray(roleList) ? roleList : []).map((r: any) => ({
+    const roleOptions = (Array.isArray(roleList) ? roleList : []).map((r: RoleResponse) => ({
         label: r.name || r.code,
         value: r.code,
     }));
@@ -113,7 +115,7 @@ const FormUser = ({ open, setOpen, user }: FormUserProps) => {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="md:max-w-[480px]">
+            <DialogContent className="md:max-w-/[480px]">
                 <DialogHeader>
                     <DialogTitle>{user ? t("common.edit") : t("common.add")} User</DialogTitle>
                 </DialogHeader>
@@ -188,11 +190,10 @@ const FormUser = ({ open, setOpen, user }: FormUserProps) => {
                                                                 form.setFieldValue("roleCodes", [...current, role.value]);
                                                             }
                                                         }}
-                                                        className={`inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer border ${
-                                                            isSelected
-                                                                ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
-                                                                : "border-border/70 bg-card hover:bg-muted/70 text-foreground/90"
-                                                        }`}
+                                                        className={`inline-flex items-center justify-center px-3.5 py-1.5 rounded-full text-xs font-medium transition-all duration-200 cursor-pointer border ${isSelected
+                                                            ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
+                                                            : "border-border/70 bg-card hover:bg-muted/70 text-foreground/90"
+                                                            }`}
                                                     >
                                                         {role.label}
                                                     </button>

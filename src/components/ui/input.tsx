@@ -13,7 +13,7 @@ function Input({
       data-slot="input"
       className={cn(
         // Base
-        "flex h-11 w-full min-w-0 rounded-xl",
+        "flex h-11 w-full min-w-0 rounded-md",
         "border border-border/70",
         "bg-background",
         "px-3.5 py-2",

@@ -153,7 +153,7 @@ const ImageUploadInner = ({
       {!value ? (
         <div
           onClick={() => !disabled && inputRef.current?.click()}
-          className="flex h-20 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed hover:bg-muted"
+          className="flex h-20 cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed hover:bg-muted"
         >
           <Upload className="mb-2 h-6 w-6" />
 
@@ -174,13 +174,13 @@ const ImageUploadInner = ({
           <img
             src={previewSrc}
             alt="Preview"
-            className="h-40 w-40 rounded-lg border object-cover"
+            className="h-40 w-40 rounded-md border object-cover"
           />
 
           <Button
             size="icon"
             variant="destructive"
-            className="absolute right-2 top-2 h-7 w-7 rounded-full"
+            className="absolute right-2 top-2 h-7 w-7 rounded-md"
             onClick={() => field.handleChange("")}
             type="button"
             disabled={disabled}
@@ -241,6 +241,7 @@ type FormSelectFieldProps = {
   required?: boolean;
   className?: string;
   size?: "sm" | "default" | "lg";
+  onAdd?: () => void;
 };
 
 export const FormSelectField = ({
@@ -248,11 +249,12 @@ export const FormSelectField = ({
   name,
   label,
   placeholder = "Select an option",
-  options,
+  options = [],
   disabled = false,
   required = false,
   className,
   size = "default",
+  onAdd,
 }: FormSelectFieldProps) => {
   return (
     <form.Field
@@ -264,9 +266,21 @@ export const FormSelectField = ({
 
         return (
           <Field data-invalid={isInvalid}>
-            <FieldLabel htmlFor={name}>
-              {label}
-              {required && <span className="text-destructive"> *</span>}
+            <FieldLabel htmlFor={name} className="flex items-center gap-1.5">
+              <span>
+                {label}
+                {required && <span className="text-destructive"> *</span>}
+              </span>
+              {onAdd && (
+                <button
+                  type="button"
+                  onClick={onAdd}
+                  className="inline-flex items-center justify-center h-5 w-5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  title={`Add new ${label}`}
+                >
+                  <span className="text-xs font-bold leading-none">+</span>
+                </button>
+              )}
             </FieldLabel>
 
             <Select
@@ -383,7 +397,7 @@ export const FormRadioGroupField = ({
   form,
   name,
   label,
-  options,
+  options = [],
   disabled = false,
   required = false,
 }: FormRadioGroupFieldProps) => {
@@ -408,7 +422,7 @@ export const FormRadioGroupField = ({
                 return (
                   <label
                     key={option.value}
-                    className={`flex items-center gap-2 cursor-pointer select-none text-xs font-medium px-3.5 py-2 rounded-xl border transition-all ${
+                    className={`flex items-center gap-2 cursor-pointer select-none text-xs font-medium px-3.5 py-2 rounded-md border transition-all ${
                       isSelected
                         ? "border-primary bg-primary/10 text-primary font-semibold shadow-xs"
                         : "border-border/60 bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground"

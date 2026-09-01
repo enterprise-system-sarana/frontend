@@ -6,6 +6,11 @@ export { default as VariantTypePage } from "@/pages/product/variantType/VariantT
 export { default as VariantValuePage } from "@/pages/product/variantValue/VariantValuePage";
 export { default as ProductPage } from "@/pages/product/product/ProductPage";
 export { default as ProductForm } from "@/pages/product/product/ProductForm";
+export { default as ProductDetail } from "@/pages/product/product/ProductDetail";
+export { HomePage as HhomePage } from "@/pages/home/Home";
+
+export { default as PurchasePage } from "@/pages/purchases/purchase/PurchasePage";
+export { default as PurchaseForm } from "@/pages/purchases/purchase/PurchaseForm";
 
 
 // auth 
@@ -21,13 +26,14 @@ export { default as ChangePasswordPage } from "@/pages/auth/ChangePassword";
 export { default as UserPage } from "@/pages/users/User/UserPage";
 export { default as RolePage } from "@/pages/users/Role/Role";
 export { PermissionPage as PermissionPage } from "@/pages/users/permission/Permission"
-export { default as GroupPermissionPage } from "@/pages/users/groupPermission/GroupPermissionPage";
+// export { default as GroupPermissionPage } from "@/pages/users/groupPermission/GroupPermissionPage";
 
 
 
 
 // Inventory 
 export { StorePage } from "@/pages/inventory/store/StorePage";
+export { default as StoreForm } from "@/pages/inventory/store/StoreForm";
 export { StockPage } from "@/pages/inventory/stock/StockPage";
 
 
@@ -48,3 +54,6 @@ export { default as ExpenseTypePage } from "@/pages/expenses/expenseType/Expense
 
 // File Upload Testing
 export { default as FileUploadPage, FileUpload } from "@/pages/FileUpload";
+
+// Error Pages
+export { default as NotFoundPage } from "@/pages/error/NotFoundPage";
