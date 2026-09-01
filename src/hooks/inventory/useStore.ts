@@ -17,6 +17,15 @@ export const useStore = {
     });
   },
 
+  useGetStoreById: (id: number, enabled: boolean = true) => {
+    return useQuery({
+      queryKey: useStore.keys.detail(id),
+      queryFn: () => storeService.findById(id),
+      enabled: enabled && !isNaN(id) && id > 0,
+      retry: 1,
+    });
+  },
+
   useCreateStore: () => {
     const queryClient = useQueryClient();
     return useMutation({

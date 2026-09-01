@@ -6,6 +6,10 @@ export const storeService = {
     return api.get("/stores", { params: filter }).then((res) => res.data);
   },
 
+  findById(id: number) {
+    return api.get(`/stores/${id}`).then((res) => res.data);
+  },
+
   create(request: StoreRequest) {
     return api.post("/stores", request).then((res) => res.data);
   },

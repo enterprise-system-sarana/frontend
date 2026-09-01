@@ -1,10 +1,10 @@
-import { purchaseService } from "@/services/purchases/purchase.service";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { mutationHandler } from "../handleMutaion";
 import type {
   PurchaseFilter,
   PurchaseRequest,
 } from "@/types/purchases/Purchase";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { mutationHandler } from "../handleMutaion";
+import { purchaseService } from "@/services/purchases/purchase.service";
 
 export const usePurchase = {
   keys: {
@@ -14,7 +14,7 @@ export const usePurchase = {
     detail: (id: number) => [...usePurchase.keys.all, "detail", id] as const,
   },
 
-  useGetAllPurchase: (filter: PurchaseFilter = { page: 1, size: 10 }) => {
+  GetAll: (filter: PurchaseFilter = { page: 1, size: 10 }) => {
     return useQuery({
       queryKey: usePurchase.keys.list(filter),
       queryFn: () => purchaseService.findAll(filter),
@@ -22,7 +22,18 @@ export const usePurchase = {
     });
   },
 
-  useCreatePurchase: () => {
+  Complete: () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+      mutationFn: purchaseService.complete,
+      ...mutationHandler({
+        queryClient,
+        queryKey: usePurchase.keys.all,
+      }),
+    });
+  },
+
+  Create: () => {
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn: purchaseService.create,
@@ -33,7 +44,15 @@ export const usePurchase = {
     });
   },
 
-  useUpdatePurchase: () => {
+  GetPurchaseById: (id: number, options?: { enabled?: boolean }) => {
+    return useQuery({
+      queryKey: usePurchase.keys.detail(id),
+      queryFn: () => purchaseService.findById(id),
+      ...options,
+      retry: 1,
+    });
+  },
+  Update: () => {
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn: ({ id, request }: { id: number; request: PurchaseRequest }) =>
@@ -44,41 +63,11 @@ export const usePurchase = {
       }),
     });
   },
-  useGetPurchaseById: (id: number) => {
-    return useQuery({
-      queryKey: usePurchase.keys.detail(id),
-      queryFn: () => purchaseService.findById(id),
-      enabled: !!id && !isNaN(id),
-      retry: 1,
-    });
-  },
 
-  useDeletePurchase: () => {
+  Delete: () => {
     const queryClient = useQueryClient();
     return useMutation({
       mutationFn: purchaseService.delete,
-      ...mutationHandler({
-        queryClient,
-        queryKey: usePurchase.keys.all,
-      }),
-    });
-  },
-
-  useApprovePurchase: () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: purchaseService.approve,
-      ...mutationHandler({
-        queryClient,
-        queryKey: usePurchase.keys.all,
-      }),
-    });
-  },
-
-  useCompletePurchase: () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-      mutationFn: purchaseService.complete,
       ...mutationHandler({
         queryClient,
         queryKey: usePurchase.keys.all,

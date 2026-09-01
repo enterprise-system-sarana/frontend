@@ -10,7 +10,9 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import FormTextField, { FormRadioGroupField } from "@/components/ui/FormTextField";
+import FormTextField, {
+  FormRadioGroupField,
+} from "@/components/ui/FormTextField";
 import {
   SupplierSchema,
   type SupplierResponse,
@@ -22,9 +24,17 @@ type FormSupplierProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
   supplier: SupplierResponse | null;
+  onCreated?: (
+    supplier: SupplierResponse | { payload?: SupplierResponse },
+  ) => void;
 };
 
-const FormSupplier = ({ open, setOpen, supplier }: FormSupplierProps) => {
+const FormSupplier = ({
+  open,
+  setOpen,
+  supplier,
+  onCreated,
+}: FormSupplierProps) => {
   const { mutate: createSupplierMutate, isPending: isCreating } =
     useSupplier.useCreateSupplier();
   const { mutate: updateSupplierMutate, isPending: isUpdating } =
@@ -48,7 +58,8 @@ const FormSupplier = ({ open, setOpen, supplier }: FormSupplierProps) => {
       onSubmit: SupplierSchema,
     },
     onSubmit: async ({ value }) => {
-      const handleSuccess = () => {
+      const handleSuccess = (response: SupplierResponse) => {
+        if (!supplier) onCreated?.(response);
         setOpen(false);
         form.reset();
       };
@@ -56,7 +67,7 @@ const FormSupplier = ({ open, setOpen, supplier }: FormSupplierProps) => {
       if (supplier) {
         updateSupplierMutate(
           { id: supplier.id, request: value },
-          { onSuccess: handleSuccess }
+          { onSuccess: handleSuccess },
         );
       } else {
         createSupplierMutate(value, { onSuccess: handleSuccess });
@@ -64,7 +75,6 @@ const FormSupplier = ({ open, setOpen, supplier }: FormSupplierProps) => {
     },
   });
 
-  console.log(form.state.values);
   // Sync form values whenever the dialog opens or the selected supplier changes
   useEffect(() => {
     if (open) {
@@ -183,7 +193,11 @@ const FormSupplier = ({ open, setOpen, supplier }: FormSupplierProps) => {
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline" className="rounded-xl" disabled={isPending}>
+            <Button
+              variant="outline"
+              className="rounded-xl"
+              disabled={isPending}
+            >
               Cancel
             </Button>
           </DialogClose>
@@ -193,7 +207,11 @@ const FormSupplier = ({ open, setOpen, supplier }: FormSupplierProps) => {
             disabled={isPending}
             className="rounded-xl shadow-md shadow-primary/20"
           >
-            {isPending ? "Saving..." : supplier ? "Update Supplier" : "Create Supplier"}
+            {isPending
+              ? "Saving..."
+              : supplier
+                ? "Update Supplier"
+                : "Create Supplier"}
           </Button>
         </DialogFooter>
       </DialogContent>

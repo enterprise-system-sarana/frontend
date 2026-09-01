@@ -73,10 +73,37 @@ export function DataTable<TData, TValue>({
     columns,
     state: {
       columnVisibility,
+      pagination: pagination
+        ? {
+            pageIndex: Math.max(0, (pagination.currentPage ?? 1) - 1),
+            pageSize: pagination.pageSize ?? 10,
+          }
+        : undefined,
     },
     onColumnVisibilityChange,
+    onPaginationChange: pagination
+      ? (updater) => {
+          const next =
+            typeof updater === "function"
+              ? updater({
+                  pageIndex: Math.max(0, (pagination.currentPage ?? 1) - 1),
+                  pageSize: pagination.pageSize ?? 10,
+                })
+              : updater;
+
+          if (pagination.onPageChange) {
+            pagination.onPageChange(next.pageIndex + 1);
+          }
+          if (
+            pagination.onPageSizeChange &&
+            next.pageSize !== pagination.pageSize
+          ) {
+            pagination.onPageSizeChange(next.pageSize);
+          }
+        }
+      : undefined,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: getPaginationRowModel(),
+    getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
@@ -93,9 +120,7 @@ export function DataTable<TData, TValue>({
     ? pagination.totalElements
     : table.getFilteredRowModel().rows.length;
 
-  const totalPages = pagination
-    ? pagination.totalPages
-    : table.getPageCount();
+  const totalPages = pagination ? pagination.totalPages : table.getPageCount();
 
   const handlePageChange = (page: number) => {
     if (pagination) {
@@ -120,20 +145,13 @@ export function DataTable<TData, TValue>({
         <div className="flex items-center justify-end border-b border-border/60 px-4 py-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                size="sm"
-                className="gap-2 text-xs"
-              >
+              <Button variant="outline" size="sm" className="gap-2 text-xs">
                 <Columns3 className="h-4 w-4" />
                 Columns
               </Button>
             </DropdownMenuTrigger>
 
-            <DropdownMenuContent
-              align="end"
-              className="w-56"
-            >
+            <DropdownMenuContent align="end" className="w-56">
               <DropdownMenuSeparator />
 
               {table
@@ -177,9 +195,9 @@ export function DataTable<TData, TValue>({
                     {header.isPlaceholder
                       ? null
                       : flexRender(
-                        header.column.columnDef.header,
-                        header.getContext(),
-                      )}
+                          header.column.columnDef.header,
+                          header.getContext(),
+                        )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -191,9 +209,7 @@ export function DataTable<TData, TValue>({
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}
-                  data-state={
-                    row.getIsSelected() && "selected"
-                  }
+                  data-state={row.getIsSelected() && "selected"}
                   className="border-b border-border/60 transition-colors duration-150 hover:bg-muted/50 data-[state=selected]:bg-primary/10"
                 >
                   {row.getVisibleCells().map((cell) => (

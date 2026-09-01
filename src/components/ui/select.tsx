@@ -45,7 +45,7 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         // Base
-        "flex h-11 w-full items-center justify-between gap-1.5 rounded-xl",
+        "flex h-11 w-full items-center justify-between gap-1.5 rounded-md",
         "border border-border/70 bg-background",
         "px-3.5 py-2",
         "text-sm text-foreground",
@@ -65,7 +65,7 @@ function SelectTrigger({
         "data-placeholder:text-muted-foreground/60",
 
         // Sizes
-        "data-[size=sm]:h-8 data-[size=sm]:rounded-lg data-[size=sm]:px-2.5 data-[size=sm]:text-xs",
+        "data-[size=sm]:h-8 data-[size=sm]:rounded-md data-[size=sm]:px-2.5 data-[size=sm]:text-xs",
         "data-[size=default]:h-11",
         "data-[size=lg]:h-12 data-[size=lg]:text-base",
 

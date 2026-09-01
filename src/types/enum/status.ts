@@ -2,7 +2,6 @@ export const Status = {
     ACTIVE: "ACT",
     INACTIVE: "INA",
     DELETE: "DEL"
-    // Banned: "BAN"
 } as const;
 
 export const StatusLabel: Record<Status, string> = {

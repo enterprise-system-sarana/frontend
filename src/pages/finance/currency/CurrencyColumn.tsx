@@ -48,7 +48,7 @@ export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete }: Curren
     {
         accessorKey: "status",
         header: "Status",
-        cell: ({ row }) => <StatusBadge status={row.original.status as any} />,
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
         accessorKey: "Action",

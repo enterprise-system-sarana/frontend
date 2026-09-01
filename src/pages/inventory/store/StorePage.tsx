@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { VisibilityState } from "@tanstack/react-table";
 import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -7,22 +8,22 @@ import type { StoreResponse } from "@/types/inventory/Store";
 import { useSearch } from "@/utils/useSearch";
 import { PageFilter, type FilterGroup } from "@/utils/PageFilter";
 import { useStore } from "@/hooks/inventory/useStore";
-import FormStore from "./StoreForm";
 import { StoreColumns } from "./StoreColumn";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { PageHeader } from "@/components/ui/page-header";
 import { Status } from "@/types/enum/status";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { ROUTERS } from "@/constants/Route";
 
 export const StorePage = () => {
+  const navigate = useNavigate();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.STORE.CREATE);
   const canRead = Can(PERMISSION.STORE.READ);
   const canUpdate = Can(PERMISSION.STORE.UPDATE);
   const canDelete = Can(PERMISSION.STORE.DELETE);
 
-  const [open, setOpen] = useState(false);
   const [store, setStore] = useState<StoreResponse | null>(null);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
@@ -86,8 +87,7 @@ export const StorePage = () => {
   }, [searchedStores, filterValues]);
 
   const handleEdit = (s: StoreResponse) => {
-    setStore(s);
-    setOpen(true);
+    navigate(`${ROUTERS.STORE_EDIT.replace(':id', String(s.id))}`);
   };
 
   const handleDelete = (id: number) => {
@@ -145,8 +145,7 @@ export const StorePage = () => {
           onCreate={
             canCreate
               ? () => {
-                  setStore(null);
-                  setOpen(true);
+                  navigate(ROUTERS.STORE_CREATE);
                 }
               : undefined
           }
@@ -194,8 +193,6 @@ export const StorePage = () => {
           </div>
         </div>
       </div>
-
-      <FormStore open={open} setOpen={setOpen} store={store} />
 
       <ConfirmDelete
         isOpen={openConfirmDelete}

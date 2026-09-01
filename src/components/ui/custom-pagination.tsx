@@ -82,9 +82,13 @@ export function CustomPagination({
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-border/60">
       {/* Showing range details */}
       <div className="text-xs text-muted-foreground font-medium">
-        {t("common.showing")} <span className="font-semibold text-foreground">{startRow}</span> {t("common.to")}{" "}
-        <span className="font-semibold text-foreground">{endRow}</span> {t("common.of")}{" "}
-        <span className="font-semibold text-foreground">{total}</span> {t("common.entries")}
+        {t("common.showing")}{" "}
+        <span className="font-semibold text-foreground">{startRow}</span>{" "}
+        {t("common.to")}{" "}
+        <span className="font-semibold text-foreground">{endRow}</span>{" "}
+        {t("common.of")}{" "}
+        <span className="font-semibold text-foreground">{total}</span>{" "}
+        {t("common.entries")}
       </div>
 
       <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
@@ -155,10 +159,11 @@ export function CustomPagination({
                 <Button
                   key={`page-${pageNum}`}
                   variant="ghost"
-                  className={`h-8 w-8 p-0 rounded-lg text-xs font-semibold transition-all duration-200 ${isActive
-                    ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30 hover:bg-primary/90 hover:text-primary-foreground"
-                    : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                    }`}
+                  className={`h-8 w-8 p-0 rounded-lg text-xs font-semibold transition-all duration-200 ${
+                    isActive
+                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30 hover:bg-primary/90 hover:text-primary-foreground"
+                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
+                  }`}
                   onClick={() => onPageChange(Number(pageNum))}
                 >
                   {pageNum}

@@ -89,6 +89,7 @@ const BrandPage = () => {
         const selected = data?.payload?.data?.find(
             (u: BrandResponse) => u.id === id
         );
+        console.log("selected", selected)
         if (selected) {
             setBrand(selected);
             setOpenConfirmDelete(true);
