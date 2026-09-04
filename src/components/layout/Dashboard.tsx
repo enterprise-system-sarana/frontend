@@ -70,9 +70,9 @@ const DashboardLayout = () => {
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-background">
-        <div className="sticky top-3 z-10 mx-6 my-2">
-          <header className="flex h-14 items-center justify-between gap-4 rounded-xl border border-border/60 bg-card/85 px-4 shadow-sm backdrop-blur-md transition-all">
+      <SidebarInset className="bg-[#f4f5f4] dark:bg-background">
+        <div className="sticky top-3 z-10 mx-3 my-2 sm:mx-6">
+          <header className="flex h-14 items-center justify-between gap-4 rounded-xl border border-border/60 bg-card/90 px-3 shadow-sm backdrop-blur-md transition-all sm:px-4">
             {/* Left side: Sidebar Trigger + User Welcome Info */}
             <div className="flex items-center gap-3">
               <SidebarTrigger className="-ml-1 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" />
@@ -102,7 +102,7 @@ const DashboardLayout = () => {
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <div className="flex items-center gap-2.5 p-1 pr-3 rounded-full border border-border/60 bg-card shadow-2xs cursor-pointer hover:bg-muted/60 transition-all select-none">
-                    <Avatar className="h-7 w-7 rounded-full border border-primary/20">
+                    {/* <Avatar className="h-7 w-7 rounded-full border border-primary/20">
                       <AvatarImage
                         src={activeUser.avatar}
                         alt={activeUser.name}
@@ -110,7 +110,7 @@ const DashboardLayout = () => {
                       <AvatarFallback className="rounded-full bg-primary/10 text-primary font-bold text-[10px]">
                         {activeUser.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
-                    </Avatar>
+                    </Avatar> */}
                     <span className="text-xs font-semibold text-foreground truncate max-w-[120px] hidden sm:inline-block font-sans">
                       {activeUser.name}
                     </span>
@@ -169,7 +169,7 @@ const DashboardLayout = () => {
             </div>
           </header>
         </div>
-        <div className="flex flex-1 flex-col gap-4 p-6 pt-2">
+        <div className="flex flex-1 flex-col gap-4 px-3 pb-6 pt-2 sm:px-6">
           <Outlet />
         </div>
       </SidebarInset>

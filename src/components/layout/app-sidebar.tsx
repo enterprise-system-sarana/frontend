@@ -158,10 +158,22 @@ const data = {
       badge: undefined as string | undefined,
       items: [
         {
-          title: "Customer",
+          title: "List Sales",
+          url: ROUTERS.SALE,
+          icon: ShoppingCart,
+          permission: PERMISSION.SALE.READ,
+        },
+        {
+          title: "Create Sale",
+          url: ROUTERS.SALE_CREATE,
+          icon: PlusCircle,
+          permission: PERMISSION.SALE.CREATE,
+        },
+        {
+          title: "Customers",
           url: ROUTERS.CUSTOMER,
           icon: Users,
-          // permission: PERMISSION.CUSTOMER.READ,
+          permission: PERMISSION.CUSTOMER.READ,
         },
       ],
     },

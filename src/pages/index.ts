@@ -47,6 +47,8 @@ export { default as CurrencyPage } from "@/pages/finance/currency/CurrencyPage";
 
 // Sales
 export { default as CustomerPage } from "@/pages/sales/customers/CustomerPage";
+export { default as SalePage } from "@/pages/sales/sale/SalePage";
+export { default as SaleForm } from "@/pages/sales/sale/SaleForm";
 
 // Expenses
 export { default as ExpensePage } from "@/pages/expenses/expense/ExpensePage";
