@@ -90,6 +90,14 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
                     <FieldGroup>
                         <FormTextField
                             form={form}
+                            name="code"
+                            label="Code"
+                            required={true}
+                            placeholder="code"
+                            type="text"
+                        />
+                        <FormTextField
+                            form={form}
                             name="name"
                             label="Name"
                             required={true}
@@ -97,14 +105,7 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
                             type="text"
                         />
 
-                        <FormTextField
-                            form={form}
-                            name="code"
-                            label="Code"
-                            required={true}
-                            placeholder="code"
-                            type="text"
-                        />
+
 
                         <FormSelectField
                             form={form}
