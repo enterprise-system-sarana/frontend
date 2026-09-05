@@ -6,6 +6,7 @@ import type { VariantValueResponse } from "./VariantValue";
 
 export interface ProductResponse extends BaseResponse {
   code: string;
+  name : string ; 
   noted: string;
   imageUrl: string;
   status: Status;
@@ -25,6 +26,7 @@ export interface ProductResponse extends BaseResponse {
 
 export const ProductSchema = z.object({
   code: validateString("Code"),
+  name: validateString("Name"),
   noted: stringValidate(),
   imageUrl: stringValidate(),
   costPrice: validateNumber("Cost Price"),
@@ -37,6 +39,8 @@ export const ProductSchema = z.object({
 
 export interface ProductFilter extends PageFilter {
   modelId?: number;
+  name : string ;
+  code : string ;
 }
 
 export type ProductRequest = z.infer<typeof ProductSchema>;
