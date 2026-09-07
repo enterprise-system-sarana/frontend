@@ -40,7 +40,7 @@ export const ProductDetail = () => {
 
   const { data, isLoading, isError, refetch } = useProduct.useGetProductById(
     productId,
-    isValidId
+    isValidId,
   );
 
   const { mutate: deleteProductMutate, isPending: isDeleting } =
@@ -55,7 +55,9 @@ export const ProductDetail = () => {
       { id: product.id },
       {
         onSuccess: () => {
-          toast.success(t("product.delete_success") || "Product deleted successfully");
+          toast.success(
+            t("product.delete_success") || "Product deleted successfully",
+          );
           setOpenConfirmDelete(false);
           navigate(ROUTERS.PRODUCT);
         },
@@ -63,12 +65,20 @@ export const ProductDetail = () => {
           toast.error(
             err?.response?.data?.message ||
               t("product.delete_failed") ||
-              "Failed to delete product"
+              "Failed to delete product",
           );
         },
-      }
+      },
     );
   };
+
+  const formatPrice = (value?: number) =>
+    value == null
+      ? "-"
+      : new Intl.NumberFormat(undefined, {
+          minimumFractionDigits: 2,
+          maximumFractionDigits: 2,
+        }).format(value);
 
   if (!isValidId) {
     return (
@@ -89,16 +99,11 @@ export const ProductDetail = () => {
   if (isLoading) {
     return (
       <div className="space-y-6 w-full pb-16 animate-pulse">
-        <div className="flex items-center justify-between pb-3 border-b border-border/60">
-          <div className="h-9 w-48 bg-muted rounded-md" />
-          <div className="flex gap-2">
-            <div className="h-9 w-20 bg-muted rounded-md" />
-            <div className="h-9 w-20 bg-muted rounded-md" />
-          </div>
-        </div>
+        <div className="h-24 bg-muted/70 rounded-2xl" />
+        <div className="h-16 bg-muted/70 rounded-2xl" />
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="h-80 bg-muted rounded-md lg:col-span-1" />
-          <div className="h-80 bg-muted rounded-md lg:col-span-2" />
+          <div className="h-80 bg-muted/70 rounded-2xl lg:col-span-1" />
+          <div className="h-80 bg-muted/70 rounded-2xl lg:col-span-2" />
         </div>
       </div>
     );
@@ -126,42 +131,61 @@ export const ProductDetail = () => {
     );
   }
 
+  const infoFields = [
+    { label: "Product code", value: product.code, mono: true },
+    { label: "Model", value: product.modelName },
+    { label: "Category", value: product.categoryName },
+    { label: "Brand", value: product.brandName },
+    {
+      label: "Created",
+      value: product.createdAt ? formatDate(product.createdAt) : undefined,
+    },
+    {
+      label: "Last updated",
+      value: product.updatedAt ? formatDate(product.updatedAt) : undefined,
+    },
+  ];
+
   return (
     <>
-      <div className="space-y-6 w-full pb-16">
-        {/* Header Bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-border/60">
-          <div className="flex items-center gap-3">
+      <div className="space-y-5 w-full pb-16">
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-2xl border border-border/60 bg-card px-5 py-4 shadow-xs">
+          <div className="flex items-center gap-3 min-w-0">
             <Button
               type="button"
               variant="outline"
               size="icon"
               onClick={() => navigate(ROUTERS.PRODUCT)}
-              className="h-9 w-9 rounded-md border-border/60 hover:bg-muted/60"
+              className="h-9 w-9 shrink-0 rounded-md border-border/60 hover:bg-muted/60"
               title={t("common.back") || "Back"}
             >
               <ArrowLeft className="h-4 w-4" />
             </Button>
-            <div>
-              <div className="flex items-center gap-2.5">
-                <h1 className="text-xl font-bold tracking-tight text-foreground">
+            <div className="min-w-0">
+              <div className="flex flex-wrap items-center gap-2.5">
+                <h1 className="text-2xl font-bold tracking-tight text-foreground truncate">
                   {product.modelName || product.code}
                 </h1>
                 <StatusBadge status={product.status} />
               </div>
-              <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1.5">
-                <Barcode className="h-3.5 w-3.5" />
-                Product Code: <span className="font-mono font-medium text-foreground">{product.code}</span>
+              <p className="text-sm text-muted-foreground mt-0.5 flex items-center gap-3">
+                <span className="flex items-center gap-1.5">
+                  <Barcode className="h-3.5 w-3.5" />
+                  <span className="font-mono text-foreground/80">
+                    {product.code}
+                  </span>
+                </span>
+                <span>ID #{product.id}</span>
               </p>
             </div>
           </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-2 self-end sm:self-auto">
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
             <Button
               variant="outline"
               onClick={() => navigate(`/product/edit/${product.id}`)}
-              className="rounded-md gap-1.5"
+              className="rounded-lg gap-1.5"
             >
               <Pencil className="h-4 w-4" />
               {t("common.edit") || "Edit"}
@@ -169,7 +193,7 @@ export const ProductDetail = () => {
             <Button
               variant="destructive"
               onClick={() => setOpenConfirmDelete(true)}
-              className="rounded-md gap-1.5"
+              className="rounded-lg gap-1.5"
             >
               <Trash2 className="h-4 w-4" />
               {t("common.delete") || "Delete"}
@@ -177,165 +201,120 @@ export const ProductDetail = () => {
           </div>
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column: Product Image & Media */}
-          <div className="space-y-6 lg:col-span-1">
-            <Card className="rounded-md border-border/60 shadow-xs overflow-hidden">
-              <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <Package className="h-4 w-4 text-primary" />
-                  Product Media
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6 flex flex-col items-center justify-center text-center">
-                <div className="w-full flex justify-center py-2">
-                  <ImageCell
-                    fileName={product.imageUrl}
-                    name={product.code}
-                    bucketName="product"
-                    className="h-56 w-56 rounded-md shadow-xs"
-                    aspectRatio="square"
-                  />
-                </div>
-                <div className="mt-4 w-full pt-4 border-t border-border/40 text-left space-y-2 text-xs">
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Image File</span>
-                    <span className="font-mono text-foreground truncate max-w-[160px]">
-                      {product.imageUrl || "No image uploaded"}
-                    </span>
-                  </div>
-                  <div className="flex justify-between py-1">
-                    <span className="text-muted-foreground">Product ID</span>
-                    <span className="font-semibold text-foreground">#{product.id}</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
+        {/* Snapshot strip */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 divide-y sm:divide-y-0 sm:divide-x divide-border/60 rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+          <div className="px-5 py-4">
+            <p className="text-xs text-muted-foreground">Sale price</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-foreground">
+              {formatPrice(product.salePrice)}
+            </p>
+          </div>
+          <div className="px-5 py-4">
+            <p className="text-xs text-muted-foreground">Cost price</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-foreground">
+              {formatPrice(product.costPrice)}
+            </p>
+          </div>
+          <div className="px-5 py-4 bg-primary/[0.04]">
+            <p className="text-xs text-primary/75">Reorder level</p>
+            <p className="mt-1 text-xl font-bold tabular-nums text-primary">
+              {product.reorderLevel ?? 0}{" "}
+              <span className="text-sm font-medium">units</span>
+            </p>
+          </div>
+        </div>
 
-            {/* Quick Metrics / Reorder Alert */}
-            <Card className="rounded-md border-border/60 shadow-xs">
-              <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <AlertTriangle className="h-4 w-4 text-amber-500" />
-                  Inventory Threshold
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-5 space-y-3 text-sm">
-                <div className="flex justify-between items-center">
-                  <span className="text-muted-foreground">Reorder Level</span>
-                  <Badge variant="outline" className="font-mono text-xs font-semibold px-2.5 py-0.5">
-                    {product.reorderLevel ?? 0} units
-                  </Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  When stock falls at or below {product.reorderLevel ?? 0} units, replenishment alerts will trigger automatically.
+        {/* Content grid */}
+        <div className="grid grid-cols-1 gap-5 lg:grid-cols-3">
+          {/* Left column */}
+          <div className="space-y-5 lg:col-span-1">
+            <Card className="rounded-2xl border-border/60 shadow-xs overflow-hidden py-0 gap-0">
+              <CardContent className="p-6 flex flex-col items-center text-center">
+                <ImageCell
+                  fileName={product.imageUrl}
+                  name={product.code}
+                  bucketName="product"
+                  className="h-52 w-52 rounded-xl shadow-xs"
+                  aspectRatio="square"
+                />
+                <p className="mt-3 text-xs text-muted-foreground truncate max-w-full">
+                  {product.imageUrl || "No image uploaded"}
                 </p>
               </CardContent>
             </Card>
+
+            <div className="rounded-2xl border border-border/60 bg-card shadow-xs p-5">
+              <div className="flex items-start gap-3">
+                <AlertTriangle className="h-4 w-4 text-amber-500 mt-0.5 shrink-0" />
+                <div>
+                  <p className="text-sm font-semibold text-foreground">
+                    Reorder at {product.reorderLevel ?? 0} units
+                  </p>
+                  <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                    Replenishment alerts trigger automatically once stock falls
+                    at or below this level.
+                  </p>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Right Column: Specifications & Variant Values */}
-          <div className="space-y-6 lg:col-span-2">
-            {/* Primary Details Card */}
-            <Card className="rounded-md border-border/60 shadow-xs">
-              <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+          {/* Right column */}
+          <div className="space-y-5 lg:col-span-2">
+            <Card className="rounded-2xl border-border/60 shadow-xs">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground/90">
                   <Layers className="h-4 w-4 text-primary" />
-                  General Information
+                  General information
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-5 text-sm">
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Barcode className="h-3.5 w-3.5 text-muted-foreground" />
-                      Product Code
-                    </span>
-                    <div className="font-mono font-semibold text-base text-foreground">
-                      {product.code || "-"}
+              <CardContent className="pt-2">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-4 text-sm">
+                  {infoFields.map((f) => (
+                    <div
+                      key={f.label}
+                      className="flex justify-between sm:block border-b sm:border-0 border-border/40 pb-2 sm:pb-0"
+                    >
+                      <span className="text-muted-foreground">{f.label}</span>
+                      <div
+                        className={`sm:mt-0.5 font-medium text-foreground text-right sm:text-left ${
+                          f.mono ? "font-mono" : ""
+                        }`}
+                      >
+                        {f.value || "-"}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Bookmark className="h-3.5 w-3.5 text-muted-foreground" />
-                      Model
-                    </span>
-                    <div className="font-semibold text-base text-foreground">
-                      {product.modelName || "-"}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Tag className="h-3.5 w-3.5 text-muted-foreground" />
-                      Category
-                    </span>
-                    <div className="font-medium text-foreground">
-                      {product.categoryName || "-"}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Building2 className="h-3.5 w-3.5 text-muted-foreground" />
-                      Brand
-                    </span>
-                    <div className="font-medium text-foreground">
-                      {product.brandName || "-"}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                      Created Date
-                    </span>
-                    <div className="text-foreground">
-                      {product.createdAt ? formatDate(product.createdAt) : "-"}
-                    </div>
-                  </div>
-
-                  <div className="space-y-1">
-                    <span className="text-xs font-medium text-muted-foreground uppercase tracking-wide flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5 text-muted-foreground" />
-                      Last Updated
-                    </span>
-                    <div className="text-foreground">
-                      {product.updatedAt ? formatDate(product.updatedAt) : "-"}
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
 
-            {/* Product Variants Card */}
-            <Card className="rounded-md border-border/60 shadow-xs">
-              <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
+            <Card className="rounded-2xl border-border/60 shadow-xs">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-semibold flex items-center gap-2 text-foreground/90">
                   <Sparkles className="h-4 w-4 text-primary" />
-                  Product Variants & Options
+                  Variants & options
                 </CardTitle>
               </CardHeader>
-              <CardContent className="p-6">
+              <CardContent className="pt-2">
                 {product.variantValues && product.variantValues.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="flex flex-wrap gap-2">
                     {product.variantValues.map((v) => (
                       <div
                         key={v.id}
-                        className="flex items-center justify-between p-3 rounded-md border border-border/60 bg-card/60 hover:bg-muted/30 transition-colors"
+                        className="flex items-center gap-1.5 rounded-full border border-border/60 bg-muted/30 pl-3 pr-2 py-1 text-sm"
                       >
-                        <div>
-                          <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider block">
-                            {v.variantTypeName || "Variant"}
-                          </span>
-                          <span className="text-sm font-medium text-foreground">
-                            {v.name}
-                          </span>
-                        </div>
+                        <span className="text-muted-foreground">
+                          {v.variantTypeName || "Variant"}:
+                        </span>
+                        <span className="font-medium text-foreground">
+                          {v.name}
+                        </span>
                         {v.code && (
-                          <Badge variant="secondary" className="font-mono text-[11px]">
+                          <Badge
+                            variant="secondary"
+                            className="font-mono text-[10px] px-1.5 py-0"
+                          >
                             {v.code}
                           </Badge>
                         )}
@@ -343,27 +322,29 @@ export const ProductDetail = () => {
                     ))}
                   </div>
                 ) : (
-                  <div className="text-center py-6 text-muted-foreground text-sm">
+                  <p className="text-sm text-muted-foreground py-2">
                     No variant attributes assigned to this product.
-                  </div>
+                  </p>
                 )}
               </CardContent>
             </Card>
 
-            {/* Notes & Remarks Card */}
-            <Card className="rounded-md border-border/60 shadow-xs">
-              <CardHeader className="pb-3 border-b border-border/40 bg-muted/20">
-                <CardTitle className="text-sm font-semibold flex items-center gap-2">
-                  <FileText className="h-4 w-4 text-primary" />
-                  Notes & Remarks
-                </CardTitle>
-              </CardHeader>
-              <CardContent className="p-6">
-                <p className="text-sm text-foreground/90 leading-relaxed whitespace-pre-wrap">
-                  {product.noted?.trim() || "No additional notes or description provided for this product."}
-                </p>
-              </CardContent>
-            </Card>
+            <div className="rounded-2xl border-l-4 border-border bg-muted/20 px-5 py-4">
+              <div className="flex items-center gap-2 text-xs text-muted-foreground mb-2">
+                <FileText className="h-3.5 w-3.5" />
+                Notes
+              </div>
+              <p
+                className={`text-sm leading-relaxed whitespace-pre-wrap ${
+                  product.noted?.trim()
+                    ? "text-foreground/90"
+                    : "text-muted-foreground italic"
+                }`}
+              >
+                {product.noted?.trim() ||
+                  "No additional notes or description provided for this product."}
+              </p>
+            </div>
           </div>
         </div>
       </div>
