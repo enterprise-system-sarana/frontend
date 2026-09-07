@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const API_URL = "http://169.58.63.127:3333/api/v1";
+const API_URL = "http://localhost:8081/api/v1"; // Fallback to localhost if the first URL is unreachable.
 
 const api = axios.create({
   baseURL: API_URL,
