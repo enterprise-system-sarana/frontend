@@ -22,6 +22,7 @@ import {
   Settings,
   CircleSmall,
   LayoutDashboard,
+  Receipt,
 } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
@@ -163,6 +164,18 @@ const data = {
           icon: Users,
           // permission: PERMISSION.CUSTOMER.READ,
         },
+        {
+          title: "Sale",
+          url: ROUTERS.SALE,
+          icon: Receipt,
+          // permission: PERMISSION.SALE.READ,
+        },
+        {
+          title: "Create Sale",
+          url: `${ROUTERS.SALE}/create`,
+          icon: PlusCircle,
+          // permission: PERMISSION.SALE.CREATE,
+        },
       ],
     },
     {
@@ -223,13 +236,6 @@ const data = {
           icon: CircleSmall,
           permission: PERMISSION.ROLE.READ,
         },
-        // {
-        //   title: "Permission Groups",
-        //   url: ROUTERS.GROUP_PERMISSION,
-        //   icon: CircleSmall,
-        //   permission: PERMISSION.PERMISSION_GROUP.READ,
-        // },
-        // <CircleSmall />
         {
           title: "Role Permissions",
           url: ROUTERS.ROLE_PERMISSIONS,
@@ -263,7 +269,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {/* Brand Logo Header */}
       <SidebarHeader className="border-b-0 px-5 py-3">
         <div className="flex items-center gap-3 px-2">
-          <div className="">
+          <div>
             <img src="/logo.png" alt="Logo" className="size-7 object-contain" />
           </div>
 

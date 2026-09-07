@@ -1,4 +1,3 @@
-
 export const ROUTERS = {
   HOME: "/",
   PRODUCT: "/product",
@@ -27,6 +26,10 @@ export const ROUTERS = {
   PERMISSION: "/permission",
   GROUP_PERMISSION: "/group-permission",
   USER: "/user",
+  SALE: "/sale",
+  SALE_CREATE: "/sale/create",
+  SALE_EDIT: "/sale/edit/:id",
+  SALE_COMPLETE: "/sale/complete/:id",
   SALES: "/sales",
   REPORT: "/report",
   CHANGE_PASSWORD: "/change-password",
