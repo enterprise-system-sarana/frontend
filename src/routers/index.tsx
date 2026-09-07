@@ -27,6 +27,8 @@ import {
   ExpenseTypePage,
   PurchasePage,
   PurchaseForm,
+  SalePage,
+  SaleForm,
   NotFoundPage,
 } from "@/pages";
 import PrivateRoute from "@/utils/privateRoute";
@@ -55,10 +57,9 @@ const router = createBrowserRouter([
         path: ROUTERS.DASHBOARD,
         element: <DashboardLayout />,
         children: [
-
           {
             index: true,
-            element: <HomePage />
+            element: <HomePage />,
           },
           {
             path: ROUTERS.HOME,
@@ -135,9 +136,24 @@ const router = createBrowserRouter([
             element: <StockPage />,
           },
           // sales
+          { path: ROUTERS.SALE, element: <SalePage /> },
+          { path: ROUTERS.SALE_CREATE, element: <SaleForm /> },
+          { path: ROUTERS.SALE_EDIT, element: <SaleForm /> },
           {
             path: ROUTERS.CUSTOMER,
             element: <CustomerPage />,
+          },
+          {
+            path: ROUTERS.SALE,
+            element: <SalePage />,
+          },
+          {
+            path: ROUTERS.SALE_CREATE,
+            element: <SaleForm />,
+          },
+          {
+            path: ROUTERS.SALE_EDIT,
+            element: <SaleForm />,
           },
           // role permission
           {
@@ -153,10 +169,6 @@ const router = createBrowserRouter([
             path: ROUTERS.ROLE_PERMISSIONS,
             element: <PermissionPage />,
           },
-          //   {
-          //     path: ROUTERS.GROUP_PERMISSION,
-          //     element: <GroupPermissionPage />,
-          //   },
           // finance
           {
             path: ROUTERS.BANK,

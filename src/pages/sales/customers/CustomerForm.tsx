@@ -23,9 +23,15 @@ type FormCustomerProps = {
   open: boolean;
   setOpen: (open: boolean) => void;
   customer: CustomerResponse | null;
+  onCreated?: (response: any) => void;
 };
 
-const FormCustomer = ({ open, setOpen, customer }: FormCustomerProps) => {
+const FormCustomer = ({
+  open,
+  setOpen,
+  customer,
+  onCreated,
+}: FormCustomerProps) => {
   const { mutate: createCustomerMutate, isPending: isCreating } =
     useCustomer.useCreateCustomer();
   const { mutate: updateCustomerMutate, isPending: isUpdating } =
@@ -58,7 +64,12 @@ const FormCustomer = ({ open, setOpen, customer }: FormCustomerProps) => {
           { onSuccess: handleSuccess }
         );
       } else {
-        createCustomerMutate(payload, { onSuccess: handleSuccess });
+        createCustomerMutate(payload, {
+          onSuccess: (data) => {
+            handleSuccess();
+            onCreated?.(data);
+          },
+        });
       }
     },
   });

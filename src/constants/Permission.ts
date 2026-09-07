@@ -13,7 +13,7 @@ export const PERMISSION = {
     DELETE: "currency:delete",
   },
 
-  //   ============== START PERMISSION PRODUCT ==============
+  // ============== START PERMISSION PRODUCT ==============
   PRODUCT: {
     READ: "product:read",
     CREATE: "product:create",
@@ -150,7 +150,7 @@ export const PERMISSION = {
     READ: "report:read",
   },
 
-  //=============== user =========================
+  //=============== USER =========================
   USERS: {
     READ: "user:read",
     CREATE: "user:create",

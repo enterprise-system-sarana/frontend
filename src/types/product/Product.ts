@@ -39,8 +39,8 @@ export const ProductSchema = z.object({
 
 export interface ProductFilter extends PageFilter {
   modelId?: number;
-  name : string ;
-  code : string ;
+  name?: string;
+  code?: string;
 }
 
 export type ProductRequest = z.infer<typeof ProductSchema>;
