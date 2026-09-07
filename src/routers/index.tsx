@@ -136,6 +136,9 @@ const router = createBrowserRouter([
             element: <StockPage />,
           },
           // sales
+          { path: ROUTERS.SALE, element: <SalePage /> },
+          { path: ROUTERS.SALE_CREATE, element: <SaleForm /> },
+          { path: ROUTERS.SALE_EDIT, element: <SaleForm /> },
           {
             path: ROUTERS.CUSTOMER,
             element: <CustomerPage />,
