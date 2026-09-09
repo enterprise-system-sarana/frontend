@@ -53,6 +53,10 @@ export { default as SaleForm } from "@/pages/sales/sale/SaleForm";
 // Expenses
 export { default as ExpensePage } from "@/pages/expenses/expense/ExpensePage";
 export { default as ExpenseTypePage } from "@/pages/expenses/expenseType/ExpenseTypePage";
+export { default as ReportPage } from "@/pages/reports/ReportPage";
+export { default as SalesItemReportPage } from "@/pages/reports/SalesItemReportPage";
+export { default as ExpenseReportPage } from "@/pages/reports/ExpenseReportPage";
+export { default as ProductSerialReportPage } from "@/pages/reports/ProductSerialReportPage";
 
 // File Upload Testing
 export { default as FileUploadPage, FileUpload } from "@/pages/FileUpload";

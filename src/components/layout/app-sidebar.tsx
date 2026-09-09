@@ -231,6 +231,39 @@ const data = {
       ],
     },
     {
+      title: "Reports",
+      url: "#",
+      icon: Receipt,
+      badge: undefined as string | undefined,
+      permission: PERMISSION.REPORT.READ,
+      items: [
+        {
+          title: "Sales Reports",
+          url: ROUTERS.REPORT_SALES,
+          icon: Receipt,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Sales Item Reports",
+          url: ROUTERS.REPORT_SALES_ITEMS,
+          icon: ShoppingCart,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Expense Reports",
+          url: ROUTERS.REPORT_EXPENSES,
+          icon: Wallet,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Product Serial Reports",
+          url: ROUTERS.REPORT_PRODUCT_SERIALS,
+          icon: Boxes,
+          permission: PERMISSION.REPORT.READ,
+        },
+      ],
+    },
+    {
       title: "Security",
       url: "#",
       icon: Shield,
@@ -276,7 +309,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       collapsible="icon"
       variant="inset"
       {...props}
-      className="border-r border-sidebar-border/60 bg-sidebar shadow-none"
+      className="h-screen border-r border-sidebar-border/60 bg-sidebar shadow-none"
     >
       {/* Brand Logo Header */}
       <SidebarHeader className="border-b-0 px-5 py-3">
