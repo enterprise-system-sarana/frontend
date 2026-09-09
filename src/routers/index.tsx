@@ -29,6 +29,10 @@ import {
   PurchaseForm,
   SalePage,
   SaleForm,
+  ReportPage,
+  SalesItemReportPage,
+  ExpenseReportPage,
+  ProductSerialReportPage,
   NotFoundPage,
 } from "@/pages";
 import PrivateRoute from "@/utils/privateRoute";
@@ -190,6 +194,22 @@ const router = createBrowserRouter([
           {
             path: ROUTERS.CHANGE_PASSWORD,
             element: <ChangePasswordPage />,
+          },
+          {
+            path: ROUTERS.REPORT_SALES,
+            element: <ReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_SALES_ITEMS,
+            element: <SalesItemReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_EXPENSES,
+            element: <ExpenseReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_PRODUCT_SERIALS,
+            element: <ProductSerialReportPage />,
           },
           {
             path: ROUTERS.FILE_UPLOAD,
