@@ -134,7 +134,7 @@ export const ProductPage = () => {
   };
 
   const handleView = (product: ProductResponse) => {
-    navigate(`${ROUTERS.PRODUCT_DETAIL}/${product.id}`);
+    navigate(ROUTERS.PRODUCT_DETAIL.replace(":id", String(product.id)));
   };
 
   const handleEdit = (product: ProductResponse) => {

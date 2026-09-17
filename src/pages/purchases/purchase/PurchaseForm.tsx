@@ -655,7 +655,7 @@ function PurchaseItemRow({
           placeholder="Select product"
           options={products.map((p) => ({
             value: String(p.id),
-            label: `${p.modelName}`,
+            label: `${p.name}`,
           }))}
         />
 

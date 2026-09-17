@@ -47,12 +47,18 @@ export { default as CurrencyPage } from "@/pages/finance/currency/CurrencyPage";
 
 // Sales
 export { default as CustomerPage } from "@/pages/sales/customers/CustomerPage";
+export { default as SalePage } from "@/pages/sales/sale/SalePage";
+export { default as SaleForm } from "@/pages/sales/sale/SaleForm";
 export { default as QuotePage } from "@/pages/sales/quotes/QuotePage";
 export { default as QuoteForm } from "@/pages/sales/quotes/QuoteForm";
 
 // Expenses
 export { default as ExpensePage } from "@/pages/expenses/expense/ExpensePage";
 export { default as ExpenseTypePage } from "@/pages/expenses/expenseType/ExpenseTypePage";
+export { default as ReportPage } from "@/pages/reports/ReportPage";
+export { default as SalesItemReportPage } from "@/pages/reports/SalesItemReportPage";
+export { default as ExpenseReportPage } from "@/pages/reports/ExpenseReportPage";
+export { default as ProductSerialReportPage } from "@/pages/reports/ProductSerialReportPage";
 
 // File Upload Testing
 export { default as FileUploadPage, FileUpload } from "@/pages/FileUpload";

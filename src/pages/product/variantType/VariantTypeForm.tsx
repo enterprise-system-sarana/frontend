@@ -74,20 +74,21 @@ const VariantTypeForm = ({ open, setOpen, variantType }: FormVariantTypeProps) =
                     <FieldGroup>
                         <FormTextField
                             form={form}
-                            name="name"
-                            label="Name"
-                            required={true}
-                            placeholder="Name"
-                            type="text"
-                        />
-                        <FormTextField
-                            form={form}
                             name="code"
                             label="Code"
                             required={true}
                             placeholder="Code"
                             type="text"
                         />
+                        <FormTextField
+                            form={form}
+                            name="name"
+                            label="Name"
+                            required={true}
+                            placeholder="Name"
+                            type="text"
+                        />
+
                         <FormRadioGroupField
                             form={form}
                             name="status"

@@ -16,6 +16,12 @@ export const mutationHandler = ({
     },
 
     onError: (error: any) => {
+        console.error("API mutation failed", {
+            status: error.response?.status,
+            url: error.config?.url,
+            request: error.config?.data,
+            response: error.response?.data,
+        });
         let errorMsg = "Something went wrong";
         if (error.response?.data) {
             const data = error.response.data;

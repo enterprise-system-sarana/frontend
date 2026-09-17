@@ -80,10 +80,16 @@ export const StoreColumns = ({
         .join(", ");
       return (
         <div className="flex flex-col text-xs max-w-xs space-y-0.5">
-          <span className="text-foreground truncate" title={address || undefined}>
+          <span
+            className="text-foreground truncate"
+            title={address || undefined}
+          >
             {address || "-"}
           </span>
-          <span className="text-muted-foreground truncate" title={region || undefined}>
+          <span
+            className="text-muted-foreground truncate"
+            title={region || undefined}
+          >
             {region || "-"}
           </span>
         </div>
@@ -101,7 +107,9 @@ export const StoreColumns = ({
   },
   {
     accessorKey: "createdAt",
-    header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+    header: ({ column }) => (
+      <SortableHeader column={column} title="Created Date" />
+    ),
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
         {formatDate(row.original.createdAt)}

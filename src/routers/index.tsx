@@ -27,6 +27,12 @@ import {
   ExpenseTypePage,
   PurchasePage,
   PurchaseForm,
+  SalePage,
+  SaleForm,
+  ReportPage,
+  SalesItemReportPage,
+  ExpenseReportPage,
+  ProductSerialReportPage,
   NotFoundPage,
   QuotePage,
   QuoteForm,
@@ -171,9 +177,24 @@ const router = createBrowserRouter([
             element: <StockPage />,
           },
           // sales
+          { path: ROUTERS.SALE, element: <SalePage /> },
+          { path: ROUTERS.SALE_CREATE, element: <SaleForm /> },
+          { path: ROUTERS.SALE_EDIT, element: <SaleForm /> },
           {
             path: ROUTERS.CUSTOMER,
             element: <CustomerPage />,
+          },
+          {
+            path: ROUTERS.SALE,
+            element: <SalePage />,
+          },
+          {
+            path: ROUTERS.SALE_CREATE,
+            element: <SaleForm />,
+          },
+          {
+            path: ROUTERS.SALE_EDIT,
+            element: <SaleForm />,
           },
           // role permission
           {
@@ -189,10 +210,6 @@ const router = createBrowserRouter([
             path: ROUTERS.ROLE_PERMISSIONS,
             element: <PermissionPage />,
           },
-          //   {
-          //     path: ROUTERS.GROUP_PERMISSION,
-          //     element: <GroupPermissionPage />,
-          //   },
           // finance
           {
             path: ROUTERS.BANK,
@@ -214,6 +231,22 @@ const router = createBrowserRouter([
           {
             path: ROUTERS.CHANGE_PASSWORD,
             element: <ChangePasswordPage />,
+          },
+          {
+            path: ROUTERS.REPORT_SALES,
+            element: <ReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_SALES_ITEMS,
+            element: <SalesItemReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_EXPENSES,
+            element: <ExpenseReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_PRODUCT_SERIALS,
+            element: <ProductSerialReportPage />,
           },
           {
             path: ROUTERS.FILE_UPLOAD,

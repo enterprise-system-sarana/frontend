@@ -6,6 +6,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { FieldGroup } from "@/components/ui/field";
 import FormTextField, {
   FormRadioGroupField,
+  FormTextareaField,
 } from "@/components/ui/FormTextField";
 import { FileUpload } from "@/pages/FileUpload";
 import { StoreSchema } from "@/types/inventory/Store";
@@ -64,13 +65,9 @@ export default function StoreForm() {
         logo: value.logo || "",
         email: value.email?.trim() || "",
         phone: value.phone?.trim() || "",
-        address1: value.address1?.trim() || "",
-        address2: value.address2?.trim() || "",
         city: value.city?.trim() || "",
         state: value.state?.trim() || "",
-        postalCode: value.postalCode?.trim() || "",
         country: value.country?.trim() || "",
-        currencyCode: value.currencyCode?.trim() || "",
         receiptHeader: value.receiptHeader?.trim() || "",
         receiptFooter: value.receiptFooter?.trim() || "",
         status: value.status || Status.ACTIVE,
@@ -80,7 +77,7 @@ export default function StoreForm() {
         toast.success(
           isEditing
             ? "Store updated successfully!"
-            : "Store created successfully!"
+            : "Store created successfully!",
         );
         navigate(ROUTERS.STORE);
       };
@@ -88,7 +85,7 @@ export default function StoreForm() {
       const handleError = (err: any) => {
         toast.error(
           err?.response?.data?.message ||
-          (isEditing ? "Failed to update store." : "Failed to create store.")
+          (isEditing ? "Failed to update store." : "Failed to create store."),
         );
       };
 
@@ -98,7 +95,7 @@ export default function StoreForm() {
           {
             onSuccess: handleSuccess,
             onError: handleError,
-          }
+          },
         );
       } else {
         createStoreMutate(payload, {
@@ -160,20 +157,12 @@ export default function StoreForm() {
           form.handleSubmit();
         }}
       >
-        <div className="space-y-4">
+        <div className="space-y-4 grid grid-cols-2 gap-4 pt-4">
           {/* Card 1: Basic Information & Contact */}
           <Card className="rounded-2xl border-border/60 shadow-2xs">
             <CardContent className="space-y-5">
-              <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-                <FormTextField
-                  form={form}
-                  name="name"
-                  label="Store Name"
-                  placeholder="e.g. Main Branch Store"
-                  type="text"
-                  autoComplete="off"
-                  required
-                />
+              {/* <FieldGroup className="grid grid-cols-1 sm:grid-cols-2  gap-5"> */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                 <FormTextField
                   form={form}
                   name="code"
@@ -185,93 +174,112 @@ export default function StoreForm() {
                 />
                 <FormTextField
                   form={form}
-                  name="currencyCode"
-                  label="Currency Code"
-                  placeholder="e.g. USD / KHR"
+                  name="name"
+                  label="Store Name"
+                  placeholder="e.g. Main Branch Store"
                   type="text"
-                  autoComplete="off"
-                />
-                <FormTextField
-                  form={form}
-                  name="email"
-                  label="Email Address"
-                  placeholder="e.g. store@example.com"
-                  type="email"
                   autoComplete="off"
                   required
                 />
-                <FormTextField
-                  form={form}
-                  name="phone"
-                  label="Phone Number"
-                  placeholder="e.g. +855 12 345 678"
-                  type="text"
-                  autoComplete="off"
-                />
-              </FieldGroup>
+              </div>
+              <FormTextField
+                form={form}
+                name="email"
+                label="Email"
+                placeholder="e.g. store@example.com"
+                type="email"
+                autoComplete="off"
+                required
+              />
+              <FormTextField
+                form={form}
+                name="phone"
+                label="Phone"
+                placeholder="e.g. +855 12 345 678"
+                type="text"
+                autoComplete="off"
+              />
+              <FormTextareaField
+                form={form}
+                name="receiptHeader"
+                label="Receipt Header Text"
+                placeholder="e.g. Welcome to Sarana Store!"
+              // rows={2}
+              // autoComplete="off"
+              />
+              <FormTextareaField
+                form={form}
+                name="receiptFooter"
+                label="Receipt Footer Text"
+                placeholder="e.g. Thank you for shopping with us!"
+              />
             </CardContent>
           </Card>
 
           {/* Card 2: Address & Location */}
           <Card className="rounded-2xl border-border/60 shadow-2xs">
             <CardContent className="space-y-5">
-              <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                <FormTextField
-                  form={form}
-                  name="address1"
-                  label="Primary Address (Line 1)"
-                  placeholder="e.g. Building 12, St. Monivong"
-                  type="text"
-                  autoComplete="off"
-                />
-                <FormTextField
-                  form={form}
-                  name="address2"
-                  label="Secondary Address (Line 2)"
-                  placeholder="e.g. Sangkat Boeung Keng Kang"
-                  type="text"
-                  autoComplete="off"
-                />
-              </FieldGroup>
+              {/* <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"> */}
+              <FormTextField
+                form={form}
+                name="city"
+                label="City"
+                placeholder="e.g. Phnom Penh"
+                type="text"
+                autoComplete="off"
+              />
+              <FormTextField
+                form={form}
+                name="state"
+                label="State / Province"
+                placeholder="e.g. Phnom Penh"
+                type="text"
+                autoComplete="off"
+              />
+              <FormTextField
+                form={form}
+                name="postalCode"
+                label="Postal Code"
+                placeholder="e.g. 12000"
+                type="text"
+                autoComplete="off"
+              />
+              <FormTextField
+                form={form}
+                name="country"
+                label="Country"
+                placeholder="e.g. Cambodia"
+                type="text"
+                autoComplete="off"
+              />
+              {/* </FieldGroup> */}
+              <FieldGroup className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
+                <div className="space-y-1">
+                  <form.Subscribe selector={(state) => [state.values.logo]}>
+                    {([logo]) => (
+                      <FileUpload
+                        label="Store Logo"
+                        value={logo || ""}
+                        onUploaded={(fileName) => {
+                          form.setFieldValue("logo", fileName);
+                        }}
+                        onRemove={() => {
+                          form.setFieldValue("logo", "");
+                        }}
+                        defaultBucket="store"
+                        bucketName="store"
+                      />
+                    )}
+                  </form.Subscribe>
+                </div>
 
-              <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-                <FormTextField
-                  form={form}
-                  name="city"
-                  label="City"
-                  placeholder="e.g. Phnom Penh"
-                  type="text"
-                  autoComplete="off"
-                />
-                <FormTextField
-                  form={form}
-                  name="state"
-                  label="State / Province"
-                  placeholder="e.g. Phnom Penh"
-                  type="text"
-                  autoComplete="off"
-                />
-                <FormTextField
-                  form={form}
-                  name="postalCode"
-                  label="Postal Code"
-                  placeholder="e.g. 12000"
-                  type="text"
-                  autoComplete="off"
-                />
-                <FormTextField
-                  form={form}
-                  name="country"
-                  label="Country"
-                  placeholder="e.g. Cambodia"
-                  type="text"
-                  autoComplete="off"
-                />
+                <div className="md:col-span-2 space-y-4"></div>
               </FieldGroup>
             </CardContent>
+
           </Card>
 
-          {/* Card 3: Branding, Receipt Settings & Status */}
+          {/* Card 3: Branding, Receipt Settings & Status
           <Card className="rounded-2xl border-border/60 shadow-2xs">
             <CardContent className="space-y-5">
               <FieldGroup className="grid grid-cols-1 md:grid-cols-3 gap-6 items-start">
@@ -294,24 +302,7 @@ export default function StoreForm() {
                   </form.Subscribe>
                 </div>
 
-                <div className="md:col-span-2 space-y-4">
-                  <FormTextField
-                    form={form}
-                    name="receiptHeader"
-                    label="Receipt Header Text"
-                    placeholder="e.g. Welcome to Sarana Store!"
-                    type="text"
-                    autoComplete="off"
-                  />
-                  <FormTextField
-                    form={form}
-                    name="receiptFooter"
-                    label="Receipt Footer Text"
-                    placeholder="e.g. Thank you for shopping with us!"
-                    type="text"
-                    autoComplete="off"
-                  />
-                </div>
+                <div className="md:col-span-2 space-y-4"></div>
               </FieldGroup>
 
               <div className="pt-2 border-t border-border/40">
@@ -324,10 +315,10 @@ export default function StoreForm() {
                 />
               </div>
             </CardContent>
-          </Card>
+          </Card> */}
 
           {/* Action Buttons */}
-          <div className="flex items-center justify-end gap-3 pt-2">
+          <div className="flex gap-3 ">
             <Button
               type="button"
               variant="outline"
@@ -355,7 +346,7 @@ export default function StoreForm() {
           </div>
         </div>
       </form>
-    </div >
+    </div>
   );
 }
 

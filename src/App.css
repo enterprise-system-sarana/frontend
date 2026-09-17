@@ -1,0 +1,97 @@
+/* Sales form presentation */
+#sale-form {
+	max-width: 1180px;
+	margin-inline: auto;
+}
+
+#sale-form > section {
+	border-color: color-mix(in srgb, var(--border) 78%, var(--primary));
+	box-shadow: 0 8px 24px rgb(42 30 18 / 4%);
+	transition: box-shadow 180ms ease, border-color 180ms ease;
+}
+
+#sale-form > section:hover {
+	border-color: color-mix(in srgb, var(--border) 55%, var(--primary));
+	box-shadow: 0 12px 30px rgb(42 30 18 / 7%);
+}
+
+#sale-form input:focus,
+#sale-form button:focus-visible,
+#sale-form [data-slot="select-trigger"]:focus-visible {
+	box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 18%, transparent);
+}
+
+#sale-form label {
+	letter-spacing: 0.01em;
+}
+
+#sale-form > section:nth-of-type(2) {
+	background: linear-gradient(135deg, var(--card), color-mix(in srgb, var(--primary-light) 48%, var(--card)));
+}
+
+#sale-form > section:nth-of-type(2) > div:first-child {
+	padding: 0.75rem;
+	border: 1px solid color-mix(in srgb, var(--primary) 18%, var(--border));
+	border-radius: 0.5rem;
+	background: rgb(255 255 255 / 58%);
+}
+
+#sale-form > section:nth-of-type(2) > div:first-child label {
+	display: block;
+	margin-bottom: 0.4rem;
+	color: var(--primary);
+	font-weight: 700;
+}
+
+#sale-form > section:nth-of-type(2) > div:first-child button {
+	min-height: 2.5rem;
+	padding-inline: 1.1rem;
+	border-color: var(--primary);
+	color: var(--primary);
+	font-weight: 700;
+}
+
+#sale-form > section:nth-of-type(2) > div:first-child button:hover {
+	background: var(--primary);
+	color: var(--primary-foreground);
+}
+
+#sale-form > section:nth-of-type(2) form > div > div {
+	border-color: color-mix(in srgb, var(--primary) 20%, var(--border));
+	background: rgb(255 255 255 / 72%);
+	box-shadow: 0 3px 12px rgb(42 30 18 / 3%);
+}
+
+#sale-form > section:last-of-type {
+	background: linear-gradient(135deg, var(--muted), color-mix(in srgb, var(--primary-light) 42%, var(--muted)));
+}
+
+@keyframes dashboardFadeInUp {
+	0% {
+		opacity: 0;
+		transform: translateY(12px) scale(0.98);
+	}
+	100% {
+		opacity: 1;
+		transform: translateY(0) scale(1);
+	}
+}
+
+.dashboard-enter {
+	animation: dashboardFadeInUp 0.55s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.dashboard-card {
+	animation: dashboardFadeInUp 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (max-width: 640px) {
+	#sale-form > section:nth-of-type(2) > div:first-child {
+		align-items: stretch;
+		flex-direction: column;
+	}
+
+	#sale-form > section:nth-of-type(2) > div:first-child button {
+		width: 100%;
+	}
+}

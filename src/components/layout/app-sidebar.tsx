@@ -22,6 +22,7 @@ import {
   Settings,
   CircleSmall,
   LayoutDashboard,
+  Receipt,
   FileText,
 } from "lucide-react";
 
@@ -159,10 +160,34 @@ const data = {
       badge: undefined as string | undefined,
       items: [
         {
-          title: "Customer",
+          title: "List Sales",
+          url: ROUTERS.SALE,
+          icon: ShoppingCart,
+          permission: PERMISSION.SALE.READ,
+        },
+        {
+          title: "Create Sale",
+          url: ROUTERS.SALE_CREATE,
+          icon: PlusCircle,
+          permission: PERMISSION.SALE.CREATE,
+        },
+        {
+          title: "Customers",
           url: ROUTERS.CUSTOMER,
           icon: Users,
-          // permission: PERMISSION.CUSTOMER.READ,
+          permission: PERMISSION.CUSTOMER.READ,
+        },
+        {
+          title: "Sale",
+          url: ROUTERS.SALE,
+          icon: Receipt,
+          // permission: PERMISSION.SALE.READ,
+        },
+        {
+          title: "Create Sale",
+          url: `${ROUTERS.SALE}/create`,
+          icon: PlusCircle,
+          // permission: PERMISSION.SALE.CREATE,
         },
         {
           title: "Quote",
@@ -219,6 +244,39 @@ const data = {
       ],
     },
     {
+      title: "Reports",
+      url: "#",
+      icon: Receipt,
+      badge: undefined as string | undefined,
+      permission: PERMISSION.REPORT.READ,
+      items: [
+        {
+          title: "Sales Reports",
+          url: ROUTERS.REPORT_SALES,
+          icon: Receipt,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Sales Item Reports",
+          url: ROUTERS.REPORT_SALES_ITEMS,
+          icon: ShoppingCart,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Expense Reports",
+          url: ROUTERS.REPORT_EXPENSES,
+          icon: Wallet,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Product Serial Reports",
+          url: ROUTERS.REPORT_PRODUCT_SERIALS,
+          icon: Boxes,
+          permission: PERMISSION.REPORT.READ,
+        },
+      ],
+    },
+    {
       title: "Security",
       url: "#",
       icon: Shield,
@@ -236,13 +294,6 @@ const data = {
           icon: CircleSmall,
           permission: PERMISSION.ROLE.READ,
         },
-        // {
-        //   title: "Permission Groups",
-        //   url: ROUTERS.GROUP_PERMISSION,
-        //   icon: CircleSmall,
-        //   permission: PERMISSION.PERMISSION_GROUP.READ,
-        // },
-        // <CircleSmall />
         {
           title: "Role Permissions",
           url: ROUTERS.ROLE_PERMISSIONS,
@@ -271,12 +322,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       collapsible="icon"
       variant="inset"
       {...props}
-      className="border-r border-sidebar-border/60 bg-sidebar shadow-none"
+      className="h-screen border-r border-sidebar-border/60 bg-sidebar shadow-none"
     >
       {/* Brand Logo Header */}
       <SidebarHeader className="border-b-0 px-5 py-3">
         <div className="flex items-center gap-3 px-2">
-          <div className="">
+          <div>
             <img src="/logo.png" alt="Logo" className="size-7 object-contain" />
           </div>
 

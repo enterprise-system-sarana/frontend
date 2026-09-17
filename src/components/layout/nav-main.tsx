@@ -154,21 +154,26 @@ export function NavMain({
                       tooltip={translateTitle(item.title)}
                       isActive={isDirectActive}
                       className={`
-                        group/btn relative mx-1 h-/[42px] rounded-xl px-3 text-[14px] font-medium
+                        group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
                         shadow-none transition-all duration-200
-                        ${isDirectActive
-                          ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-/[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                          : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        ${
+                          isDirectActive
+                            ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                            : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                         }
                       `}
                     >
-                      <Link to={item.url} className="flex items-center gap-2.5 w-full">
+                      <Link
+                        to={item.url}
+                        className="flex items-center gap-2.5 w-full"
+                      >
                         {ItemIcon && (
                           <ItemIcon
-                            className={`h-5 w-5 shrink-0 ${isDirectActive
-                              ? "text-primary"
-                              : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
-                              }`}
+                            className={`h-5 w-5 shrink-0 ${
+                              isDirectActive
+                                ? "text-primary"
+                                : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
+                            }`}
                             strokeWidth={1.75}
                           />
                         )}
@@ -207,20 +212,22 @@ export function NavMain({
                         tooltip={translateTitle(item.title)}
                         isActive={Boolean(hasActiveChild)}
                         className={`
-                          group/btn relative mx-1 h-/[42px] rounded-xl px-3 text-[14px] font-medium
+                          group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
                           shadow-none transition-all duration-200
-                          ${hasActiveChild
-                            ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-/[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                            : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          ${
+                            hasActiveChild
+                              ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                              : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                           }
                         `}
                       >
                         {item.icon && (
                           <item.icon
-                            className={`h-5 w-5 shrink-0 ${hasActiveChild
-                              ? "text-primary"
-                              : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
-                              }`}
+                            className={`h-5 w-5 shrink-0 ${
+                              hasActiveChild
+                                ? "text-primary"
+                                : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
+                            }`}
                             strokeWidth={1.75}
                           />
                         )}
@@ -233,16 +240,17 @@ export function NavMain({
                           </span>
                         )}
                         <ChevronRightIcon
-                          className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 ${hasActiveChild
-                            ? "text-primary"
-                            : "text-sidebar-foreground/40"
-                            }`}
+                          className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 ${
+                            hasActiveChild
+                              ? "text-primary"
+                              : "text-sidebar-foreground/40"
+                          }`}
                         />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
 
                     <CollapsibleContent>
-                      <SidebarMenuSub className="mt-0.5 ml-/[18px] border-l border-border/40 py-0.5 pl-3">
+                      <SidebarMenuSub className="mt-0.5 ml-[18px] border-l border-border/40 py-0.5 pl-3">
                         {item.items?.map((subItem) => {
                           const isActive =
                             location.pathname === subItem.url ||
@@ -257,9 +265,10 @@ export function NavMain({
                                 className={`
                                   h-/[34px] rounded-lg px-2.5 text-[13px] font-medium
                                   transition-all duration-150
-                                  ${isActive
-                                    ? "bg-primary/8 text-primary font-semibold"
-                                    : "bg-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                  ${
+                                    isActive
+                                      ? "bg-primary/8 text-primary font-semibold"
+                                      : "bg-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                                   }
                                 `}
                               >
@@ -269,20 +278,22 @@ export function NavMain({
                                 >
                                   {SubIcon ? (
                                     <SubIcon
-                                      className={`h-4 w-4 shrink-0 transition-colors duration-150 ${isActive
-                                        ? "text-primary"
-                                        : "text-sidebar-foreground/45"
-                                        }`}
+                                      className={`h-4 w-4 shrink-0 transition-colors duration-150 ${
+                                        isActive
+                                          ? "text-primary"
+                                          : "text-sidebar-foreground/45"
+                                      }`}
                                       strokeWidth={1.75}
                                     />
                                   ) : (
                                     <span
                                       className={`
-                                        inline-flex h-/[5px] w-/[5px] shrink-0 rounded-full
+                                        inline-flex h-[5px] w-[5px] shrink-0 rounded-full
                                         transition-all duration-150
-                                        ${isActive
-                                          ? "bg-primary"
-                                          : "border border-sidebar-foreground/35 bg-transparent"
+                                        ${
+                                          isActive
+                                            ? "bg-primary"
+                                            : "border border-sidebar-foreground/35 bg-transparent"
                                         }
                                       `}
                                     />
