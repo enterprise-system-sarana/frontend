@@ -38,10 +38,13 @@ export const ROUTERS = {
   FILE_UPLOAD: "/file-upload",
   CUSTOMERS: "/customers",
 
-  EXPENSE_TYPE: "/expense-type",
-  EXPENSE: "/expense",
-  QUOTE: "/quote",
-};
+    EXPENSE_TYPE: "/expense-type",
+    EXPENSE: "/expense",
+    QUOTE: "/quote",
+    QUOTE_CREATE: "/quote/create",
+    QUOTE_EDIT: "/quote/edit/:id",
+}
+
 
 export const AUTHENTICATION = {
   REFRESH_TOKEN: "refreshToken",

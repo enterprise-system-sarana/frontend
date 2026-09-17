@@ -28,11 +28,14 @@ import {
   PurchasePage,
   PurchaseForm,
   NotFoundPage,
+  QuotePage,
+  QuoteForm,
 } from "@/pages";
 import PrivateRoute from "@/utils/privateRoute";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ROUTERS } from "@/constants/Route";
 import { HomePage } from "@/pages/home/Home";
+import { PurchasePaymentPage } from "@/pages/purchases/purchase/PurchasePayment";
 
 const router = createBrowserRouter([
   {
@@ -55,10 +58,9 @@ const router = createBrowserRouter([
         path: ROUTERS.DASHBOARD,
         element: <DashboardLayout />,
         children: [
-
           {
             index: true,
-            element: <HomePage />
+            element: <HomePage />,
           },
           {
             path: ROUTERS.HOME,
@@ -116,6 +118,40 @@ const router = createBrowserRouter([
           {
             path: ROUTERS.PURCHASE_EDIT,
             element: <PurchaseForm />,
+          },
+          {
+            path: ROUTERS.PURCHASE_PAYMENT,
+            element: <PurchasePaymentPage />,
+          },
+          {
+            path: ROUTERS.STORE,
+            element: <StorePage />,
+          },
+          {
+            path: ROUTERS.STOCK,
+            element: <StockPage />,
+          },
+          // sales
+          {
+            path: ROUTERS.CUSTOMER,
+            element: <CustomerPage />,
+          },
+          {
+            path: ROUTERS.QUOTE,
+            element: <QuotePage />,
+          },
+          {
+            path: ROUTERS.QUOTE_CREATE,
+            element: <QuoteForm />,
+          },
+          {
+            path: ROUTERS.QUOTE_EDIT,
+            element: <QuoteForm />,
+          },
+          // role permission
+          {
+            path: ROUTERS.ROLE,
+            element: <RolePage />,
           },
 
           {
