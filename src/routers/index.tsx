@@ -6,6 +6,7 @@ import {
   RegisterPage,
   ForgotPasswordPage,
   ChangePasswordPage,
+  ProfilePage,
   PermissionPage,
   RolePage,
   UserPage,
@@ -27,8 +28,11 @@ import {
   ExpenseTypePage,
   PurchasePage,
   PurchaseForm,
+  PurchaseInvoice,
   SalePage,
   SaleForm,
+  PaymentPage,
+  // SaleDetail,
   ReportPage,
   SalesItemReportPage,
   ExpenseReportPage,
@@ -56,6 +60,7 @@ const router = createBrowserRouter([
     path: ROUTERS.FORGOT_PASSWORD,
     element: <ForgotPasswordPage />,
   },
+  { path: ROUTERS.SALE_CREATE, element: <SaleForm /> },
 
   {
     element: <PrivateRoute />,
@@ -178,8 +183,9 @@ const router = createBrowserRouter([
           },
           // sales
           { path: ROUTERS.SALE, element: <SalePage /> },
-          { path: ROUTERS.SALE_CREATE, element: <SaleForm /> },
+          // { path: ROUTERS.SALE_DETAIL, element: <SaleDetail /> },
           { path: ROUTERS.SALE_EDIT, element: <SaleForm /> },
+          { path: ROUTERS.PAYMENT, element: <PaymentPage /> },
           {
             path: ROUTERS.CUSTOMER,
             element: <CustomerPage />,
@@ -231,6 +237,10 @@ const router = createBrowserRouter([
           {
             path: ROUTERS.CHANGE_PASSWORD,
             element: <ChangePasswordPage />,
+          },
+          {
+            path: ROUTERS.PROFILE,
+            element: <ProfilePage />,
           },
           {
             path: ROUTERS.REPORT_SALES,

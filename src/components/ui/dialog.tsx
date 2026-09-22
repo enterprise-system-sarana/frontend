@@ -49,7 +49,7 @@ function DialogContent({
   className,
   children,
   showCloseButton = true,
-  closeOnOutsideClick = false,
+  closeOnOutsideClick = true,
   onPointerDownOutside,
   onInteractOutside,
   ...props

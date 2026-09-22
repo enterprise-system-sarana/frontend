@@ -113,7 +113,7 @@ export const en = {
   // Auth Pages
   "auth.login.title": "Welcome back",
   "auth.login.subtitle": "Login to your account",
-  "auth.login.username_or_email": "Username or Email",
+  "auth.login.username_or_email": "Email",
   "auth.login.password": "Password",
   "auth.login.forgot_password": "Forgot your password?",
   "auth.login.button": "Login",

@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import type { VisibilityState } from "@tanstack/react-table";
 import {
   DataTable,
@@ -16,11 +17,13 @@ import { PageFilter, type FilterGroup } from "@/utils/PageFilter";
 import { Status } from "@/types/enum/status";
 import type { RoleResponse } from "@/types/users/Role";
 import { useRole } from "@/hooks/users/useRole";
+import { ROUTERS } from "@/constants/Route";
 import { RoleColumns } from "./RoleColumn";
 import FormRole from "./RoleForm";
 
 
 const RolePage = () => {
+  const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<RoleResponse>();
   const [page, setPage] = useState(1);
@@ -117,11 +120,16 @@ const RolePage = () => {
     }
   };
 
+  const handleViewPermissions = (r: RoleResponse) => {
+    navigate(`${ROUTERS.ROLE_PERMISSIONS}?roleId=${r.id}`);
+  };
+
   const columns = useMemo(
     () =>
       RoleColumns({
         onEdit: handleEdit,
         onDelete: handleDelete,
+        onViewPermissions: handleViewPermissions,
       }),
     [],
   );
@@ -148,8 +156,8 @@ const RolePage = () => {
       <div className="space-y-4">
         {/* Top Header */}
         <PageHeader
-          title="Categories"
-          featureName="Category"
+          title="Roles"
+          featureName="Role"
           onCreate={() => {
             setRole(null);
             setOpen(true);

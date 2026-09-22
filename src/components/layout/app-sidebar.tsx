@@ -178,16 +178,9 @@ const data = {
           permission: PERMISSION.CUSTOMER.READ,
         },
         {
-          title: "Sale",
-          url: ROUTERS.SALE,
-          icon: Receipt,
-          // permission: PERMISSION.SALE.READ,
-        },
-        {
-          title: "Create Sale",
-          url: `${ROUTERS.SALE}/create`,
-          icon: PlusCircle,
-          // permission: PERMISSION.SALE.CREATE,
+          title: "Payments",
+          url: ROUTERS.PAYMENT,
+          icon: CreditCard,
         },
         {
           title: "Quote",
@@ -324,25 +317,24 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
       className="h-screen border-r border-sidebar-border/60 bg-sidebar shadow-none"
     >
-      {/* Brand Logo Header */}
-      <SidebarHeader className="border-b-0 px-5 py-3">
-        <div className="flex items-center gap-3 px-2">
-          <div>
+      <SidebarHeader className="border-b-0 px-4 py-4">
+        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 shadow-sm backdrop-blur-sm">
+          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 ring-1 ring-primary/30">
             <img src="/logo.png" alt="Logo" className="size-7 object-contain" />
           </div>
 
           <div className="min-w-0">
-            <p className="text-sm font-bold tracking-tight text-foreground">
+            <p className="truncate text-sm font-black uppercase tracking-[0.12em] text-sidebar-foreground">
               360System
             </p>
-            <p className="text-[11px] font-medium text-muted-foreground">
+            <p className="truncate text-[11px] font-medium text-sidebar-foreground/60">
               Inventory Management
             </p>
           </div>
         </div>
       </SidebarHeader>
 
-      <SidebarContent>
+      <SidebarContent className="px-1 py-2">
         <NavMain items={filteredNavMain} />
       </SidebarContent>
     </Sidebar>

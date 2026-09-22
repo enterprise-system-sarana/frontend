@@ -9,6 +9,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { useSearch } from "@/utils/useSearch";
 import { useState, useMemo, useEffect } from "react";
 import { SaleColumns } from "./SaleCulumn";
+import { SaleDetailModal } from "./SaleDetailModal";
 import ConfirmDelete from "@/components/ui/confirmDelete";
 import { PageFilter } from "@/utils/PageFilter";
 import { useNavigate } from "react-router-dom";
@@ -18,6 +19,7 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import { ROUTERS } from "@/constants/Route";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { CustomerResponse } from "@/types/sales/Customer";
+import PaymentForm from "@/pages/sales/payment/PaymentForm";
 
 const SalePage = () => {
   const navigate = useNavigate();
@@ -28,6 +30,12 @@ const SalePage = () => {
   const canDelete = Can(PERMISSION.SALE.DELETE);
 
   const [sale, setSale] = useState<SaleResponse | null>(null);
+  const [detailSaleId, setDetailSaleId] = useState<number | null>(null);
+  const [viewingSale, setViewingSale] = useState<SaleResponse | null>(null);
+  const [openDetailModal, setOpenDetailModal] = useState(false);
+  const [paymentSale, setPaymentSale] = useState<SaleResponse | null>(null);
+  const [openPaymentModal, setOpenPaymentModal] = useState(false);
+
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -57,6 +65,7 @@ const SalePage = () => {
     storeId: storeId && storeId !== "all" ? Number(storeId) : undefined,
     status: status,
   });
+
 
   const { mutate: deleteSaleMutate } = useSale.Delete();
   const { mutate: completeSaleMutate } = useSale.Complete();
@@ -140,6 +149,12 @@ const SalePage = () => {
     setSize(newSize);
   };
 
+  const handleView = (selectedSale: SaleResponse) => {
+    setViewingSale(selectedSale);
+    setDetailSaleId(selectedSale.id);
+    setOpenDetailModal(true);
+  };
+
   const handleEdit = (selectedSale: SaleResponse) => {
     navigate(ROUTERS.SALE_EDIT.replace(":id", String(selectedSale.id)));
   };
@@ -166,6 +181,11 @@ const SalePage = () => {
     returnSaleMutate(id);
   };
 
+  const handlePayment = (selectedSale: SaleResponse) => {
+    setPaymentSale(selectedSale);
+    setOpenPaymentModal(true);
+  };
+
   const confirmDelete = () => {
     if (sale?.id) {
       deleteSaleMutate(sale.id, {
@@ -185,9 +205,9 @@ const SalePage = () => {
       <div className="space-y-4">
         <PageHeader
           title="Sales"
-          buttonLabel="Add Sale"
+          buttonLabel="Create Sale"
           onCreate={
-            canCreate ? () => navigate(ROUTERS.SALE_CREATE) : undefined
+            canCreate ? () => window.open(ROUTERS.SALE_CREATE, "_blank") : undefined
           }
           hideButton={!canCreate}
         />
@@ -213,11 +233,13 @@ const SalePage = () => {
             <QueryBoundary isLoading={isLoading} isError={isError}>
               <DataTable
                 columns={SaleColumns({
+                  onView: handleView,
                   onEdit: handleEdit,
                   onDelete: handleDelete,
                   onComplete: handleComplete,
                   onCancel: handleCancel,
                   onReturn: handleReturn,
+                  onPayment: handlePayment,
                   canEdit: canUpdate,
                   canDelete: canDelete,
                 })}
@@ -241,6 +263,23 @@ const SalePage = () => {
         setIsOpen={setOpenConfirmDelete}
         entityName={"Sale"}
         confirmDelete={confirmDelete}
+      />
+
+      <SaleDetailModal
+        saleId={detailSaleId}
+        initialSale={viewingSale}
+        open={openDetailModal}
+        onOpenChange={setOpenDetailModal}
+        onEdit={handleEdit}
+      />
+
+      <PaymentForm
+        open={openPaymentModal}
+        setOpen={setOpenPaymentModal}
+        payment={null}
+        mode="sale"
+        saleId={paymentSale?.id}
+        amount={paymentSale?.dueAmount}
       />
     </>
   );

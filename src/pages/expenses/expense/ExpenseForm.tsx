@@ -46,7 +46,7 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
     const storeOptions = useMemo(() => {
         const list = storeData?.payload?.data || [];
         return [
-            { label: "None / Not Applicable", value: "0" },
+            // { label: "None / Not Applicable", value: "0" },
             ...list.map((item: any) => ({
                 label: item.name,
                 value: String(item.id),
@@ -57,7 +57,7 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
     const bankOptions = useMemo(() => {
         const list = bankData?.payload?.data || [];
         return [
-            { label: "None / Cash", value: "0" },
+            // { label: "None / Cash", value: "0" },
             ...list.map((item: any) => ({
                 label: `${item.name || item.bankName || "Bank"}${item.accountNumber ? ` - ${item.accountNumber}` : ""}`,
                 value: String(item.id),

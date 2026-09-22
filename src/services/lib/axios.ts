@@ -12,6 +12,8 @@ import {
   clearAuth,
 } from "@/utils/Auth";
 
+import { store } from "@/store/store";
+import { updateTokens, logout as logoutAction } from "@/store/authSlice";
 import { ROUTERS } from "@/constants/Route";
 
 const API_URL = "http://localhost:8081/api/v1";
@@ -60,6 +62,8 @@ const processQueue = (
 
     if (token) {
       resolve(token);
+    } else {
+      reject(new Error("Token refresh produced no token"));
     }
   });
 
@@ -78,6 +82,7 @@ const isAuthRequest = (url?: string) => {
 
 const logout = () => {
   clearAuth();
+  store.dispatch(logoutAction());
   window.location.href = ROUTERS.LOGIN;
 };
 
@@ -109,6 +114,7 @@ api.interceptors.response.use(
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
         return api(originalRequest);
       } catch (queueError) {
+        isRefreshing = false;
         return Promise.reject(queueError);
       }
     }
@@ -140,6 +146,7 @@ api.interceptors.response.use(
       );
 
       // Extract token across multiple common API response structures (.payload used in Spring)
+      console.log("[Token Refresh] Raw response.data:", response.data); // ← debug: remove after fix confirmed
       const resData = response.data?.payload || response.data?.data || response.data;
       const newAccessToken = resData?.accessToken || resData?.token || resData?.access_token;
       const newRefreshToken = resData?.refreshToken || resData?.refresh_token;
@@ -148,10 +155,18 @@ api.interceptors.response.use(
         throw new Error("New access token is missing from refresh response");
       }
 
+      // Update both localStorage and Redux store to keep them in sync
       setAccessToken(newAccessToken);
       if (newRefreshToken) {
         setRefreshToken(newRefreshToken);
       }
+
+      store.dispatch(
+        updateTokens({
+          accessToken: newAccessToken,
+          refreshToken: newRefreshToken,
+        })
+      );
 
       console.log("Access token refreshed successfully.");
 

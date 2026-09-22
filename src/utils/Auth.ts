@@ -31,6 +31,7 @@ export const getUser = (): AuthUser | null => {
     return JSON.parse(userStr) as AuthUser;
   } catch (e) {
     console.log(e);
+    return null;
   }
 };
 

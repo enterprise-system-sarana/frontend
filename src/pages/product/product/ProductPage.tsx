@@ -17,6 +17,7 @@ import type { ProductResponse } from "@/types/product/Product";
 import { useProduct } from "@/hooks/product/useProduct";
 import { Status } from "@/types/enum/status";
 import { ProductColumns } from "./ProductColumn";
+import { ProductDetailModal } from "./ProductDetailModal";
 import { ROUTERS } from "@/constants/Route";
 import { toast } from "sonner";
 import { useModel } from "@/hooks/product/useModel";
@@ -28,6 +29,9 @@ export const ProductPage = () => {
   const { t } = useLanguage();
   const [selectedProduct, setSelectedProduct] =
     useState<ProductResponse | null>(null);
+  const [viewingProduct, setViewingProduct] =
+    useState<ProductResponse | null>(null);
+  const [openDetailModal, setOpenDetailModal] = useState(false);
   const [page, setPage] = useState(0);
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -134,7 +138,8 @@ export const ProductPage = () => {
   };
 
   const handleView = (product: ProductResponse) => {
-    navigate(ROUTERS.PRODUCT_DETAIL.replace(":id", String(product.id)));
+    setViewingProduct(product);
+    setOpenDetailModal(true);
   };
 
   const handleEdit = (product: ProductResponse) => {
@@ -240,6 +245,14 @@ export const ProductPage = () => {
           </div>
         </div>
       </div>
+
+      <ProductDetailModal
+        productId={viewingProduct?.id ?? null}
+        initialProduct={viewingProduct}
+        open={openDetailModal}
+        onOpenChange={setOpenDetailModal}
+        onEdit={handleEdit}
+      />
 
       <ConfirmDelete
         isOpen={openConfirmDelete}

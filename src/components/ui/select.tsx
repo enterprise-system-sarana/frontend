@@ -26,9 +26,16 @@ function SelectGroup({
 }
 
 function SelectValue({
+  className,
   ...props
 }: React.ComponentProps<typeof SelectPrimitive.Value>) {
-  return <SelectPrimitive.Value data-slot="select-value" {...props} />
+  return (
+    <SelectPrimitive.Value
+      data-slot="select-value"
+      className={cn("truncate text-left block min-w-0 flex-1", className)}
+      {...props}
+    />
+  )
 }
 
 function SelectTrigger({
@@ -45,10 +52,10 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         // Base
-        "flex h-11 w-full items-center justify-between gap-1.5 rounded-md",
+        "flex h-11 w-full items-center justify-between gap-2 rounded-md min-w-0 overflow-hidden",
         "border border-border/70 bg-background",
         "px-3.5 py-2",
-        "text-sm text-foreground",
+        "text-sm text-foreground text-left",
         "transition-all duration-200 ease-out",
         "outline-none select-none",
 
@@ -76,7 +83,8 @@ function SelectTrigger({
         "dark:bg-card/60 dark:border-border/60 dark:hover:bg-card/80 dark:focus-visible:border-foreground/60 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
 
         // Child elements
-        "*:data-[slot=select-value]:line-clamp-1 *:data-[slot=select-value]:flex *:data-[slot=select-value]:items-center *:data-[slot=select-value]:gap-1.5",
+        "[&>span]:truncate [&>span]:block [&>span]:text-left [&>span]:min-w-0 [&>span]:flex-1",
+        "*:data-[slot=select-value]:truncate *:data-[slot=select-value]:block *:data-[slot=select-value]:text-left *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:flex-1",
         "[&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4",
         className
       )}

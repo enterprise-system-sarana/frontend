@@ -185,12 +185,11 @@ export function DataTable<TData, TValue>({
             {table.getHeaderGroups().map((headerGroup) => (
               <TableRow
                 key={headerGroup.id}
-                className="border-b border-border/60 bg-muted/30 hover:bg-muted/40"
+                className="hover:bg-transparent"
               >
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
-                    className="h-11 bg-transparent px-5 text-[11px] font-bold uppercase tracking-wider text-muted-foreground"
                   >
                     {header.isPlaceholder
                       ? null
@@ -210,12 +209,10 @@ export function DataTable<TData, TValue>({
                 <TableRow
                   key={row.id}
                   data-state={row.getIsSelected() && "selected"}
-                  className="border-b border-border/60 transition-colors duration-150 hover:bg-muted/50 data-[state=selected]:bg-primary/10"
                 >
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
-                      className="px-5 py-3.5 text-sm font-sans text-foreground/80"
                     >
                       {flexRender(
                         cell.column.columnDef.cell,

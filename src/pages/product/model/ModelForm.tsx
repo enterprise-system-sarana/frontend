@@ -66,7 +66,6 @@ const ModelForm = ({ open, setOpen, model }: FormModelProps) => {
                 setOpen(false);
                 form.reset();
             };
-
             if (model) {
                 updateModel(
                     { id: model.id, req: payload },

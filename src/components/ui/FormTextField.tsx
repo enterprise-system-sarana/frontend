@@ -2,6 +2,7 @@ import { Input } from "@/components/ui/input";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { useRef, useMemo, useEffect } from "react";
 import { Upload, X } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
 
@@ -48,28 +49,42 @@ const FormTextField = ({
               {required && <span className="text-destructive"> *</span>}
             </FieldLabel>
 
-            <Input
-              id={field.name}
-              name={field.name}
-              type={type}
-              autoComplete={autoComplete}
-              value={field.state.value ?? ""}
-              onBlur={field.handleBlur}
-              onChange={(e) => {
-                const nextValue =
-                  type === "number"
-                    ? e.target.value === ""
-                      ? 0
-                      : Number(e.target.value)
-                    : e.target.value;
+            {type === "number" ? (
+              <div className="flex h-11 w-full min-w-0 overflow-hidden rounded-md border border-border/70 bg-background transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 aria-invalid:border-destructive">
 
-                field.handleChange(nextValue);
-              }}
-              aria-invalid={isInvalid}
-              placeholder={placeholder}
-              disabled={disabled}
-              required={required}
-            />
+                <Input
+                  id={field.name}
+                  name={field.name}
+                  type="number"
+                  autoComplete={autoComplete}
+                  value={field.state.value ?? ""}
+                  onBlur={field.handleBlur}
+                  onChange={(e) => {
+                    const value = e.target.value;
+                    field.handleChange(value === "" ? "" : Number(value));
+                  }} aria-invalid={isInvalid}
+                  placeholder={placeholder}
+                  disabled={disabled}
+                  required={required}
+                  className="h-full rounded-none border-0 bg-transparent px-2  font-semibold shadow-none hover:border-0 focus-visible:border-0 focus-visible:ring-0"
+                />
+
+              </div>
+            ) : (
+              <Input
+                id={field.name}
+                name={field.name}
+                type={type}
+                autoComplete={autoComplete}
+                value={field.state.value ?? ""}
+                onBlur={field.handleBlur}
+                onChange={(e) => field.handleChange(e.target.value)}
+                aria-invalid={isInvalid}
+                placeholder={placeholder}
+                disabled={disabled}
+                required={required}
+              />
+            )}
 
             {isInvalid && <FieldError errors={field.state.meta.errors} />}
           </Field>
@@ -242,6 +257,7 @@ type FormSelectFieldProps = {
   className?: string;
   size?: "sm" | "default" | "lg";
   onAdd?: () => void;
+  onValueChange?: (value: string) => void;
 };
 
 export const FormSelectField = ({
@@ -255,6 +271,7 @@ export const FormSelectField = ({
   className,
   size = "default",
   onAdd,
+  onValueChange,
 }: FormSelectFieldProps) => {
   return (
     <form.Field
@@ -265,7 +282,7 @@ export const FormSelectField = ({
           !field.state.meta.isValid;
 
         return (
-          <Field data-invalid={isInvalid}>
+          <Field data-invalid={isInvalid} className="w-full min-w-0">
             <FieldLabel htmlFor={name} className="flex items-center gap-1.5">
               <span>
                 {label}
@@ -286,10 +303,10 @@ export const FormSelectField = ({
             <Select
               value={
                 field.state.value !== undefined &&
-                field.state.value !== null &&
-                field.state.value !== 0 &&
-                field.state.value !== "0" &&
-                field.state.value !== ""
+                  field.state.value !== null &&
+                  field.state.value !== 0 &&
+                  field.state.value !== "0" &&
+                  field.state.value !== ""
                   ? String(field.state.value)
                   : ""
               }
@@ -299,6 +316,7 @@ export const FormSelectField = ({
                   : value;
 
                 field.handleChange(nextValue);
+                onValueChange?.(value);
               }}
               disabled={disabled}
               required={required}
@@ -308,7 +326,7 @@ export const FormSelectField = ({
                 size={size}
                 aria-invalid={isInvalid}
                 onBlur={field.handleBlur}
-                className={className}
+                className={cn("w-full min-w-0", className)}
               >
                 <SelectValue placeholder={placeholder} />
               </SelectTrigger>
@@ -422,11 +440,10 @@ export const FormRadioGroupField = ({
                 return (
                   <label
                     key={option.value}
-                    className={`flex items-center gap-2 cursor-pointer select-none text-xs font-medium px-3.5 py-2 rounded-md border transition-all ${
-                      isSelected
-                        ? "border-primary bg-primary/10 text-primary font-semibold shadow-xs"
-                        : "border-border/60 bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground"
-                    } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+                    className={`flex items-center gap-2 cursor-pointer select-none text-xs font-medium px-3.5 py-2 rounded-md border transition-all ${isSelected
+                      ? "border-primary bg-primary/10 text-primary font-semibold shadow-xs"
+                      : "border-border/60 bg-card text-muted-foreground hover:bg-muted/50 hover:text-foreground"
+                      } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
                   >
                     <input
                       type="radio"

@@ -1,256 +1,428 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useForm, useStore as useFormStore } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
+import {
+  Plus,
+  Minus,
+  ScanLine,
+  Search,
+  Trash2,
+  Hash,
+  ShoppingCart,
+  Package,
+  CheckCircle2,
+  Calendar,
+  UserPlus,
+  Pause,
+  Printer,
+  ArrowRight,
+  Check,
+  AlertTriangle,
+  Receipt,
+  ShoppingBag,
+  User,
+  Tag,
+  Wallet,
+  X,
+} from "lucide-react";
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { FieldGroup } from "@/components/ui/field";
 import {
   Dialog,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Plus, ScanLine, Search, Trash2, Hash, Loader2 } from "lucide-react";
-import FormTextField, { FormSelectField } from "@/components/ui/FormTextField";
+
 import {
   SaleSchema,
   SalePaymentStatus,
   SaleStatus,
   type SaleFormValues,
 } from "@/types/sales/Sale";
+
 import { useSale } from "@/hooks/sales/useSale";
+import { usePayment } from "@/hooks/sales/usePayment";
 import { useCustomer } from "@/hooks/sales/useCustomer";
 import { useStore } from "@/hooks/inventory/useStore";
+import { useBank } from "@/hooks/finance/useBank";
 import { useProduct } from "@/hooks/product/useProduct";
 import { useProductSerial } from "@/hooks/product/useProductSerial";
+import { useCategory } from "@/hooks/product/useCategory";
+
 import FormCustomer from "@/pages/sales/customers/CustomerForm";
+import PaymentForm from "@/pages/sales/payment/PaymentForm";
+import ImageCell from "@/components/file/ImageCell";
 import { ROUTERS } from "@/constants/Route";
+import { toast } from "sonner";
+
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { CustomerResponse } from "@/types/sales/Customer";
 import type { ProductResponse } from "@/types/product/Product";
-import { useBank } from "@/hooks/finance/useBank";
-import FormBank from "@/pages/finance/bank/BankForm";
+import type { PaymentRequest } from "@/types/sales/Payment";
+
+import PosHeader from "./components/PosHeader";
+import PosCalculatorModal from "./components/PosCalculatorModal";
+import PosHeldOrdersModal, { type HeldOrder } from "./components/PosHeldOrdersModal";
+import PosReceiptModal, { type PosReceiptData } from "./components/PosReceiptModal";
+
+/* =========================================================
+   HELPERS
+========================================================= */
 
 function formatCurrency(value: number) {
   return new Intl.NumberFormat("en-US", {
     style: "currency",
     currency: "USD",
-  }).format(value || 0);
+  }).format(Number(value) || 0);
 }
 
-function emptyItem() {
-  return {
-    productId: 0,
-    quantity: 1,
-    price: 0,
-    itemDiscount: 0,
-    subtotal: 0,
-    serialNumberIds: [] as number[],
-  };
+function generateRef() {
+  const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+  const rand = Math.floor(1000 + Math.random() * 9000);
+  return `POS-${dateStr}-${rand}`;
 }
+
+/* =========================================================
+   MAIN POS SALE FORM
+========================================================= */
 
 export default function SaleForm() {
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  /* -------------------------------------------------------
+     DATA FETCHING
+  ------------------------------------------------------- */
 
   const { data: customers } = useCustomer.useGetAllCustomer({
     page: 0,
     size: 1000,
   });
-  const { data: banks } = useBank.useGetAllBank({ page: 0, size: 1000 });
-  const [bankFormOpen, setBankFormOpen] = useState(false);
-  const { data: stores } = useStore.useGetAllStore({ page: 0, size: 1000 });
+
+  const { data: stores } = useStore.useGetAllStore({
+    page: 0,
+    size: 1000,
+  });
+
   const { data: products } = useProduct.useGetAllProduct({
     page: 0,
     size: 1000,
   });
+
+  const { data: dataCategory } = useCategory.useGetAllCategory({
+    page: 0,
+    size: 1000,
+  });
+
+  const listCategory = dataCategory?.payload?.data ?? [];
   const productList: ProductResponse[] = products?.payload?.data ?? [];
+  const customerList: CustomerResponse[] = customers?.payload?.data ?? [];
+  const storeList: StoreResponse[] = stores?.payload?.data ?? [];
+
+  const { data: banks } = useBank.useGetAllBank({ page: 1, size: 1000 });
+  const bankList: any[] = banks?.payload?.data ?? banks?.data ?? banks?.payload ?? [];
 
   const { data: existingSale } = useSale.GetSaleById(Number(id), {
     enabled: isEditing,
   });
+
   const saleDetail =
     existingSale?.payload?.data ??
     existingSale?.payload ??
     existingSale?.data ??
     existingSale;
 
+  /* -------------------------------------------------------
+     MUTATIONS
+  ------------------------------------------------------- */
+
   const createSale = useSale.Create();
   const updateSale = useSale.Update();
-  const isPending = createSale.isPending || updateSale.isPending;
+  const completeSale = useSale.Complete();
+  const createPayment = usePayment.createPayment();
+  const isPending = createSale.isPending || updateSale.isPending || completeSale.isPending;
 
-  // Search States
+  /* -------------------------------------------------------
+     LOCAL UI STATE
+  ------------------------------------------------------- */
+
   const [productSearch, setProductSearch] = useState("");
-  const [searchResults, setSearchResults] = useState<any[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
-  const [showDropdown, setShowDropdown] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState("All");
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [activeSerialRowIndex, setActiveSerialRowIndex] = useState<number | null>(null);
+
+  // Modals
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+  const [isHeldOrdersOpen, setIsHeldOrdersOpen] = useState(false);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<PosReceiptData | null>(null);
+  const [lastReceiptData, setLastReceiptData] = useState<PosReceiptData | null>(null);
+
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [paymentAmount, setPaymentAmount] = useState(0);
+  const [paymentMethod, setPaymentMethod] = useState("CASH");
+  const [paymentBankId, setPaymentBankId] = useState(0);
+  const [paymentTransactionNo, setPaymentTransactionNo] = useState("");
+  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
+  const [pendingPayment, setPendingPayment] = useState<PaymentRequest | null>(null);
+
+  const [heldOrders, setHeldOrders] = useState<HeldOrder[]>(() => {
+    try {
+      const saved = localStorage.getItem("POS_HELD_ORDERS");
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveHeldOrders = (orders: HeldOrder[]) => {
+    setHeldOrders(orders);
+    try {
+      localStorage.setItem("POS_HELD_ORDERS", JSON.stringify(orders));
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  /* -------------------------------------------------------
+     FORM INITIALIZATION
+  ------------------------------------------------------- */
 
   const form = useForm({
     defaultValues: {
-      reference: "",
-      saleDate: "",
+      reference: generateRef(),
+      saleDate: new Date().toISOString().split("T")[0],
       noted: "",
-      customerId: 0,
-      storeId: 1,
+      customerId: 1,
+      storeId: storeList[0]?.id || 1,
       bankId: 1,
       discount: 0,
       paidAmount: 0,
       paymentStatus: SalePaymentStatus.Pending,
       status: SaleStatus.Pending,
       paymentOption: "PAID",
-      items: [emptyItem()],
+      items: [] as any[],
     } as SaleFormValues,
+
     validators: {
       onSubmit: SaleSchema,
     },
+
     onSubmit: async ({ value }) => {
+      if (!value.items || value.items.length === 0) {
+        toast.error("Please add at least one product to the cart before checkout");
+        return;
+      }
+
       const items = value.items.map((item: any) => {
-        const itemPrice = Number(item.price) || 0;
-        const itemQty = Number(item.quantity) || 1;
-        const itemDisc = Number(item.itemDiscount) || 0;
+        const price = Number(item.price) || 0;
+        const quantity = Number(item.quantity) || 1;
+        const itemDiscount = Number(item.itemDiscount) || 0;
+
         return {
           productId: Number(item.productId),
-          quantity: itemQty,
-          price: itemPrice,
-          itemDiscount: itemDisc,
-          subtotal: itemPrice * itemQty - itemDisc,
+          quantity,
+          price,
+          itemDiscount,
+          subtotal: price * quantity - itemDiscount,
           serialNumberIds: (item.serialNumberIds ?? []).filter(
-            (sId: any) => Number(sId) > 0,
+            (sId: any) => Number(sId) > 0
           ),
         };
       });
 
-      const payload = {
-        ...value,
-        customerId: Number(value.customerId),
-        storeId: Number(value.storeId),
-        bankId: Number(value.bankId),
-        discount: Number(value.discount) || 0,
-        paidAmount: Number(value.paidAmount) || 0,
-        paymentOption: value.paymentOption === "DUE" ? "DUE" : "PAID",
-        paymentStatus: value.paymentStatus,
-        status: value.status,
+      const subtotalCalc = items.reduce((sum: number, it: any) => sum + it.subtotal, 0);
+      const discountVal = Number(value.discount) || 0;
+      const grandTotalCalc = Math.max(subtotalCalc - discountVal, 0);
+
+      const paymentOption: "PAID" | "DUE" =
+        value.paymentOption === "DUE" ? "DUE" : "PAID";
+
+      const finalPaidAmount =
+        paymentOption === "PAID"
+          ? (Number(value.paidAmount) > 0 ? Number(value.paidAmount) : grandTotalCalc)
+          : (Number(value.paidAmount) || 0);
+
+      const customerIdNum = Number(value.customerId);
+      const walkInCustomer = customerList.find((c: any) => c.name?.toLowerCase().includes("walk"));
+      const finalCustomerId = customerIdNum > 0 ? customerIdNum : (walkInCustomer?.id || (customerList.length > 0 ? customerList[0].id : null));
+
+      const payload: any = {
+        reference: value.reference || generateRef(),
+        saleDate: value.saleDate || new Date().toISOString().split("T")[0],
+        noted: value.noted?.trim() || null,
+        customerId: finalCustomerId,
+        storeId: Number(value.storeId) || storeList[0]?.id || 1,
+        bankId: Number(value.bankId) > 0 ? Number(value.bankId) : null,
+        discount: discountVal,
+        totalAmount: subtotalCalc,
+        grandTotal: grandTotalCalc,
+        paidAmount: finalPaidAmount,
+        dueAmount: Math.max(grandTotalCalc - finalPaidAmount, 0),
+        paymentOption,
+        paymentStatus: SalePaymentStatus.Pending,
+        status: SaleStatus.Pending,
         items,
       };
 
       try {
+        let savedSaleId = isEditing && id ? Number(id) : 0;
         if (isEditing && id) {
-          await updateSale.mutateAsync({ id: Number(id), request: payload });
+          await updateSale.mutateAsync({
+            id: Number(id),
+            request: payload,
+          });
+          toast.success("Sale updated successfully!");
+          navigate(ROUTERS.SALE);
         } else {
-          await createSale.mutateAsync(payload);
+          const createdSale: any = await createSale.mutateAsync(payload);
+          const createdSaleData = createdSale?.payload?.data ?? createdSale?.data ?? createdSale?.payload ?? createdSale;
+          savedSaleId = Number(createdSaleData?.id || 0);
+          toast.success("Sale created successfully!");
+
+          // const receipt: PosReceiptData = {
+          //   reference: payload.reference || "REC-" + Date.now().toString().slice(-6),
+          //   saleDate: payload.saleDate || new Date().toISOString().split("T")[0],
+          //   storeName: currentStore?.name || "Main Retail Store",
+          //   storePhone: (currentStore as any)?.phone || "+1 (555) 019-2834",
+          //   storeAddress: (currentStore as any)?.address || "Retail Boulevard, Suite 100",
+          //   customerName: currentCustomer?.name,
+          //   cashierName: user?.username || "Cashier",
+          //   items: items.map((it: any) => {
+          //     const matchedProd = productList.find((p) => p.id === it.productId);
+          //     return {
+          //       name: matchedProd?.name || `Product #${it.productId}`,
+          //       price: it.price,
+          //       quantity: it.quantity,
+          //       subtotal: it.subtotal,
+          //     };
+          //   }),
+          //   subtotal: subtotalCalc,
+          //   discount: discountVal,
+          //   grandTotal: grandTotalCalc,
+          //   paymentMethod: activePaymentMethod,
+          // };
+
         }
-        navigate(ROUTERS.SALE);
-      } catch (error) {
+
+        if (savedSaleId > 0 && finalPaidAmount > 0) {
+          const paymentRequest: PaymentRequest = {
+            paymentNo: pendingPayment?.paymentNo || `PAY-${payload.reference}-${Date.now()}`,
+            paymentMethod: pendingPayment?.paymentMethod || paymentMethod,
+            bankId: pendingPayment?.bankId ?? (paymentMethod === "BANK" && paymentBankId > 0 ? paymentBankId : null),
+            saleId: savedSaleId,
+            amount: pendingPayment?.amount || finalPaidAmount,
+            transactionNo: pendingPayment?.transactionNo?.trim() || paymentTransactionNo.trim() || null,
+            paymentDate: pendingPayment?.paymentDate || paymentDate,
+            status: finalPaidAmount >= grandTotalCalc ? "PAID" : "PARTIAL",
+          };
+          const paymentResponse: any = await createPayment.mutateAsync(paymentRequest);
+          const responseStatus = String(
+            paymentResponse?.status ??
+            paymentResponse?.payload?.status ??
+            paymentResponse?.data?.status ??
+            ""
+          ).toUpperCase();
+          const paymentSucceeded =
+            !responseStatus || ["SUCCESS", "SUCCEEDED", "PAID", "COMPLETED"].includes(responseStatus);
+
+          if (paymentSucceeded && finalPaidAmount >= grandTotalCalc) {
+            await completeSale.mutateAsync(savedSaleId);
+            await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+          }
+        }
+
+        if (!isEditing) {
+          form.setFieldValue("items", []);
+          form.setFieldValue("discount", 0);
+          form.setFieldValue("paidAmount", 0);
+          form.setFieldValue("paymentOption", "PAID");
+          setPendingPayment(null);
+          setIsPaymentModalOpen(false);
+          window.location.reload();
+        }
+      } catch (error: any) {
         console.error("Failed to save sale:", error);
+        const errorMsg = error?.response?.data?.message ||
+          (typeof error?.response?.data === "string" ? error.response.data : null) ||
+          error?.message ||
+          "Failed to save sale. Please check your inputs.";
+        toast.error(errorMsg);
       }
     },
   });
 
+  /* -------------------------------------------------------
+     FORM VALUES & TOTALS
+  ------------------------------------------------------- */
+
   const formValues = useFormStore(form.store, (state) => state.values);
 
-  // Close dropdown on outside click
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setShowDropdown(false);
+    if (storeList.length > 0 && !formValues.storeId) {
+      form.setFieldValue("storeId", storeList[0].id);
+    }
+  }, [storeList, formValues.storeId, form]);
+
+  useEffect(() => {
+    if (bankList.length > 0 && !formValues.bankId) {
+      form.setFieldValue("bankId", bankList[0].id);
+    }
+  }, [bankList, formValues.bankId, form]);
+
+  useEffect(() => {
+    if (customerList.length > 0 && !formValues.customerId) {
+      const walkIn = customerList.find((c) =>
+        c.name?.toLowerCase().includes("walk")
+      );
+      if (walkIn) {
+        form.setFieldValue("customerId", walkIn.id);
       }
     }
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
+  }, [customerList, formValues.customerId, form]);
 
-  // Live Auto Search
-  useEffect(() => {
-    const query = productSearch.trim();
-    if (!query) {
-      setSearchResults([]);
-      setShowDropdown(false);
-      return;
-    }
-
-    const timer = setTimeout(async () => {
-      setIsSearching(true);
-      try {
-        const res = await useProductSerial.useGetAllProductSerial({
-          barcode: query,
-          page: 0,
-          size: 50,
-        }); // Adjust if using service directly
-        const rawList: any[] =
-          (res as any)?.payload?.data ??
-          (res as any)?.data?.content ??
-          (res as any)?.data ??
-          [];
-
-        const filtered = rawList.filter((s: any) => {
-          const hasStock = Number(s.quantity ?? 0) > 0 && s.status !== "SOLD";
-          const matchQuery =
-            (s.barcode || s.barCode)
-              ?.toLowerCase()
-              .includes(query.toLowerCase()) ||
-            (s.productName || "")?.toLowerCase().includes(query.toLowerCase());
-          return hasStock && matchQuery;
-        });
-
-        setSearchResults(filtered);
-        setShowDropdown(true);
-      } catch (err) {
-        console.error("Search failed:", err);
-      } finally {
-        setIsSearching(false);
-      }
-    }, 400);
-
-    return () => clearTimeout(timer);
-  }, [productSearch]);
-
-  // Handle total calculation and auto-check payment/completion status
   useEffect(() => {
     const itemsTotal = (formValues.items || []).reduce(
       (sum: number, item: any) =>
         sum +
         (Number(item.price) || 0) * (Number(item.quantity) || 0) -
         (Number(item.itemDiscount) || 0),
-      0,
+      0
     );
 
     const discount = Number(formValues.discount) || 0;
-    const computedGrandTotal = Math.max(itemsTotal - discount, 0);
+    const grandTotal = Math.max(itemsTotal - discount, 0);
     const paidAmount = Number(formValues.paidAmount) || 0;
-
     let targetPaid = paidAmount;
-    if (!isEditing && (paidAmount === 0 || paidAmount === computedGrandTotal)) {
-      targetPaid = computedGrandTotal;
-      form.setFieldValue("paidAmount", computedGrandTotal);
+
+    if (!isEditing && (paidAmount === 0 || paidAmount === grandTotal)) {
+      targetPaid = grandTotal;
+      form.setFieldValue("paidAmount", grandTotal);
     }
 
-    let computedPaymentStatus: string = SalePaymentStatus.Pending;
-    let computedSaleStatus: string = SaleStatus.Pending;
+    let paymentStatus: SalePaymentStatus = SalePaymentStatus.Pending;
+    let saleStatus: SaleStatus = SaleStatus.Pending;
 
-    if (computedGrandTotal > 0 && targetPaid >= computedGrandTotal) {
-      computedPaymentStatus = SalePaymentStatus.Paid;
-      computedSaleStatus = SaleStatus.Completed;
-    } else if (targetPaid > 0 && targetPaid < computedGrandTotal) {
-      computedPaymentStatus = SalePaymentStatus.Partial;
-      computedSaleStatus = SaleStatus.Pending;
-    } else {
-      computedPaymentStatus = SalePaymentStatus.Pending;
-      computedSaleStatus = SaleStatus.Pending;
+    if (grandTotal > 0 && targetPaid >= grandTotal) {
+      paymentStatus = SalePaymentStatus.Paid;
+      saleStatus = SaleStatus.Completed;
+    } else if (targetPaid > 0 && targetPaid < grandTotal) {
+      paymentStatus = SalePaymentStatus.Partial;
+      saleStatus = SaleStatus.Pending;
     }
 
-    if (formValues.paymentStatus !== computedPaymentStatus) {
-      form.setFieldValue("paymentStatus", computedPaymentStatus);
+    if (formValues.paymentStatus !== paymentStatus) {
+      form.setFieldValue("paymentStatus", paymentStatus);
     }
-    if (formValues.status !== computedSaleStatus) {
-      form.setFieldValue("status", computedSaleStatus);
+
+    if (formValues.status !== saleStatus) {
+      form.setFieldValue("status", saleStatus);
     }
   }, [
     formValues.items,
@@ -262,14 +434,18 @@ export default function SaleForm() {
     form,
   ]);
 
-  // Bind existing data on edit
+  /* -------------------------------------------------------
+     LOAD EXISTING SALE (EDIT MODE)
+  ------------------------------------------------------- */
+
   useEffect(() => {
     const sale = saleDetail;
     if (!sale || typeof sale !== "object") return;
+
     form.reset({
-      reference: sale.reference ?? "",
+      reference: sale.reference ?? generateRef(),
       noted: sale.noted ?? "",
-      saleDate: sale.saleDate ?? "",
+      saleDate: sale.saleDate ?? new Date().toISOString().split("T")[0],
       customerId: sale.customerId ?? sale.customer?.id ?? 0,
       storeId: sale.storeId ?? sale.store?.id ?? 1,
       bankId: sale.bankId ?? sale.bank?.id ?? 1,
@@ -277,58 +453,1084 @@ export default function SaleForm() {
       paidAmount: sale.paidAmount ?? 0,
       paymentStatus: sale.paymentStatus ?? SalePaymentStatus.Pending,
       status: sale.status ?? SaleStatus.Pending,
+      paymentOption: sale.paymentOption ?? "PAID",
       items: sale.items?.length
-        ? sale.items.map((item: any) => ({
+        ? sale.items.map((item: any) => {
+          const price = item.price ?? item.product?.salePrice ?? 0;
+          const quantity = item.quantity ?? 1;
+          const itemDiscount = item.itemDiscount ?? 0;
+
+          return {
             productId: item.productId ?? item.product?.id ?? 0,
-            quantity: item.quantity ?? 1,
-            price: item.price ?? item.product?.salePrice ?? 0,
-            itemDiscount: item.itemDiscount ?? 0,
-            subtotal:
-              (item.price ?? item.product?.salePrice ?? 0) *
-                (item.quantity ?? 1) -
-              (item.itemDiscount ?? 0),
+            quantity,
+            price,
+            itemDiscount,
+            subtotal: price * quantity - itemDiscount,
             serialNumberIds: item.serialNumberIds ?? [],
-          }))
-        : [emptyItem()],
+          };
+        })
+        : [],
     });
   }, [saleDetail, form]);
 
-  // Auto Select Serial Item
-  const handleSelectSerialAuto = (serial: any, itemsField: any) => {
-    const product = productList.find((p) => p.id === Number(serial.productId));
-    const itemPrice = Number(product?.salePrice ?? serial.price ?? 0);
+  /* -------------------------------------------------------
+     ADD PRODUCT TO CART
+  ------------------------------------------------------- */
+
+  const handleAddProduct = (product: ProductResponse, itemsField: any) => {
     const currentItems = itemsField.state.value || [];
-    const firstEmptyIndex = currentItems.findIndex(
-      (i: any) => !i.productId || i.productId === 0,
+    const existingIndex = currentItems.findIndex(
+      (item: any) => Number(item.productId) === Number(product.id)
     );
 
-    const newItemData = {
-      productId: serial.productId,
-      quantity: 1,
-      price: itemPrice,
-      itemDiscount: 0,
-      subtotal: itemPrice,
-      serialNumberIds: [serial.id],
-    };
+    if (existingIndex !== -1) {
+      const existing = currentItems[existingIndex];
+      const newQuantity = (Number(existing.quantity) || 1) + 1;
+      const price = Number(existing.price) || Number(product.salePrice) || 0;
 
-    if (firstEmptyIndex !== -1) {
-      form.setFieldValue(`items[${firstEmptyIndex}]`, newItemData);
+      form.setFieldValue(`items[${existingIndex}].quantity`, newQuantity);
+      form.setFieldValue(
+        `items[${existingIndex}].subtotal`,
+        price * newQuantity - (Number(existing.itemDiscount) || 0)
+      );
+      setActiveSerialRowIndex(existingIndex);
     } else {
-      itemsField.pushValue(newItemData);
+      const price = Number(product.salePrice) || 0;
+      itemsField.pushValue({
+        productId: product.id,
+        quantity: 1,
+        price,
+        itemDiscount: 0,
+        subtotal: price,
+        serialNumberIds: [],
+      });
+      setActiveSerialRowIndex(currentItems.length);
     }
-
-    setProductSearch("");
-    setShowDropdown(false);
   };
 
-  return (
-    <div className="py-2 pb-12">
-      <div className="flex items-center justify-between mb-6 pb-4 border-b">
-        <h1 className="text-2xl font-bold">
-          {isEditing ? "Edit Sale" : "Create New Sale"}
-        </h1>
-      </div>
+  /* -------------------------------------------------------
+     FILTER PRODUCTS
+  ------------------------------------------------------- */
 
+  const filteredProducts = useMemo(() => {
+    const search = productSearch.toLowerCase().trim();
+    return productList.filter((product) => {
+      const matchesSearch =
+        product.name?.toLowerCase().includes(search) ||
+        (product as any).code?.toLowerCase().includes(search) ||
+        (product as any).sku?.toLowerCase().includes(search);
+
+      const matchesCategory =
+        selectedCategory === "All" ||
+        (product as any).categoryName === selectedCategory ||
+        String((product as any).categoryId) === selectedCategory;
+
+      return matchesSearch && matchesCategory;
+    });
+  }, [productList, productSearch, selectedCategory]);
+
+  /* -------------------------------------------------------
+     HOLD ORDER ACTION
+  ------------------------------------------------------- */
+
+  const handleHoldOrder = () => {
+    const items = formValues.items || [];
+    if (items.length === 0) return;
+
+    const currentCustomer = customerList.find(
+      (c) => c.id === Number(formValues.customerId)
+    );
+
+    const subtotal = items.reduce(
+      (sum: number, item: any) =>
+        sum +
+        (Number(item.price) || 0) * (Number(item.quantity) || 0) -
+        (Number(item.itemDiscount) || 0),
+      0
+    );
+    const grandTotal = Math.max(subtotal - (Number(formValues.discount) || 0), 0);
+
+    const newHold: HeldOrder = {
+      id: Date.now().toString(),
+      createdAt: new Date().toLocaleTimeString([], {
+        hour: "2-digit",
+        minute: "2-digit",
+      }),
+      reference: formValues.reference || generateRef(),
+      customerId: Number(formValues.customerId) || 0,
+      customerName: currentCustomer?.name,
+      storeId: Number(formValues.storeId) || 1,
+      discount: Number(formValues.discount) || 0,
+      grandTotal,
+      items: [...items],
+    };
+
+    saveHeldOrders([newHold, ...heldOrders]);
+
+    // Reset current sale
+    form.reset({
+      reference: generateRef(),
+      saleDate: new Date().toISOString().split("T")[0],
+      noted: "",
+      customerId: 0,
+      storeId: formValues.storeId,
+      bankId: 1,
+      discount: 0,
+      paidAmount: 0,
+      paymentStatus: SalePaymentStatus.Pending,
+      status: SaleStatus.Pending,
+      paymentOption: "PAID",
+      items: [],
+    });
+  };
+
+  const handleRestoreHeldOrder = (order: HeldOrder) => {
+    form.reset({
+      reference: order.reference,
+      saleDate: new Date().toISOString().split("T")[0],
+      noted: "",
+      customerId: order.customerId,
+      storeId: order.storeId,
+      bankId: 1,
+      discount: order.discount,
+      paidAmount: order.grandTotal,
+      paymentStatus: SalePaymentStatus.Paid,
+      status: SaleStatus.Completed,
+      paymentOption: "PAID",
+      items: order.items,
+    });
+
+    // Remove from held orders
+    const updated = heldOrders.filter((h) => h.id !== order.id);
+    saveHeldOrders(updated);
+  };
+
+  const handleDeleteHeldOrder = (orderId: string) => {
+    const updated = heldOrders.filter((h) => h.id !== orderId);
+    saveHeldOrders(updated);
+  };
+
+  // const handleResetForm = () => {
+  //   form.reset({
+  //     reference: generateRef(),
+  //     saleDate: new Date().toISOString().split("T")[0],
+  //     noted: "",
+  //     customerId: 0,
+  //     storeId: formValues.storeId || 1,
+  //     bankId: 1,
+  //     discount: 0,
+  //     paidAmount: 0,
+  //     paymentStatus: SalePaymentStatus.Pending,
+  //     status: SaleStatus.Pending,
+  //     paymentOption: "PAID",
+  //     items: [],
+  //   });
+  // };
+
+  const handleVoidCart = () => {
+    form.setFieldValue("items", []);
+    form.setFieldValue("discount", 0);
+  };
+
+  const currentDateFormatted = useMemo(() => {
+    return new Date().toLocaleDateString("en-US", {
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
+  }, []);
+
+  /* =========================================================
+     RENDER
+  ========================================================= */
+
+  return (
+    <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
+      {/* 1. DreamsPOS Header */}
+      <PosHeader
+        stores={storeList}
+        selectedStoreId={Number(formValues.storeId) || 1}
+        onSelectStore={(stId) => form.setFieldValue("storeId", stId)}
+        onOpenCalculator={() => setIsCalculatorOpen(true)}
+        onOpenHeldOrders={() => setIsHeldOrdersOpen(true)}
+        heldOrdersCount={heldOrders.length}
+        hasLastReceipt={!!lastReceiptData}
+        onPrintLastReceipt={() => {
+          if (lastReceiptData) {
+            setReceiptData(lastReceiptData);
+            setIsReceiptOpen(true);
+          }
+        }}
+      />
+
+      {/* 2. Main POS Workspace Split */}
+      <div className="flex min-h-0 flex-1 overflow-hidden">
+        {/* ===================================================
+            LEFT SECTION: PRODUCT CATALOG
+        =================================================== */}
+        <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-white dark:bg-slate-900 border-r border-slate-200 dark:border-slate-800">
+          {/* Greeting Banner & Search Bar */}
+          <div className="shrink-0 p-4 md:p-5 border-b border-slate-200/80 dark:border-slate-800">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+              {/* <div>
+                <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
+                  Welcome, {user?.username || "Wesley Adrian"}
+                  <Sparkles className="size-4 text-amber-500 fill-amber-500" />
+                </h2>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {currentDateFormatted}
+                </p>
+              </div> */}
+
+              {/* Search Bar + Scan */}
+              <div className="flex items-center gap-2 max-w-md w-full sm:w-auto">
+                <div className="relative flex-1 sm:w-64 md:w-72">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                  <Input
+                    value={productSearch}
+                    onChange={(e) => setProductSearch(e.target.value)}
+                    placeholder="Search Product..."
+                    className="pl-9 h-9.5 text-xs bg-slate-50 dark:bg-slate-800/80 border-slate-200 dark:border-slate-700 rounded-xl focus-visible:ring-1 focus-visible:ring-teal-500"
+                  />
+                  {productSearch && (
+                    <button
+                      type="button"
+                      onClick={() => setProductSearch("")}
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground text-xs"
+                    >
+                      ×
+                    </button>
+                  )}
+                </div>
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-9.5 px-3 gap-1.5 text-xs rounded-xl bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700"
+                >
+                  <ScanLine className="size-4 text-teal-600" />
+                  <span className="hidden sm:inline">Scan</span>
+                </Button>
+              </div>
+            </div>
+
+            {/* Category Filter Tabs / Pills */}
+            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-1">
+              <button
+                type="button"
+                onClick={() => setSelectedCategory("All")}
+                className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${selectedCategory === "All"
+                  ? "bg-teal-700 text-white shadow-sm"
+                  : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                  }`}
+              >
+                All Categories
+              </button>
+              {listCategory.map((cat: any) => {
+                const isSelected = selectedCategory === cat.name;
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => setSelectedCategory(cat.name)}
+                    className={`shrink-0 px-4 py-1.5 rounded-full text-xs font-semibold transition cursor-pointer ${isSelected
+                      ? "bg-teal-600 text-white shadow-sm"
+                      : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
+                      }`}
+                  >
+                    {cat.name}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+
+          {/* Product Grid Catalog */}
+          <div className="flex-1 overflow-y-auto p-4 md:p-5">
+            <form.Field name="items" mode="array">
+              {(itemsField) => {
+                const cartItemIds = (itemsField.state.value || []).map((it: any) =>
+                  Number(it.productId)
+                );
+
+                if (filteredProducts.length === 0) {
+                  return (
+                    <div className="flex h-full flex-col items-center justify-center text-center py-16">
+                      <div className="size-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-3">
+                        <Package className="size-8 text-muted-foreground/40" />
+                      </div>
+                      <h3 className="font-semibold text-slate-800 dark:text-white text-sm">
+                        No products found
+                      </h3>
+                      {/* <p className="text-xs text-muted-foreground mt-1 max-w-xs">
+                        Try searching with another keyword or select a different category.
+                      </p> */}
+                    </div>
+                  );
+                }
+
+                return (
+                  <div className="grid grid-cols-2 sm:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-3.5">
+                    {filteredProducts.map((product) => {
+                      const stock = Number((product as any).qty ?? 0);
+                      const inCart = cartItemIds.includes(product.id);
+
+                      return (
+                        <div
+                          key={product.id}
+                          onClick={() => {
+                            if (stock > 0) {
+                              handleAddProduct(product, itemsField);
+                            }
+                          }}
+                          className={`group relative rounded-xl border bg-white dark:bg-slate-800/90 text-left transition duration-150 overflow-hidden cursor-pointer select-none flex flex-col ${inCart
+                            ? "border-teal-500 ring-2 ring-teal-500/20 shadow-md"
+                            : "border-slate-200/90 dark:border-slate-700/80 hover:border-teal-400 hover:shadow-md"
+                            } ${stock <= 0 ? "opacity-50 cursor-not-allowed" : ""}`}
+                        >
+                          {/* Image Container */}
+                          <div className="relative aspect-4/3 w-full overflow-hidden bg-slate-50 dark:bg-slate-900/60 flex items-center justify-center">
+                            <ImageCell
+                              fileName={product.imageUrl}
+                              name={product.code}
+                              bucketName="product"
+                              className="h-full w-full object-cover transition duration-300 group-hover:scale-105"
+                            />
+
+                            {/* In-cart Checkmark */}
+                            {inCart && (
+                              <div className="absolute top-2 left-2 size-6 rounded-full bg-teal-600 text-white flex items-center justify-center shadow-xs">
+                                <CheckCircle2 className="size-4" />
+                              </div>
+                            )}
+
+                            {/* Quick Add Overlay Button */}
+                            {stock > 0 && (
+                              <div className="absolute top-2 right-2 size-7 rounded-lg bg-white/90 dark:bg-slate-800/90 text-slate-800 dark:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition shadow-xs">
+                                <Plus className="size-4" />
+                              </div>
+                            )}
+
+                            {/* Stock Badge */}
+                            <div className="absolute bottom-2 left-2">
+                              <span
+                                className={`text-[9px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-md shadow-2xs backdrop-blur-xs ${stock > 0
+                                  ? "bg-emerald-500/90 text-white"
+                                  : "bg-red-500/90 text-white"
+                                  }`}
+                              >
+                                {stock > 0 ? `${stock} in stock` : "Out of stock"}
+                              </span>
+                            </div>
+                          </div>
+
+                          {/* Content */}
+                          <div className="p-3 flex-1 flex flex-col justify-between">
+                            <h4
+                              title={product.name}
+                              className="text-xs font-semibold text-slate-800 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-teal-600 dark:group-hover:text-teal-400 transition"
+                            >
+                              {product.name}
+                            </h4>
+                            <div className="mt-2 flex items-center justify-between">
+                              <span className="text-sm font-extrabold text-teal-600 dark:text-teal-400">
+                                {formatCurrency(Number(product.salePrice) || 0)}
+                              </span>
+                              {(product as any).code && (
+                                <span className="text-[10px] text-muted-foreground font-mono">
+                                  {(product as any).code}
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                );
+              }}
+            </form.Field>
+          </div>
+        </section>
+        {/* ===================================================
+            RIGHT: ORDER CART & CHECKOUT PANEL (Modern POS Style)
+        =================================================== */}
+        <aside className="w-107.5 xl:w-117.5 2xl:w-125 shrink-0 bg-card border-l border-border/60 flex flex-col h-full overflow-hidden select-none">
+          {/* 1. Header Bar: Order Info & Customer */}
+          <div className="p-3.5 border-b border-border/60 bg-muted/20 shrink-0 space-y-2.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="size-7 rounded-lg bg-primary/10 text-primary flex items-center justify-center">
+                  <Receipt className="size-4" />
+                </div>
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-bold text-foreground">Order</span>
+                    <span className="text-[11px] font-mono font-medium text-muted-foreground">
+                      {formValues.reference || "NEW"}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-1">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleVoidCart}
+                  title="Clear Cart"
+                  className="size-7 text-muted-foreground hover:text-rose-500 hover:bg-rose-500/10 rounded-lg transition cursor-pointer"
+                >
+                  <Trash2 className="size-3.5" />
+                </Button>
+              </div>
+            </div>
+
+            {/* Compact Metadata Controls */}
+            <div className="grid grid-cols-12 gap-2 text-xs">
+              {/* Customer Selector */}
+              <div className="col-span-8 flex items-center gap-1.5">
+                <div className="relative flex-1">
+                  <User className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground pointer-events-none" />
+                  <select
+                    value={formValues.customerId ? String(formValues.customerId) : "0"}
+                    onChange={(e) =>
+                      form.setFieldValue("customerId", Number(e.target.value))
+                    }
+                    className="w-full h-8 text-xs pl-8 pr-2 rounded-lg border border-border/60 bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/40 focus:border-primary transition cursor-pointer"
+                  >
+                    {customerList.map((cust) => (
+                      <option key={cust.id} value={String(cust.id)}>
+                        {cust.name} {cust.phone ? `(${cust.phone})` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+
+                <Button
+                  type="button"
+                  size="icon"
+                  onClick={() => setIsCustomerDialogOpen(true)}
+                  title="Add New Customer"
+                  className="size-8 shrink-0 bg-primary hover:bg-primary/90 text-primary-foreground rounded-lg shadow-2xs cursor-pointer"
+                >
+                  <UserPlus className="size-3.5" />
+                </Button>
+              </div>
+
+              {/* Date Input */}
+              <div className="col-span-4 relative">
+                <input
+                  type="date"
+                  value={formValues.saleDate}
+                  onChange={(e) => form.setFieldValue("saleDate", e.target.value)}
+                  className="w-full h-8 text-[11px] px-2 pr-6 rounded-lg border border-border/60 bg-background text-foreground focus:outline-hidden focus:ring-1 focus:ring-primary/40 focus:border-primary transition"
+                />
+                <Calendar className="absolute right-2 top-1/2 -translate-y-1/2 size-3 text-muted-foreground pointer-events-none" />
+              </div>
+            </div>
+          </div>
+
+          {/* 2. Cart Items Table Header & Scrollable List */}
+          <div className="flex-1 min-h-0 flex flex-col bg-background/50">
+            {/* Header sub-bar */}
+            <div className="px-3.5 py-2 bg-muted/40 border-b border-border/60 flex items-center justify-between shrink-0">
+              <span className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider flex items-center gap-1.5">
+                <ShoppingBag className="size-3.5 text-primary" />
+                Cart Items
+              </span>
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-background border border-border/60 text-foreground">
+                {(formValues.items || []).length} items
+              </span>
+            </div>
+
+            {/* Scrollable Cart List */}
+            <div className="flex-1 overflow-y-auto divide-y divide-border/40">
+              <form.Field name="items" mode="array">
+                {(itemsField) => {
+                  const items = itemsField.state.value || [];
+
+                  if (items.length === 0) {
+                    return (
+                      <div className="h-full min-h-40 flex flex-col items-center justify-center text-center p-6 select-none">
+                        <div className="size-12 rounded-2xl bg-muted/80 border border-border/60 text-muted-foreground flex items-center justify-center mb-2.5 shadow-2xs">
+                          <ShoppingCart className="size-5 opacity-60" />
+                        </div>
+                        <p className="font-semibold text-xs text-foreground">
+                          Your cart is empty
+                        </p>
+                        <p className="text-[11px] text-muted-foreground mt-0.5 max-w-50 leading-relaxed">
+                          Click any item from the catalog to add it to this sale.
+                        </p>
+                      </div>
+                    );
+                  }
+
+                  return items.map((_: any, index: number) => (
+                    <PosItemRow
+                      key={index}
+                      form={form}
+                      index={index}
+                      products={productList}
+                      isOpenModal={activeSerialRowIndex === index}
+                      onCloseModal={() => {
+                        if (activeSerialRowIndex === index) {
+                          setActiveSerialRowIndex(null);
+                        }
+                      }}
+                      onRemove={() => itemsField.removeValue(index)}
+                    />
+                  ));
+                }}
+              </form.Field>
+            </div>
+          </div>
+
+          {/* 3. Bottom Checkout & Totals Panel */}
+          <form.Subscribe
+            selector={(state) =>
+              [
+                state.values.items,
+                state.values.discount,
+                state.values.paymentOption,
+              ] as const
+            }
+          >
+            {([items, discount, paymentOption]) => {
+              const subtotal = (items || []).reduce(
+                (sum: number, item: any) =>
+                  sum +
+                  (Number(item.price) || 0) * (Number(item.quantity) || 0) -
+                  (Number(item.itemDiscount) || 0),
+                0
+              );
+
+              const grandTotal = Math.max(subtotal - (Number(discount) || 0), 0);
+
+              return (
+                <div className="shrink-0 border-t border-border/70 bg-card p-3.5 space-y-3">
+                  {/* Simple Summary & Total Section */}
+                  <div className="space-y-2">
+                    {/* Subtotal & Discount Rows */}
+                    <div className="space-y-1.5 text-xs">
+                      <div className="flex justify-between items-center text-muted-foreground text-[11px]">
+                        <span className="font-medium flex items-center gap-1.5">
+                          <Receipt className="size-3.5 text-muted-foreground/70" />
+                          Subtotal
+                          <span className="text-[10px] px-1.5 py-0.2 rounded-full bg-muted font-normal text-muted-foreground">
+                            {items?.length || 0} {items?.length === 1 ? "item" : "items"}
+                          </span>
+                        </span>
+                        <span className="font-semibold font-mono text-foreground text-xs">
+                          {formatCurrency(subtotal)}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-muted-foreground flex items-center gap-1.5">
+                          <Tag className="size-3.5 text-amber-500" />
+                          Discount
+                        </span>
+                        <div className="flex items-center gap-1.5">
+                          {Number(discount) > 0 && (
+                            <span className="text-[10px] font-mono font-bold text-rose-500 bg-rose-500/10 px-1.5 py-0.5 rounded border border-rose-500/20">
+                              -{formatCurrency(Number(discount))}
+                            </span>
+                          )}
+                          <div className="relative w-22">
+                            <span className="absolute left-2 top-1/2 -translate-y-1/2 text-[10px] text-muted-foreground font-mono">
+                              $
+                            </span>
+                            <Input
+                              type="number"
+                              min="0"
+                              value={Number(discount) || 0}
+                              onChange={(e) =>
+                                form.setFieldValue("discount", Math.max(0, Number(e.target.value) || 0))
+                              }
+                              className="h-6.5 text-[11px] text-right font-mono pl-5 pr-1.5 bg-muted/40 hover:bg-muted/70 focus:bg-background rounded-md border-border/60 transition-colors"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Grand Total Row */}
+                    <div className="pt-2 border-t border-border/60 flex items-center justify-between">
+                      <div className="space-y-0.5">
+                        <div className="flex items-center gap-1.5">
+                          <Wallet className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                          <span className="text-[11px] font-black uppercase tracking-wider text-foreground">
+                            Total Due
+                          </span>
+                        </div>
+                      </div>
+                      <div className="text-right">
+                        <div className="text-2xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+                          {formatCurrency(grandTotal)}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="rounded-xl bg-slate-200/80 p-2">
+                    <div className="grid grid-cols-4 gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (receiptData) {
+                            setIsReceiptOpen(true);
+                            return;
+                          }
+                          toast.info("No receipt available yet.");
+                        }}
+                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer"
+                      >
+                        <Printer className="size-5" />
+                        <span className="text-sm font-medium">Print Order</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!items || items.length === 0}
+                        onClick={handleHoldOrder}
+                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Pause className="size-5" />
+                        <span className="text-sm font-medium">Hold</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (receiptData) {
+                            setIsReceiptOpen(true);
+                            return;
+                          }
+                          toast.info("No bill available yet.");
+                        }}
+                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer"
+                      >
+                        <Receipt className="size-5" />
+                        <span className="text-sm font-medium">Print Bill</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        disabled={!items || items.length === 0}
+                        onClick={() => {
+                          if (!items || items.length === 0) {
+                            toast.error("Please add at least one product to the order");
+                            return;
+                          }
+                          const totalDue = Math.max(subtotal - (Number(discount) || 0), 0);
+                          setPaymentAmount(totalDue);
+                          setPaymentMethod("CASH");
+                          setPaymentBankId(Number(formValues.bankId) || 0);
+                          setPaymentTransactionNo("");
+                          setPaymentDate(formValues.saleDate || new Date().toISOString().split("T")[0]);
+                          setIsPaymentModalOpen(true);
+                        }}
+                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                      >
+                        <Wallet className="size-5" />
+                        <span className="text-sm font-medium">Payment</span>
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Payment Method & Status Pill Selector */}
+                  <div className="space-y-1.5">
+                    {/* <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-1.5">
+                        <CreditCard className="size-3 text-muted-foreground" />
+                        <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
+                          Payment Method
+                        </span>
+                      </div>
+                      <div className="inline-flex p-0.5 rounded-lg bg-muted border border-border/70 shadow-2xs">
+                        <button
+                          type="button"
+                          onClick={() => form.setFieldValue("paymentOption", "PAID")}
+                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${paymentOption === "PAID"
+                            ? "bg-emerald-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          <Check className="size-2.5" />
+                          <span>PAID</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => form.setFieldValue("paymentOption", "DUE")}
+                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${paymentOption === "DUE"
+                            ? "bg-rose-600 text-white shadow-xs"
+                            : "text-muted-foreground hover:text-foreground"
+                            }`}
+                        >
+                          <span>DUE</span>
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* 5 Tactile Payment Method Tiles */}
+                    {/* <div className="grid grid-cols-5 gap-1.5">
+                      {[
+                        { id: "CASH", label: "Cash", icon: Banknote, color: "text-emerald-600 dark:text-emerald-400" },
+                        { id: "CARD", label: "Card", icon: CreditCard, color: "text-indigo-600 dark:text-indigo-400" },
+                        { id: "POINTS", label: "Points", icon: Award, color: "text-amber-600 dark:text-amber-400" },
+                        { id: "DEPOSIT", label: "Deposit", icon: Landmark, color: "text-sky-600 dark:text-sky-400" },
+                        { id: "CHEQUE", label: "Cheque", icon: FileCheck, color: "text-purple-600 dark:text-purple-400" },
+                      ].map((pm) => {
+                        const Icon = pm.icon;
+                        const isSelected = activePaymentMethod === pm.id;
+                        return (
+                          <button
+                            key={pm.id}
+                            type="button"
+                            onClick={() => setActivePaymentMethod(pm.id as any)}
+                            className={`h-10 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer active:scale-95 ${isSelected
+                              ? "border-emerald-600 bg-emerald-500/10 text-foreground font-bold shadow-xs ring-2 ring-emerald-500/20"
+                              : "border-border/70 bg-card/70 text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:border-border"
+                              }`}
+                          >
+                            <Icon className={`size-3.5 mb-0.5 ${isSelected ? pm.color : "text-muted-foreground"}`} />
+                            <span className="text-[9.5px] font-semibold leading-none">
+                              {pm.label}
+                            </span>
+                          </button>
+                        );
+                      })}
+                    </div> */}
+                  </div>
+
+                  {/* Pay Now Button */}
+                  <Button
+                    type="button"
+                    disabled={isPending || !items || items.length === 0}
+                    onClick={() => {
+                      if (!items || items.length === 0) {
+                        toast.error("Please add at least one product to the order");
+                        return;
+                      }
+                      const totalDue = Math.max(subtotal - (Number(discount) || 0), 0);
+                      setPaymentAmount(totalDue);
+                      setPaymentMethod("CASH");
+                      setPaymentBankId(Number(formValues.bankId) || 0);
+                      setPaymentTransactionNo("");
+                      setPaymentDate(formValues.saleDate || new Date().toISOString().split("T")[0]);
+                      setIsPaymentModalOpen(true);
+                    }}
+                    className="w-full h-11.5 rounded-xl  text-white font-bold text-sm shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all flex items-center justify-between px-4 active:scale-[0.99] cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100"
+                  >
+                    {isPending ? (
+                      <span className="w-full text-center flex items-center justify-center gap-2">
+                        <span className="size-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
+                        <span>Processing Order...</span>
+                      </span>
+                    ) : (
+                      <>
+                        <span className="flex items-center justify-center gap-2">
+                          <span className="size-5.5 rounded-md bg-white/20 flex items-center justify-center">
+                            <CheckCircle2 className="size-3.5 text-white" />
+                          </span>
+                          <span className="tracking-wide">Completed</span>
+                        </span>
+                        {/* <span className="flex items-center gap-1.5 font-mono text-sm font-black">
+                          <span>{formatCurrency(grandTotal)}</span>
+                          <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
+                        </span> */}
+                      </>
+                    )}
+                  </Button>
+                </div>
+              );
+            }}
+          </form.Subscribe>
+        </aside>
+      </div >
+
+      <PaymentForm
+        open={isPaymentModalOpen}
+        setOpen={setIsPaymentModalOpen}
+        payment={null}
+        mode="sale"
+        saleId={isEditing && id ? Number(id) : undefined}
+        amount={Math.max(
+          (formValues.items || []).reduce(
+            (sum: number, item: any) =>
+              sum +
+              (Number(item.price) || 0) * (Number(item.quantity) || 0) -
+              (Number(item.itemDiscount) || 0),
+            0,
+          ) - (Number(formValues.discount) || 0),
+          0,
+        )}
+
+      />
+
+      {false && <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
+        <DialogContent
+          showCloseButton={false}
+          closeOnOutsideClick={true}
+          className="max-w-5xl overflow-hidden border border-border bg-background p-0 text-foreground shadow-xl"
+        >
+          <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
+            <div className="flex items-center gap-2 text-3xl font-black tracking-tight text-foreground">
+              <span>Payment</span>
+              <span className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-muted text-base font-bold">
+                i
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={() => setIsPaymentModalOpen(false)}
+              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-700 hover:bg-slate-200/80"
+              aria-label="Close payment modal"
+            >
+              <X className="h-5 w-5" />
+            </button>
+          </div>
+
+          <div className="grid gap-0 lg:grid-cols-[2.1fr_0.9fr]">
+            <div className="bg-background p-5">
+              <div className="grid grid-cols-3 gap-4 border-b border-border pb-3 text-sm font-bold text-muted-foreground">
+                <div className="space-y-1">
+                  <div>Total Items</div>
+                  <div className="text-xl font-black text-foreground">{(formValues.items || []).length}</div>
+                </div>
+                <div className="space-y-1">
+                  <div>Total Payable</div>
+                  <div className="text-xl font-black text-primary">
+                    {formatCurrency(
+                      Math.max(
+                        (formValues.items || []).reduce(
+                          (sum: number, item: any) =>
+                            sum +
+                            (Number(item.price) || 0) * (Number(item.quantity) || 0) -
+                            (Number(item.itemDiscount) || 0),
+                          0
+                        ) - (Number(formValues.discount) || 0),
+                        0
+                      )
+                    )}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <div>Balance</div>
+                  <div className="text-xl font-black text-foreground">
+                    {formatCurrency(
+                      Math.max(
+                        Math.max(
+                          (formValues.items || []).reduce(
+                            (sum: number, item: any) =>
+                              sum +
+                              (Number(item.price) || 0) * (Number(item.quantity) || 0) -
+                              (Number(item.itemDiscount) || 0),
+                            0
+                          ) - (Number(formValues.discount) || 0),
+                          0
+                        ) -
+                        Number(paymentAmount) || 0,
+                        0
+                      )
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Payment method</label>
+                  <select
+                    value={paymentMethod}
+                    onChange={(e) => setPaymentMethod(e.target.value)}
+                    className="h-11 w-full rounded-md border border-slate-400 bg-white/80 px-3 text-base font-medium text-slate-700 outline-none"
+                  >
+                    <option value="CASH">Cash</option>
+                    <option value="BANK">Bank</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Amount</label>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={paymentAmount}
+                    onChange={(e) => setPaymentAmount(Math.max(0, Number(e.target.value) || 0))}
+                    className="h-11 rounded-md border border-slate-400 bg-white/80 text-lg font-semibold text-slate-900"
+                  />
+                </div>
+
+                {paymentMethod === "BANK" && <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Bank</label>
+                  <select
+                    value={String(paymentBankId || "")}
+                    onChange={(e) => setPaymentBankId(Number(e.target.value))}
+                    className="h-11 w-full rounded-md border border-slate-400 bg-white/80 px-3 text-base font-medium text-slate-700 outline-none"
+                  >
+                    <option value="">Select bank</option>
+                    {bankList.map((bank: any) => (
+                      <option key={bank.id} value={String(bank.id)}>
+                        {bank.name || bank.bankName || "Bank"}
+                        {bank.accountNumber ? ` - ${bank.accountNumber}` : ""}
+                      </option>
+                    ))}
+                  </select>
+                </div>}
+
+                <div>
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Payment date</label>
+                  <Input
+                    type="date"
+                    value={paymentDate}
+                    onChange={(e) => setPaymentDate(e.target.value)}
+                    className="h-11 rounded-md border border-slate-400 bg-white/80 text-base font-medium text-slate-900"
+                  />
+                </div>
+
+                <div className="sm:col-span-2">
+                  <label className="mb-2 block text-sm font-bold text-slate-700">Transaction no. <span className="font-normal">(optional)</span></label>
+                  <Input
+                    value={paymentTransactionNo}
+                    onChange={(e) => setPaymentTransactionNo(e.target.value)}
+                    placeholder="Enter a bank reference or transaction number"
+                    className="h-11 rounded-md border border-slate-400 bg-white/80 text-base font-medium text-slate-900"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-muted/40 p-4">
+              {/* <div className="mb-2 text-lg font-black text-slate-800">Quick Cash</div> */}
+              <div className="space-y-2">
+              </div>
+            </div>
+          </div>
+
+          <div className="border-t border-border bg-card px-4 py-3">
+            <button
+              type="button"
+              onClick={() => {
+                const totalDue = Math.max((formValues.items || []).reduce((sum: number, item: any) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0) - (Number(item.itemDiscount) || 0), 0) - (Number(formValues.discount) || 0), 0);
+                const paidAmount = Number(paymentAmount) || 0;
+                if (paymentMethod === "BANK" && !(paymentBankId > 0)) {
+                  toast.error("Please select a bank for the bank payment");
+                  return;
+                }
+                if (paidAmount <= 0) {
+                  toast.error("Payment amount must be greater than zero");
+                  return;
+                }
+                if (paymentMethod === "BANK") {
+                  form.setFieldValue("bankId", paymentBankId);
+                }
+                form.setFieldValue("paidAmount", paidAmount);
+                if (paidAmount >= totalDue) {
+                  form.setFieldValue("paymentOption", "PAID");
+                } else {
+                  form.setFieldValue("paymentOption", "DUE");
+                }
+                form.handleSubmit();
+                setIsPaymentModalOpen(false);
+              }}
+              className="w-full rounded-lg bg-primary py-3 text-center text-xl font-black text-primary-foreground hover:bg-primary-hover"
+            >
+              Submit
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>}
+
+      {/* =====================================================
+          MODALS & POPUPS
+      ===================================================== */}
+
+      {/* 1. Payment Completed Dialog (DreamsPOS style) */}
+      {/* <Dialog
+        open={isPaymentCompletedOpen}
+        onOpenChange={(open) => !open && setIsPaymentCompletedOpen(false)}
+      >
+        <DialogContent className="sm:max-w-[420px] text-center p-6 gap-4">
+          <div className="size-16 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
+            <CheckCircle2 className="size-10" />
+          </div>
+          <div>
+            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
+              Payment Completed!
+            </DialogTitle>
+            <DialogDescription className="text-xs text-muted-foreground mt-1">
+              Transaction #{completedReference} was processed successfully. Would
+              you like to print the receipt now?
+            </DialogDescription>
+          </div>
+
+          <div className="flex flex-col sm:flex-row gap-2.5 sm:justify-center mt-3 pt-3 border-t border-border/50 w-full">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setIsPaymentCompletedOpen(false);
+                setIsReceiptOpen(true);
+              }}
+              className="gap-1.5 h-9 rounded-xl text-xs font-medium"
+            >
+              <Printer className="size-4 text-primary" />
+              Print Receipt
+            </Button>
+            <Button
+              type="button"
+              onClick={() => {
+                setIsPaymentCompletedOpen(false);
+                handleResetForm();
+              }}
+              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-9 rounded-xl text-xs shadow-sm"
+            >
+              Next Order
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog> */}
+
+      {/* 2. Thermal Receipt Preview & Print Modal */}
+      <PosReceiptModal
+        isOpen={isReceiptOpen}
+        onClose={() => setIsReceiptOpen(false)}
+        data={receiptData}
+      />
+
+      {/* 3. On-Screen POS Calculator */}
+      <PosCalculatorModal
+        isOpen={isCalculatorOpen}
+        onClose={() => setIsCalculatorOpen(false)}
+      />
+
+      {/* 4. Held Orders Modal */}
+      <PosHeldOrdersModal
+        isOpen={isHeldOrdersOpen}
+        onClose={() => setIsHeldOrdersOpen(false)}
+        heldOrders={heldOrders}
+        onRestore={handleRestoreHeldOrder}
+        onDelete={handleDeleteHeldOrder}
+      />
+
+      {/* 5. Add Customer Modal */}
+      <FormCustomer
+        open={isCustomerDialogOpen}
+        setOpen={setIsCustomerDialogOpen}
+        customer={null}
+        onCreated={(res: any) => {
+          if (res?.payload?.id) {
+            form.setFieldValue("customerId", res.payload.id);
+          }
+        }}
+      />
+
+      {/* Hidden Submit Form */}
       <form
         id="sale-form"
         onSubmit={(e) => {
@@ -336,349 +1538,75 @@ export default function SaleForm() {
           e.stopPropagation();
           form.handleSubmit();
         }}
-      >
-        {/* Header Section */}
-        <section className="mb-8 bg-card border rounded-md p-6 shadow-xs">
-          <FieldGroup className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-6 gap-y-4">
-            <FormTextField
-              form={form}
-              name="reference"
-              label="Reference Number"
-              type="text"
-            />
-            <FormTextField
-              form={form}
-              name="saleDate"
-              label="Sale Date"
-              type="date"
-            />
-            <FormSelectField
-              form={form}
-              name="customerId"
-              label="Customer"
-              options={customers?.payload?.data.map((c: CustomerResponse) => ({
-                value: String(c.id),
-                label: c.name,
-              }))}
-              required
-              onAdd={() => setIsCustomerDialogOpen(true)}
-            />
-            <FormSelectField
-              form={form}
-              name="storeId"
-              label="Store"
-              options={stores?.payload?.data.map((s: StoreResponse) => ({
-                value: String(s.id),
-                label: s.name,
-              }))}
-              required
-              onAdd={() => window.open(ROUTERS.STORE_CREATE, "_blank")}
-            />
-            <FormTextField form={form} name="noted" label="Note" type="text" />
-          </FieldGroup>
-        </section>
-
-        <FormCustomer
-          open={isCustomerDialogOpen}
-          setOpen={setIsCustomerDialogOpen}
-          customer={null}
-          onCreated={(res: any) => {
-            if (res?.payload?.id)
-              form.setFieldValue("customerId", res.payload.id);
-          }}
-        />
-
-        {/* Item Section */}
-        <section className="mb-8 bg-card border rounded-md p-3 shadow-xs">
-          <div className="flex items-center justify-between mb-2">
-            <h2 className="text-lg font-semibold">Items</h2>
-          </div>
-
-          <form.Field name="items" mode="array">
-            {(itemsField) => (
-              <>
-                <div className="flex flex-col gap-2 sm:flex-row">
-                  <div className="relative flex-1 mb-5" ref={dropdownRef}>
-                    <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-                    <Input
-                      value={productSearch}
-                      onChange={(e) => setProductSearch(e.target.value)}
-                      onFocus={() =>
-                        productSearch.trim() && setShowDropdown(true)
-                      }
-                      placeholder="Search product name or serial barcode..."
-                      className="pl-9 pr-8"
-                      autoComplete="off"
-                    />
-                    {isSearching && (
-                      <Loader2 className="absolute right-3 top-1/2 size-4 -translate-y-1/2 animate-spin text-muted-foreground" />
-                    )}
-
-                    {showDropdown && (
-                      <div className="absolute z-50 mt-1 max-h-60 w-full overflow-y-auto rounded-md border bg-popover text-popover-foreground shadow-lg">
-                        {searchResults.length === 0 ? (
-                          <div className="p-3 text-sm text-muted-foreground text-center">
-                            {isSearching
-                              ? "Searching..."
-                              : "No available serials found"}
-                          </div>
-                        ) : (
-                          searchResults.map((serial: any) => (
-                            <div
-                              key={serial.id}
-                              onClick={() =>
-                                handleSelectSerialAuto(serial, itemsField)
-                              }
-                              className="flex items-center justify-between p-3 hover:bg-accent hover:text-accent-foreground cursor-pointer border-b last:border-b-0 text-sm transition-colors"
-                            >
-                              <div>
-                                <p className="font-semibold">
-                                  {serial.productName ||
-                                    `Product #${serial.productId}`}
-                                </p>
-                                <p className="text-xs text-muted-foreground">
-                                  Barcode/SN:{" "}
-                                  <span className="font-mono font-medium text-foreground">
-                                    {serial.barcode || serial.barCode}
-                                  </span>
-                                </p>
-                              </div>
-                              <div className="text-right">
-                                <span className="inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700 border border-green-200">
-                                  In Stock ({serial.quantity})
-                                </span>
-                              </div>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    type="button"
-                    variant="outline"
-                    onClick={() => itemsField.pushValue(emptyItem())}
-                  >
-                    <Plus /> Add row
-                  </Button>
-                </div>
-
-                <div className="space-y-4">
-                  {itemsField.state.value.length === 0 && (
-                    <p className="text-sm text-muted-foreground">
-                      No items added yet.
-                    </p>
-                  )}
-                  {itemsField.state.value.map((_: any, index: number) => (
-                    <SaleItemRow
-                      key={index}
-                      form={form}
-                      index={index}
-                      products={productList}
-                      onRemove={() => itemsField.removeValue(index)}
-                    />
-                  ))}
-                </div>
-              </>
-            )}
-          </form.Field>
-        </section>
-
-        {/* Totals & Payment Section */}
-        <form.Subscribe
-          selector={(state) =>
-            [
-              state.values.items,
-              state.values.discount,
-              state.values.paidAmount,
-              state.values.paymentStatus,
-              state.values.status,
-              state.values.paymentOption,
-            ] as const
-          }
-        >
-          {([
-            items,
-            discount,
-            paidAmount,
-            paymentStatus,
-            status,
-            paymentOption,
-          ]) => {
-            const itemsTotal = (items || []).reduce(
-              (sum: number, i: any) =>
-                sum +
-                (Number(i.price) || 0) * (Number(i.quantity) || 0) -
-                (Number(i.itemDiscount) || 0),
-              0,
-            );
-            const grandTotal = Math.max(
-              itemsTotal - (Number(discount) || 0),
-              0,
-            );
-            const balance = Math.max(grandTotal - (Number(paidAmount) || 0), 0);
-
-            const isPaid = paymentStatus === "PAID";
-            const isPartial = paymentStatus === "PARTIAL";
-            const isCompleted = status === "COMPLETED";
-            const isPaidOption = paymentOption === "PAID";
-
-            return (
-              <>
-                {isPaidOption && (
-                  <section className="rounded-md bg-muted/40 border p-6 shadow-xs">
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-4 text-sm items-end">
-                      <FormSelectField
-                        form={form}
-                        name="paymentOption"
-                        label="Payment Option"
-                        options={[
-                          { value: "PAID", label: "Paid" },
-                          { value: "DUE", label: "Due" },
-                        ]}
-                        required
-                      />
-                      <FormSelectField
-                        form={form}
-                        name="bankId"
-                        label="Bank"
-                        options={banks?.payload?.data.map((b: any) => ({
-                          value: String(b.id),
-                          label: b.name,
-                        }))}
-                        required
-                        onAdd={() => setBankFormOpen(true)}
-                      />
-                      <FormTextField
-                        form={form}
-                        name="discount"
-                        label="Discount"
-                        type="number"
-                      />
-                      <FormTextField
-                        form={form}
-                        name="paidAmount"
-                        label="Paid Amount"
-                        type="number"
-                      />
-                      <FormBank
-                        open={bankFormOpen}
-                        setOpen={setBankFormOpen}
-                        bank={null}
-                      />
-
-                      <div className="flex flex-col gap-1.5 justify-center pt-2">
-                        <span className="text-xs font-medium text-muted-foreground">
-                          Payment & Status
-                        </span>
-                        <div className="flex flex-wrap items-center gap-1.5">
-                          <span
-                            className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
-                              isPaid
-                                ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
-                                : isPartial
-                                  ? "bg-blue-500/15 text-blue-600 border-blue-500/25"
-                                  : "bg-amber-500/15 text-amber-600 border-amber-500/25"
-                            }`}
-                          >
-                            {paymentStatus || "PENDING"}
-                          </span>
-                          <span
-                            className={`px-2.5 py-0.5 text-xs font-semibold rounded-full border ${
-                              isCompleted
-                                ? "bg-emerald-500/15 text-emerald-600 border-emerald-500/25"
-                                : "bg-amber-500/15 text-amber-600 border-amber-500/25"
-                            }`}
-                          >
-                            {status || "PENDING"}
-                          </span>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-center">
-                        <span className="text-muted-foreground">
-                          Grand Total
-                        </span>
-                        <div className="font-bold text-base mt-0.5">
-                          {formatCurrency(grandTotal)}
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-center">
-                        <span className="text-muted-foreground">
-                          Balance Due
-                        </span>
-                        <div
-                          className={`font-bold text-base mt-0.5 ${balance > 0 ? "text-destructive" : "text-emerald-600"}`}
-                        >
-                          {formatCurrency(balance)}
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                )}
-              </>
-            );
-          }}
-        </form.Subscribe>
-      </form>
-
-      <div className="flex gap-2 justify-end mt-6">
-        <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-          Cancel
-        </Button>
-        <Button type="submit" form="sale-form" disabled={isPending}>
-          {isPending ? "Saving..." : isEditing ? "Update Sale" : "Create Sale"}
-        </Button>
-      </div>
+        className="hidden"
+      />
     </div>
   );
 }
 
-/* ---------------- Item Row Component ---------------- */
-function SaleItemRow({
+/* ===========================================================
+   POS CART ITEM ROW COMPONENT
+=========================================================== */
+
+function PosItemRow({
   form,
   index,
   products,
   onRemove,
+  isOpenModal,
+  onCloseModal,
 }: {
   form: any;
   index: number;
   products: ProductResponse[];
   onRemove: () => void;
+  isOpenModal: boolean;
+  onCloseModal: () => void;
 }) {
   const productId = useFormStore(
     form.store,
-    (state: any) => state.values.items[index]?.productId,
-  );
-  const quantity = useFormStore(
-    form.store,
-    (state: any) => state.values.items[index]?.quantity,
-  );
-  const price = useFormStore(
-    form.store,
-    (state: any) => Number(state.values.items[index]?.price) || 0,
-  );
-  const itemDiscount = useFormStore(
-    form.store,
-    (state: any) => Number(state.values.items[index]?.itemDiscount) || 0,
-  );
-  const serialNumberIds = useFormStore(
-    form.store,
-    (state: any) => state.values.items[index]?.serialNumberIds || [],
+    (state: any) => state.values.items[index]?.productId
   );
 
-  const [isSerialModalOpen, setIsSerialModalOpen] = useState(false);
+  const quantity = useFormStore(
+    form.store,
+    (state: any) => Number(state.values.items[index]?.quantity) || 1
+  );
+
+  const price = useFormStore(
+    form.store,
+    (state: any) => Number(state.values.items[index]?.price) || 0
+  );
+
+  const serialNumberIds = useFormStore(
+    form.store,
+    (state: any) => state.values.items[index]?.serialNumberIds || []
+  );
+
+  const [isSerialModalOpen, setIsSerialModalOpen] = useState(isOpenModal);
   const [scanValue, setScanValue] = useState("");
+  const [modalSearch, setModalSearch] = useState("");
   const [serialError, setSerialError] = useState("");
-  const previousProductIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    setIsSerialModalOpen(isOpenModal);
+  }, [isOpenModal]);
 
   const selectedProduct = products.find((p) => p.id === Number(productId));
 
+  /* -------------------------------------------------------
+     SERIALS DATA
+  ------------------------------------------------------- */
+
   const { data: serialsResponse } = useProductSerial.useGetAllProductSerial(
-    { productId: Number(productId), page: 0, size: 100 },
-    { enabled: Number(productId) > 0 },
+    {
+      productId: Number(productId),
+      page: 0,
+      size: 100,
+    },
+    {
+      enabled: Number(productId) > 0,
+    }
   );
 
   const availableSerials = (
@@ -686,52 +1614,52 @@ function SaleItemRow({
     (serialsResponse as any)?.data ??
     []
   ).filter(
-    (s: any) => Number(s.quantity ?? 0) > 0 && s.status !== "OUT_OF_STOCK",
+    (serial: any) =>
+      Number(serial.quantity ?? 0) > 0 && serial.status !== "OUT_OF_STOCK"
   );
 
-  const computedSubtotal = price * (Number(quantity) || 0) - itemDiscount;
+  const filteredAvailableSerials = availableSerials.filter((s: any) => {
+    if (!modalSearch.trim()) return true;
+    const q = modalSearch.toLowerCase();
+    const barcode = (s.barcode || s.barCode || s.serialNumber || `ID #${s.id}`).toLowerCase();
+    const store = (s.storeName || s.store?.name || "").toLowerCase();
+    return barcode.includes(q) || store.includes(q);
+  });
 
-  useEffect(() => {
-    if (!productId || !selectedProduct) return;
-    const nextProductId = Number(productId);
-    if (previousProductIdRef.current === nextProductId) return;
+  const handleAutoSelect = () => {
+    const needed = quantity;
+    const autoIds = availableSerials.slice(0, needed).map((s: any) => s.id);
+    form.setFieldValue(`items[${index}].serialNumberIds`, autoIds);
+    setSerialError("");
+  };
 
-    previousProductIdRef.current = nextProductId;
-    const itemPrice = selectedProduct.salePrice ?? 0;
+  const handleClearSerials = () => {
+    form.setFieldValue(`items[${index}].serialNumberIds`, []);
+    setSerialError("");
+  };
 
-    form.setFieldValue(`items[${index}].price`, itemPrice);
-
-    if (availableSerials.length > 0 && serialNumberIds.length === 0) {
-      form.setFieldValue(`items[${index}].serialNumberIds`, [
-        availableSerials[0].id,
-      ]);
-    }
-  }, [
-    productId,
-    selectedProduct,
-    index,
-    form,
-    availableSerials,
-    serialNumberIds,
-  ]);
+  const subtotal = price * quantity;
+  const serialsComplete = serialNumberIds.length === quantity;
 
   const toggleSerial = (serial: any) => {
     if (Number(serial.quantity ?? 0) <= 0 || serial.status === "SOLD") {
-      setSerialError("Out of stock!");
+      setSerialError("This serial is not available.");
       return;
     }
 
     const current = [...serialNumberIds];
-    const targetIdx = current.indexOf(serial.id);
-    if (targetIdx > -1) {
-      current.splice(targetIdx, 1);
+    const targetIndex = current.indexOf(serial.id);
+
+    if (targetIndex >= 0) {
+      current.splice(targetIndex, 1);
     } else {
-      if (current.length >= Number(quantity)) {
-        setSerialError(`Maximum ${quantity} serials limit reached.`);
+      if (current.length >= quantity) {
+        setSerialError(`Maximum ${quantity} serial numbers allowed.`);
         return;
       }
       current.push(serial.id);
     }
+
     setSerialError("");
     form.setFieldValue(`items[${index}].serialNumberIds`, current);
   };
@@ -739,134 +1667,315 @@ function SaleItemRow({
   const handleModalScan = () => {
     const code = scanValue.trim().toLowerCase();
     if (!code) return;
+
     const matched = availableSerials.find(
-      (s: any) => (s.barcode || s.barCode)?.toLowerCase() === code,
+      (serial: any) =>
+        (serial.barcode || serial.barCode || "").toLowerCase() === code
     );
+
     if (!matched) {
-      setSerialError("Barcode invalid or out of stock.");
+      setSerialError("Barcode not found or unavailable.");
       return;
     }
+
     toggleSerial(matched);
     setScanValue("");
   };
 
   return (
-    <div className="rounded-lg border border-border/70 bg-background/50 p-4 shadow-sm">
-      <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 items-end">
-        <FormSelectField
-          form={form}
-          name={`items[${index}].productId`}
-          label="Product"
-          options={products.map((p) => ({
-            value: String(p.id),
-            label: `${p.name}`,
-          }))}
-        />
-        <FormTextField
-          form={form}
-          name={`items[${index}].quantity`}
-          label="Quantity"
-          type="number"
-        />
-        <FormTextField
-          form={form}
-          name={`items[${index}].price`}
-          label="Price"
-          type="number"
-        />
-        <FormTextField
-          form={form}
-          name={`items[${index}].itemDiscount`}
-          label="Discount"
-          type="number"
-        />
-        <div className="flex flex-col gap-1.5">
-          <label className="text-sm font-medium">Subtotal</label>
-          <div className="h-10 px-3 py-2 rounded-md border bg-muted/50 text-sm flex items-center font-medium">
-            {formatCurrency(computedSubtotal)}
+    <>
+      <div className="p-3.5 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
+        <div className="flex items-start justify-between gap-3">
+          {/* Product image & details */}
+          <div className="flex gap-2.5 min-w-0">
+            <div className="size-11 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center border">
+              {(selectedProduct as any)?.imageUrl ? (
+                <ImageCell
+                  fileName={(selectedProduct as any).imageUrl}
+                  name={selectedProduct?.name || ""}
+                  bucketName="product"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <Package className="size-5 text-muted-foreground/40" />
+              )}
+            </div>
+
+            <div className="min-w-0">
+              <h5 className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate max-w-45 xl:max-w-55">
+                {selectedProduct?.name || `Product #${productId}`}
+              </h5>
+              <div className="flex items-center gap-2 mt-0.5">
+                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
+                  {formatCurrency(price)}
+                </span>
+                <span className="text-[10px] text-muted-foreground">
+                  Stock: {(selectedProduct as any)?.qty ?? "—"}
+                </span>
+              </div>
+            </div>
+          </div>
+
+          {/* Line Subtotal */}
+          <div className="text-right">
+            <span className="text-xs font-bold text-slate-900 dark:text-white">
+              {formatCurrency(subtotal)}
+            </span>
           </div>
         </div>
 
-        <div className="flex items-center justify-end gap-2">
-          {Number(productId) > 0 && (
-            <Button
+        {/* Action Controls Row (Stepper, Serials, Trash) */}
+        <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
+          {/* Quantity Stepper */}
+          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden h-7 bg-white dark:bg-slate-800">
+            <button
               type="button"
-              variant="outline"
-              size="icon"
-              onClick={() => setIsSerialModalOpen(true)}
-              className="relative"
+              className="size-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+              onClick={() => {
+                if (quantity <= 1) return;
+                const newQuantity = quantity - 1;
+                form.setFieldValue(`items[${index}].quantity`, newQuantity);
+                if (serialNumberIds.length > newQuantity) {
+                  form.setFieldValue(
+                    `items[${index}].serialNumberIds`,
+                    serialNumberIds.slice(0, newQuantity)
+                  );
+                }
+              }}
             >
-              <Hash className="size-4" />
-              {serialNumberIds.length > 0 && (
-                <span className="absolute -top-2 -right-2 bg-blue-600 text-white text-[10px] size-5 rounded-full flex items-center justify-center font-bold">
-                  {serialNumberIds.length}
-                </span>
-              )}
-            </Button>
-          )}
-          <Button
+              <Minus className="size-3" />
+            </button>
+
+            <span className="w-8 text-center text-xs font-bold font-mono text-slate-800 dark:text-slate-200">
+              {quantity}
+            </span>
+
+            <button
+              type="button"
+              className="size-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
+              onClick={() => form.setFieldValue(`items[${index}].quantity`, quantity + 1)}
+            >
+              <Plus className="size-3" />
+            </button>
+          </div>
+
+          {/* Serials / IMEI Selector Button */}
+          <button
             type="button"
-            variant="ghost"
-            className="text-destructive"
-            onClick={onRemove}
+            onClick={() => setIsSerialModalOpen(true)}
+            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold border transition cursor-pointer ${serialsComplete && serialNumberIds.length > 0
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+              : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+              }`}
           >
-            <Trash2 />
-          </Button>
+            <Hash className="size-3" />
+            <span>Serials: {serialNumberIds.length}/{quantity}</span>
+          </button>
+
+          {/* Delete Row Button */}
+          <button
+            type="button"
+            onClick={onRemove}
+            className="text-slate-400 hover:text-rose-500 transition p-1"
+          >
+            <Trash2 className="size-3.5" />
+          </button>
         </div>
       </div>
 
-      <Dialog open={isSerialModalOpen} onOpenChange={setIsSerialModalOpen}>
-        <DialogContent className="max-w-md">
-          <DialogHeader>
-            <DialogTitle>Select Serials</DialogTitle>
-            <DialogDescription>
-              Selected {serialNumberIds.length} of {quantity}
-            </DialogDescription>
-          </DialogHeader>
-          <div className="flex items-center gap-2 my-2">
-            <ScanLine className="size-5 text-muted-foreground" />
-            <Input
-              value={scanValue}
-              onChange={(e) => setScanValue(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  handleModalScan();
-                }
-              }}
-              placeholder="Scan barcode..."
-            />
-            <Button type="button" onClick={handleModalScan} variant="secondary">
-              Add
-            </Button>
-          </div>
-          {serialError && (
-            <p className="text-sm text-destructive">{serialError}</p>
-          )}
-          <div className="max-h-60 overflow-y-auto space-y-2 border p-2 rounded">
-            {availableSerials.map((serial: any) => {
-              const isSelected = serialNumberIds.includes(serial.id);
-              return (
-                <div
-                  key={serial.id}
-                  onClick={() => toggleSerial(serial)}
-                  className={`flex items-center justify-between p-2 rounded cursor-pointer border text-sm ${isSelected ? "bg-blue-50 border-blue-500 text-blue-900" : "bg-background hover:bg-muted"}`}
+      {/* Serial Numbers Modal */}
+      <Dialog
+        open={isSerialModalOpen}
+        onOpenChange={(open) => {
+          setIsSerialModalOpen(open);
+          if (!open) onCloseModal();
+        }}
+      >
+        <DialogContent className="sm:max-w-135 max-h-[85vh] p-0 overflow-hidden bg-background rounded-2xl border border-border/60 shadow-2xl flex flex-col">
+          {/* Modal Header */}
+          <DialogHeader className="px-5 py-4 border-b border-border/60 bg-muted/20 shrink-0">
+            <div className="flex items-center justify-between gap-3">
+              <div className="min-w-0 space-y-0.5">
+                <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
+                  <Hash className="size-4 text-primary" />
+                  Select Serial Numbers
+                </DialogTitle>
+                <DialogDescription className="text-xs text-muted-foreground truncate">
+                  {selectedProduct?.name || `Product #${productId}`}
+                </DialogDescription>
+              </div>
+
+              <div className="flex items-center gap-2 shrink-0">
+                <span
+                  className={`px-2.5 py-1 text-xs font-bold rounded-lg border tabular-nums ${serialsComplete
+                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
+                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                    }`}
                 >
-                  <span>SN: {serial.barcode || serial.barCode}</span>
-                  <span className="text-xs px-2 py-0.5 rounded bg-green-100 text-green-800">
-                    IN STOCK
-                  </span>
-                </div>
-              );
-            })}
+                  {serialNumberIds.length} / {quantity} {serialsComplete ? "✓ Selected" : "needed"}
+                </span>
+              </div>
+            </div>
+          </DialogHeader>
+
+          {/* Scanner & Quick Actions Toolbar */}
+          <div className="p-3.5 border-b border-border/60 bg-muted/30 space-y-2.5 shrink-0">
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <ScanLine className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  autoFocus
+                  value={scanValue}
+                  onChange={(e) => setScanValue(e.target.value)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter") {
+                      e.preventDefault();
+                      handleModalScan();
+                    }
+                  }}
+                  placeholder="Scan serial or barcode and press Enter..."
+                  className="pl-9 h-9 text-xs rounded-xl bg-background border-border/60"
+                />
+              </div>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleModalScan}
+                className="h-9 px-4 rounded-xl text-xs font-semibold"
+              >
+                Add
+              </Button>
+            </div>
+
+            {serialError && (
+              <div className="flex items-center gap-1.5 text-xs text-rose-500 font-medium px-1">
+                <AlertTriangle className="size-3.5 shrink-0" />
+                <span>{serialError}</span>
+              </div>
+            )}
+
+            {/* Quick action shortcuts */}
+            <div className="flex items-center justify-between pt-0.5 text-xs">
+              {/* <div className="relative w-44 sm:w-56">
+                <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3 text-muted-foreground" />
+                <Input
+                  value={modalSearch}
+                  onChange={(e) => setModalSearch(e.target.value)}
+                  placeholder="Filter serials..."
+                  className="h-7 pl-7 text-[11px] rounded-lg bg-background border-border/60"
+                />
+              </div> */}
+
+              <div className="flex items-center gap-1.5">
+                {availableSerials.length > 0 && serialNumberIds.length < quantity && (
+                  <button
+                    type="button"
+                    onClick={handleAutoSelect}
+                    className="px-2 py-1 text-[11px] font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer"
+                  >
+                    Auto-Fill ({Math.min(quantity, availableSerials.length)})
+                  </button>
+                )}
+                {/* {serialNumberIds.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={handleClearSerials}
+                    className="px-2 py-1 text-[11px] font-medium rounded-lg text-muted-foreground hover:bg-muted transition cursor-pointer"
+                  >
+                    Clear All
+                  </button>
+                )} */}
+              </div>
+            </div>
           </div>
-          <DialogFooter>
-            <Button type="button" onClick={() => setIsSerialModalOpen(false)}>
-              Done
-            </Button>
-          </DialogFooter>
+
+          {/* Serial List */}
+          <div className="max-h-75 overflow-y-auto p-3 space-y-1.5 flex-1">
+            {filteredAvailableSerials.length === 0 ? (
+              <div className="py-10 text-center text-xs text-muted-foreground">
+                {modalSearch
+                  ? "No serial numbers matched your filter."
+                  : "No active serial numbers found for this product."}
+              </div>
+            ) : (
+              filteredAvailableSerials.map((serial: any) => {
+                const isSelected = serialNumberIds.includes(serial.id);
+                const barcode = serial.barcode || serial.barCode || serial.serialNumber || `ID #${serial.id}`;
+                // const store = serial.storeName || serial.store?.name;
+
+                return (
+                  <div
+                    key={serial.id}
+                    onClick={() => toggleSerial(serial)}
+                    className={`flex items-center justify-between p-2.5 rounded-xl border transition cursor-pointer text-xs ${isSelected
+                      ? "border-primary bg-primary/10 text-foreground font-semibold shadow-xs"
+                      : "border-border/60 hover:bg-muted/40 text-foreground/90"
+                      }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className={`size-4.5 rounded-md border flex items-center justify-center text-[10px] shrink-0 transition-colors ${isSelected
+                          ? "bg-primary border-primary text-primary-foreground font-bold"
+                          : "border-border/70 bg-background"
+                          }`}
+                      >
+                        {isSelected && "✓"}
+                      </div>
+                      <span className="font-mono text-xs truncate">{barcode}</span>
+                    </div>
+
+                    <div className="flex items-center gap-2 shrink-0">
+                      {/* {store && (
+                        <span className="text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                          {store}
+                        </span>
+                      )} */}
+                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                        Available
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Modal Footer */}
+          <div className="px-5 py-3.5 border-t border-border/60 bg-muted/20 flex items-center justify-between gap-3 shrink-0 rounded-b-2xl">
+            <div className="text-xs text-muted-foreground">
+              <span className="font-semibold text-foreground">{serialNumberIds.length}</span> of{" "}
+              <span className="font-semibold text-foreground">{quantity}</span> selected
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  setIsSerialModalOpen(false);
+                  onCloseModal();
+                }}
+                className="rounded-xl px-4 text-xs font-medium"
+              >
+                Cancel
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => {
+                  setIsSerialModalOpen(false);
+                  onCloseModal();
+                }}
+                className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold rounded-xl px-4 text-xs gap-1.5 shadow-sm"
+              >
+                <Check className="size-3.5" />
+                Done
+              </Button>
+            </div>
+          </div>
         </DialogContent>
       </Dialog>
-    </div>
+    </>
   );
 }

@@ -4,27 +4,21 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-import {
-  CheckCircle2,
-  MoreVertical,
-  PencilIcon,
   RotateCcw,
-  Trash2,
-  XCircle,
+  Wallet,
 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { TableActions } from "@/components/ui/table-actions";
+import { formatDate } from "@/utils/formatDate";
 
 interface SaleColumnProps {
+  onView?: (sale: SaleResponse) => void;
   onEdit: (sale: SaleResponse) => void;
   onDelete: (id: number) => void;
   onComplete?: (id: number) => void;
   onCancel?: (id: number) => void;
   onReturn?: (id: number) => void;
+  onPayment?: (sale: SaleResponse) => void;
   canEdit: boolean;
   canDelete: boolean;
 }
@@ -33,20 +27,31 @@ const formatCurrency = (value: number) => `$${(value || 0).toFixed(2)}`;
 const safeText = (value: string | null | undefined) => value ?? "N/A";
 
 export const SaleColumns = ({
+  onView,
   onEdit,
   onDelete,
   onComplete,
   onCancel,
   onReturn,
+  onPayment,
   canEdit,
   canDelete,
 }: SaleColumnProps): ColumnDef<SaleResponse>[] => [
+    // {
+    //   accessorKey: "id",
+    //   header: ({ column }) => <SortableHeader column={column} title="ID" />,
+    //   cell: ({ row }) => (
+    //     <span className="font-semibold text-[#566a7f]">
+    //       {safeText(row.original.id.toString())}
+    //     </span>
+    //   ),
+    // },
     {
-      accessorKey: "id",
-      header: ({ column }) => <SortableHeader column={column} title="ID" />,
+      accessorKey: "customer",
+      header: ({ column }) => <SortableHeader column={column} title="Customer" />,
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
-          {safeText(row.original.id.toString())}
+          {safeText(row.original.customerName)}
         </span>
       ),
     },
@@ -54,8 +59,21 @@ export const SaleColumns = ({
       accessorKey: "reference",
       header: ({ column }) => <SortableHeader column={column} title="Reference" />,
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-[#696cff]">
+        <span
+          onClick={() => onView?.(row.original)}
+          className={`font-mono text-xs ${onView ? "text-[#696cff] hover:underline cursor-pointer font-semibold" : "text-[#696cff]"
+            }`}
+        >
           {row.original.reference}
+        </span>
+      ),
+    },
+    {
+      accessorKey: "no",
+      header: ({ column }) => <SortableHeader column={column} title="No" />,
+      cell: ({ row }) => (
+        <span className="font-mono text-xs text-[#696cff]">
+          {(row.original as any).no ?? row.index + 1}
         </span>
       ),
     },
@@ -69,26 +87,23 @@ export const SaleColumns = ({
       ),
     },
     {
-      accessorKey: "customer",
-      header: ({ column }) => <SortableHeader column={column} title="Customer" />,
-      cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
-          {safeText(row.original.customerName)}
-        </span>
-      ),
+      accessorKey: "createdAt",
+      header: ({ column }) => <SortableHeader column={column} title="Date" />,
+      cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
     },
-    {
-      accessorKey: "bank",
-      header: ({ column }) => <SortableHeader column={column} title="Bank" />,
-      cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
-          {safeText(row.original.bankName)}
-        </span>
-      ),
-    },
+
+    // {
+    //   accessorKey: "bank",
+    //   header: ({ column }) => <SortableHeader column={column} title="Bank" />,
+    //   cell: ({ row }) => (
+    //     <span className="font-semibold text-[#566a7f]">
+    //       {safeText(row.original.bankName)}
+    //     </span>
+    //   ),
+    // },
     {
       accessorKey: "grandTotal",
-      header: "Grand Total",
+      header: "Total",
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {formatCurrency(row.original.grandTotal)}
@@ -97,7 +112,7 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "paidAmount",
-      header: "Paid Amount",
+      header: "Paid",
       cell: ({ row }) => (
         <span className="text-[#71dd37] font-medium">
           {formatCurrency(row.original.paidAmount)}
@@ -106,7 +121,7 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "dueAmount",
-      header: "Due Balance",
+      header: "Due",
       cell: ({ row }) => (
         <span className="text-[#ff3e1d] font-medium">
           {formatCurrency(row.original.dueAmount)}
@@ -115,7 +130,7 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "paymentStatus",
-      header: "Payment Status",
+      header: "Payment",
       cell: ({ row }) => {
         const status = row.original.paymentStatus?.toUpperCase();
         const isPaid = status === "PAID";
@@ -159,66 +174,24 @@ export const SaleColumns = ({
         }
 
         return (
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+          <div className="flex items-center gap-1">
+            <TableActions
+              onView={onView ? () => onView(row.original) : undefined}
+              onEdit={() => onEdit(row.original)}
+              onDelete={() => onDelete(row.original.id)}
+            />
+            {onPayment && row.original.dueAmount > 0 && (
               <Button
                 variant="ghost"
-                className="h-8 w-8 p-0 text-[#697a8d] hover:text-[#566a7f] hover:bg-[#f5f5f9]"
+                size="icon"
+                title="Payment"
+                className="h-8 w-8 text-[#696cff] hover:bg-[#696cff]/10 rounded-lg"
+                onClick={() => onPayment(row.original)}
               >
-                <span className="sr-only">Open menu</span>
-                <MoreVertical className="h-4 w-4" />
+                <Wallet className="h-4 w-4" />
               </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent
-              align="end"
-              className="w-40 shadow-[0_3px_12px_rgba(67,89,113,0.15)] border-[#e7e7e8]"
-            >
-              {onComplete && isPendingLike && (
-                <DropdownMenuItem
-                  className="cursor-pointer text-[#71dd37] focus:text-[#71dd37] focus:bg-[#71dd37]/8"
-                  onClick={() => onComplete(row.original.id)}
-                >
-                  <CheckCircle2 className="mr-2 h-4 w-4" /> Complete
-                </DropdownMenuItem>
-              )}
-
-              {onCancel && isPendingLike && (
-                <DropdownMenuItem
-                  className="cursor-pointer text-[#ffab00] focus:text-[#ffab00] focus:bg-[#ffab00]/8"
-                  onClick={() => onCancel(row.original.id)}
-                >
-                  <XCircle className="mr-2 h-4 w-4" /> Cancel
-                </DropdownMenuItem>
-              )}
-
-              {onReturn && isCompleted && (
-                <DropdownMenuItem
-                  className="cursor-pointer text-[#03c3ec] focus:text-[#03c3ec] focus:bg-[#03c3ec]/8"
-                  onClick={() => onReturn(row.original.id)}
-                >
-                  <RotateCcw className="mr-2 h-4 w-4" /> Return
-                </DropdownMenuItem>
-              )}
-
-              {canEdit && isPendingLike && (
-                <DropdownMenuItem
-                  className="cursor-pointer text-[#697a8d] focus:text-[#696cff] focus:bg-[#696cff]/8"
-                  onClick={() => onEdit(row.original)}
-                >
-                  <PencilIcon className="mr-2 h-4 w-4" /> Edit
-                </DropdownMenuItem>
-              )}
-
-              {canDelete && (
-                <DropdownMenuItem
-                  className="cursor-pointer text-[#ff3e1d] focus:text-[#ff3e1d] focus:bg-[#ff3e1d]/8"
-                  onClick={() => onDelete(row.original.id)}
-                >
-                  <Trash2 className="mr-2 h-4 w-4" /> Delete
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+            )}
+          </div>
         );
       },
     },
@@ -264,7 +237,9 @@ export const SaleColumnsReturn = ({
         return (
           <Button
             variant="ghost"
-            className="h-8 w-8 p-0 text-[#03c3ec] hover:bg-[#03c3ec]/8"
+            size="icon"
+            title="Return"
+            className="h-8 w-8 text-[#03c3ec] hover:bg-[#03c3ec]/10 rounded-lg"
             onClick={() => onReturn(row.original.id)}
           >
             <RotateCcw className="h-4 w-4" />

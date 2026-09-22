@@ -37,15 +37,13 @@ export interface ExpenseReportResponse {
   createdAt?: string;
 }
 
-export interface ProductSerialReportFilter {
+export interface ProductSerialReportFilter extends PageFilter {
   startDate?: string;
   endDate?: string;
   storeId?: number;
   productId?: number;
   status?: string;
   barcode?: string;
-  page?: number;
-  size?: number;
 }
 
 export interface ProductSerialReportResponse {
@@ -92,13 +90,13 @@ export interface SaleReportResponse {
   sales?: SaleResponse[];
 }
 
-export interface SalesReportPageResponse<T> {
-  content?: T[];
-  data?: T[];
-  items?: T[];
-  totalElements?: number;
-  totalPages?: number;
-  number?: number;
-  size?: number;
-  [key: string]: unknown;
-}
+// export interface SalesReportPageResponse<T> {
+//   content?: T[];
+//   data?: T[];
+//   items?: T[];
+//   totalElements?: number;
+//   totalPages?: number;
+//   number?: number;
+//   size?: number;
+//   [key: string]: unknown;
+// }

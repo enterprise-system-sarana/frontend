@@ -1,9 +1,19 @@
+import { useState } from "react";
+import { useNavigate, Link } from "react-router-dom";
+import { AuthService } from "@/services/auth/auth.service";
+import {
+  ArrowRight,
+  Eye,
+  EyeOff,
+  Mail,
+  Lock,
+  AlertCircle,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { AuthService } from "@/services/auth/auth.service";
-import { ArrowRight, Eye, EyeOff, Mail, Lock } from "lucide-react";
+import { LanguageToggle } from "@/components/layout/LanguageToggle";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { ROUTERS } from "@/constants/Route";
 
 export default function LoginPage() {
   const [usernameOrEmail, setUsernameOrEmail] = useState("");
@@ -13,6 +23,7 @@ export default function LoginPage() {
   const [error, setError] = useState<string | null>(null);
 
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,105 +47,153 @@ export default function LoginPage() {
       localStorage.setItem("isLoggedIn", "true");
       localStorage.setItem("usernameOrEmail", username);
 
-      navigate("/");
+      navigate(ROUTERS.DASHBOARD);
     } catch (err: any) {
       console.error("Login error:", err);
-      setError(err?.response?.data?.message || err?.message || "Invalid username/email or password.");
+      setError(
+        err?.response?.data?.message ||
+          err?.message ||
+          "Invalid username/email or password."
+      );
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <main className="flex min-h-svh items-center justify-center bg-[#f1f1f3] p-5">
-      <div className="flex w-full max-w-[980px] overflow-hidden rounded-[28px] border border-[#e7e1ee] bg-white shadow-[0_30px_80px_rgba(79,62,130,0.12)]">
-        <div className="relative hidden flex-1 items-center justify-center overflow-hidden bg-gradient-to-br from-[#4b3bd5] via-[#4b3bd5] to-[#5c3ae4] p-10 md:flex">
-          <div className="absolute -left-16 top-1/2 h-[210px] w-[210px] -translate-y-1/2 rounded-full bg-[#6552e1]/30 blur-2xl" />
-          <div className="absolute -right-20 bottom-0 h-[250px] w-[250px] rounded-full bg-[#7f69f1]/25 blur-3xl" />
-          <div className="relative z-10 flex w-full max-w-[420px] flex-col items-center">
-            <div className="mb-8 flex h-[170px] w-[270px] items-center justify-center rounded-[22px] bg-[#f7f7f8] shadow-[inset_0_1px_0_rgba(255,255,255,0.6)]">
-              <div className="relative flex h-[120px] w-[210px] items-center justify-center rounded-[18px] bg-white/80">
-                <div className="absolute left-1/2 top-1/2 h-[104px] w-[104px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[8px] border-[#2ec5b8] border-l-transparent border-b-transparent rotate-45 opacity-90" />
-                <div className="absolute left-1/2 top-1/2 h-[90px] w-[90px] -translate-x-1/2 -translate-y-1/2 rounded-full border-[8px] border-[#30cdd3] border-r-transparent border-t-transparent rotate-45 opacity-80" />
-                <div className="relative text-[54px] font-black tracking-[-0.08em] text-[#1ec7b7]">360</div>
-                <div className="absolute right-6 top-1/2 h-5 w-5 -translate-y-1/2 rounded-full border-[3px] border-[#1ec7b7] border-l-transparent border-b-transparent rotate-45" />
+    <main className="relative flex min-h-svh items-center justify-center bg-slate-50 dark:bg-slate-950 p-4 sm:p-6">
+      {/* Language Toggle in Top Right */}
+      <div className="absolute top-4 right-4 z-20">
+        <LanguageToggle />
+      </div>
+
+      <div className="w-full max-w-[420px]">
+        {/* Logo & Shop Header */}
+        <div className="mb-6 text-center">
+          <div className="inline-block p-1 rounded-full bg-white dark:bg-slate-900 shadow-md border border-slate-200 dark:border-slate-800 mb-3">
+            <img
+              src="/logo.png"
+              alt="360° Phone Shop"
+              className="size-20 sm:size-24 rounded-full object-cover"
+            />
+          </div>
+          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+            360° Phone Shop
+          </h1>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            {t("auth.login.subtitle") || "Sign in to manage your store"}
+          </p>
+        </div>
+
+        {/* Login Card */}
+        <div className="rounded-2xl border border-slate-200/90 dark:border-slate-800 bg-white dark:bg-slate-900 p-6 sm:p-8 shadow-sm">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {/* Username / Email */}
+            <div className="space-y-1.5">
+              <label
+                htmlFor="usernameOrEmail"
+                className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+              >
+                {t("auth.login.username_or_email") || "Username or Email"}
+                <span className="text-red-500 ml-1">*</span>
+              </label>
+              <div className="relative">
+                <Mail className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="usernameOrEmail"
+                  type="text"
+                  value={usernameOrEmail}
+                  onChange={(e) => setUsernameOrEmail(e.target.value)}
+                  placeholder="Username or email"
+                  autoComplete="username"
+                  disabled={isLoading}
+                  required
+                  autoFocus
+                  className="h-11 rounded-xl bg-slate-50/50 pl-10 pr-4 text-xs dark:bg-slate-800/40"
+                />
               </div>
             </div>
 
-            <div className="text-5xl font-bold tracking-[-0.06em] text-white">POS System</div>
-            <p className="mt-5 max-w-[300px] text-center text-lg leading-8 text-[#e7e0ff]">
-              Welcome back! Enter your credentials to access the admin dashboard and manage your business effectively.
-            </p>
-          </div>
-        </div>
-
-        <div className="flex flex-1 items-center justify-center bg-[#f8f8f9] px-6 py-8 sm:px-10 md:px-12">
-          <div className="w-full max-w-[420px]">
-            <h1 className="mb-10 text-center text-5xl font-semibold tracking-[-0.06em] text-[#1f2430]">Sign In</h1>
-            <p className="mb-8 text-center text-base text-[#6d7180]">Continue to your account.</p>
-
-            <form onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
-                <label htmlFor="usernameOrEmail" className="block text-[12px] font-semibold tracking-[0.15em] text-[#4c4f5c] uppercase">
-                  Username or Email
+            {/* Password */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <label
+                  htmlFor="password"
+                  className="block text-xs font-semibold text-slate-700 dark:text-slate-300"
+                >
+                  {t("auth.login.password") || "Password"}
+                  <span className="text-red-500 ml-1">*</span>
                 </label>
-                <div className="relative">
-                  <Mail className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7d8291]" />
-                  <Input
-                    id="usernameOrEmail"
-                    type="text"
-                    value={usernameOrEmail}
-                    onChange={(e) => setUsernameOrEmail(e.target.value)}
-                    placeholder="admin@example.com"
-                    autoComplete="username"
-                    disabled={isLoading}
-                    className="h-14 rounded-xl border-0 bg-[#eef0f3] pl-11 pr-4 text-base text-[#1d2430] placeholder:text-[#8b90a0] focus-visible:ring-2 focus-visible:ring-[#5b4bd9]/20"
-                  />
-                </div>
+                <Link
+                  to={ROUTERS.FORGOT_PASSWORD}
+                  className="text-[11px] font-medium text-primary hover:underline"
+                >
+                  {t("auth.login.forgot_password") || "Forgot password?"}
+                </Link>
               </div>
-
-              <div className="space-y-2">
-                <label htmlFor="password" className="block text-[12px] font-semibold tracking-[0.15em] text-[#4c4f5c] uppercase">
-                  Password
-                </label>
-                <div className="relative">
-                  <Lock className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7d8291]" />
-                  <Input
-                    id="password"
-                    type={showPassword ? "text" : "password"}
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="••••••••"
-                    autoComplete="current-password"
-                    disabled={isLoading}
-                    className="h-14 rounded-xl border-0 bg-[#eef0f3] pl-11 pr-12 text-base text-[#1d2430] placeholder:text-[#8b90a0] focus-visible:ring-2 focus-visible:ring-[#5b4bd9]/20"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword((value) => !value)}
-                    className="absolute right-3 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-[#525a68] transition hover:bg-[#e3e7ee]"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
-                  >
-                    {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                  </button>
-                </div>
+              <div className="relative">
+                <Lock className="pointer-events-none absolute left-3.5 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                <Input
+                  id="password"
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  autoComplete="current-password"
+                  disabled={isLoading}
+                  required
+                  className="h-11 rounded-xl bg-slate-50/50 pl-10 pr-10 text-xs dark:bg-slate-800/40"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((v) => !v)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-colors p-1"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
+                </button>
               </div>
+            </div>
 
-              {error && (
-                <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-600">
-                  {error}
-                </div>
+            {/* Error Message */}
+            {error && (
+              <div className="flex items-start gap-2 rounded-xl border border-red-200 dark:border-red-900/40 bg-red-50 dark:bg-red-950/30 p-2.5 text-xs text-red-600 dark:text-red-400">
+                <AlertCircle className="size-4 shrink-0 mt-0.5" />
+                <span className="leading-snug">{error}</span>
+              </div>
+            )}
+
+            {/* Submit Button */}
+            <Button
+              type="submit"
+              disabled={isLoading}
+              className="mt-2 flex h-11 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-xs text-primary-foreground shadow-sm hover:opacity-95 transition-opacity disabled:opacity-60 cursor-pointer"
+            >
+              {isLoading ? (
+                <>
+                  <div className="size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span>{t("common.loading") || "Signing in..."}</span>
+                </>
+              ) : (
+                <>
+                  <span>{t("auth.login.button") || "Sign In"}</span>
+                  <ArrowRight className="size-3.5" />
+                </>
               )}
+            </Button>
+          </form>
 
-              <Button
-                type="submit"
-                disabled={isLoading}
-                className="flex h-14 w-full items-center justify-center rounded-xl bg-gradient-to-r from-[#4f3cd8] to-[#4a43d0] text-lg font-semibold text-white shadow-[0_12px_25px_rgba(75,59,213,0.30)] transition hover:brightness-105 disabled:opacity-80"
+          {/* Register Link */}
+          <div className="mt-5 text-center border-t border-slate-100 dark:border-slate-800 pt-4">
+            <p className="text-xs text-slate-500 dark:text-slate-400">
+              {t("auth.login.no_account") || "Don't have an account?"}{" "}
+              <Link
+                to={ROUTERS.REGISTER}
+                className="font-semibold text-primary hover:underline"
               >
-                {isLoading ? "Signing In..." : "Sign In "}
-                {!isLoading && <ArrowRight className="ml-2 h-5 w-5" />}
-              </Button>
-            </form>
+                {t("auth.login.signup") || "Sign up"}
+              </Link>
+            </p>
           </div>
         </div>
       </div>
