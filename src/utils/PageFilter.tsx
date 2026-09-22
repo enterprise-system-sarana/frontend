@@ -5,9 +5,6 @@ import {
   RotateCcw,
   Filter,
   ChevronDown,
-  Printer,
-  Download,
-  FileDown,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -76,9 +73,6 @@ export function PageFilter({
   onFilterChange,
   columns = [],
   onColumnToggle,
-  onPrintPdf,
-  onDownloadPdf,
-  onDownloadCsv,
   onReset,
 }: PageToolbarProps) {
   const { t } = useLanguage();
@@ -306,45 +300,6 @@ export function PageFilter({
             title={t("common.reset")}
           >
             <RotateCcw className="h-3.5 w-3.5" />
-          </Button>
-        )}
-      </div>
-
-      {/* Right toolbar section: Print PDF + Download PDF + Download CSV */}
-      <div className="flex items-center gap-2">
-        {onPrintPdf && (
-          <Button
-            variant="outline"
-            type="button"
-            onClick={onPrintPdf}
-            className="h-9 px-3 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground hover:bg-muted/80 flex items-center gap-1.5 shadow-xs transition-all"
-          >
-            <Printer className="h-3.5 w-3.5 text-muted-foreground" />
-            <span>{t("common.print")}</span>
-          </Button>
-        )}
-
-        {onDownloadPdf && (
-          <Button
-            variant="outline"
-            type="button"
-            onClick={onDownloadPdf}
-            className="h-9 px-3 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground hover:bg-muted/80 flex items-center gap-1.5 shadow-xs transition-all"
-          >
-            <FileDown className="h-3.5 w-3.5 text-muted-foreground" />
-            <span>{t("common.download_pdf")}</span>
-          </Button>
-        )}
-
-        {onDownloadCsv && (
-          <Button
-            variant="outline"
-            type="button"
-            onClick={onDownloadCsv}
-            className="h-9 px-3 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground hover:bg-muted/80 flex items-center gap-1.5 shadow-xs transition-all"
-          >
-            <Download className="h-3.5 w-3.5 text-muted-foreground" />
-            <span>{t("common.export_csv")}</span>
           </Button>
         )}
       </div>

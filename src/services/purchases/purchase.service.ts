@@ -23,6 +23,9 @@ export const purchaseService = {
     },
     complete(id: number) {
         return api.patch(`/purchases/${id}/complete`).then((res) => res.data);
+    },
+    generateInvoice(id: number) {
+        return api.get(`/purchases/${id}/invoice`).then((res) => res.data);
     }
 
 }

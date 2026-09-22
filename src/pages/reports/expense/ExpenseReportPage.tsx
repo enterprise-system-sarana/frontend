@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
 import {
   DataTable,
   exportTableToCsv,
@@ -12,10 +11,11 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { useReport } from "@/hooks/reports/useReport";
 import { useStore } from "@/hooks/inventory/useStore";
-import { useProduct } from "@/hooks/product/useProduct";
-import { SalePaymentStatus, SaleStatus } from "@/types/sales/Sale";
+import { useBank } from "@/hooks/finance/useBank";
+import { useExpenseType } from "@/hooks/expense/useExpenseType";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
+import { ExpenseReportColumns } from "./ExpenseReportColumn";
 
 const formatCurrency = (value: number | string | undefined) => {
   const numeric = Number(value ?? 0);
@@ -26,7 +26,7 @@ const formatCurrency = (value: number | string | undefined) => {
   }).format(numeric);
 };
 
-const SalesItemReportPage = () => {
+const ExpenseReportPage = () => {
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.REPORT.READ);
 
@@ -37,15 +37,17 @@ const SalesItemReportPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [storeId, setStoreId] = useState<string>("all");
-  const [productId, setProductId] = useState<string>("all");
-  const [saleStatus, setSaleStatus] = useState<string>("all");
-  const [paymentStatus, setPaymentStatus] = useState<string>("all");
+  const [bankId, setBankId] = useState<string>("all");
+  const [expenseTypeId, setExpenseTypeId] = useState<string>("all");
+  const [status, setStatus] = useState<string>("all");
 
   const { data: storeData } = useStore.useGetAllStore({ page: 1, size: 1000 });
-  const { data: productData } = useProduct.useGetAllProduct({ page: 1, size: 1000 });
+  const { data: bankData } = useBank.useGetAllBank({ page: 1, size: 1000 });
+  const { data: expenseTypeData } = useExpenseType.useGetAllExpenseType({ page: 1, size: 1000 });
 
   const stores = storeData?.payload?.data ?? [];
-  const products = productData?.payload?.data ?? [];
+  const banks = bankData?.payload?.data ?? [];
+  const expenseTypes = expenseTypeData?.payload?.data ?? [];
 
   const filter = useMemo(
     () => ({
@@ -54,24 +56,25 @@ const SalesItemReportPage = () => {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       storeId: storeId !== "all" ? Number(storeId) : undefined,
-      productId: productId !== "all" ? Number(productId) : undefined,
-      saleStatus: saleStatus !== "all" ? saleStatus : undefined,
-      paymentStatus: paymentStatus !== "all" ? paymentStatus : undefined,
+      bankId: bankId !== "all" ? Number(bankId) : undefined,
+      expenseTypeId: expenseTypeId !== "all" ? Number(expenseTypeId) : undefined,
+      status: status !== "all" ? status : undefined,
     }),
-    [page, size, startDate, endDate, storeId, productId, saleStatus, paymentStatus],
+    [page, size, startDate, endDate, storeId, bankId, expenseTypeId, status],
   );
 
-  const { data: itemsData } = useReport.useSalesItemsReport(filter, { page, size });
+  const { data: expenseData } = useReport.useExpenseReport(filter);
 
   const rows = useMemo(() => {
-    if (!itemsData) return [];
-    const payload = itemsData.payload ?? itemsData;
+    if (!expenseData) return [];
+    const payload = (expenseData as any)?.payload ?? expenseData;
     if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.content)) return payload.content;
     if (Array.isArray(payload?.data)) return payload.data;
+    if (Array.isArray(payload?.content)) return payload.content;
+    if (Array.isArray(payload?.expenses)) return payload.expenses;
     if (Array.isArray(payload?.items)) return payload.items;
     return [];
-  }, [itemsData]);
+  }, [expenseData]);
 
   const filterGroups = useMemo(
     () => [
@@ -81,100 +84,132 @@ const SalesItemReportPage = () => {
         options: stores.map((store: any) => ({ label: store.name, value: String(store.id) })),
       },
       {
-        key: "productId",
-        label: "Product",
-        options: products.map((product: any) => ({ label: product.name, value: String(product.id) })),
+        key: "bankId",
+        label: "Bank",
+        options: banks.map((bank: any) => ({ label: bank.name, value: String(bank.id) })),
       },
       {
-        key: "saleStatus",
-        label: "Sale Status",
-        options: Object.values(SaleStatus).map((status) => ({ label: status, value: status })),
+        key: "expenseTypeId",
+        label: "Expense Type",
+        options: expenseTypes.map((expenseType: any) => ({ label: expenseType.name, value: String(expenseType.id) })),
       },
       {
-        key: "paymentStatus",
-        label: "Payment Status",
-        options: Object.values(SalePaymentStatus).map((status) => ({ label: status, value: status })),
+        key: "status",
+        label: "Status",
+        options: [
+          { label: "PENDING", value: "PENDING" },
+          { label: "APPROVED", value: "APPROVED" },
+          { label: "PAID", value: "PAID" },
+          { label: "REJECTED", value: "REJECTED" },
+        ],
       },
     ],
-    [stores, products],
+    [stores, banks, expenseTypes],
   );
 
   const searchFilteredRows = useSearch(rows, search, [
-    "saleReference",
-    "productName",
-    "saleDate",
-    "serialNumbers",
+    "reference",
+    "storeName",
+    "bankName",
+    "expenseTypeName",
+    "description",
+    "status",
   ]);
 
   const filteredRows = useMemo(() => {
     return searchFilteredRows.filter((row: any) => {
       if (storeId !== "all" && String(row.storeId) !== storeId) return false;
-      if (productId !== "all" && String(row.productId) !== productId) return false;
-      if (saleStatus !== "all" && row.status !== saleStatus) return false;
-      if (paymentStatus !== "all" && row.paymentStatus !== paymentStatus) return false;
+      if (bankId !== "all" && String(row.bankId) !== bankId) return false;
+      if (expenseTypeId !== "all" && String(row.expenseTypeId) !== expenseTypeId) return false;
+      if (status !== "all" && row.status !== status) return false;
       return true;
     });
-  }, [searchFilteredRows, storeId, productId, saleStatus, paymentStatus]);
+  }, [searchFilteredRows, storeId, bankId, expenseTypeId, status]);
 
-  const columns: ColumnDef<Record<string, unknown>>[] = [
-    { accessorKey: "saleReference", header: "Sale Reference" },
-    { accessorKey: "productName", header: "Product" },
-    { accessorKey: "saleDate", header: "Date" },
-    { accessorKey: "storeId", header: "Store ID" },
-    { accessorKey: "quantity", header: "Qty" },
-    {
-      accessorKey: "price",
-      header: "Unit Price",
-      cell: ({ row }) => formatCurrency(row.original.price as number | undefined),
-    },
-    {
-      accessorKey: "itemDiscount",
-      header: "Discount",
-      cell: ({ row }) => formatCurrency(row.original.itemDiscount as number | undefined),
-    },
-    {
-      accessorKey: "subTotal",
-      header: "Subtotal",
-      cell: ({ row }) => formatCurrency(row.original.subTotal as number | undefined),
-    },
-    {
-      accessorKey: "serialNumbers",
-      header: "Serial Numbers",
-      cell: ({ row }) =>
-        (row.original.serialNumbers as string[] | undefined)?.join(", ") || "-",
-    },
-  ];
+  const totalElements =
+    (expenseData as any)?.payload?.totalElements ??
+    (expenseData as any)?.payload?.pagination?.totalElements ??
+    rows.length;
+
+  const columns = ExpenseReportColumns();
 
   const handleSearchFilterChange = (key: string, value: string) => {
     setFilterValues((prev) => ({ ...prev, [key]: value }));
     if (key === "storeId") setStoreId(value || "all");
-    if (key === "productId") setProductId(value || "all");
-    if (key === "saleStatus") setSaleStatus(value || "all");
-    if (key === "paymentStatus") setPaymentStatus(value || "all");
+    if (key === "bankId") setBankId(value || "all");
+    if (key === "expenseTypeId") setExpenseTypeId(value || "all");
+    if (key === "status") setStatus(value || "all");
   };
 
   const handleExportExcel = () => {
-    exportTableToCsv(filteredRows, columns, "sales-item-report");
+    exportTableToCsv(filteredRows, columns, "expense-report");
   };
 
   const handleDownloadPdf = () => {
-    exportTableToPdf(filteredRows, columns, "sales-item-report", "Sales Item Report");
+    exportTableToPdf(filteredRows, columns, "expense-report", "Expense Report");
   };
 
   const handlePrint = () => {
-    printTable("Sales Item Report");
+    printTable("Expense Report");
   };
 
   if (!canRead) {
-    return <AccessDenied resource="sales item reports" showBackButton />;
+    return <AccessDenied resource="expense reports" showBackButton />;
   }
+
+  const summary = useMemo(() => {
+    let totalExpense = 0;
+    let paidAmount = 0;
+    let pendingAmount = 0;
+    let totalCount = rows.length;
+
+    for (const r of rows) {
+      const amt = Number(r.amount ?? 0);
+      totalExpense += amt;
+      const st = String(r.status ?? "").toUpperCase();
+      if (st === "PAID") {
+        paidAmount += amt;
+      } else if (st === "PENDING") {
+        pendingAmount += amt;
+      }
+    }
+
+    return { totalExpense, paidAmount, pendingAmount, totalCount };
+  }, [rows]);
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Sales Item Reports"
-        description="Detailed breakdown of each sold item by transaction"
+        title="Expense Reports"
+        description="Overview of expenses by store, payment account, and type"
       />
+
+      {/* Summary KPI Cards */}
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            label: "Total Expenses",
+            value: formatCurrency(summary.totalExpense),
+          },
+          {
+            label: "Paid Expenses",
+            value: formatCurrency(summary.paidAmount),
+          },
+          {
+            label: "Pending Expenses",
+            value: formatCurrency(summary.pendingAmount),
+          },
+          {
+            label: "Transactions",
+            value: Number(summary.totalCount).toLocaleString(),
+          },
+        ].map((card) => (
+          <div key={card.label} className="rounded-xl border bg-card p-4 shadow-sm">
+            <p className="text-sm text-muted-foreground">{card.label}</p>
+            <h3 className="mt-2 text-2xl font-bold">{card.value}</h3>
+          </div>
+        ))}
+      </div>
 
       <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
         <div className="border-b p-4">
@@ -191,16 +226,16 @@ const SalesItemReportPage = () => {
               setSearch("");
               setFilterValues({});
               setStoreId("all");
-              setProductId("all");
-              setSaleStatus("all");
-              setPaymentStatus("all");
+              setBankId("all");
+              setExpenseTypeId("all");
+              setStatus("all");
             }}
           />
         </div>
 
         <div className="flex flex-col gap-3 border-b p-4">
           <div>
-            <h2 className="text-lg font-semibold">Filtered Sales Items</h2>
+            <h2 className="text-lg font-semibold">Filtered Expense Transactions</h2>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
@@ -236,43 +271,44 @@ const SalesItemReportPage = () => {
               ))}
             </select>
             <select
-              value={productId}
+              value={bankId}
               onChange={(e) => {
                 setPage(1);
-                setProductId(e.target.value);
+                setBankId(e.target.value);
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Products</option>
-              {products.map((product: any) => (
-                <option key={product.id} value={product.id}>{product.name}</option>
+              <option value="all">All Banks</option>
+              {banks.map((bank: any) => (
+                <option key={bank.id} value={bank.id}>{bank.name}</option>
               ))}
             </select>
             <select
-              value={saleStatus}
+              value={expenseTypeId}
               onChange={(e) => {
                 setPage(1);
-                setSaleStatus(e.target.value);
+                setExpenseTypeId(e.target.value);
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Sale Status</option>
-              {Object.values(SaleStatus).map((status) => (
-                <option key={status} value={status}>{status}</option>
+              <option value="all">All Expense Types</option>
+              {expenseTypes.map((expenseType: any) => (
+                <option key={expenseType.id} value={expenseType.id}>{expenseType.name}</option>
               ))}
             </select>
             <select
-              value={paymentStatus}
+              value={status}
               onChange={(e) => {
                 setPage(1);
-                setPaymentStatus(e.target.value);
+                setStatus(e.target.value);
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Payment Status</option>
-              {Object.values(SalePaymentStatus).map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
+              <option value="all">All Status</option>
+              <option value="PENDING">PENDING</option>
+              <option value="APPROVED">APPROVED</option>
+              <option value="PAID">PAID</option>
+              <option value="REJECTED">REJECTED</option>
             </select>
           </div>
         </div>
@@ -297,4 +333,4 @@ const SalesItemReportPage = () => {
   );
 };
 
-export default SalesItemReportPage;
+export default ExpenseReportPage;

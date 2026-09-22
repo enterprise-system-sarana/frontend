@@ -19,18 +19,23 @@ export interface AuthState {
 }
 
 const token = getAccessToken();
+const refreshToken = getRefreshToken();
 const user = getUser();
-const isExpired = token ? isTokenExpired(token) : true;
+const isAccessTokenExpired = token ? isTokenExpired(token) : true;
+const hasRefreshToken = !!refreshToken;
 
-if (token && isExpired) {
+// Only clear storage if access token is expired AND no refresh token exists.
+// If a refresh token is available, keep it so the axios interceptor can refresh silently.
+if (isAccessTokenExpired && !hasRefreshToken) {
     clearStorage();
 }
 
 const initialState: AuthState = {
-    user: isExpired ? null : user,
-    accessToken: isExpired ? null : token,
-    refreshToken: isExpired ? null : getRefreshToken(),
-    isAuthenticated: !isExpired,
+    user: user,
+    accessToken: isAccessTokenExpired ? null : token,
+    refreshToken: hasRefreshToken ? refreshToken : null,
+    // Allow authenticated state if we have a valid token OR a refresh token to attempt refresh
+    isAuthenticated: !isAccessTokenExpired || hasRefreshToken,
 };
 
 const authSlice = createSlice({
@@ -78,8 +83,14 @@ const authSlice = createSlice({
             state.isAuthenticated = false;
             clearStorage();
         },
+        updateUser(state, action: PayloadAction<Partial<AuthUser>>) {
+            if (state.user) {
+                state.user = { ...state.user, ...action.payload };
+                saveUser(state.user);
+            }
+        },
     },
 });
 
-export const { setCredentials, updateTokens, logout } = authSlice.actions;
+export const { setCredentials, updateTokens, logout, updateUser } = authSlice.actions;
 export default authSlice.reducer;

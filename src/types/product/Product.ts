@@ -4,19 +4,34 @@ import type { Status } from "../enum/status";
 import { stringValidate, validateNumber, validateString } from "../validator";
 import type { VariantValueResponse } from "./VariantValue";
 
+export interface ProductSerialItem {
+  id: number;
+  serialNumber: string;
+  barcode: string;
+  costPrice: number;
+  sellingPrice: number;
+  status: string;
+}
+
 export interface ProductResponse extends BaseResponse {
   code: string;
-  name : string ; 
+  name: string;
   noted: string;
   imageUrl: string;
   status: Status;
   reorderLevel: number;
   modelId: number;
   modelName: string;
+  brandId?: number;
   brandName: string;
+  categoryId?: number;
   categoryName: string;
   costPrice: number;
   salePrice: number;
+  quantity?: number;
+  qty?: number;
+  availableSerials?: number;
+  serials?: ProductSerialItem[];
   serialized?: boolean;
   isSerialized?: boolean;
   serializable?: boolean;

@@ -154,9 +154,10 @@ const ProductForm = () => {
   }, [product]);
 
   return (
-    <div className="space-y-6 w-full pb-16">
+    <div className="space-y-6 w-full ">
       {/* Header */}
-      <div className="flex items-center justify-between pb-3 border-b border-border/60">
+      <div className="flex items-center justify-between gap-4 border-b border-border/60">
+        {/* Start: Back button & Title */}
         <div className="flex items-center gap-3">
           <Button
             type="button"
@@ -172,6 +173,35 @@ const ProductForm = () => {
             {id ? t("product.edit") : t("product.create")}
           </h2>
         </div>
+
+        {/* End: Actions */}
+        <div className="flex items-center gap-3">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => navigate(ROUTERS.PRODUCT)}
+            disabled={isPending}
+          >
+            {t("common.cancel")}
+          </Button>
+          <Button
+            type="submit"
+            form="product-form"
+            disabled={isPending}
+            className="min-w-[140px]"
+          >
+            {isPending ? (
+              <span className="flex items-center gap-1.5">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                {t("common.saving")}
+              </span>
+            ) : id ? (
+              t("product.edit")
+            ) : (
+              t("product.create")
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* Form */}
@@ -182,9 +212,9 @@ const ProductForm = () => {
           form.handleSubmit();
         }}
       >
-        <div className="space-y-6 grid grid-cols-1 md:grid-cols-2 gap-2">
+        <div className=" grid grid-cols-1 md:grid-cols-2 gap-2">
           {/* Basic Info Card */}
-          <Card className="rounded-2xl border-border/60 shadow-2xs">
+          <Card className="rounded-2xl  shadow-2xs">
             <CardContent className="space-y-5">
               <FieldGroup>
                 {/* Model Selection */}
@@ -387,8 +417,8 @@ const ProductForm = () => {
                                             }
                                           }}
                                           className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer select-none border ${isSelected
-                                              ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
-                                              : "border-border/70 bg-card/60 hover:bg-muted/70 hover:border-foreground/30 text-foreground/90 hover:text-foreground"
+                                            ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
+                                            : "border-border/70 bg-card/60 hover:bg-muted/70 hover:border-foreground/30 text-foreground/90 hover:text-foreground"
                                             }`}
                                         >
                                           {val.name}
@@ -445,33 +475,7 @@ const ProductForm = () => {
             </CardContent>
           </Card>
 
-          {/* Actions */}
-          <div className="flex items-center justify-end gap-3 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => navigate(ROUTERS.PRODUCT)}
-              disabled={isPending}
-            >
-              {t("common.cancel")}
-            </Button>
-            <Button
-              type="submit"
-              disabled={isPending}
-              className="min-w-[140px]"
-            >
-              {isPending ? (
-                <span className="flex items-center gap-1.5">
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                  {t("common.saving")}
-                </span>
-              ) : id ? (
-                t("product.edit")
-              ) : (
-                t("product.create")
-              )}
-            </Button>
-          </div>
+
         </div>
       </form>
 

@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import type { ColumnDef } from "@tanstack/react-table";
 import {
   DataTable,
   exportTableToCsv,
@@ -12,10 +11,11 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { useReport } from "@/hooks/reports/useReport";
 import { useStore } from "@/hooks/inventory/useStore";
-import { useBank } from "@/hooks/finance/useBank";
-import { useExpenseType } from "@/hooks/expense/useExpenseType";
+import { useCustomer } from "@/hooks/sales/useCustomer";
+import { SalePaymentStatus, SaleStatus } from "@/types/sales/Sale";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
+import { SalesReportColumns } from "./SalesReportColumn";
 
 const formatCurrency = (value: number | string | undefined) => {
   const numeric = Number(value ?? 0);
@@ -26,7 +26,7 @@ const formatCurrency = (value: number | string | undefined) => {
   }).format(numeric);
 };
 
-const ExpenseReportPage = () => {
+const ReportPage = () => {
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.REPORT.READ);
 
@@ -37,17 +37,15 @@ const ExpenseReportPage = () => {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [storeId, setStoreId] = useState<string>("all");
-  const [bankId, setBankId] = useState<string>("all");
-  const [expenseTypeId, setExpenseTypeId] = useState<string>("all");
-  const [status, setStatus] = useState<string>("all");
+  const [customerId, setCustomerId] = useState<string>("all");
+  const [saleStatus, setSaleStatus] = useState<string>("all");
+  const [paymentStatus, setPaymentStatus] = useState<string>("all");
 
   const { data: storeData } = useStore.useGetAllStore({ page: 1, size: 1000 });
-  const { data: bankData } = useBank.useGetAllBank({ page: 1, size: 1000 });
-  const { data: expenseTypeData } = useExpenseType.useGetAllExpenseType({ page: 1, size: 1000 });
+  const { data: customerData } = useCustomer.useGetAllCustomer({ page: 1, size: 1000 });
 
   const stores = storeData?.payload?.data ?? [];
-  const banks = bankData?.payload?.data ?? [];
-  const expenseTypes = expenseTypeData?.payload?.data ?? [];
+  const customers = customerData?.payload?.data ?? [];
 
   const filter = useMemo(
     () => ({
@@ -56,24 +54,17 @@ const ExpenseReportPage = () => {
       startDate: startDate || undefined,
       endDate: endDate || undefined,
       storeId: storeId !== "all" ? Number(storeId) : undefined,
-      bankId: bankId !== "all" ? Number(bankId) : undefined,
-      expenseTypeId: expenseTypeId !== "all" ? Number(expenseTypeId) : undefined,
-      status: status !== "all" ? status : undefined,
+      customerId: customerId !== "all" ? Number(customerId) : undefined,
+      saleStatus: saleStatus !== "all" ? saleStatus : undefined,
+      paymentStatus: paymentStatus !== "all" ? paymentStatus : undefined,
     }),
-    [page, size, startDate, endDate, storeId, bankId, expenseTypeId, status],
+    [page, size, startDate, endDate, storeId, customerId, saleStatus, paymentStatus],
   );
 
-  const { data: expenseData } = useReport.useExpenseReport(filter);
+  const { data: summaryData } = useReport.useSalesReport(filter);
 
-  const rows = useMemo(() => {
-    if (!expenseData) return [];
-    const payload = expenseData.payload ?? expenseData;
-    if (Array.isArray(payload)) return payload;
-    if (Array.isArray(payload?.content)) return payload.content;
-    if (Array.isArray(payload?.data)) return payload.data;
-    if (Array.isArray(payload?.items)) return payload.items;
-    return [];
-  }, [expenseData]);
+  const summary = summaryData?.payload ?? summaryData ?? {};
+  const salesRows = Array.isArray(summary.sales) ? summary.sales : [];
 
   const filterGroups = useMemo(
     () => [
@@ -83,98 +74,100 @@ const ExpenseReportPage = () => {
         options: stores.map((store: any) => ({ label: store.name, value: String(store.id) })),
       },
       {
-        key: "bankId",
-        label: "Bank",
-        options: banks.map((bank: any) => ({ label: bank.name, value: String(bank.id) })),
+        key: "customerId",
+        label: "Customer",
+        options: customers.map((customer: any) => ({ label: customer.name, value: String(customer.id) })),
       },
       {
-        key: "expenseTypeId",
-        label: "Expense Type",
-        options: expenseTypes.map((expenseType: any) => ({ label: expenseType.name, value: String(expenseType.id) })),
+        key: "saleStatus",
+        label: "Sale Status",
+        options: Object.values(SaleStatus).map((status) => ({ label: status, value: status })),
       },
       {
-        key: "status",
-        label: "Status",
-        options: [
-          { label: "PENDING", value: "PENDING" },
-          { label: "APPROVED", value: "APPROVED" },
-          { label: "PAID", value: "PAID" },
-          { label: "REJECTED", value: "REJECTED" },
-        ],
+        key: "paymentStatus",
+        label: "Payment Status",
+        options: Object.values(SalePaymentStatus).map((status) => ({ label: status, value: status })),
       },
     ],
-    [stores, banks, expenseTypes],
+    [stores, customers],
   );
 
-  const searchFilteredRows = useSearch(rows, search, [
+  const searchFilteredRows = useSearch(salesRows, search, [
     "reference",
+    "customerName",
     "storeName",
-    "bankName",
-    "expenseTypeName",
-    "description",
+    "paymentStatus",
     "status",
   ]);
 
   const filteredRows = useMemo(() => {
     return searchFilteredRows.filter((row: any) => {
       if (storeId !== "all" && String(row.storeId) !== storeId) return false;
-      if (bankId !== "all" && String(row.bankId) !== bankId) return false;
-      if (expenseTypeId !== "all" && String(row.expenseTypeId) !== expenseTypeId) return false;
-      if (status !== "all" && row.status !== status) return false;
+      if (customerId !== "all" && String(row.customerId) !== customerId) return false;
+      if (saleStatus !== "all" && row.status !== saleStatus) return false;
+      if (paymentStatus !== "all" && row.paymentStatus !== paymentStatus) return false;
       return true;
     });
-  }, [searchFilteredRows, storeId, bankId, expenseTypeId, status]);
+  }, [searchFilteredRows, storeId, customerId, saleStatus, paymentStatus]);
 
-  const totalElements =
-    (expenseData as any)?.payload?.totalElements ??
-    (expenseData as any)?.payload?.pagination?.totalElements ??
-    rows.length;
-
-  const columns: ColumnDef<Record<string, unknown>>[] = [
-    { accessorKey: "reference", header: "Reference" },
-    { accessorKey: "storeName", header: "Store" },
-    { accessorKey: "expenseTypeName", header: "Expense Type" },
-    { accessorKey: "bankName", header: "Bank" },
-    { accessorKey: "description", header: "Description" },
-    { accessorKey: "status", header: "Status" },
-    {
-      accessorKey: "amount",
-      header: "Amount",
-      cell: ({ row }) => formatCurrency(row.original.amount as number | undefined),
-    },
-    { accessorKey: "createdAt", header: "Created At" },
-  ];
+  const columns = SalesReportColumns();
 
   const handleSearchFilterChange = (key: string, value: string) => {
     setFilterValues((prev) => ({ ...prev, [key]: value }));
     if (key === "storeId") setStoreId(value || "all");
-    if (key === "bankId") setBankId(value || "all");
-    if (key === "expenseTypeId") setExpenseTypeId(value || "all");
-    if (key === "status") setStatus(value || "all");
+    if (key === "customerId") setCustomerId(value || "all");
+    if (key === "saleStatus") setSaleStatus(value || "all");
+    if (key === "paymentStatus") setPaymentStatus(value || "all");
   };
 
   const handleExportExcel = () => {
-    exportTableToCsv(filteredRows, columns, "expense-report");
+    exportTableToCsv(filteredRows, columns, "sales-report");
   };
 
   const handleDownloadPdf = () => {
-    exportTableToPdf(filteredRows, columns, "expense-report", "Expense Report");
+    exportTableToPdf(filteredRows, columns, "sales-report", "Sales Report");
   };
 
   const handlePrint = () => {
-    printTable("Expense Report");
+    printTable("Sales Report");
   };
 
   if (!canRead) {
-    return <AccessDenied resource="expense reports" showBackButton />;
+    return <AccessDenied resource="reports" showBackButton />;
   }
 
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Expense Reports"
-        description="Overview of expenses by store, payment account, and type"
+        title="Sales Reports"
+        description="Overview of sales performance and transactions"
       />
+
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+        {[
+          {
+            label: "Total Sales",
+            value: formatCurrency(summary.totalSalesAmount ?? 0),
+          },
+          {
+            label: "Discount",
+            value: formatCurrency(summary.totalDiscount ?? 0),
+          },
+          {
+            label: "Paid Amount",
+            value: formatCurrency(summary.totalPaidAmount ?? 0),
+          },
+          {
+            label: "Transactions",
+            value: Number(summary.totalTransactions ?? 0).toLocaleString(),
+          },
+        ].map((card) => (
+          <div key={card.label} className="rounded-xl border bg-card p-4 shadow-sm">
+            <p className="text-sm text-muted-foreground">{card.label}</p>
+            <h3 className="mt-2 text-2xl font-bold">{card.value}</h3>
+          </div>
+        ))}
+      </div>
 
       <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
         <div className="border-b p-4">
@@ -191,16 +184,16 @@ const ExpenseReportPage = () => {
               setSearch("");
               setFilterValues({});
               setStoreId("all");
-              setBankId("all");
-              setExpenseTypeId("all");
-              setStatus("all");
+              setCustomerId("all");
+              setSaleStatus("all");
+              setPaymentStatus("all");
             }}
           />
         </div>
 
         <div className="flex flex-col gap-3 border-b p-4">
           <div>
-            <h2 className="text-lg font-semibold">Filtered Expense Transactions</h2>
+            <h2 className="text-lg font-semibold">Sales Transactions</h2>
           </div>
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
@@ -236,44 +229,43 @@ const ExpenseReportPage = () => {
               ))}
             </select>
             <select
-              value={bankId}
+              value={customerId}
               onChange={(e) => {
                 setPage(1);
-                setBankId(e.target.value);
+                setCustomerId(e.target.value);
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Banks</option>
-              {banks.map((bank: any) => (
-                <option key={bank.id} value={bank.id}>{bank.name}</option>
+              <option value="all">All Customers</option>
+              {customers.map((customer: any) => (
+                <option key={customer.id} value={customer.id}>{customer.name}</option>
               ))}
             </select>
             <select
-              value={expenseTypeId}
+              value={saleStatus}
               onChange={(e) => {
                 setPage(1);
-                setExpenseTypeId(e.target.value);
+                setSaleStatus(e.target.value);
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Expense Types</option>
-              {expenseTypes.map((expenseType: any) => (
-                <option key={expenseType.id} value={expenseType.id}>{expenseType.name}</option>
+              <option value="all">All Sale Status</option>
+              {Object.values(SaleStatus).map((status) => (
+                <option key={status} value={status}>{status}</option>
               ))}
             </select>
             <select
-              value={status}
+              value={paymentStatus}
               onChange={(e) => {
                 setPage(1);
-                setStatus(e.target.value);
+                setPaymentStatus(e.target.value);
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Status</option>
-              <option value="PENDING">PENDING</option>
-              <option value="APPROVED">APPROVED</option>
-              <option value="PAID">PAID</option>
-              <option value="REJECTED">REJECTED</option>
+              <option value="all">All Payment Status</option>
+              {Object.values(SalePaymentStatus).map((status) => (
+                <option key={status} value={status}>{status}</option>
+              ))}
             </select>
           </div>
         </div>
@@ -298,4 +290,4 @@ const ExpenseReportPage = () => {
   );
 };
 
-export default ExpenseReportPage;
+export default ReportPage;

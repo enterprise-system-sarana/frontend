@@ -5,10 +5,10 @@ import {
   SidebarProvider,
   SidebarTrigger,
 } from "@/components/ui/sidebar";
-import { Outlet, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/store/useAuth";
 import { useEffect, useState } from "react";
-import { ChevronDown, LogOut, BadgeCheck, CreditCard } from "lucide-react";
+import { ChevronDown, LogOut, BadgeCheck, CreditCard, Search, Store as StoreIcon, PlusCircle, Monitor, Maximize, Mail, Bell, Settings } from "lucide-react";
 import { useAppDispatch } from "@/store/store";
 import { logout } from "@/store/authSlice";
 import { AuthService } from "@/services/auth/auth.service";
@@ -21,18 +21,29 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { KeyRound } from "lucide-react";
 import { ROUTERS } from "@/constants/Route";
+import { Button } from "@/components/ui/button";
+import { useStore } from "@/hooks/inventory/useStore";
 
 const DashboardLayout = () => {
   const { user } = useAuth();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
+  const location = useLocation();
   const { t, language } = useLanguage();
   const [currentDateString, setCurrentDateString] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
+
+  const { data: stores } = useStore.useGetAllStore({ page: 0, size: 1000 });
+  const storeOptions = stores?.payload?.data ?? stores?.data ?? [] as any[];
+  const selectedStore =
+    storeOptions.find((store: any) => Number(store.id) === Number(selectedStoreId)) ??
+    storeOptions[0] ??
+    null;
 
   useEffect(() => {
     const locale = language === "km" ? "km-KH" : "en-GB";
@@ -45,17 +56,23 @@ const DashboardLayout = () => {
     setCurrentDateString(`${weekday}, ${day}`);
   }, [language]);
 
+  useEffect(() => {
+    if (!selectedStoreId && storeOptions.length > 0) {
+      setSelectedStoreId(Number(storeOptions[0].id));
+    }
+  }, [selectedStoreId, storeOptions]);
+
   const activeUser = user
     ? {
-        name: user.username,
-        email: user.email,
-        avatar: "",
-      }
+      name: user.username,
+      email: user.email,
+      avatar: "",
+    }
     : {
-        name: "Guest User",
-        email: "guest@example.com",
-        avatar: "",
-      };
+      name: "Guest User",
+      email: "guest@example.com",
+      avatar: "",
+    };
 
   const handleLogout = async () => {
     try {
@@ -67,54 +84,157 @@ const DashboardLayout = () => {
     navigate(ROUTERS.LOGIN);
   };
 
+  const handleGlobalSearch = () => {
+    const trimmed = searchQuery.trim();
+    const targetPath = trimmed ? `${ROUTERS.PRODUCT}?search=${encodeURIComponent(trimmed)}` : ROUTERS.PRODUCT;
+    navigate(targetPath);
+  };
+
+  const handleAddNew = () => {
+    const currentPath = location.pathname;
+
+    if (currentPath.startsWith(ROUTERS.PRODUCT)) {
+      navigate(ROUTERS.PRODUCT_CREATE);
+      return;
+    }
+
+    if (currentPath.startsWith(ROUTERS.PURCHASE)) {
+      navigate(ROUTERS.PURCHASE_CREATE);
+      return;
+    }
+
+    if (currentPath.startsWith(ROUTERS.SALE)) {
+      navigate(ROUTERS.SALE_CREATE);
+      return;
+    }
+
+    if (currentPath.startsWith(ROUTERS.STORE)) {
+      navigate(ROUTERS.STORE_CREATE);
+      return;
+    }
+
+    navigate(ROUTERS.PRODUCT_CREATE);
+  };
+
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-[#f4f5f4] dark:bg-background">
-        <div className="sticky top-3 z-10 mx-3 my-2 sm:mx-6">
-          <header className="flex h-14 items-center justify-between gap-4 rounded-xl border border-border/60 bg-card/90 px-3 shadow-sm backdrop-blur-md transition-all sm:px-4">
-            {/* Left side: Sidebar Trigger + User Welcome Info */}
-            <div className="flex items-center gap-3">
-              <SidebarTrigger className="-ml-1 text-muted-foreground hover:bg-primary/10 hover:text-primary rounded-lg transition-colors" />
-              <Separator orientation="vertical" className="h-5 bg-border/60" />
-              <div className="flex flex-col">
-                <h1 className="text-xs font-semibold text-foreground md:text-sm leading-tight font-heading">
-                  {t("common.welcome")}, {activeUser.name}
-                </h1>
-                {currentDateString && (
-                  <p className="text-[10px] text-muted-foreground font-medium">
-                    {currentDateString}
-                  </p>
-                )}
-              </div>
+      <SidebarInset className="bg-[#f4f5f4] dark:bg-background overflow-hidden flex flex-col h-screen">
+        <div className="sticky top-0 z-20 w-full">
+          <header className="flex h-14 items-center justify-between gap-4 border-b bg-white dark:bg-card px-4 shadow-sm w-full transition-all">
+            {/* Left side: Sidebar Trigger + Search */}
+            <div className="flex items-center gap-3 md:gap-6 flex-1">
+              <SidebarTrigger className="h-8 w-8 rounded-full bg-orange-400 hover:bg-orange-500 hover:text-white text-white flex items-center justify-center transition-colors shadow-sm" />
+
+              {/* Search Input */}
+              {/* <div className="hidden sm:flex relative max-w-sm w-full items-center">
+                <Search
+                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer"
+                  onClick={handleGlobalSearch}
+                />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(event) => setSearchQuery(event.target.value)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter") {
+                      handleGlobalSearch();
+                    }
+                  }}
+                  placeholder="Search"
+                  className="h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-12 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                />
+                <button
+                  type="button"
+                  onClick={handleGlobalSearch}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted/60 border px-1.5 py-0.5 rounded text-[10px] text-muted-foreground font-medium hover:bg-muted transition-colors"
+                >
+                  <span>⌘</span>
+                  <span>K</span>
+                </button>
+              </div> */}
             </div>
 
-            {/* Right side: Language Switcher & User Menu */}
-            <div className="flex items-center gap-2.5 sm:gap-3">
-              <LanguageToggle />
+            {/* Right side: Actions & User Menu */}
+            <div className="flex items-center gap-2 sm:gap-3">
 
-              <Separator
-                orientation="vertical"
-                className="h-5 bg-border/60 hidden sm:block"
-              />
-
-              {/* User dropdown pill */}
+              {/* Store Selector */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="flex items-center gap-2.5 p-1 pr-3 rounded-full border border-border/60 bg-card shadow-2xs cursor-pointer hover:bg-muted/60 transition-all select-none">
-                    {/* <Avatar className="h-7 w-7 rounded-full border border-primary/20">
-                      <AvatarImage
-                        src={activeUser.avatar}
-                        alt={activeUser.name}
-                      />
-                      <AvatarFallback className="rounded-full bg-primary/10 text-primary font-bold text-[10px]">
-                        {activeUser.name.slice(0, 2).toUpperCase()}
-                      </AvatarFallback>
-                    </Avatar> */}
-                    <span className="text-xs font-semibold text-foreground truncate max-w-[120px] hidden sm:inline-block font-sans">
-                      {activeUser.name}
-                    </span>
+                  <button
+                    type="button"
+                    className="hidden md:flex items-center gap-2 px-3 py-1.5 border rounded-md cursor-pointer hover:bg-muted transition-colors text-sm font-medium"
+                  >
+                    <StoreIcon className="h-4 w-4 text-emerald-700" />
+                    <span>{selectedStore?.name ?? "Select store"}</span>
                     <ChevronDown className="h-3 w-3 text-muted-foreground" />
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  {storeOptions.length > 0 ? (
+                    storeOptions.map((store: any) => (
+                      <DropdownMenuItem
+                        key={store.id}
+                        onClick={() => setSelectedStoreId(Number(store.id))}
+                        className={Number(selectedStoreId) === Number(store.id) ? "bg-muted" : ""}
+                      >
+                        {store.name}
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <DropdownMenuItem disabled>No stores found</DropdownMenuItem>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              {/* Add New Button */}
+              {/* <Button
+                size="sm"
+                onClick={handleAddNew}
+                className="hidden sm:flex bg-orange-400 hover:bg-orange-500 text-white gap-1.5 h-8 px-3 rounded-md"
+              >
+                <PlusCircle className="h-4 w-4" />
+                Add New
+              </Button> */}
+
+              {/* POS Button */}
+              <Button size="sm" onClick={() => window.open(ROUTERS.SALE_CREATE, "_blank")} className="hidden sm:flex bg-[#0e4091] hover:bg-slate-800 text-white gap-1.5 h-8 px-4 rounded-md cursor-pointer">
+                <Monitor className="h-4 w-4" />
+                POS
+              </Button>
+
+              <Separator orientation="vertical" className="h-6 bg-border/60 mx-1 hidden sm:block" />
+
+              <LanguageToggle />
+              {/* 
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md hidden md:flex">
+                <Maximize className="h-4 w-4" />
+              </Button> */}
+
+              {/* <div className="relative hidden md:flex">
+                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md">
+                  <Mail className="h-4 w-4" />
+                </Button>
+                <span className="absolute top-0 right-0 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border border-white">
+                  1
+                </span>
+              </div> */}
+
+              {/* <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md hidden md:flex">
+                <Bell className="h-4 w-4" />
+              </Button>
+
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md hidden md:flex">
+                <Settings className="h-4 w-4" />
+              </Button> */}
+
+              {/* User Menu */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <div className="h-8 w-8 rounded-md bg-muted flex items-center justify-center cursor-pointer border hover:opacity-80 transition-opacity ml-1 overflow-hidden">
+                    <span className="text-xs font-bold text-muted-foreground">
+                      {activeUser.name.slice(0, 2).toUpperCase()}
+                    </span>
                   </div>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
@@ -136,7 +256,7 @@ const DashboardLayout = () => {
                   <DropdownMenuGroup>
                     <DropdownMenuItem
                       className="cursor-pointer text-muted-foreground focus:text-primary focus:bg-primary/10 rounded-lg"
-                      onClick={() => navigate("/profile")}
+                      onClick={() => navigate(ROUTERS.PROFILE)}
                     >
                       <BadgeCheck className="mr-2 h-4 w-4" />
                       <span>{t("user.profile")}</span>
@@ -169,9 +289,18 @@ const DashboardLayout = () => {
             </div>
           </header>
         </div>
-        <div className="flex flex-1 flex-col gap-4 px-3 pb-6 pt-2 sm:px-6">
-          <Outlet />
-        </div>
+        {(() => {
+          const isNoPaddingPage =
+            location.pathname.includes("/sale/create") ||
+            location.pathname.includes("/sale/edit") ||
+            location.pathname.includes("/purchase/create") ||
+            location.pathname.includes("/purchase/edit");
+          return (
+            <div className={`flex-1 overflow-auto bg-background dark:bg-background ${isNoPaddingPage ? "p-0" : "p-4 sm:p-6"}`}>
+              <Outlet />
+            </div>
+          );
+        })()}
       </SidebarInset>
     </SidebarProvider>
   );

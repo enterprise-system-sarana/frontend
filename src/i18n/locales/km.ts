@@ -65,6 +65,7 @@ export const km: Record<TranslationKey, string> = {
   "nav.purchase": "ការបញ្ជាទិញ",
   "nav.create_purchase": "បង្កើតការបញ្ជាទិញ",
   "nav.purchase_payment": "ការទូទាត់ប្រាក់",
+  "nav.payments": "ការទូទាត់ប្រាក់ពីការលក់",
   "nav.inventory": "សារពើភ័ណ្ឌ",
   "nav.store": "ហាង/ឃ្លាំង",
   "nav.stock": "ស្តុកទំនិញ",

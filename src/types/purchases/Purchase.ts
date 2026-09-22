@@ -1,6 +1,7 @@
 import z from "zod";
 import { Status } from "../enum/status";
 import type { BaseResponse, PageFilter } from "../pagination";
+import type { ProductSerialResponse } from "../product/ProductSerial";
 
 export interface PurchaseItemResponse extends BaseResponse {
   productId: number;
@@ -8,7 +9,7 @@ export interface PurchaseItemResponse extends BaseResponse {
   quantity: number;
   costPrice: number;
   subtotal: number;
-  serialNumbers?: string[];
+  serialNumbers?: ProductSerialResponse[];
 }
 
 //  Long id,

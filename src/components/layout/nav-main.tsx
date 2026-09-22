@@ -16,6 +16,7 @@ import {
 import { ChevronRightIcon, type LucideIcon } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { ROUTERS } from "@/constants/Route";
 
 export function NavMain({
   items,
@@ -84,6 +85,7 @@ export function NavMain({
       Purchase: t("nav.purchase"),
       "Create Purchase": t("nav.create_purchase"),
       "Purchase Payment": t("nav.purchase_payment"),
+      Payments: t("nav.payments"),
       Inventory: t("nav.inventory"),
       Store: t("nav.store"),
       Stock: t("nav.stock"),
@@ -151,24 +153,24 @@ export function NavMain({
                       className={`
                         group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
                         shadow-none transition-all duration-200
-                        ${
-                          isDirectActive
-                            ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                            : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                        ${isDirectActive
+                          ? "bg-primary/12 text-primary font-semibold ring-1 ring-primary/30 before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                          : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:ring-1 hover:ring-sidebar-border/50"
                         }
                       `}
                     >
                       <Link
                         to={item.url}
-                        className="flex items-center gap-2.5 w-full"
+                        target={item.url === ROUTERS.SALE_CREATE ? "_blank" : undefined}
+                        rel={item.url === ROUTERS.SALE_CREATE ? "noopener noreferrer" : undefined}
+                        className="flex w-full items-center gap-2.5"
                       >
                         {ItemIcon && (
                           <ItemIcon
-                            className={`h-5 w-5 shrink-0 ${
-                              isDirectActive
+                            className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isDirectActive
                                 ? "text-primary"
                                 : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
-                            }`}
+                              }`}
                             strokeWidth={1.75}
                           />
                         )}
@@ -209,20 +211,18 @@ export function NavMain({
                         className={`
                           group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
                           shadow-none transition-all duration-200
-                          ${
-                            hasActiveChild
-                              ? "bg-primary/12 text-primary font-semibold before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                              : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+                          ${hasActiveChild
+                            ? "bg-primary/12 text-primary font-semibold ring-1 ring-primary/30 before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
+                            : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:ring-1 hover:ring-sidebar-border/50"
                           }
                         `}
                       >
                         {item.icon && (
                           <item.icon
-                            className={`h-5 w-5 shrink-0 ${
-                              hasActiveChild
+                            className={`h-5 w-5 shrink-0 transition-colors duration-200 ${hasActiveChild
                                 ? "text-primary"
                                 : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
-                            }`}
+                              }`}
                             strokeWidth={1.75}
                           />
                         )}
@@ -235,11 +235,10 @@ export function NavMain({
                           </span>
                         )}
                         <ChevronRightIcon
-                          className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 ${
-                            hasActiveChild
+                          className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 ${hasActiveChild
                               ? "text-primary"
                               : "text-sidebar-foreground/40"
-                          }`}
+                            }`}
                         />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
@@ -258,26 +257,26 @@ export function NavMain({
                                 asChild
                                 isActive={isActive}
                                 className={`
-                                  h-/[34px] rounded-lg px-2.5 text-[13px] font-medium
+                                  h-[34px] rounded-lg px-2.5 text-[13px] font-medium
                                   transition-all duration-150
-                                  ${
-                                    isActive
-                                      ? "bg-primary/8 text-primary font-semibold"
-                                      : "bg-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                  ${isActive
+                                    ? "bg-primary/8 text-primary font-semibold shadow-sm ring-1 ring-primary/20"
+                                    : "bg-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
                                   }
                                 `}
                               >
                                 <Link
                                   to={subItem.url}
+                                  target={subItem.url === ROUTERS.SALE_CREATE ? "_blank" : undefined}
+                                  rel={subItem.url === ROUTERS.SALE_CREATE ? "noopener noreferrer" : undefined}
                                   className="flex items-center gap-2.5"
                                 >
                                   {SubIcon ? (
                                     <SubIcon
-                                      className={`h-4 w-4 shrink-0 transition-colors duration-150 ${
-                                        isActive
+                                      className={`h-4 w-4 shrink-0 transition-colors duration-150 ${isActive
                                           ? "text-primary"
                                           : "text-sidebar-foreground/45"
-                                      }`}
+                                        }`}
                                       strokeWidth={1.75}
                                     />
                                   ) : (
@@ -285,10 +284,9 @@ export function NavMain({
                                       className={`
                                         inline-flex h-[5px] w-[5px] shrink-0 rounded-full
                                         transition-all duration-150
-                                        ${
-                                          isActive
-                                            ? "bg-primary"
-                                            : "border border-sidebar-foreground/35 bg-transparent"
+                                        ${isActive
+                                          ? "bg-primary"
+                                          : "border border-sidebar-foreground/35 bg-transparent"
                                         }
                                       `}
                                     />

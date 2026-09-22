@@ -1,14 +1,7 @@
-import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import type { StoreResponse } from "@/types/inventory/Store";
 import { SortableHeader } from "@/utils/sort-table-header";
 import type { ColumnDef } from "@tanstack/react-table";
-import { MoreVertical, PencilIcon, Trash2 } from "lucide-react";
+import { TableActions } from "@/components/ui/table-actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import ImageCell from "@/components/file/ImageCell";
 import { formatDate } from "@/utils/formatDate";
@@ -130,38 +123,10 @@ export const StoreColumns = ({
         return <span className="text-muted-foreground text-sm">-</span>;
       }
       return (
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button
-              variant="ghost"
-              className="h-8 w-8 p-0 text-muted-foreground hover:text-foreground hover:bg-muted/80 rounded-lg"
-            >
-              <span className="sr-only">Open menu</span>
-              <MoreVertical className="h-4 w-4" />
-            </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="end"
-            className="w-40 shadow-lg border-border/60 rounded-xl"
-          >
-            {canEdit && (
-              <DropdownMenuItem
-                className="cursor-pointer text-muted-foreground focus:text-primary focus:bg-primary/10 rounded-lg"
-                onClick={() => onEdit(row.original)}
-              >
-                <PencilIcon className="mr-2 h-4 w-4" /> Edit
-              </DropdownMenuItem>
-            )}
-            {canDelete && (
-              <DropdownMenuItem
-                className="cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10 rounded-lg"
-                onClick={() => onDelete(row.original.id)}
-              >
-                <Trash2 className="mr-2 h-4 w-4" /> Delete
-              </DropdownMenuItem>
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <TableActions
+              onEdit={() => onEdit(row.original)}
+              onDelete={() => onDelete(row.original.id)}
+            />
       );
     },
   },

@@ -18,6 +18,7 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import { ROUTERS } from "@/constants/Route";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { SupplierResponse } from "@/types/purchases/Supplier";
+import { PurchaseDetailModal } from "./PurchaseDetail";
 
 const PurchasePage = () => {
   const navigate = useNavigate();
@@ -48,7 +49,7 @@ const PurchasePage = () => {
 
   const suppliers = supplierData?.payload?.data || [];
   const stores = storeData?.payload?.data || [];
-  const { data, isError, isLoading } = usePurchase.GetAll({
+  const { data, isError, isLoading, refetch } = usePurchase.GetAll({
     page,
     size,
     referenceNo: search || undefined,
@@ -64,6 +65,8 @@ const PurchasePage = () => {
   // const { mutate: completePurchaseMutate } =
   //   usePurchase.Complete() || { mutate: () => { } };
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
+  const [detailPurchaseId, setDetailPurchaseId] = useState<number | null>(null);
+  const [openDetail, setOpenDetail] = useState(false);
 
   const filteredPurchases = useSearch<PurchaseResponse>(
     data?.payload?.data,
@@ -97,9 +100,9 @@ const PurchasePage = () => {
         placeholder: "Filter by Status",
         allLabel: "All Statuses",
         options: [
-          { label: "Approved", value: "APPROVED" },
-          { label: "Completed", value: "COMPLETED" },
-          { label: "Ordered", value: "ORDERED" },
+          { label: "COMPLETED", value: "COMPLETED" },
+          { label: "CANCELLED", value: "CANCELLED" },
+          { label: "PENDING", value: "PENDING" },
         ],
       },
     ],
@@ -138,6 +141,11 @@ const PurchasePage = () => {
   const handlePageSizeChange = (newSize: number) => {
     setPage(1);
     setSize(newSize);
+  };
+
+  const handleView = (purchase: PurchaseResponse) => {
+    setDetailPurchaseId(purchase.id);
+    setOpenDetail(true);
   };
 
   const handleEdit = (purchase: PurchaseResponse) => {
@@ -200,9 +208,10 @@ const PurchasePage = () => {
           </div>
 
           <div className="px-0">
-            <QueryBoundary isLoading={isLoading} isError={isError}>
+            <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
               <DataTable
                 columns={PurchaseColumns({
+                  onView: handleView,
                   onEdit: handleEdit,
                   onDelete: handleDelete,
                   // onApprove: handleApprove,
@@ -230,6 +239,13 @@ const PurchasePage = () => {
         setIsOpen={setOpenConfirmDelete}
         entityName={"Purchase"}
         confirmDelete={confirmDelete}
+      />
+
+      <PurchaseDetailModal
+        purchaseId={detailPurchaseId}
+        open={openDetail}
+        onOpenChange={setOpenDetail}
+        onEdit={handleEdit}
       />
     </>
   );

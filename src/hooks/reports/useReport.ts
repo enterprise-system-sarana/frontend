@@ -23,6 +23,7 @@ export const useReport = {
       queryKey: useReport.keys.sales(filter),
       queryFn: () => reportService.getSalesReport(filter),
       retry: 1,
+      enabled: !!filter,
     }),
 
   useSalesItemsReport: (filter?: SaleReportFilter, page?: { page?: number; size?: number }) =>
@@ -30,7 +31,6 @@ export const useReport = {
       queryKey: useReport.keys.salesItems(filter, page),
       queryFn: () => reportService.getSalesItemsReport(filter, page),
       retry: 1,
-      enabled: !!filter || !!page,
     }),
 
   useExpenseReport: (filter?: ExpenseReportFilter) =>

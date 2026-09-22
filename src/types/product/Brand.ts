@@ -1,4 +1,4 @@
-import type { Status } from "../enum/status";
+// import type { Status } from "../enum/status";
 import type { BaseResponse, PageFilter } from "../pagination";
 import { z } from "zod";
 import { validateString } from "../validator";
@@ -6,7 +6,7 @@ import { validateString } from "../validator";
 export interface BrandResponse extends BaseResponse {
   name: string;
   imageUrl?: string;
-  status: Status;
+  // status: Status;
 }
 
 export interface BrandFilter extends PageFilter {

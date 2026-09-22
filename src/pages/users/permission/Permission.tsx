@@ -4,29 +4,34 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useState, useEffect, useMemo } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Search, Shield, Save, X } from "lucide-react";
+import { Search, Shield, Save, X, ArrowLeft } from "lucide-react";
 // import { useAllRoles, useRolePermissions, useUpdateRolePermissions } from "@/hooks/users/useRole";
 import { usePermission } from "@/hooks/users/usePermission";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import { usePermission as useAppPermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
+import { ROUTERS } from "@/constants/Route";
 
 import { AccessDenied } from "@/components/ui/access-denied";
 import { PageHeader } from "@/components/ui/page-header";
 import { useRole } from '@/hooks/users/useRole';
 
 export const PermissionPage = () => {
+    const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
+    const roleIdParam = searchParams.get("roleId") || searchParams.get("role") || "";
+
     const { Can } = useAppPermission();
     const canRead = Can(PERMISSION.PERMISSION.READ) || Can(PERMISSION.ROLES.READ);
     const canUpdate = Can(PERMISSION.PERMISSION.UPDATE) || Can(PERMISSION.ROLES.UPDATE);
 
-    const [selectedRoleId, setSelectedRoleId] = useState<string>("");
+    const [selectedRoleId, setSelectedRoleId] = useState<string>(roleIdParam);
     const [permissions, setPermissions] = useState<any[]>([]);
     const [searchTerm, setSearchTerm] = useState("");
 
     const { data: rolesData, isLoading: isLoadingRoles, isError: isErrorRoles } = useRole.GetAllRole({ page: 1, size: 200 });
-    console.log("roleDate ", rolesData)
     const { data: allPermissionsData, isLoading: isLoadingAllPerms, isError: isErrorAllPerms } = usePermission.useFindAll();
     const { data: rolePermissionsData, isLoading: isLoadingRolePerms, isError: isErrorRolePerms } = useRole.GetRolePermission(
         selectedRoleId ? Number(selectedRoleId) : null
@@ -34,7 +39,31 @@ export const PermissionPage = () => {
     const updatePermissionsMutation = useRole.UpdateRolePermissions();
 
     const roles = rolesData?.payload?.data || [];
-    console.log("roles : ", roles)
+
+    // Sync selectedRoleId from URL param or resolve by code/name
+    useEffect(() => {
+        if (!roleIdParam) return;
+        if (!isNaN(Number(roleIdParam))) {
+            setSelectedRoleId(roleIdParam);
+        } else if (roles.length > 0) {
+            const found = roles.find((r: any) =>
+                r.code?.toLowerCase() === roleIdParam.toLowerCase() ||
+                r.name?.toLowerCase() === roleIdParam.toLowerCase()
+            );
+            if (found) {
+                setSelectedRoleId(found.id.toString());
+            }
+        }
+    }, [roleIdParam, roles]);
+
+    const handleRoleChange = (roleId: string) => {
+        setSelectedRoleId(roleId);
+        setSearchParams(roleId ? { roleId } : {});
+    };
+
+    const selectedRole = useMemo(() => {
+        return roles.find((r: any) => r.id?.toString() === selectedRoleId);
+    }, [roles, selectedRoleId]);
     if (!canRead) {
         return <AccessDenied resource="permissions" showBackButton />;
     }
@@ -115,14 +144,33 @@ export const PermissionPage = () => {
     return (
         <div className="space-y-6">
             {/* Header section */}
-
+            <PageHeader
+                title="Role Permissions"
+                // description={
+                //     selectedRole
+                //         ? `Configuring permissions for "${selectedRole.name}" (${selectedRole.code})`
+                //         : "Select a role to configure module access and permissions"
+                // }
+                hideButton
+                actions={
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => navigate(ROUTERS.ROLE)}
+                        className="gap-1.5 cursor-pointer"
+                    >
+                        <ArrowLeft className="h-4 w-4" />
+                        Back to Roles
+                    </Button>
+                }
+            />
 
             {/* Selection and Filter toolbar */}
             <div className="flex flex-col sm:flex-row gap-4 max-w-2xl px-2">
                 {/* Role Selector */}
                 <div className="flex flex-col gap-1.5 w-[240px]">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Role</span>
-                    <Select value={selectedRoleId} onValueChange={setSelectedRoleId}>
+                    <Select value={selectedRoleId} onValueChange={handleRoleChange}>
                         <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
                             <SelectValue placeholder="Select Role..." />
                         </SelectTrigger>

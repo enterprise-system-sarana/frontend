@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useSupplier } from "@/hooks/purchases/useSupplier";
 import { usePurchase } from "@/hooks/purchases/usePurchase";
+import PaymentForm from "@/pages/sales/payment/PaymentForm";
 import {
   normalizePurchasePaymentStatus,
   PurchasePaymentStatus,
@@ -42,6 +43,8 @@ export const PurchasePaymentPage = () => {
   const [supplierId, setSupplierId] = useState("");
   const [note, setNote] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [openPaymentForm, setOpenPaymentForm] = useState(false);
+  const [selectedPaymentRow, setSelectedPaymentRow] = useState<PaymentRow | null>(null);
 
   const { data: storesData } = useStore.useGetAllStore();
   const { data: supplierData } = useSupplier.useGetAllSupplier();
@@ -252,6 +255,7 @@ export const PurchasePaymentPage = () => {
                   <th className="p-3">Grand Total</th>
                   <th className="p-3">Balance</th>
                   <th className="p-3">Amount Paid</th>
+                  <th className="p-3 text-right">Action</th>
                 </tr>
               </thead>
               <tbody className="divide-y bg-background">
@@ -294,6 +298,18 @@ export const PurchasePaymentPage = () => {
                           className="w-32 h-8"
                           disabled={!row.selected}
                         />
+                      </td>
+                      <td className="p-3 text-right">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => {
+                            setSelectedPaymentRow(row);
+                            setOpenPaymentForm(true);
+                          }}
+                        >
+                          Pay
+                        </Button>
                       </td>
                     </tr>
                   ))
@@ -341,6 +357,20 @@ export const PurchasePaymentPage = () => {
           </Button>
         </div>
       </form>
+
+      <PaymentForm
+        open={openPaymentForm}
+        setOpen={setOpenPaymentForm}
+        payment={null}
+        mode="purchase"
+        purchaseId={selectedPaymentRow?.id}
+        amount={selectedPaymentRow?.amountPaid || selectedPaymentRow?.balance || 0}
+        onPurchasePayment={async (purchaseId) => {
+          await completePurchase.mutateAsync(purchaseId);
+          setPaymentRows((rows) => rows.filter((row) => row.id !== purchaseId));
+          toast.success("Purchase payment completed successfully");
+        }}
+      />
     </div>
   );
 };
