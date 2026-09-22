@@ -23,6 +23,7 @@ import {
   CircleSmall,
   LayoutDashboard,
   Receipt,
+  FileText,
 } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
@@ -181,18 +182,18 @@ const data = {
           url: ROUTERS.PAYMENT,
           icon: CreditCard,
         },
-        // {
-        //   title: "Sale",
-        //   url: ROUTERS.SALE,
-        //   icon: Receipt,
-        //   // permission: PERMISSION.SALE.READ,
-        // },
-        // {
-        //   title: "Create Sale",
-        //   url: `${ROUTERS.SALE}/create`,
-        //   icon: PlusCircle,
-        //   // permission: PERMISSION.SALE.CREATE,
-        // },
+        {
+          title: "Quote",
+          url: ROUTERS.QUOTE,
+          icon: FileText,
+          // permission: PERMISSION.QUOTE.READ,
+        },
+        {
+          title: "Create Quote",
+          url: ROUTERS.QUOTE_CREATE,
+          icon: PlusCircle,
+          // permission: PERMISSION.QUOTE.CREATE,
+        },
       ],
     },
     {

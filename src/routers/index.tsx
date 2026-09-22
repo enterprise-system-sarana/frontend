@@ -38,11 +38,14 @@ import {
   ExpenseReportPage,
   ProductSerialReportPage,
   NotFoundPage,
+  QuotePage,
+  QuoteForm,
 } from "@/pages";
 import PrivateRoute from "@/utils/privateRoute";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ROUTERS } from "@/constants/Route";
 import { HomePage } from "@/pages/home/Home";
+import { PurchasePaymentPage } from "@/pages/purchases/purchase/PurchasePayment";
 
 const router = createBrowserRouter([
   {
@@ -128,8 +131,38 @@ const router = createBrowserRouter([
             element: <PurchaseForm />,
           },
           {
-            path: ROUTERS.PURCHASE_INVOICE,
-            element: <PurchaseInvoice />,
+            path: ROUTERS.PURCHASE_PAYMENT,
+            element: <PurchasePaymentPage />,
+          },
+          {
+            path: ROUTERS.STORE,
+            element: <StorePage />,
+          },
+          {
+            path: ROUTERS.STOCK,
+            element: <StockPage />,
+          },
+          // sales
+          {
+            path: ROUTERS.CUSTOMER,
+            element: <CustomerPage />,
+          },
+          {
+            path: ROUTERS.QUOTE,
+            element: <QuotePage />,
+          },
+          {
+            path: ROUTERS.QUOTE_CREATE,
+            element: <QuoteForm />,
+          },
+          {
+            path: ROUTERS.QUOTE_EDIT,
+            element: <QuoteForm />,
+          },
+          // role permission
+          {
+            path: ROUTERS.ROLE,
+            element: <RolePage />,
           },
 
           {

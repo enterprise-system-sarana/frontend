@@ -53,9 +53,8 @@ export { default as CurrencyPage } from "@/pages/finance/currency/CurrencyPage";
 export { default as CustomerPage } from "@/pages/sales/customers/CustomerPage";
 export { default as SalePage } from "@/pages/sales/sale/SalePage";
 export { default as SaleForm } from "@/pages/sales/sale/SaleForm";
-export { default as PaymentPage } from "@/pages/sales/payment/PaymentPage";
-// export { default as SaleDetail } from "@/pages/sales/sale/SaleDetail";
-export { default as SaleDetailModal } from "@/pages/sales/sale/SaleDetailModal";
+export { default as QuotePage } from "@/pages/sales/quotes/QuotePage";
+export { default as QuoteForm } from "@/pages/sales/quotes/QuoteForm";
 
 // Expenses
 export { default as ExpensePage } from "@/pages/expenses/expense/ExpensePage";

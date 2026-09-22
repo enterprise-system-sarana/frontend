@@ -49,10 +49,13 @@ export const ROUTERS = {
   CUSTOMERS: "/customers",
   PROFILE: "/profile",
 
-  EXPENSE_TYPE: "/expense-type",
-  EXPENSE: "/expense",
-  QUOTE: "/quote",
-};
+    EXPENSE_TYPE: "/expense-type",
+    EXPENSE: "/expense",
+    QUOTE: "/quote",
+    QUOTE_CREATE: "/quote/create",
+    QUOTE_EDIT: "/quote/edit/:id",
+}
+
 
 export const AUTHENTICATION = {
   REFRESH_TOKEN: "refreshToken",
