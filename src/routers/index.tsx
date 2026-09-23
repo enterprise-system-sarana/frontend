@@ -23,7 +23,6 @@ import {
   CustomerPage,
   ProductPage,
   ProductForm,
-  ProductDetail,
   ExpensePage,
   ExpenseTypePage,
   PurchasePage,
@@ -31,6 +30,7 @@ import {
   PurchaseInvoice,
   SalePage,
   SaleForm,
+  SaleInvoicePage,
   PaymentPage,
   // SaleDetail,
   ReportPage,
@@ -40,8 +40,10 @@ import {
   NotFoundPage,
 } from "@/pages";
 import PrivateRoute from "@/utils/privateRoute";
+import PermissionRoute from "@/utils/permissionRoute";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { ROUTERS } from "@/constants/Route";
+import { PERMISSION } from "@/constants/Permission";
 import { HomePage } from "@/pages/home/Home";
 
 const router = createBrowserRouter([
@@ -57,7 +59,18 @@ const router = createBrowserRouter([
     path: ROUTERS.FORGOT_PASSWORD,
     element: <ForgotPasswordPage />,
   },
-  { path: ROUTERS.SALE_CREATE, element: <SaleForm /> },
+  {
+    path: ROUTERS.SALE_CREATE,
+    element: (
+      <PermissionRoute permission={PERMISSION.SALE.CREATE}>
+        <SaleForm />
+      </PermissionRoute>
+    ),
+  },
+  {
+    path: ROUTERS.SALE_INVOICE,
+    element: <SaleInvoicePage />,
+  },
 
   {
     element: <PrivateRoute />,
@@ -100,16 +113,17 @@ const router = createBrowserRouter([
           },
           {
             path: ROUTERS.PRODUCT_CREATE,
-            element: <ProductForm />,
+            element: (
+              <PermissionRoute permission={PERMISSION.PRODUCT.CREATE}>
+                <ProductForm />
+              </PermissionRoute>
+            ),
           },
           {
             path: ROUTERS.PRODUCT_EDIT,
             element: <ProductForm />,
           },
-          {
-            path: ROUTERS.PRODUCT_DETAIL,
-            element: <ProductDetail />,
-          },
+
 
           {
             path: ROUTERS.SUPPLIER,
@@ -121,7 +135,11 @@ const router = createBrowserRouter([
           },
           {
             path: ROUTERS.PURCHASE_CREATE,
-            element: <PurchaseForm />,
+            element: (
+              <PermissionRoute permission={PERMISSION.PURCHASE.CREATE}>
+                <PurchaseForm />
+              </PermissionRoute>
+            ),
           },
           {
             path: ROUTERS.PURCHASE_EDIT,
@@ -138,7 +156,11 @@ const router = createBrowserRouter([
           },
           {
             path: ROUTERS.STORE_CREATE,
-            element: <StoreForm />,
+            element: (
+              <PermissionRoute permission={PERMISSION.STORE.CREATE}>
+                <StoreForm />
+              </PermissionRoute>
+            ),
           },
           {
             path: ROUTERS.STORE_EDIT,
@@ -151,7 +173,15 @@ const router = createBrowserRouter([
           // sales
           { path: ROUTERS.SALE, element: <SalePage /> },
           // { path: ROUTERS.SALE_DETAIL, element: <SaleDetail /> },
-          { path: ROUTERS.SALE_EDIT, element: <SaleForm /> },
+          {
+            path: ROUTERS.SALE_EDIT,
+            element: (
+              <PermissionRoute permission={PERMISSION.SALE.UPDATE}>
+                <SaleForm />
+              </PermissionRoute>
+            ),
+          },
+
           { path: ROUTERS.PAYMENT, element: <PaymentPage /> },
           {
             path: ROUTERS.CUSTOMER,
@@ -163,11 +193,19 @@ const router = createBrowserRouter([
           },
           {
             path: ROUTERS.SALE_CREATE,
-            element: <SaleForm />,
+            element: (
+              <PermissionRoute permission={PERMISSION.SALE.CREATE}>
+                <SaleForm />
+              </PermissionRoute>
+            ),
           },
           {
             path: ROUTERS.SALE_EDIT,
-            element: <SaleForm />,
+            element: (
+              <PermissionRoute permission={PERMISSION.SALE.UPDATE}>
+                <SaleForm />
+              </PermissionRoute>
+            ),
           },
           // role permission
           {

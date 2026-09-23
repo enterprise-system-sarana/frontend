@@ -11,8 +11,17 @@ import { Status } from "@/types/enum/status";
 import FormExpenseType from "./ExpenseTypeForm";
 import { ExpenseTypeColumns } from "./ExpenseTypeColumn";
 import { useExpenseType } from "@/hooks/expense/useExpenseType";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const ExpenseTypePage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.EXPENSES_TYPE.CREATE);
+    const canRead = Can(PERMISSION.EXPENSES_TYPE.READ);
+    const canUpdate = Can(PERMISSION.EXPENSES_TYPE.UPDATE);
+    const canDelete = Can(PERMISSION.EXPENSES_TYPE.DELETE);
+
     const [open, setOpen] = useState(false);
     const [expenseType, setExpenseType] = useState<ExpenseTypeResponse | null>(null);
     const [page, setPage] = useState(1);
@@ -81,11 +90,13 @@ const ExpenseTypePage = () => {
     }, [searchedExpenseTypes, filterValues]);
 
     const handleEdit = (expenseType: ExpenseTypeResponse) => {
+        if (!canUpdate) return;
         setExpenseType(expenseType);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = data?.payload?.data?.find(
             (u: ExpenseTypeResponse) => u.id === id
         );
@@ -129,6 +140,8 @@ const ExpenseTypePage = () => {
         printTable("Expense Types List");
     };
 
+    if (!canRead) return <AccessDenied resource="expense types" showBackButton />;
+
     return (
         <>
             <div className="space-y-4">
@@ -136,10 +149,11 @@ const ExpenseTypePage = () => {
                 <PageHeader
                     title="Expense Types"
                     featureName="Expense Type"
-                    onCreate={() => {
+                    onCreate={canCreate ? () => {
                         setExpenseType(null);
                         setOpen(true);
-                    }}
+                    } : undefined}
+                    hideButton={!canCreate}
                 />
 
                 {/* Main Card with Toolbar & Table */}

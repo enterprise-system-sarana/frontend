@@ -204,6 +204,11 @@ const ProductSerialReportPage = () => {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
+            showSearch={false}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={(value) => { setPage(1); setStartDate(value); }}
+            onEndDateChange={(value) => { setPage(1); setEndDate(value); }}
             filterGroups={filterGroups}
             filterValues={filterValues}
             onFilterChange={handleSearchFilterChange}
@@ -253,7 +258,7 @@ const ProductSerialReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Stores</option>
+              <option value="all">All</option>
               {stores.map((store: any) => (
                 <option key={store.id} value={store.id}>{store.name}</option>
               ))}
@@ -266,7 +271,7 @@ const ProductSerialReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Products</option>
+              <option value="all">All</option>
               {products.map((product: any) => (
                 <option key={product.id} value={product.id}>{product.name}</option>
               ))}
@@ -279,7 +284,7 @@ const ProductSerialReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Status</option>
+              <option value="all">All</option>
               <option value="AVAILABLE">AVAILABLE</option>
               <option value="SOLD">SOLD</option>
               <option value="DAMAGED">DAMAGED</option>

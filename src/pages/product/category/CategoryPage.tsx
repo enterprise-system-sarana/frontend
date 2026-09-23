@@ -17,8 +17,17 @@ import { useCategory } from "@/hooks/product/useCategory";
 import { Status } from "@/types/enum/status";
 import FormCategory from "./CategoryForm";
 import { CategoryColumns } from "./CategoryColumn";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const CategoryPage = () => {
+  const { Can } = usePermission();
+  const canCreate = Can(PERMISSION.CATEGORY.CREATE);
+  const canRead = Can(PERMISSION.CATEGORY.READ);
+  const canUpdate = Can(PERMISSION.CATEGORY.UPDATE);
+  const canDelete = Can(PERMISSION.CATEGORY.DELETE);
+
   const [open, setOpen] = useState(false);
   const [category, setCategory] = useState<CategoryResponse | null>(null);
   const [page, setPage] = useState(1);
@@ -87,12 +96,14 @@ const CategoryPage = () => {
   }, [searchedCategories, filterValues]);
 
   const handleEdit = useCallback((c: CategoryResponse) => {
+    if (!canUpdate) return;
     setCategory(c);
     setOpen(true);
   }, []);
 
   const handleDelete = useCallback(
     (id: number) => {
+      if (!canDelete) return;
       const selected = data?.payload?.data?.find(
         (u: CategoryResponse) => u.id === id,
       );
@@ -144,6 +155,8 @@ const CategoryPage = () => {
     printTable("Categories List");
   };
 
+  if (!canRead) return <AccessDenied resource="categories" showBackButton />;
+
   return (
     <>
       <div className="space-y-4">
@@ -151,10 +164,11 @@ const CategoryPage = () => {
         <PageHeader
           title="Categories"
           featureName="Category"
-          onCreate={() => {
+          onCreate={canCreate ? () => {
             setCategory(null);
             setOpen(true);
-          }}
+          } : undefined}
+          hideButton={!canCreate}
         />
 
         {/* Main Card with Toolbar & Table */}

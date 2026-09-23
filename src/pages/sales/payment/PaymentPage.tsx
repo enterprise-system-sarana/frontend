@@ -10,10 +10,19 @@ import type { PaymentResponse } from "@/types/sales/Payment";
 import { useSearch } from "@/utils/useSearch";
 import PaymentForm from "./PaymentForm";
 import { PaymentColumns } from "./PaymentColumn";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const formatCurrency = (value: number) => `$${(Number(value) || 0).toFixed(2)}`;
 
 const PaymentPage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.PAYMENT.CREATE);
+    const canRead = Can(PERMISSION.PAYMENT.READ);
+    const canUpdate = Can(PERMISSION.PAYMENT.UPDATE);
+    const canDelete = Can(PERMISSION.PAYMENT.DELETE);
+
     const [open, setOpen] = useState(false);
     const [payment, setPayment] = useState<PaymentResponse | null>(null);
     const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
@@ -32,8 +41,9 @@ const PaymentPage = () => {
     const bankAmount = allPayments.filter((item) => item.paymentMethod?.toUpperCase() !== "CASH").reduce((total, item) => total + (Number(item.amount) || 0), 0);
 
     const columns = PaymentColumns({
-        onEdit: (selected) => { setPayment(selected); setOpen(true); },
+        onEdit: (selected) => { if (canUpdate) { setPayment(selected); setOpen(true); } },
         onDelete: (id) => {
+            if (!canDelete) return;
             const selected = allPayments.find((item) => item.id === id);
             if (selected) { setPayment(selected); setOpenConfirmDelete(true); }
         },
@@ -41,6 +51,8 @@ const PaymentPage = () => {
 
     const clearFilters = () => { setSearch(""); setMethod("all"); setPage(1); };
     const hasFilters = Boolean(search || method !== "all");
+
+    if (!canRead) return <AccessDenied resource="payments" showBackButton />;
 
     return (
         <div className="space-y-6 pb-8">
@@ -50,7 +62,8 @@ const PaymentPage = () => {
                 titleIcon={<WalletCards className="h-6 w-6 text-primary" />}
                 buttonLabel="Record payment"
                 buttonIcon={<Plus className="h-4 w-4" />}
-                onCreate={() => { setPayment(null); setOpen(true); }}
+                onCreate={canCreate ? () => { setPayment(null); setOpen(true); } : undefined}
+                hideButton={!canCreate}
             />
 
             <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">

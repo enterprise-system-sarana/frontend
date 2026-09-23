@@ -13,9 +13,8 @@ export const HomePage = () => {
 
   return (
     <main
-      className={`dashboard-enter mx-auto w-full max-w-[1600px] px-0 pb-6 text-[#2b2f36] transition-all duration-700 ease-out ${
-        isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-      }`}
+      className={`dashboard-enter mx-auto w-full max-w-[1600px] px-0 pb-6 text-[#2b2f36] transition-all duration-700 ease-out ${isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
+        }`}
     >
       <div className="mb-5 flex items-center justify-between px-0">
         <h1 className="text-[18px] font-bold tracking-[-0.02em] text-[#2b2f36] sm:text-[20px]">

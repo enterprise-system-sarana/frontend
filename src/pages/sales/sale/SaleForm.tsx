@@ -1,4 +1,4 @@
-import { useEffect, useState, useMemo } from "react";
+import { useEffect, useState, useMemo, useRef } from "react";
 import { useForm, useStore as useFormStore } from "@tanstack/react-form";
 import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams } from "react-router-dom";
@@ -52,6 +52,7 @@ import { useBank } from "@/hooks/finance/useBank";
 import { useProduct } from "@/hooks/product/useProduct";
 import { useProductSerial } from "@/hooks/product/useProductSerial";
 import { useCategory } from "@/hooks/product/useCategory";
+import { useAuth } from "@/store/useAuth";
 
 import FormCustomer from "@/pages/sales/customers/CustomerForm";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
@@ -64,10 +65,7 @@ import type { CustomerResponse } from "@/types/sales/Customer";
 import type { ProductResponse } from "@/types/product/Product";
 import type { PaymentRequest } from "@/types/sales/Payment";
 
-import PosHeader from "./components/PosHeader";
-import PosCalculatorModal from "./components/PosCalculatorModal";
-import PosHeldOrdersModal, { type HeldOrder } from "./components/PosHeldOrdersModal";
-import PosReceiptModal, { type PosReceiptData } from "./components/PosReceiptModal";
+
 
 /* =========================================================
    HELPERS
@@ -95,6 +93,7 @@ export default function SaleForm() {
   const isEditing = Boolean(id);
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   /* -------------------------------------------------------
      DATA FETCHING
@@ -157,42 +156,136 @@ export default function SaleForm() {
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
   const [activeSerialRowIndex, setActiveSerialRowIndex] = useState<number | null>(null);
 
-  // Modals
-  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
-  const [isHeldOrdersOpen, setIsHeldOrdersOpen] = useState(false);
-  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
-  const [receiptData, setReceiptData] = useState<PosReceiptData | null>(null);
-  const [lastReceiptData, setLastReceiptData] = useState<PosReceiptData | null>(null);
+
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [paymentAmount, setPaymentAmount] = useState(0);
-  const [paymentMethod, setPaymentMethod] = useState("CASH");
-  const [paymentBankId, setPaymentBankId] = useState(0);
-  const [paymentTransactionNo, setPaymentTransactionNo] = useState("");
-  const [paymentDate, setPaymentDate] = useState(new Date().toISOString().split("T")[0]);
-  const [pendingPayment, setPendingPayment] = useState<PaymentRequest | null>(null);
+  const paymentSubmittedRef = useRef(false);
 
-  const [heldOrders, setHeldOrders] = useState<HeldOrder[]>(() => {
-    try {
-      const saved = localStorage.getItem("POS_HELD_ORDERS");
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
-    }
-  });
 
-  const saveHeldOrders = (orders: HeldOrder[]) => {
-    setHeldOrders(orders);
-    try {
-      localStorage.setItem("POS_HELD_ORDERS", JSON.stringify(orders));
-    } catch (e) {
-      console.error(e);
-    }
-  };
+
 
   /* -------------------------------------------------------
      FORM INITIALIZATION
   ------------------------------------------------------- */
+
+  const submitSale = async (paymentOverride?: PaymentRequest): Promise<number> => {
+    const currentValues = form.state.values;
+
+    if (!currentValues.items || currentValues.items.length === 0) {
+      toast.error("Please add at least one product to the cart before checkout");
+      return 0;
+    }
+
+    const items = currentValues.items.map((item: any) => {
+      const price = Number(item.price) || 0;
+      const quantity = Number(item.quantity) || 1;
+      const itemDiscount = Number(item.itemDiscount) || 0;
+
+      return {
+        productId: Number(item.productId),
+        quantity,
+        price,
+        itemDiscount,
+        subtotal: price * quantity - itemDiscount,
+        serialNumberIds: (item.serialNumberIds ?? []).filter(
+          (sId: any) => Number(sId) > 0
+        ),
+      };
+    });
+
+    const subtotalCalc = items.reduce((sum: number, it: any) => sum + it.subtotal, 0);
+    const discountVal = Number(currentValues.discount) || 0;
+    const grandTotalCalc = Math.max(subtotalCalc - discountVal, 0);
+
+    const paymentOption: "PAID" | "DUE" =
+      currentValues.paymentOption === "DUE" ? "DUE" : "PAID";
+
+    const finalPaidAmount =
+      paymentOverride?.amount
+        ? Number(paymentOverride.amount)
+        : paymentOption === "PAID"
+          ? (Number(currentValues.paidAmount) > 0 ? Number(currentValues.paidAmount) : grandTotalCalc)
+          : (Number(currentValues.paidAmount) || 0);
+
+    const customerIdNum = Number(currentValues.customerId);
+    const walkInCustomer = customerList.find((c: any) => c.name?.toLowerCase().includes("walk"));
+    const finalCustomerId = customerIdNum > 0 ? customerIdNum : (walkInCustomer?.id || (customerList.length > 0 ? customerList[0].id : null));
+
+    const payload: any = {
+      reference: currentValues.reference || generateRef(),
+      saleDate: currentValues.saleDate || new Date().toISOString().split("T")[0],
+      noted: currentValues.noted?.trim() || null,
+      customerId: finalCustomerId,
+      storeId: Number(currentValues.storeId) || storeList[0]?.id || 1,
+      bankId: Number(currentValues.bankId) > 0 ? Number(currentValues.bankId) : null,
+      discount: discountVal,
+      totalAmount: subtotalCalc,
+      grandTotal: grandTotalCalc,
+      paidAmount: finalPaidAmount,
+      dueAmount: Math.max(grandTotalCalc - finalPaidAmount, 0),
+      paymentOption,
+      paymentStatus: SalePaymentStatus.Pending,
+      status: SaleStatus.Pending,
+      items,
+    };
+
+    let savedSaleId = isEditing && id ? Number(id) : 0;
+    if (isEditing && id) {
+      await updateSale.mutateAsync({
+        id: Number(id),
+        request: payload,
+      });
+      toast.success("Sale updated successfully!");
+      navigate(ROUTERS.SALE);
+    } else {
+      const createdSale: any = await createSale.mutateAsync(payload);
+      const createdSaleData = createdSale?.payload?.data ?? createdSale?.data ?? createdSale?.payload ?? createdSale;
+      savedSaleId = Number(createdSaleData?.id || 0);
+      toast.success("Sale created successfully!");
+    }
+
+    // When called without a paymentOverride (direct submit flow), handle payment internally
+    if (!paymentOverride && savedSaleId > 0 && finalPaidAmount > 0) {
+      const paymentRequest: PaymentRequest = {
+        paymentNo: `PAY-${payload.reference}-${Date.now()}`,
+        paymentMethod: "CASH",
+        bankId: null,
+        saleId: savedSaleId,
+        amount: finalPaidAmount,
+        transactionNo: null,
+        paymentDate: payload.saleDate,
+        status: finalPaidAmount >= grandTotalCalc ? "PAID" : "PARTIAL",
+      };
+      const paymentResponse: any = await createPayment.mutateAsync(paymentRequest);
+      const responseStatus = String(
+        paymentResponse?.status ??
+        paymentResponse?.payload?.status ??
+        paymentResponse?.data?.status ??
+        ""
+      ).toUpperCase();
+      const httpStatus = Number(responseStatus);
+      const paymentSucceeded =
+        !responseStatus ||
+        (httpStatus >= 200 && httpStatus < 300) ||
+        ["SUCCESS", "SUCCEEDED", "PAID", "COMPLETED"].includes(responseStatus);
+
+      if (paymentSucceeded && finalPaidAmount >= grandTotalCalc) {
+        await completeSale.mutateAsync(savedSaleId);
+        await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+      }
+    }
+
+    if (!isEditing) {
+      form.setFieldValue("items", []);
+      form.setFieldValue("discount", 0);
+      form.setFieldValue("paidAmount", 0);
+      form.setFieldValue("paymentOption", "PAID");
+      setIsPaymentModalOpen(false);
+      await queryClient.invalidateQueries({ queryKey: useSale.keys.all });
+    }
+
+    return savedSaleId;
+  };
 
   const form = useForm({
     defaultValues: {
@@ -215,146 +308,8 @@ export default function SaleForm() {
     },
 
     onSubmit: async ({ value }) => {
-      if (!value.items || value.items.length === 0) {
-        toast.error("Please add at least one product to the cart before checkout");
-        return;
-      }
-
-      const items = value.items.map((item: any) => {
-        const price = Number(item.price) || 0;
-        const quantity = Number(item.quantity) || 1;
-        const itemDiscount = Number(item.itemDiscount) || 0;
-
-        return {
-          productId: Number(item.productId),
-          quantity,
-          price,
-          itemDiscount,
-          subtotal: price * quantity - itemDiscount,
-          serialNumberIds: (item.serialNumberIds ?? []).filter(
-            (sId: any) => Number(sId) > 0
-          ),
-        };
-      });
-
-      const subtotalCalc = items.reduce((sum: number, it: any) => sum + it.subtotal, 0);
-      const discountVal = Number(value.discount) || 0;
-      const grandTotalCalc = Math.max(subtotalCalc - discountVal, 0);
-
-      const paymentOption: "PAID" | "DUE" =
-        value.paymentOption === "DUE" ? "DUE" : "PAID";
-
-      const finalPaidAmount =
-        paymentOption === "PAID"
-          ? (Number(value.paidAmount) > 0 ? Number(value.paidAmount) : grandTotalCalc)
-          : (Number(value.paidAmount) || 0);
-
-      const customerIdNum = Number(value.customerId);
-      const walkInCustomer = customerList.find((c: any) => c.name?.toLowerCase().includes("walk"));
-      const finalCustomerId = customerIdNum > 0 ? customerIdNum : (walkInCustomer?.id || (customerList.length > 0 ? customerList[0].id : null));
-
-      const payload: any = {
-        reference: value.reference || generateRef(),
-        saleDate: value.saleDate || new Date().toISOString().split("T")[0],
-        noted: value.noted?.trim() || null,
-        customerId: finalCustomerId,
-        storeId: Number(value.storeId) || storeList[0]?.id || 1,
-        bankId: Number(value.bankId) > 0 ? Number(value.bankId) : null,
-        discount: discountVal,
-        totalAmount: subtotalCalc,
-        grandTotal: grandTotalCalc,
-        paidAmount: finalPaidAmount,
-        dueAmount: Math.max(grandTotalCalc - finalPaidAmount, 0),
-        paymentOption,
-        paymentStatus: SalePaymentStatus.Pending,
-        status: SaleStatus.Pending,
-        items,
-      };
-
-      try {
-        let savedSaleId = isEditing && id ? Number(id) : 0;
-        if (isEditing && id) {
-          await updateSale.mutateAsync({
-            id: Number(id),
-            request: payload,
-          });
-          toast.success("Sale updated successfully!");
-          navigate(ROUTERS.SALE);
-        } else {
-          const createdSale: any = await createSale.mutateAsync(payload);
-          const createdSaleData = createdSale?.payload?.data ?? createdSale?.data ?? createdSale?.payload ?? createdSale;
-          savedSaleId = Number(createdSaleData?.id || 0);
-          toast.success("Sale created successfully!");
-
-          // const receipt: PosReceiptData = {
-          //   reference: payload.reference || "REC-" + Date.now().toString().slice(-6),
-          //   saleDate: payload.saleDate || new Date().toISOString().split("T")[0],
-          //   storeName: currentStore?.name || "Main Retail Store",
-          //   storePhone: (currentStore as any)?.phone || "+1 (555) 019-2834",
-          //   storeAddress: (currentStore as any)?.address || "Retail Boulevard, Suite 100",
-          //   customerName: currentCustomer?.name,
-          //   cashierName: user?.username || "Cashier",
-          //   items: items.map((it: any) => {
-          //     const matchedProd = productList.find((p) => p.id === it.productId);
-          //     return {
-          //       name: matchedProd?.name || `Product #${it.productId}`,
-          //       price: it.price,
-          //       quantity: it.quantity,
-          //       subtotal: it.subtotal,
-          //     };
-          //   }),
-          //   subtotal: subtotalCalc,
-          //   discount: discountVal,
-          //   grandTotal: grandTotalCalc,
-          //   paymentMethod: activePaymentMethod,
-          // };
-
-        }
-
-        if (savedSaleId > 0 && finalPaidAmount > 0) {
-          const paymentRequest: PaymentRequest = {
-            paymentNo: pendingPayment?.paymentNo || `PAY-${payload.reference}-${Date.now()}`,
-            paymentMethod: pendingPayment?.paymentMethod || paymentMethod,
-            bankId: pendingPayment?.bankId ?? (paymentMethod === "BANK" && paymentBankId > 0 ? paymentBankId : null),
-            saleId: savedSaleId,
-            amount: pendingPayment?.amount || finalPaidAmount,
-            transactionNo: pendingPayment?.transactionNo?.trim() || paymentTransactionNo.trim() || null,
-            paymentDate: pendingPayment?.paymentDate || paymentDate,
-            status: finalPaidAmount >= grandTotalCalc ? "PAID" : "PARTIAL",
-          };
-          const paymentResponse: any = await createPayment.mutateAsync(paymentRequest);
-          const responseStatus = String(
-            paymentResponse?.status ??
-            paymentResponse?.payload?.status ??
-            paymentResponse?.data?.status ??
-            ""
-          ).toUpperCase();
-          const paymentSucceeded =
-            !responseStatus || ["SUCCESS", "SUCCEEDED", "PAID", "COMPLETED"].includes(responseStatus);
-
-          if (paymentSucceeded && finalPaidAmount >= grandTotalCalc) {
-            await completeSale.mutateAsync(savedSaleId);
-            await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
-          }
-        }
-
-        if (!isEditing) {
-          form.setFieldValue("items", []);
-          form.setFieldValue("discount", 0);
-          form.setFieldValue("paidAmount", 0);
-          form.setFieldValue("paymentOption", "PAID");
-          setPendingPayment(null);
-          setIsPaymentModalOpen(false);
-          window.location.reload();
-        }
-      } catch (error: any) {
-        console.error("Failed to save sale:", error);
-        const errorMsg = error?.response?.data?.message ||
-          (typeof error?.response?.data === "string" ? error.response.data : null) ||
-          error?.message ||
-          "Failed to save sale. Please check your inputs.";
-        toast.error(errorMsg);
-      }
+      form.setFieldValue("reference", value.reference || generateRef());
+      await submitSale();
     },
   });
 
@@ -529,116 +484,12 @@ export default function SaleForm() {
     });
   }, [productList, productSearch, selectedCategory]);
 
-  /* -------------------------------------------------------
-     HOLD ORDER ACTION
-  ------------------------------------------------------- */
-
-  const handleHoldOrder = () => {
-    const items = formValues.items || [];
-    if (items.length === 0) return;
-
-    const currentCustomer = customerList.find(
-      (c) => c.id === Number(formValues.customerId)
-    );
-
-    const subtotal = items.reduce(
-      (sum: number, item: any) =>
-        sum +
-        (Number(item.price) || 0) * (Number(item.quantity) || 0) -
-        (Number(item.itemDiscount) || 0),
-      0
-    );
-    const grandTotal = Math.max(subtotal - (Number(formValues.discount) || 0), 0);
-
-    const newHold: HeldOrder = {
-      id: Date.now().toString(),
-      createdAt: new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit",
-      }),
-      reference: formValues.reference || generateRef(),
-      customerId: Number(formValues.customerId) || 0,
-      customerName: currentCustomer?.name,
-      storeId: Number(formValues.storeId) || 1,
-      discount: Number(formValues.discount) || 0,
-      grandTotal,
-      items: [...items],
-    };
-
-    saveHeldOrders([newHold, ...heldOrders]);
-
-    // Reset current sale
-    form.reset({
-      reference: generateRef(),
-      saleDate: new Date().toISOString().split("T")[0],
-      noted: "",
-      customerId: 0,
-      storeId: formValues.storeId,
-      bankId: 1,
-      discount: 0,
-      paidAmount: 0,
-      paymentStatus: SalePaymentStatus.Pending,
-      status: SaleStatus.Pending,
-      paymentOption: "PAID",
-      items: [],
-    });
-  };
-
-  const handleRestoreHeldOrder = (order: HeldOrder) => {
-    form.reset({
-      reference: order.reference,
-      saleDate: new Date().toISOString().split("T")[0],
-      noted: "",
-      customerId: order.customerId,
-      storeId: order.storeId,
-      bankId: 1,
-      discount: order.discount,
-      paidAmount: order.grandTotal,
-      paymentStatus: SalePaymentStatus.Paid,
-      status: SaleStatus.Completed,
-      paymentOption: "PAID",
-      items: order.items,
-    });
-
-    // Remove from held orders
-    const updated = heldOrders.filter((h) => h.id !== order.id);
-    saveHeldOrders(updated);
-  };
-
-  const handleDeleteHeldOrder = (orderId: string) => {
-    const updated = heldOrders.filter((h) => h.id !== orderId);
-    saveHeldOrders(updated);
-  };
-
-  // const handleResetForm = () => {
-  //   form.reset({
-  //     reference: generateRef(),
-  //     saleDate: new Date().toISOString().split("T")[0],
-  //     noted: "",
-  //     customerId: 0,
-  //     storeId: formValues.storeId || 1,
-  //     bankId: 1,
-  //     discount: 0,
-  //     paidAmount: 0,
-  //     paymentStatus: SalePaymentStatus.Pending,
-  //     status: SaleStatus.Pending,
-  //     paymentOption: "PAID",
-  //     items: [],
-  //   });
-  // };
-
   const handleVoidCart = () => {
     form.setFieldValue("items", []);
     form.setFieldValue("discount", 0);
   };
 
-  const currentDateFormatted = useMemo(() => {
-    return new Date().toLocaleDateString("en-US", {
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
-  }, []);
+
 
   /* =========================================================
      RENDER
@@ -647,21 +498,6 @@ export default function SaleForm() {
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
       {/* 1. DreamsPOS Header */}
-      <PosHeader
-        stores={storeList}
-        selectedStoreId={Number(formValues.storeId) || 1}
-        onSelectStore={(stId) => form.setFieldValue("storeId", stId)}
-        onOpenCalculator={() => setIsCalculatorOpen(true)}
-        onOpenHeldOrders={() => setIsHeldOrdersOpen(true)}
-        heldOrdersCount={heldOrders.length}
-        hasLastReceipt={!!lastReceiptData}
-        onPrintLastReceipt={() => {
-          if (lastReceiptData) {
-            setReceiptData(lastReceiptData);
-            setIsReceiptOpen(true);
-          }
-        }}
-      />
 
       {/* 2. Main POS Workspace Split */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -672,16 +508,6 @@ export default function SaleForm() {
           {/* Greeting Banner & Search Bar */}
           <div className="shrink-0 p-4 md:p-5 border-b border-slate-200/80 dark:border-slate-800">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
-              {/* <div>
-                <h2 className="text-base md:text-lg font-bold text-slate-800 dark:text-white flex items-center gap-1.5">
-                  Welcome, {user?.username || "Wesley Adrian"}
-                  <Sparkles className="size-4 text-amber-500 fill-amber-500" />
-                </h2>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  {currentDateFormatted}
-                </p>
-              </div> */}
-
               {/* Search Bar + Scan */}
               <div className="flex items-center gap-2 max-w-md w-full sm:w-auto">
                 <div className="relative flex-1 sm:w-64 md:w-72">
@@ -725,7 +551,7 @@ export default function SaleForm() {
                   : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
                   }`}
               >
-                All Categories
+                All
               </button>
               {listCategory.map((cat: any) => {
                 const isSelected = selectedCategory === cat.name;
@@ -941,13 +767,13 @@ export default function SaleForm() {
                 <ShoppingBag className="size-3.5 text-primary" />
                 Cart Items
               </span>
-              <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-background border border-border/60 text-foreground">
+              {/* <span className="px-2 py-0.5 rounded-md text-[10px] font-bold bg-background border border-border/60 text-foreground">
                 {(formValues.items || []).length} items
-              </span>
+              </span> */}
             </div>
 
             {/* Scrollable Cart List */}
-            <div className="flex-1 overflow-y-auto divide-y divide-border/40">
+            <div className="flex-1 overflow-y-auto">
               <form.Field name="items" mode="array">
                 {(itemsField) => {
                   const items = itemsField.state.value || [];
@@ -961,28 +787,41 @@ export default function SaleForm() {
                         <p className="font-semibold text-xs text-foreground">
                           Your cart is empty
                         </p>
-                        <p className="text-[11px] text-muted-foreground mt-0.5 max-w-50 leading-relaxed">
-                          Click any item from the catalog to add it to this sale.
-                        </p>
                       </div>
                     );
                   }
 
-                  return items.map((_: any, index: number) => (
-                    <PosItemRow
-                      key={index}
-                      form={form}
-                      index={index}
-                      products={productList}
-                      isOpenModal={activeSerialRowIndex === index}
-                      onCloseModal={() => {
-                        if (activeSerialRowIndex === index) {
-                          setActiveSerialRowIndex(null);
-                        }
-                      }}
-                      onRemove={() => itemsField.removeValue(index)}
-                    />
-                  ));
+                  return (
+                    <table className="w-full text-xs border-collapse">
+                      {/* Shared header — rendered once */}
+                      <thead className="sticky top-0 z-10 bg-muted/60 border-b border-border/60 backdrop-blur-sm">
+                        <tr>
+                          <th className="px-3.5 py-2 text-left text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">Product</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-28">Qty</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-24">Price</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-24">Serial</th>
+                          <th className="px-3 py-2 text-center text-[10px] font-semibold text-muted-foreground uppercase tracking-wider w-8"></th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border/40">
+                        {items.map((_: any, index: number) => (
+                          <PosItemRow
+                            key={index}
+                            form={form}
+                            index={index}
+                            products={productList}
+                            isOpenModal={activeSerialRowIndex === index}
+                            onCloseModal={() => {
+                              if (activeSerialRowIndex === index) {
+                                setActiveSerialRowIndex(null);
+                              }
+                            }}
+                            onRemove={() => itemsField.removeValue(index)}
+                          />
+                        ))}
+                      </tbody>
+                    </table>
+                  );
                 }}
               </form.Field>
             </div>
@@ -1077,45 +916,7 @@ export default function SaleForm() {
 
                   <div className="rounded-xl bg-slate-200/80 p-2">
                     <div className="grid grid-cols-4 gap-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (receiptData) {
-                            setIsReceiptOpen(true);
-                            return;
-                          }
-                          toast.info("No receipt available yet.");
-                        }}
-                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer"
-                      >
-                        <Printer className="size-5" />
-                        <span className="text-sm font-medium">Print Order</span>
-                      </button>
 
-                      <button
-                        type="button"
-                        disabled={!items || items.length === 0}
-                        onClick={handleHoldOrder}
-                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
-                      >
-                        <Pause className="size-5" />
-                        <span className="text-sm font-medium">Hold</span>
-                      </button>
-
-                      <button
-                        type="button"
-                        onClick={() => {
-                          if (receiptData) {
-                            setIsReceiptOpen(true);
-                            return;
-                          }
-                          toast.info("No bill available yet.");
-                        }}
-                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer"
-                      >
-                        <Receipt className="size-5" />
-                        <span className="text-sm font-medium">Print Bill</span>
-                      </button>
 
                       <button
                         type="button"
@@ -1141,70 +942,7 @@ export default function SaleForm() {
                     </div>
                   </div>
 
-                  {/* Payment Method & Status Pill Selector */}
-                  <div className="space-y-1.5">
-                    {/* <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-1.5">
-                        <CreditCard className="size-3 text-muted-foreground" />
-                        <span className="font-bold text-muted-foreground uppercase tracking-wider text-[10px]">
-                          Payment Method
-                        </span>
-                      </div>
-                      <div className="inline-flex p-0.5 rounded-lg bg-muted border border-border/70 shadow-2xs">
-                        <button
-                          type="button"
-                          onClick={() => form.setFieldValue("paymentOption", "PAID")}
-                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${paymentOption === "PAID"
-                            ? "bg-emerald-600 text-white shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          <Check className="size-2.5" />
-                          <span>PAID</span>
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => form.setFieldValue("paymentOption", "DUE")}
-                          className={`px-2.5 py-0.5 rounded-md text-[10px] font-bold transition-all cursor-pointer flex items-center gap-1 ${paymentOption === "DUE"
-                            ? "bg-rose-600 text-white shadow-xs"
-                            : "text-muted-foreground hover:text-foreground"
-                            }`}
-                        >
-                          <span>DUE</span>
-                        </button>
-                      </div>
-                    </div>
 
-                    {/* 5 Tactile Payment Method Tiles */}
-                    {/* <div className="grid grid-cols-5 gap-1.5">
-                      {[
-                        { id: "CASH", label: "Cash", icon: Banknote, color: "text-emerald-600 dark:text-emerald-400" },
-                        { id: "CARD", label: "Card", icon: CreditCard, color: "text-indigo-600 dark:text-indigo-400" },
-                        { id: "POINTS", label: "Points", icon: Award, color: "text-amber-600 dark:text-amber-400" },
-                        { id: "DEPOSIT", label: "Deposit", icon: Landmark, color: "text-sky-600 dark:text-sky-400" },
-                        { id: "CHEQUE", label: "Cheque", icon: FileCheck, color: "text-purple-600 dark:text-purple-400" },
-                      ].map((pm) => {
-                        const Icon = pm.icon;
-                        const isSelected = activePaymentMethod === pm.id;
-                        return (
-                          <button
-                            key={pm.id}
-                            type="button"
-                            onClick={() => setActivePaymentMethod(pm.id as any)}
-                            className={`h-10 rounded-xl border flex flex-col items-center justify-center transition-all cursor-pointer active:scale-95 ${isSelected
-                              ? "border-emerald-600 bg-emerald-500/10 text-foreground font-bold shadow-xs ring-2 ring-emerald-500/20"
-                              : "border-border/70 bg-card/70 text-muted-foreground hover:bg-muted/50 hover:text-foreground hover:border-border"
-                              }`}
-                          >
-                            <Icon className={`size-3.5 mb-0.5 ${isSelected ? pm.color : "text-muted-foreground"}`} />
-                            <span className="text-[9.5px] font-semibold leading-none">
-                              {pm.label}
-                            </span>
-                          </button>
-                        );
-                      })}
-                    </div> */}
-                  </div>
 
                   {/* Pay Now Button */}
                   <Button
@@ -1215,12 +953,6 @@ export default function SaleForm() {
                         toast.error("Please add at least one product to the order");
                         return;
                       }
-                      const totalDue = Math.max(subtotal - (Number(discount) || 0), 0);
-                      setPaymentAmount(totalDue);
-                      setPaymentMethod("CASH");
-                      setPaymentBankId(Number(formValues.bankId) || 0);
-                      setPaymentTransactionNo("");
-                      setPaymentDate(formValues.saleDate || new Date().toISOString().split("T")[0]);
                       setIsPaymentModalOpen(true);
                     }}
                     className="w-full h-11.5 rounded-xl  text-white font-bold text-sm shadow-md shadow-emerald-600/20 hover:shadow-emerald-600/30 transition-all flex items-center justify-between px-4 active:scale-[0.99] cursor-pointer group disabled:opacity-40 disabled:cursor-not-allowed disabled:shadow-none disabled:active:scale-100"
@@ -1238,10 +970,7 @@ export default function SaleForm() {
                           </span>
                           <span className="tracking-wide">Completed</span>
                         </span>
-                        {/* <span className="flex items-center gap-1.5 font-mono text-sm font-black">
-                          <span>{formatCurrency(grandTotal)}</span>
-                          <ArrowRight className="size-4 group-hover:translate-x-1 transition-transform" />
-                        </span> */}
+
                       </>
                     )}
                   </Button>
@@ -1254,10 +983,20 @@ export default function SaleForm() {
 
       <PaymentForm
         open={isPaymentModalOpen}
-        setOpen={setIsPaymentModalOpen}
+        setOpen={(open) => {
+          // When modal closes after a successful payment, refresh stock & sales
+          if (!open && paymentSubmittedRef.current) {
+            paymentSubmittedRef.current = false;
+            void queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+            void queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all });
+            void queryClient.invalidateQueries({ queryKey: useSale.keys.all });
+          }
+          setIsPaymentModalOpen(open);
+        }}
         payment={null}
         mode="sale"
         saleId={isEditing && id ? Number(id) : undefined}
+        orderRef={formValues.reference}
         amount={Math.max(
           (formValues.items || []).reduce(
             (sum: number, item: any) =>
@@ -1268,254 +1007,25 @@ export default function SaleForm() {
           ) - (Number(formValues.discount) || 0),
           0,
         )}
-
-      />
-
-      {false && <Dialog open={isPaymentModalOpen} onOpenChange={setIsPaymentModalOpen}>
-        <DialogContent
-          showCloseButton={false}
-          closeOnOutsideClick={true}
-          className="max-w-5xl overflow-hidden border border-border bg-background p-0 text-foreground shadow-xl"
-        >
-          <div className="flex items-center justify-between border-b border-border bg-card px-6 py-4">
-            <div className="flex items-center gap-2 text-3xl font-black tracking-tight text-foreground">
-              <span>Payment</span>
-              <span className="flex h-6 w-6 items-center justify-center rounded-full border border-border bg-muted text-base font-bold">
-                i
-              </span>
-            </div>
-            <button
-              type="button"
-              onClick={() => setIsPaymentModalOpen(false)}
-              className="flex h-8 w-8 items-center justify-center rounded-md text-slate-700 hover:bg-slate-200/80"
-              aria-label="Close payment modal"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-
-          <div className="grid gap-0 lg:grid-cols-[2.1fr_0.9fr]">
-            <div className="bg-background p-5">
-              <div className="grid grid-cols-3 gap-4 border-b border-border pb-3 text-sm font-bold text-muted-foreground">
-                <div className="space-y-1">
-                  <div>Total Items</div>
-                  <div className="text-xl font-black text-foreground">{(formValues.items || []).length}</div>
-                </div>
-                <div className="space-y-1">
-                  <div>Total Payable</div>
-                  <div className="text-xl font-black text-primary">
-                    {formatCurrency(
-                      Math.max(
-                        (formValues.items || []).reduce(
-                          (sum: number, item: any) =>
-                            sum +
-                            (Number(item.price) || 0) * (Number(item.quantity) || 0) -
-                            (Number(item.itemDiscount) || 0),
-                          0
-                        ) - (Number(formValues.discount) || 0),
-                        0
-                      )
-                    )}
-                  </div>
-                </div>
-                <div className="space-y-1">
-                  <div>Balance</div>
-                  <div className="text-xl font-black text-foreground">
-                    {formatCurrency(
-                      Math.max(
-                        Math.max(
-                          (formValues.items || []).reduce(
-                            (sum: number, item: any) =>
-                              sum +
-                              (Number(item.price) || 0) * (Number(item.quantity) || 0) -
-                              (Number(item.itemDiscount) || 0),
-                            0
-                          ) - (Number(formValues.discount) || 0),
-                          0
-                        ) -
-                        Number(paymentAmount) || 0,
-                        0
-                      )
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Payment method</label>
-                  <select
-                    value={paymentMethod}
-                    onChange={(e) => setPaymentMethod(e.target.value)}
-                    className="h-11 w-full rounded-md border border-slate-400 bg-white/80 px-3 text-base font-medium text-slate-700 outline-none"
-                  >
-                    <option value="CASH">Cash</option>
-                    <option value="BANK">Bank</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Amount</label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={paymentAmount}
-                    onChange={(e) => setPaymentAmount(Math.max(0, Number(e.target.value) || 0))}
-                    className="h-11 rounded-md border border-slate-400 bg-white/80 text-lg font-semibold text-slate-900"
-                  />
-                </div>
-
-                {paymentMethod === "BANK" && <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Bank</label>
-                  <select
-                    value={String(paymentBankId || "")}
-                    onChange={(e) => setPaymentBankId(Number(e.target.value))}
-                    className="h-11 w-full rounded-md border border-slate-400 bg-white/80 px-3 text-base font-medium text-slate-700 outline-none"
-                  >
-                    <option value="">Select bank</option>
-                    {bankList.map((bank: any) => (
-                      <option key={bank.id} value={String(bank.id)}>
-                        {bank.name || bank.bankName || "Bank"}
-                        {bank.accountNumber ? ` - ${bank.accountNumber}` : ""}
-                      </option>
-                    ))}
-                  </select>
-                </div>}
-
-                <div>
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Payment date</label>
-                  <Input
-                    type="date"
-                    value={paymentDate}
-                    onChange={(e) => setPaymentDate(e.target.value)}
-                    className="h-11 rounded-md border border-slate-400 bg-white/80 text-base font-medium text-slate-900"
-                  />
-                </div>
-
-                <div className="sm:col-span-2">
-                  <label className="mb-2 block text-sm font-bold text-slate-700">Transaction no. <span className="font-normal">(optional)</span></label>
-                  <Input
-                    value={paymentTransactionNo}
-                    onChange={(e) => setPaymentTransactionNo(e.target.value)}
-                    placeholder="Enter a bank reference or transaction number"
-                    className="h-11 rounded-md border border-slate-400 bg-white/80 text-base font-medium text-slate-900"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="bg-muted/40 p-4">
-              {/* <div className="mb-2 text-lg font-black text-slate-800">Quick Cash</div> */}
-              <div className="space-y-2">
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t border-border bg-card px-4 py-3">
-            <button
-              type="button"
-              onClick={() => {
-                const totalDue = Math.max((formValues.items || []).reduce((sum: number, item: any) => sum + (Number(item.price) || 0) * (Number(item.quantity) || 0) - (Number(item.itemDiscount) || 0), 0) - (Number(formValues.discount) || 0), 0);
-                const paidAmount = Number(paymentAmount) || 0;
-                if (paymentMethod === "BANK" && !(paymentBankId > 0)) {
-                  toast.error("Please select a bank for the bank payment");
-                  return;
-                }
-                if (paidAmount <= 0) {
-                  toast.error("Payment amount must be greater than zero");
-                  return;
-                }
-                if (paymentMethod === "BANK") {
-                  form.setFieldValue("bankId", paymentBankId);
-                }
-                form.setFieldValue("paidAmount", paidAmount);
-                if (paidAmount >= totalDue) {
-                  form.setFieldValue("paymentOption", "PAID");
-                } else {
-                  form.setFieldValue("paymentOption", "DUE");
-                }
-                form.handleSubmit();
-                setIsPaymentModalOpen(false);
-              }}
-              className="w-full rounded-lg bg-primary py-3 text-center text-xl font-black text-primary-foreground hover:bg-primary-hover"
-            >
-              Submit
-            </button>
-          </div>
-        </DialogContent>
-      </Dialog>}
-
-      {/* =====================================================
-          MODALS & POPUPS
-      ===================================================== */}
-
-      {/* 1. Payment Completed Dialog (DreamsPOS style) */}
-      {/* <Dialog
-        open={isPaymentCompletedOpen}
-        onOpenChange={(open) => !open && setIsPaymentCompletedOpen(false)}
-      >
-        <DialogContent className="sm:max-w-[420px] text-center p-6 gap-4">
-          <div className="size-16 rounded-full bg-emerald-100 text-emerald-600 dark:bg-emerald-950/50 dark:text-emerald-400 flex items-center justify-center mx-auto shadow-sm">
-            <CheckCircle2 className="size-10" />
-          </div>
-          <div>
-            <DialogTitle className="text-xl font-bold text-slate-900 dark:text-white">
-              Payment Completed!
-            </DialogTitle>
-            <DialogDescription className="text-xs text-muted-foreground mt-1">
-              Transaction #{completedReference} was processed successfully. Would
-              you like to print the receipt now?
-            </DialogDescription>
-          </div>
-
-          <div className="flex flex-col sm:flex-row gap-2.5 sm:justify-center mt-3 pt-3 border-t border-border/50 w-full">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => {
-                setIsPaymentCompletedOpen(false);
-                setIsReceiptOpen(true);
-              }}
-              className="gap-1.5 h-9 rounded-xl text-xs font-medium"
-            >
-              <Printer className="size-4 text-primary" />
-              Print Receipt
-            </Button>
-            <Button
-              type="button"
-              onClick={() => {
-                setIsPaymentCompletedOpen(false);
-                handleResetForm();
-              }}
-              className="bg-primary hover:bg-primary/90 text-primary-foreground font-semibold h-9 rounded-xl text-xs shadow-sm"
-            >
-              Next Order
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog> */}
-
-      {/* 2. Thermal Receipt Preview & Print Modal */}
-      <PosReceiptModal
-        isOpen={isReceiptOpen}
-        onClose={() => setIsReceiptOpen(false)}
-        data={receiptData}
-      />
-
-      {/* 3. On-Screen POS Calculator */}
-      <PosCalculatorModal
-        isOpen={isCalculatorOpen}
-        onClose={() => setIsCalculatorOpen(false)}
-      />
-
-      {/* 4. Held Orders Modal */}
-      <PosHeldOrdersModal
-        isOpen={isHeldOrdersOpen}
-        onClose={() => setIsHeldOrdersOpen(false)}
-        heldOrders={heldOrders}
-        onRestore={handleRestoreHeldOrder}
-        onDelete={handleDeleteHeldOrder}
+        onPaymentSubmit={async (request) => {
+          try {
+            const savedSaleId = await submitSale(request);
+            if (!savedSaleId) return false;
+            request.saleId = savedSaleId;
+            paymentSubmittedRef.current = true;
+            // Navigate to invoice page
+            navigate(ROUTERS.SALE_INVOICE.replace(":id", String(savedSaleId)));
+            return true;
+          } catch (error: any) {
+            const errorMsg =
+              error?.response?.data?.message ||
+              (typeof error?.response?.data === "string" ? error.response.data : null) ||
+              error?.message ||
+              "Failed to save sale.";
+            toast.error(errorMsg);
+            return false;
+          }
+        }}
       />
 
       {/* 5. Add Customer Modal */}
@@ -1633,10 +1143,7 @@ function PosItemRow({
     setSerialError("");
   };
 
-  const handleClearSerials = () => {
-    form.setFieldValue(`items[${index}].serialNumberIds`, []);
-    setSerialError("");
-  };
+
 
   const subtotal = price * quantity;
   const serialsComplete = serialNumberIds.length === quantity;
@@ -1684,50 +1191,18 @@ function PosItemRow({
 
   return (
     <>
-      <div className="p-3.5 hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition">
-        <div className="flex items-start justify-between gap-3">
-          {/* Product image & details */}
-          <div className="flex gap-2.5 min-w-0">
-            <div className="size-11 rounded-lg overflow-hidden bg-slate-100 dark:bg-slate-800 shrink-0 flex items-center justify-center border">
-              {(selectedProduct as any)?.imageUrl ? (
-                <ImageCell
-                  fileName={(selectedProduct as any).imageUrl}
-                  name={selectedProduct?.name || ""}
-                  bucketName="product"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <Package className="size-5 text-muted-foreground/40" />
-              )}
-            </div>
+      {/* Data row */}
+      <tr className="hover:bg-slate-50/70 dark:hover:bg-slate-800/40 transition-colors">
+        {/* Product name */}
+        <td className="px-3.5 py-2.5">
+          <span className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate block max-w-[160px]">
+            {selectedProduct?.name || `Product #${productId}`}
+          </span>
+        </td>
 
-            <div className="min-w-0">
-              <h5 className="font-semibold text-xs text-slate-800 dark:text-slate-100 truncate max-w-45 xl:max-w-55">
-                {selectedProduct?.name || `Product #${productId}`}
-              </h5>
-              <div className="flex items-center gap-2 mt-0.5">
-                <span className="text-[11px] font-bold text-slate-600 dark:text-slate-400">
-                  {formatCurrency(price)}
-                </span>
-                <span className="text-[10px] text-muted-foreground">
-                  Stock: {(selectedProduct as any)?.qty ?? "—"}
-                </span>
-              </div>
-            </div>
-          </div>
-
-          {/* Line Subtotal */}
-          <div className="text-right">
-            <span className="text-xs font-bold text-slate-900 dark:text-white">
-              {formatCurrency(subtotal)}
-            </span>
-          </div>
-        </div>
-
-        {/* Action Controls Row (Stepper, Serials, Trash) */}
-        <div className="flex items-center justify-between mt-2.5 pt-2 border-t border-slate-100 dark:border-slate-800/60">
-          {/* Quantity Stepper */}
-          <div className="flex items-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden h-7 bg-white dark:bg-slate-800">
+        {/* Qty Stepper */}
+        <td className="px-3 py-2.5 text-center">
+          <div className="flex items-center justify-center border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden h-7 bg-white dark:bg-slate-800 w-fit mx-auto">
             <button
               type="button"
               className="size-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
@@ -1745,11 +1220,9 @@ function PosItemRow({
             >
               <Minus className="size-3" />
             </button>
-
             <span className="w-8 text-center text-xs font-bold font-mono text-slate-800 dark:text-slate-200">
               {quantity}
             </span>
-
             <button
               type="button"
               className="size-7 flex items-center justify-center text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-700 transition"
@@ -1758,21 +1231,32 @@ function PosItemRow({
               <Plus className="size-3" />
             </button>
           </div>
+        </td>
 
-          {/* Serials / IMEI Selector Button */}
+        {/* Price */}
+        <td className="px-3 py-2.5 text-center">
+          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tabular-nums">
+            {formatCurrency(price)}
+          </span>
+        </td>
+
+        {/* Serial badge */}
+        <td className="px-3 py-2.5 text-center">
           <button
             type="button"
             onClick={() => setIsSerialModalOpen(true)}
-            className={`flex items-center gap-1.5 px-2 py-1 rounded-md text-[10px] font-semibold border transition cursor-pointer ${serialsComplete && serialNumberIds.length > 0
+            className={`inline-flex items-center gap-1 px-2 py-1 rounded-md text-[10px] font-semibold border transition cursor-pointer ${serialsComplete && serialNumberIds.length > 0
               ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
               : "bg-amber-50 text-amber-700 border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
               }`}
           >
             <Hash className="size-3" />
-            <span>Serials: {serialNumberIds.length}/{quantity}</span>
+            <span>{serialNumberIds.length}/{quantity}</span>
           </button>
+        </td>
 
-          {/* Delete Row Button */}
+        {/* Delete */}
+        <td className="px-3 py-2.5 text-center">
           <button
             type="button"
             onClick={onRemove}
@@ -1780,8 +1264,8 @@ function PosItemRow({
           >
             <Trash2 className="size-3.5" />
           </button>
-        </div>
-      </div>
+        </td>
+      </tr>
 
       {/* Serial Numbers Modal */}
       <Dialog
@@ -1801,7 +1285,7 @@ function PosItemRow({
                   Select Serial Numbers
                 </DialogTitle>
                 <DialogDescription className="text-xs text-muted-foreground truncate">
-                  {selectedProduct?.name || `Product #${productId}`}
+                  {selectedProduct?.name || `Product ${productId}`}
                 </DialogDescription>
               </div>
 
@@ -1900,7 +1384,7 @@ function PosItemRow({
             ) : (
               filteredAvailableSerials.map((serial: any) => {
                 const isSelected = serialNumberIds.includes(serial.id);
-                const barcode = serial.barcode || serial.barCode || serial.serialNumber || `ID #${serial.id}`;
+                const barcode = serial.barcode || serial.barCode || serial.serialNumber || `${serial.id}`;
                 // const store = serial.storeName || serial.store?.name;
 
                 return (

@@ -73,7 +73,7 @@ export const SaleColumns = ({
       header: ({ column }) => <SortableHeader column={column} title="No" />,
       cell: ({ row }) => (
         <span className="font-mono text-xs text-[#696cff]">
-          {(row.original as any).no ?? row.index + 1}
+          {row.index + 1}
         </span>
       ),
     },
@@ -177,8 +177,8 @@ export const SaleColumns = ({
           <div className="flex items-center gap-1">
             <TableActions
               onView={onView ? () => onView(row.original) : undefined}
-              onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
+              onEdit={canEdit && isPendingLike ? () => onEdit(row.original) : undefined}
+              onDelete={canDelete ? () => onDelete(row.original.id) : undefined}
             />
             {onPayment && row.original.dueAmount > 0 && (
               <Button
@@ -189,6 +189,17 @@ export const SaleColumns = ({
                 onClick={() => onPayment(row.original)}
               >
                 <Wallet className="h-4 w-4" />
+              </Button>
+            )}
+            {onReturn && isCompleted && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title="Return Sale"
+                className="h-8 w-8 text-amber-500 hover:bg-amber-500/10 rounded-lg"
+                onClick={() => onReturn(row.original.id)}
+              >
+                <RotateCcw className="h-4 w-4" />
               </Button>
             )}
           </div>

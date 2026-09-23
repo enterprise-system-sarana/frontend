@@ -15,8 +15,17 @@ import type { CategoryResponse } from "@/types/product/Category";
 import { Status } from "@/types/enum/status";
 import { ModelColumns } from "./ModelColumn";
 import ModelForm from "./ModelForm";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const ModelPage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.MODEL.CREATE);
+    const canRead = Can(PERMISSION.MODEL.READ);
+    const canUpdate = Can(PERMISSION.MODEL.UPDATE);
+    const canDelete = Can(PERMISSION.MODEL.DELETE);
+
     const [open, setOpen] = useState(false);
     const [model, setModel] = useState<ModelResponse | null>(null);
     const [page, setPage] = useState(1);
@@ -132,11 +141,13 @@ const ModelPage = () => {
 
     // Actions
     const handleEdit = (m: ModelResponse) => {
+        if (!canUpdate) return;
         setModel(m);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = data?.payload?.data?.find(
             (u: ModelResponse) => u.id === id
         );
@@ -181,6 +192,8 @@ const ModelPage = () => {
         printTable("Models List");
     };
 
+    if (!canRead) return <AccessDenied resource="models" showBackButton />;
+
     return (
         <>
             <div className="space-y-4">
@@ -188,10 +201,11 @@ const ModelPage = () => {
                 <PageHeader
                     title="Models"
                     featureName="Model"
-                    onCreate={() => {
+                    onCreate={canCreate ? () => {
                         setModel(null);
                         setOpen(true);
-                    }}
+                    } : undefined}
+                    hideButton={!canCreate}
                 />
 
                 {/* Main Card with Toolbar & Table */}

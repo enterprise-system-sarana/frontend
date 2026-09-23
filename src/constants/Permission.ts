@@ -32,6 +32,24 @@ export const PERMISSION = {
     UPDATE: "brand:update",
     DELETE: "brand:delete",
   },
+  MODEL: {
+    READ: "model:read",
+    CREATE: "model:create",
+    UPDATE: "model:update",
+    DELETE: "model:delete",
+  },
+  VARIANT_TYPE: {
+    READ: "variantType:read",
+    CREATE: "variantType:create",
+    UPDATE: "variantType:update",
+    DELETE: "variantType:delete",
+  },
+  VARIANT_VALUE: {
+    READ: "variantValue:read",
+    CREATE: "variantValue:create",
+    UPDATE: "variantValue:update",
+    DELETE: "variantValue:delete",
+  },
   SUBCATEGORY: {
     READ: "subCategory:read",
     CREATE: "subCategory:create",
@@ -67,6 +85,12 @@ export const PERMISSION = {
     UPDATE: "expensesType:update",
     DELETE: "expensesType:delete",
   },
+  EXPENSE: {
+    READ: "expense:read",
+    CREATE: "expense:create",
+    UPDATE: "expense:update",
+    DELETE: "expense:delete",
+  },
   ORDER_ITEM: {
     READ: "orderItem:read",
     CREATE: "orderItem:create",
@@ -83,7 +107,9 @@ export const PERMISSION = {
   },
   STOCK: {
     READ: "stock:read",
+    CREATE: "stock:create",
     UPDATE: "stock:update",
+    DELETE: "stock:delete",
   },
   STORE: {
     READ: "store:read",
@@ -113,6 +139,12 @@ export const PERMISSION = {
     CREATE: "sale:create",
     UPDATE: "sale:update",
     DELETE: "sale:delete",
+  },
+  PAYMENT: {
+    READ: "payment:read",
+    CREATE: "payment:create",
+    UPDATE: "payment:update",
+    DELETE: "payment:delete",
   },
   GROUP: {
     READ: "group:read",

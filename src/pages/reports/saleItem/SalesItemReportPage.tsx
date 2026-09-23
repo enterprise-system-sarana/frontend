@@ -352,6 +352,11 @@ const SalesItemReportPage = () => {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
+            showSearch={false}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={(value) => { setPage(1); setStartDate(value); }}
+            onEndDateChange={(value) => { setPage(1); setEndDate(value); }}
             filterGroups={filterGroups}
             filterValues={filterValues}
             onFilterChange={handleSearchFilterChange}

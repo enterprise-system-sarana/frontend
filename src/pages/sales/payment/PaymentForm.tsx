@@ -8,13 +8,18 @@ import {
     DialogTitle,
 } from "@/components/ui/dialog";
 import { useEffect } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import {
     WalletCards,
     X,
 } from "lucide-react";
+import { toast } from "sonner";
 
 import { Status } from "@/types/enum/status";
 import { usePayment } from "@/hooks/sales/usePayment";
+import { useSale } from "@/hooks/sales/useSale";
+import { useProduct } from "@/hooks/product/useProduct";
+import { useProductSerial } from "@/hooks/product/useProductSerial";
 import type { PaymentRequest, PaymentResponse } from "@/types/sales/Payment";
 import { useBank } from "@/hooks/finance/useBank";
 import { FieldGroup } from "@/components/ui/field";
@@ -28,6 +33,7 @@ type FormPaymentProps = {
     purchaseId?: number;
     amount?: number;
     mode?: "sale" | "purchase";
+    orderRef?: string;
     onPurchasePayment?: (purchaseId: number) => Promise<void> | void;
     onPaymentSubmit?: (request: PaymentRequest) => Promise<boolean | void> | boolean | void;
     banks?: Array<{ id: number; name?: string; bankName?: string; accountNumber?: string }>;
@@ -41,12 +47,15 @@ const PaymentForm = ({
     purchaseId,
     amount,
     mode = "sale",
+    orderRef,
     onPurchasePayment,
     onPaymentSubmit,
     banks = [],
 }: FormPaymentProps) => {
+    const queryClient = useQueryClient();
     const { mutate: createPaymentMutate, isPending: isCreating } = usePayment.createPayment();
     const { mutate: updatePaymentMutate, isPending: isUpdating } = usePayment.updatePayment();
+    const completeSale = useSale.Complete();
     const { data: bankData } = useBank.useGetAllBank({ page: 1, size: 100 });
 
     const bankOptions = (bankData?.payload?.data || banks).map((b: { id: number; name?: string; bankName?: string; accountNumber?: string }) => ({
@@ -99,7 +108,21 @@ const PaymentForm = ({
                 form.reset();
                 return;
             }
-            const handleSuccess = () => {
+            const handleSuccess = async () => {
+                if (mode === "sale" && saleId && saleId > 0) {
+                    try {
+                        await completeSale.mutateAsync(saleId);
+                        await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+                        await queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all });
+                    } catch (error: any) {
+                        const errorMsg = error?.response?.data?.message ||
+                            (typeof error?.response?.data === "string" ? error.response.data : null) ||
+                            error?.message ||
+                            "Sale completion failed after payment.";
+                        toast.error(errorMsg);
+                    }
+                }
+
                 setOpen(false);
                 form.reset();
                 if (mode === "purchase" && purchaseId) {
@@ -125,7 +148,7 @@ const PaymentForm = ({
     const dueAmount = Number(amount || payment?.amount || form.getFieldValue("amount") || 0);
     const enteredAmount = Number(form.getFieldValue("amount") || 0);
     const remainingAmount = Math.max(0, dueAmount - enteredAmount);
-    const orderLabel = payment?.saleNo || saleId || purchaseId;
+    const orderLabel = orderRef || payment?.saleNo || saleId || purchaseId || "New";
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>

@@ -16,9 +16,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import PosReceiptModal, { type PosReceiptData } from "./components/PosReceiptModal";
-import { Hash } from "lucide-react";
+import { Hash, RotateCcw } from "lucide-react";
 import { toast } from "sonner";
+import ReturnSaleModal from "./components/ReturnSaleModal";
 
 function formatCurrency(val: number) {
   return new Intl.NumberFormat("en-US", {
@@ -64,7 +64,9 @@ export const SaleDetailModal = ({
   );
 
   const { mutate: completeSaleMutate, isPending: isCompleting } = useSale.Complete();
+  const { mutate: returnSaleMutate, isPending: isReturning } = useSale.ReturnSale();
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [openReturnModal, setOpenReturnModal] = useState(false);
 
   const sale: SaleResponse | undefined =
     data?.payload?.data ||
@@ -130,7 +132,28 @@ export const SaleDetailModal = ({
     statusUpper === "PENDING" ||
     statusUpper === "ACT" ||
     statusUpper === "ACTIVE";
+  const isCompleted = statusUpper === "COMPLETED";
   const isPaid = (sale?.paymentStatus || "").toUpperCase() === "PAID";
+
+  const handleReturn = (reason: string) => {
+    if (!sale?.id) return;
+    returnSaleMutate(sale.id, {
+      onSuccess: () => {
+        toast.success(`Sale #${sale.reference} has been returned.`);
+        setOpenReturnModal(false);
+        onOpenChange(false);
+      },
+      onError: (err: any) => {
+        const msg =
+          err?.response?.data?.message ||
+          (typeof err?.response?.data === "string" ? err.response.data : null) ||
+          err?.message ||
+          "Failed to return sale. Please try again.";
+        toast.error(msg);
+      },
+    });
+    void reason; // reserved for future backend support
+  };
 
   const receiptData: PosReceiptData | null = sale
     ? {
@@ -138,7 +161,7 @@ export const SaleDetailModal = ({
       saleDate:
         sale.saleDate || (sale.createdAt ? formatDate(sale.createdAt) : ""),
       storeName: sale.storeName || "Main Retail Store",
-      customerName: sale.customerName ,
+      customerName: sale.customerName,
       items: items.map((it) => ({
         name: it.productName || `Product #${it.productId}`,
         price: it.price,
@@ -409,6 +432,18 @@ export const SaleDetailModal = ({
                   Print
                 </Button>
 
+                {canUpdate && isCompleted && (
+                  <Button
+                    type="button"
+                    onClick={() => setOpenReturnModal(true)}
+                    disabled={isReturning}
+                    className="flex items-center gap-1.5 bg-amber-500 hover:bg-amber-600 text-white px-5 rounded-lg font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-sm"
+                  >
+                    <RotateCcw className="h-3.5 w-3.5" />
+                    Return
+                  </Button>
+                )}
+
                 {canUpdate && isPending && (
                   <Button
                     type="button"
@@ -436,12 +471,15 @@ export const SaleDetailModal = ({
         </DialogContent>
       </Dialog>
 
-      {/* Printable Receipt Modal */}
-      {receiptData && (
-        <PosReceiptModal
-          isOpen={isReceiptOpen}
-          onClose={() => setIsReceiptOpen(false)}
-          data={receiptData}
+      {/* Return Sale Confirmation Modal */}
+      {sale && (
+        <ReturnSaleModal
+          open={openReturnModal}
+          onOpenChange={setOpenReturnModal}
+          saleReference={sale.reference}
+          grandTotal={sale.grandTotal}
+          onConfirm={handleReturn}
+          isPending={isReturning}
         />
       )}
     </>

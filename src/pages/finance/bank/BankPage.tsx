@@ -25,6 +25,8 @@ export const BankPage = () => {
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.BANK.CREATE);
     const canRead = Can(PERMISSION.BANK.READ);
+    const canUpdate = Can(PERMISSION.BANK.UPDATE);
+    const canDelete = Can(PERMISSION.BANK.DELETE);
 
     const [open, setOpen] = useState(false);
     const [bank, setBank] = useState<BankResponse | null>(null);
@@ -94,11 +96,13 @@ export const BankPage = () => {
     }, [searchedBanks, filterValues]);
 
     const handleEdit = (b: BankResponse) => {
+        if (!canUpdate) return;
         setBank(b);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = data?.payload?.data?.find(
             (u: BankResponse) => u.id === id
         );
@@ -126,8 +130,8 @@ export const BankPage = () => {
             BankColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
-                // canEdit: canUpdate,
-                // canDelete: canDelete,
+                canEdit: canUpdate,
+                canDelete: canDelete,
             }),
         []
     );

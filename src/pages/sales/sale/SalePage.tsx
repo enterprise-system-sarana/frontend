@@ -20,6 +20,8 @@ import { ROUTERS } from "@/constants/Route";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { CustomerResponse } from "@/types/sales/Customer";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
+import ReturnSaleModal from "./components/ReturnSaleModal";
+import { toast } from "sonner";
 
 const SalePage = () => {
   const navigate = useNavigate();
@@ -35,6 +37,8 @@ const SalePage = () => {
   const [openDetailModal, setOpenDetailModal] = useState(false);
   const [paymentSale, setPaymentSale] = useState<SaleResponse | null>(null);
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
+  const [returningSale, setReturningSale] = useState<SaleResponse | null>(null);
+  const [openReturnModal, setOpenReturnModal] = useState(false);
 
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
@@ -53,8 +57,14 @@ const SalePage = () => {
   const { data: customerData } = useCustomer.useGetAllCustomer();
   const { data: storeData } = useStore.useGetAllStore();
 
-  const customers = customerData?.payload?.data || [];
-  const stores = storeData?.payload?.data || [];
+  const customers = useMemo(
+    () => customerData?.payload?.data ?? [],
+    [customerData],
+  );
+  const stores = useMemo(
+    () => storeData?.payload?.data ?? [],
+    [storeData],
+  );
 
   const { data, isError, isLoading } = useSale.GetAll({
     page,
@@ -70,7 +80,7 @@ const SalePage = () => {
   const { mutate: deleteSaleMutate } = useSale.Delete();
   const { mutate: completeSaleMutate } = useSale.Complete();
   const { mutate: cancelSaleMutate } = useSale.Cancel();
-  const { mutate: returnSaleMutate } = useSale.ReturnSale();
+  const { mutate: returnSaleMutate, isPending: isReturning } = useSale.ReturnSale();
 
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
 
@@ -85,7 +95,7 @@ const SalePage = () => {
       {
         key: "customerId",
         placeholder: "Filter by Customer",
-        allLabel: "All Customers",
+        allLabel: "All",
         options: customers.map((cust: CustomerResponse) => ({
           label: cust.name,
           value: String(cust.id),
@@ -94,7 +104,7 @@ const SalePage = () => {
       {
         key: "storeId",
         placeholder: "Filter by Store",
-        allLabel: "All Stores",
+        allLabel: "All",
         options: stores.map((store: StoreResponse) => ({
           label: store.name,
           value: String(store.id),
@@ -103,7 +113,7 @@ const SalePage = () => {
       {
         key: "status",
         placeholder: "Filter by Status",
-        allLabel: "All Statuses",
+        allLabel: "All",
         options: [
           { label: "Pending", value: "PENDING" },
           { label: "Completed", value: "COMPLETED" },
@@ -156,6 +166,7 @@ const SalePage = () => {
   };
 
   const handleEdit = (selectedSale: SaleResponse) => {
+    if (!canUpdate) return;
     navigate(ROUTERS.SALE_EDIT.replace(":id", String(selectedSale.id)));
   };
 
@@ -178,7 +189,30 @@ const SalePage = () => {
   };
 
   const handleReturn = (id: number) => {
-    returnSaleMutate(id);
+    const selected = data?.payload?.data?.find((s: SaleResponse) => s.id === id);
+    if (selected) {
+      setReturningSale(selected);
+      setOpenReturnModal(true);
+    }
+  };
+
+  const handleReturnConfirm = (_reason: string) => {
+    if (!returningSale?.id) return;
+    returnSaleMutate(returningSale.id, {
+      onSuccess: () => {
+        toast.success(`Sale #${returningSale.reference} has been returned.`);
+        setOpenReturnModal(false);
+        setReturningSale(null);
+      },
+      onError: (err: any) => {
+        const msg =
+          err?.response?.data?.message ||
+          (typeof err?.response?.data === "string" ? err.response.data : null) ||
+          err?.message ||
+          "Failed to return sale. Please try again.";
+        toast.error(msg);
+      },
+    });
   };
 
   const handlePayment = (selectedSale: SaleResponse) => {
@@ -280,6 +314,15 @@ const SalePage = () => {
         mode="sale"
         saleId={paymentSale?.id}
         amount={paymentSale?.dueAmount}
+      />
+
+      <ReturnSaleModal
+        open={openReturnModal}
+        onOpenChange={setOpenReturnModal}
+        saleReference={returningSale?.reference}
+        grandTotal={returningSale?.grandTotal}
+        onConfirm={handleReturnConfirm}
+        isPending={isReturning}
       />
     </>
   );

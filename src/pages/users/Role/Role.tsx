@@ -20,9 +20,18 @@ import { useRole } from "@/hooks/users/useRole";
 import { ROUTERS } from "@/constants/Route";
 import { RoleColumns } from "./RoleColumn";
 import FormRole from "./RoleForm";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 
 const RolePage = () => {
+  const { Can } = usePermission();
+  const canCreate = Can(PERMISSION.ROLES.CREATE);
+  const canRead = Can(PERMISSION.ROLES.READ);
+  const canUpdate = Can(PERMISSION.ROLES.UPDATE);
+  const canDelete = Can(PERMISSION.ROLES.DELETE);
+
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
   const [role, setRole] = useState<RoleResponse>();
@@ -93,11 +102,13 @@ const RolePage = () => {
   }, [searchRole, filterValues]);
 
   const handleEdit = (r: RoleResponse) => {
+    if (!canUpdate) return;
     setRole(r);
     setOpen(true);
   };
 
   const handleDelete = (id: number) => {
+    if (!canDelete) return;
     const selected = data?.payload?.data?.find(
       (u: RoleResponse) => u.id === id,
     );
@@ -151,6 +162,8 @@ const RolePage = () => {
     printTable("Roles List");
   };
 
+  if (!canRead) return <AccessDenied resource="roles" showBackButton />;
+
   return (
     <>
       <div className="space-y-4">
@@ -158,10 +171,11 @@ const RolePage = () => {
         <PageHeader
           title="Roles"
           featureName="Role"
-          onCreate={() => {
+          onCreate={canCreate ? () => {
             setRole(null);
             setOpen(true);
-          }}
+          } : undefined}
+          hideButton={!canCreate}
         />
 
         {/* Main Card with Toolbar & Table */}

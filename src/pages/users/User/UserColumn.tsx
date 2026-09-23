@@ -6,6 +6,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { SortableHeader } from "@/utils/sort-table-header";
 import { formatDate } from "@/utils/formatDate";
 import type { TranslationKey } from "@/i18n/locales/en";
+import { ImageCell } from "@/components/file/ImageCell";
 
 interface UserColumnsProps {
     onEdit: (user: UserResponse) => void;
@@ -22,24 +23,28 @@ export const UserColumns = ({
     canDelete = true,
     t,
 }: UserColumnsProps): ColumnDef<UserResponse>[] => [
-
         {
+            id: "user",
             accessorKey: "username",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("nav.user") : "User"} />,
             cell: ({ row }) => {
-                const username = row.original.username || "User";
-                const initial = username.slice(0, 2).toUpperCase();
+                const user = row.original;
+                const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username;
+
                 return (
-                    <div className="flex items-center gap-3">
-                        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-xs font-bold text-primary border border-primary/20">
-                            {initial}
-                        </div>
+                    <div className="flex items-center gap-3 min-w-[220px]">
+                        <ImageCell
+                            fileName={user.profileImage}
+                            name={fullName}
+                            bucketName="user"
+                            className="h-10 w-10 rounded-lg shadow-sm flex-shrink-0"
+                        />
                         <div className="flex flex-col min-w-0">
-                            <span className="font-semibold text-foreground leading-tight truncate">
-                                {username}
+                            <span className="text-sm font-semibold text-foreground truncate">
+                                {fullName || "-"}
                             </span>
-                            <span className="text-xs text-muted-foreground truncate">
-                                {row.original.email || "-"}
+                            <span className="text-[11px] text-muted-foreground font-mono truncate">
+                                {user.username || "-"}
                             </span>
                         </div>
                     </div>
@@ -47,6 +52,19 @@ export const UserColumns = ({
             },
         },
         {
+            id: "email",
+            accessorKey: "email",
+            header: ({ column }) => <SortableHeader column={column} title={"Email"} />,
+            cell: ({ row }) => <span className="text-xs text-[#566a7f]">{row.original.email || "-"}</span>,
+        },
+        {
+            id: "phone",
+            accessorKey: "phone",
+            header: ({ column }) => <SortableHeader column={column} title={"Phone"} />,
+            cell: ({ row }) => <span className="text-xs text-[#566a7f]">{row.original.phone || "-"}</span>,
+        },
+        {
+            id: "store",
             accessorKey: "storeName",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("nav.store") : "Store / Branch"} />,
             cell: ({ row }) => {
@@ -61,6 +79,7 @@ export const UserColumns = ({
             },
         },
         {
+            id: "roles",
             accessorKey: "roles",
             header: t ? t("nav.role") : "Roles",
             cell: ({ row }) => {
@@ -84,13 +103,13 @@ export const UserColumns = ({
             },
         },
         {
+            id: "status",
             accessorKey: "isActive",
             header: t ? t("common.status") : "Status",
-            cell: ({ row }) => {
-                return <StatusBadge status={row.original.isActive} />;
-            },
+            cell: ({ row }) => <StatusBadge status={row.original.isActive} />,
         },
         {
+            id: "createdAt",
             accessorKey: "createdAt",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : "Created Date"} />,
             cell: ({ row }) => (
@@ -100,6 +119,7 @@ export const UserColumns = ({
             ),
         },
         {
+            id: "actions",
             accessorKey: "Action",
             header: t ? t("common.action") : "Action",
             enableHiding: false,
@@ -109,10 +129,10 @@ export const UserColumns = ({
                 }
                 return (
                     <TableActions
-              onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
-              t={t}
-            />
+                        onEdit={() => onEdit(row.original)}
+                        onDelete={() => onDelete(row.original.id)}
+                        t={t}
+                    />
                 );
             },
         },

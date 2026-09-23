@@ -6,7 +6,6 @@ export { default as VariantTypePage } from "@/pages/product/variantType/VariantT
 export { default as VariantValuePage } from "@/pages/product/variantValue/VariantValuePage";
 export { default as ProductPage } from "@/pages/product/product/ProductPage";
 export { default as ProductForm } from "@/pages/product/product/ProductForm";
-export { default as ProductDetail } from "@/pages/product/product/ProductDetail";
 export { default as ProductDetailModal } from "@/pages/product/product/ProductDetailModal";
 export { HomePage as HhomePage } from "@/pages/home/Home";
 
@@ -53,6 +52,7 @@ export { default as CurrencyPage } from "@/pages/finance/currency/CurrencyPage";
 export { default as CustomerPage } from "@/pages/sales/customers/CustomerPage";
 export { default as SalePage } from "@/pages/sales/sale/SalePage";
 export { default as SaleForm } from "@/pages/sales/sale/SaleForm";
+export { default as SaleInvoicePage } from "@/pages/sales/sale/SaleInvoicePage";
 export { default as PaymentPage } from "@/pages/sales/payment/PaymentPage";
 // export { default as SaleDetail } from "@/pages/sales/sale/SaleDetail";
 export { default as SaleDetailModal } from "@/pages/sales/sale/SaleDetailModal";
