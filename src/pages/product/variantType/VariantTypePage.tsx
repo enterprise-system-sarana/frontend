@@ -11,8 +11,17 @@ import { useVariantType } from "@/hooks/product/useVariantType";
 import { Status } from "@/types/enum/status";
 import VariantTypeForm from "./VariantTypeForm";
 import { VariantTypeColumns } from "./VariantTypeColumn";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const VariantTypePage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.VARIANT_TYPE.CREATE);
+    const canRead = Can(PERMISSION.VARIANT_TYPE.READ);
+    const canUpdate = Can(PERMISSION.VARIANT_TYPE.UPDATE);
+    const canDelete = Can(PERMISSION.VARIANT_TYPE.DELETE);
+
     const [open, setOpen] = useState(false);
     const [variantType, setVariantType] = useState<VariantTypeResponse | null>(null);
     const [page, setPage] = useState(1);
@@ -82,11 +91,13 @@ const VariantTypePage = () => {
     }, [searchedVariantTypes, filterValues]);
 
     const handleEdit = (v: VariantTypeResponse) => {
+        if (!canUpdate) return;
         setVariantType(v);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = data?.payload?.data?.find(
             (u: VariantTypeResponse) => u.id === id
         );
@@ -130,6 +141,8 @@ const VariantTypePage = () => {
         printTable("Variant Types List");
     };
 
+    if (!canRead) return <AccessDenied resource="variant types" showBackButton />;
+
     return (
         <>
             <div className="space-y-4">
@@ -137,10 +150,11 @@ const VariantTypePage = () => {
                 <PageHeader
                     title="Variant Types"
                     featureName="Variant Type"
-                    onCreate={() => {
+                    onCreate={canCreate ? () => {
                         setVariantType(null);
                         setOpen(true);
-                    }}
+                    } : undefined}
+                    hideButton={!canCreate}
                 />
 
                 {/* Main Card with Toolbar & Table */}

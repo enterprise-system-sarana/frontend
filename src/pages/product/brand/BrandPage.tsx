@@ -11,8 +11,17 @@ import { PageHeader } from "@/components/ui/page-header";
 import { useSearch } from "@/utils/useSearch";
 import { PageFilter, type FilterGroup } from "@/utils/PageFilter";
 import { Status } from "@/types/enum/status";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const BrandPage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.BRAND.CREATE);
+    const canRead = Can(PERMISSION.BRAND.READ);
+    const canUpdate = Can(PERMISSION.BRAND.UPDATE);
+    const canDelete = Can(PERMISSION.BRAND.DELETE);
+
     const [open, setOpen] = useState(false);
     const [brand, setBrand] = useState<BrandResponse | null>(null);
     const [page, setPage] = useState(1);
@@ -81,11 +90,13 @@ const BrandPage = () => {
     }, [searchedBrands, filterValues]);
 
     const handleEdit = (b: BrandResponse) => {
+        if (!canUpdate) return;
         setBrand(b);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = data?.payload?.data?.find(
             (u: BrandResponse) => u.id === id
         );
@@ -130,6 +141,8 @@ const BrandPage = () => {
         printTable("Brands List");
     };
 
+    if (!canRead) return <AccessDenied resource="brands" showBackButton />;
+
     return (
         <>
             <div className="space-y-4">
@@ -137,10 +150,11 @@ const BrandPage = () => {
                 <PageHeader
                     title="Brands"
                     featureName="Brand"
-                    onCreate={() => {
+                    onCreate={canCreate ? () => {
                         setBrand(null);
                         setOpen(true);
-                    }}
+                    } : undefined}
+                    hideButton={!canCreate}
                 />
 
                 {/* Main Card with Toolbar & Table */}

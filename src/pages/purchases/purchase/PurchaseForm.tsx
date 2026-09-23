@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useStore as useFormStore } from "@tanstack/react-form";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
   Check,
@@ -105,8 +105,11 @@ function initials(name?: string) {
 
 export default function PurchaseForm() {
   const { id } = useParams<{ id: string }>();
+  const [searchParams] = useSearchParams();
   const isEditing = Boolean(id);
   const navigate = useNavigate();
+  const initialProductId = searchParams.get("productId");
+  const handledInitialProduct = useRef(false);
 
   /* ------------------------------- Load data ------------------------------ */
 
@@ -335,6 +338,28 @@ export default function PurchaseForm() {
         : [emptyItem()],
     });
   }, [purchaseDetail]);
+
+  /* -------------------------- Auto-Add Product --------------------------- */
+
+  useEffect(() => {
+    if (!isEditing && initialProductId && productList.length > 0 && !handledInitialProduct.current) {
+      const product = productList.find((p) => String(p.id) === initialProductId);
+      if (product) {
+        const cost = Number(product.costPrice ?? 0);
+        form.setFieldValue("items", [
+          {
+            ...emptyItem(),
+            productId: product.id,
+            productName: product.name,
+            cost,
+            price: Number(product.salePrice ?? 0),
+            subtotal: cost,
+          },
+        ]);
+        handledInitialProduct.current = true;
+      }
+    }
+  }, [isEditing, initialProductId, productList]);
 
   /* ------------------------------ Products ------------------------------- */
 

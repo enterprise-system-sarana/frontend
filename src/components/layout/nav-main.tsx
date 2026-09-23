@@ -126,6 +126,8 @@ export function NavMain({
 
   return (
     <>
+
+
       {groupedItems.map((group) => (
         <SidebarGroup key={group.label} className="space-y-0.5 py-1">
           <SidebarMenu className="space-y-0.5">
@@ -173,8 +175,8 @@ export function NavMain({
                         {ItemIcon && (
                           <ItemIcon
                             className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isDirectActive
-                                ? "text-primary"
-                                : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
+                              ? "text-primary"
+                              : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
                               }`}
                             strokeWidth={1.75}
                           />
@@ -192,6 +194,7 @@ export function NavMain({
                   </SidebarMenuItem>
                 );
               }
+
 
               // ----------------------------------------------------
               // 2. RENDER COLLAPSIBLE DROPDOWN (FOR ITEMS WITH SUB-ITEMS)
@@ -225,8 +228,8 @@ export function NavMain({
                         {item.icon && (
                           <item.icon
                             className={`h-5 w-5 shrink-0 transition-colors duration-200 ${hasActiveChild
-                                ? "text-primary"
-                                : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
+                              ? "text-primary"
+                              : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
                               }`}
                             strokeWidth={1.75}
                           />
@@ -241,8 +244,8 @@ export function NavMain({
                         )}
                         <ChevronRightIcon
                           className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 ${hasActiveChild
-                              ? "text-primary"
-                              : "text-sidebar-foreground/40"
+                            ? "text-primary"
+                            : "text-sidebar-foreground/40"
                             }`}
                         />
                       </SidebarMenuButton>
@@ -279,8 +282,8 @@ export function NavMain({
                                   {SubIcon ? (
                                     <SubIcon
                                       className={`h-4 w-4 shrink-0 transition-colors duration-150 ${isActive
-                                          ? "text-primary"
-                                          : "text-sidebar-foreground/45"
+                                        ? "text-primary"
+                                        : "text-sidebar-foreground/45"
                                         }`}
                                       strokeWidth={1.75}
                                     />

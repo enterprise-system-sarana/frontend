@@ -56,13 +56,13 @@ const data = {
           title: "List Product",
           url: ROUTERS.PRODUCT,
           icon: Box,
-          // permission: PERMISSION.PRODUCT.READ,
+          permission: PERMISSION.PRODUCT.READ,
         },
         {
           title: "Create Product",
           url: `${ROUTERS.PRODUCT}/create`,
           icon: PlusCircle,
-          // permission: PERMISSION.PRODUCT.CREATE,
+          permission: PERMISSION.PRODUCT.CREATE,
         },
       ],
     },
@@ -76,11 +76,13 @@ const data = {
           title: "Expense Type",
           url: ROUTERS.EXPENSE_TYPE,
           icon: LayoutGrid,
+          permission: PERMISSION.EXPENSES_TYPE.READ,
         },
         {
           title: "Expense",
           url: ROUTERS.EXPENSE,
           icon: CreditCard,
+          permission: PERMISSION.EXPENSE.READ,
         },
       ],
     },
@@ -93,31 +95,31 @@ const data = {
           title: "Category",
           url: ROUTERS.CATEGORY,
           icon: LayoutGrid,
-          // permission: PERMISSION.CATEGORY.READ,
+          permission: PERMISSION.CATEGORY.READ,
         },
         {
           title: "Brand",
           url: ROUTERS.BRAND,
           icon: Layers,
-          // permission: PERMISSION.PRODUCT.READ,
+          permission: PERMISSION.BRAND.READ,
         },
         {
           title: "Model",
           url: ROUTERS.MODEL,
           icon: Layers,
-          // permission: PERMISSION.PRODUCT.READ,
+          permission: PERMISSION.MODEL.READ,
         },
         {
           title: "Variant Type",
           url: ROUTERS.VARIANT_TYPE,
           icon: LayoutGrid,
-          // permission: PERMISSION.PRODUCT.READ,
+          permission: PERMISSION.VARIANT_TYPE.READ,
         },
         {
           title: "Variant Value",
           url: ROUTERS.VARIANT_VALUE,
           icon: Layers,
-          // permission: PERMISSION.PRODUCT.READ,
+          permission: PERMISSION.VARIANT_VALUE.READ,
         },
       ],
     },
@@ -131,25 +133,25 @@ const data = {
           title: "Supplier",
           url: ROUTERS.SUPPLIER,
           icon: Truck,
-          // permission: PERMISSION.SUPPLIER.READ,
+          permission: PERMISSION.SUPPLIER.READ,
         },
         {
           title: "Purchase",
           url: ROUTERS.PURCHASE,
           icon: ShoppingBag,
-          // permission: PERMISSION.PURCHASE.CREATE,
+          permission: PERMISSION.PURCHASE.READ,
         },
         {
           title: "Create Purchase",
           url: `${ROUTERS.PURCHASE}/create`,
           icon: PlusCircle,
-          // permission: PERMISSION.PURCHASE.CREATE,
+          permission: PERMISSION.PURCHASE.CREATE,
         },
         {
           title: "Purchase Payment",
           url: ROUTERS.PURCHASE_PAYMENT,
           icon: CreditCard,
-          // permission: PERMISSION.PURCHASE.CREATE,
+          permission: PERMISSION.PURCHASE.READ,
         },
       ],
     },
@@ -181,6 +183,7 @@ const data = {
           title: "Payments",
           url: ROUTERS.PAYMENT,
           icon: CreditCard,
+          permission: PERMISSION.PAYMENT.READ,
         },
         {
           title: "Quote",
@@ -303,10 +306,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
 
   const filteredNavMain = data.navMain
     .map((group) => {
-      const filteredItems = group.items?.filter((subItem: any) => {
+      const groupHasPermission = !group.permission || Can(group.permission);
+      const filteredItems = group.items?.filter((subItem) => {
         return !subItem.permission || Can(subItem.permission);
       });
-      return { ...group, items: filteredItems };
+      return {
+        ...group,
+        items: groupHasPermission ? filteredItems : [],
+      };
     })
     .filter((group) => !group.items || group.items.length > 0);
 

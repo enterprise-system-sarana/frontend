@@ -416,7 +416,7 @@ const ProductForm = () => {
                                               );
                                             }
                                           }}
-                                          className={`inline-flex items-center justify-center px-4 py-2 rounded-full text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer select-none border ${isSelected
+                                          className={`inline-flex items-center justify-center px-4 py-2  rounded-sm text-xs sm:text-sm font-medium transition-all duration-200 cursor-pointer select-none border ${isSelected
                                             ? "border-primary bg-primary text-primary-foreground font-semibold shadow-xs ring-2 ring-primary/20"
                                             : "border-border/70 bg-card/60 hover:bg-muted/70 hover:border-foreground/30 text-foreground/90 hover:text-foreground"
                                             }`}

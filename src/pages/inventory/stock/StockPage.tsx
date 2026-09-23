@@ -184,7 +184,7 @@ export const StockPage = () => {
             {/* Top Header */}
             <PageHeader
                 title="Stock Inventory"
-                description="Manage and track real-time stock levels across all stores and products."
+                // description="Manage and track real-time stock levels across all stores and products."
             />
 
             {/* Main Card with Toolbar & Table */}

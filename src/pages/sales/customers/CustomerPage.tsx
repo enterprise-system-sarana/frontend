@@ -17,8 +17,17 @@ import { useCustomer } from "@/hooks/sales/useCustomer";
 import FormCustomer from "./CustomerForm";
 import { CustomerColumns } from "./CustomerColumn";
 import { Status } from "@/types/enum/status";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 export const CustomerPage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.CUSTOMER.CREATE);
+    const canRead = Can(PERMISSION.CUSTOMER.READ);
+    const canUpdate = Can(PERMISSION.CUSTOMER.UPDATE);
+    const canDelete = Can(PERMISSION.CUSTOMER.DELETE);
+
     const [open, setOpen] = useState(false);
     const [customer, setCustomer] = useState<CustomerResponse | null>(null);
     const [page, setPage] = useState(1);
@@ -87,11 +96,13 @@ export const CustomerPage = () => {
     }, [searchedCustomers, filterValues]);
 
     const handleEdit = (c: CustomerResponse) => {
+        if (!canUpdate) return;
         setCustomer(c);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = data?.payload?.data?.find(
             (u: CustomerResponse) => u.id === id
         );
@@ -137,9 +148,7 @@ export const CustomerPage = () => {
         printTable("Customers List");
     };
 
-    // if (!canRead) {
-    //     return <AccessDenied resource="customers" showBackButton />;
-    // }
+    if (!canRead) return <AccessDenied resource="customers" showBackButton />;
 
     return (
         <>
@@ -148,10 +157,11 @@ export const CustomerPage = () => {
                 <PageHeader
                     title="Customers"
                     featureName="Customer"
-                    onCreate={() => {
+                    onCreate={canCreate ? () => {
                         setCustomer(null);
                         setOpen(true);
-                    }}
+                    } : undefined}
+                    hideButton={!canCreate}
                 />
 
                 {/* Main Card with Toolbar & Table */}

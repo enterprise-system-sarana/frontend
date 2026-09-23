@@ -8,7 +8,7 @@ import {
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/store/useAuth";
 import { useEffect, useState } from "react";
-import { ChevronDown, LogOut, BadgeCheck, CreditCard, Search, Store as StoreIcon, PlusCircle, Monitor, Maximize, Mail, Bell, Settings } from "lucide-react";
+import { ChevronDown, LogOut, BadgeCheck, CreditCard, Search, Store as StoreIcon, PlusCircle, Monitor, Maximize, Mail, Bell, Settings, AlertTriangle } from "lucide-react";
 import { useAppDispatch } from "@/store/store";
 import { logout } from "@/store/authSlice";
 import { AuthService } from "@/services/auth/auth.service";
@@ -27,6 +27,8 @@ import { KeyRound } from "lucide-react";
 import { ROUTERS } from "@/constants/Route";
 import { Button } from "@/components/ui/button";
 import { useStore } from "@/hooks/inventory/useStore";
+import { useProduct } from "@/hooks/product/useProduct";
+import type { ProductResponse } from "@/types/product/Product";
 
 const DashboardLayout = () => {
   const { user } = useAuth();
@@ -39,7 +41,14 @@ const DashboardLayout = () => {
   const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
 
   const { data: stores } = useStore.useGetAllStore({ page: 0, size: 1000 });
+  const { data: products } = useProduct.useGetAllProduct({ page: 1, size: 1000 });
   const storeOptions = stores?.payload?.data ?? stores?.data ?? [] as any[];
+  const productOptions = (products?.payload?.data ?? products?.data ?? []) as ProductResponse[];
+  const stockAlerts = productOptions.filter((product) => {
+    const quantity = Number(product.qty ?? product.quantity ?? 0);
+    const reorderLevel = Number(product.reorderLevel ?? 0);
+    return quantity <= reorderLevel;
+  });
   const selectedStore =
     storeOptions.find((store: any) => Number(store.id) === Number(selectedStoreId)) ??
     storeOptions[0] ??
@@ -125,77 +134,12 @@ const DashboardLayout = () => {
             {/* Left side: Sidebar Trigger + Search */}
             <div className="flex items-center gap-3 md:gap-6 flex-1">
               <SidebarTrigger className="h-8 w-8 rounded-full bg-orange-400 hover:bg-orange-500 hover:text-white text-white flex items-center justify-center transition-colors shadow-sm" />
-
-              {/* Search Input */}
-              {/* <div className="hidden sm:flex relative max-w-sm w-full items-center">
-                <Search
-                  className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground cursor-pointer"
-                  onClick={handleGlobalSearch}
-                />
-                <input
-                  type="text"
-                  value={searchQuery}
-                  onChange={(event) => setSearchQuery(event.target.value)}
-                  onKeyDown={(event) => {
-                    if (event.key === "Enter") {
-                      handleGlobalSearch();
-                    }
-                  }}
-                  placeholder="Search"
-                  className="h-9 w-full rounded-md border border-input bg-transparent pl-9 pr-12 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                />
-                <button
-                  type="button"
-                  onClick={handleGlobalSearch}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1 bg-muted/60 border px-1.5 py-0.5 rounded text-[10px] text-muted-foreground font-medium hover:bg-muted transition-colors"
-                >
-                  <span>⌘</span>
-                  <span>K</span>
-                </button>
-              </div> */}
             </div>
 
             {/* Right side: Actions & User Menu */}
             <div className="flex items-center gap-2 sm:gap-3">
 
-              {/* Store Selector */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <button
-                    type="button"
-                    className="hidden md:flex items-center gap-2 px-3 py-1.5 border rounded-md cursor-pointer hover:bg-muted transition-colors text-sm font-medium"
-                  >
-                    <StoreIcon className="h-4 w-4 text-emerald-700" />
-                    <span>{selectedStore?.name ?? "Select store"}</span>
-                    <ChevronDown className="h-3 w-3 text-muted-foreground" />
-                  </button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  {storeOptions.length > 0 ? (
-                    storeOptions.map((store: any) => (
-                      <DropdownMenuItem
-                        key={store.id}
-                        onClick={() => setSelectedStoreId(Number(store.id))}
-                        className={Number(selectedStoreId) === Number(store.id) ? "bg-muted" : ""}
-                      >
-                        {store.name}
-                      </DropdownMenuItem>
-                    ))
-                  ) : (
-                    <DropdownMenuItem disabled>No stores found</DropdownMenuItem>
-                  )}
-                </DropdownMenuContent>
-              </DropdownMenu>
 
-              {/* Add New Button */}
-              {/* <Button
-                size="sm"
-                onClick={handleAddNew}
-                className="hidden sm:flex bg-orange-400 hover:bg-orange-500 text-white gap-1.5 h-8 px-3 rounded-md"
-              >
-                <PlusCircle className="h-4 w-4" />
-                Add New
-              </Button> */}
 
               {/* POS Button */}
               <Button size="sm" onClick={() => window.open(ROUTERS.SALE_CREATE, "_blank")} className="hidden sm:flex bg-[#0e4091] hover:bg-slate-800 text-white gap-1.5 h-8 px-4 rounded-md cursor-pointer">
@@ -206,27 +150,65 @@ const DashboardLayout = () => {
               <Separator orientation="vertical" className="h-6 bg-border/60 mx-1 hidden sm:block" />
 
               <LanguageToggle />
-              {/* 
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md hidden md:flex">
+
+              {/* <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md hidden md:flex">
                 <Maximize className="h-4 w-4" />
               </Button> */}
 
-              {/* <div className="relative hidden md:flex">
-                <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md">
-                  <Mail className="h-4 w-4" />
-                </Button>
-                <span className="absolute top-0 right-0 h-3.5 w-3.5 rounded-full bg-red-500 text-white text-[9px] font-bold flex items-center justify-center border border-white">
-                  1
-                </span>
-              </div> */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    aria-label={`${stockAlerts.length} stock alerts`}
+                    className="relative hidden h-8 w-8 rounded-md text-muted-foreground hover:bg-muted md:flex"
+                  >
+                    <Mail className="h-4 w-4" />
+                    {stockAlerts.length > 0 && (
+                      <span className="absolute right-0 top-0 flex h-3.5 w-3.5 items-center justify-center rounded-full border border-white bg-red-500 text-[9px] font-bold text-white">
+                        {stockAlerts.length > 99 ? "99+" : stockAlerts.length}
+                      </span>
+                    )}
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-72">
+                  <DropdownMenuLabel>
+                    Stock alerts ({stockAlerts.length})
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {stockAlerts.length > 0 ? (
+                    stockAlerts.slice(0, 8).map((product) => {
+                      const quantity = Number(product.qty ?? product.quantity ?? 0);
+                      return (
+                        <DropdownMenuItem
+                          key={product.id}
+                          className="cursor-pointer gap-2"
+                          onClick={() => navigate(`${ROUTERS.PURCHASE_CREATE}?productId=${product.id}`)}
+                        >
+                          <AlertTriangle className="h-4 w-4 shrink-0 text-red-500" />
 
-              {/* <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md hidden md:flex">
-                <Bell className="h-4 w-4" />
-              </Button>
+                          <span className="min-w-0 flex-1 truncate">{product.name}</span>
+                          <span className="text-xs text-muted-foreground">{quantity} left</span>
+                        </DropdownMenuItem>
+                      );
+                    })
+                  ) : (
+                    <DropdownMenuItem disabled>No stock alerts</DropdownMenuItem>
+                  )}
+                  {stockAlerts.length > 8 && (
+                    <>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="cursor-pointer justify-center text-xs text-muted-foreground"
+                        onClick={() => navigate(ROUTERS.PRODUCT)}
+                      >
+                        View all alerts
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
 
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-muted-foreground hover:bg-muted rounded-md hidden md:flex">
-                <Settings className="h-4 w-4" />
-              </Button> */}
 
               {/* User Menu */}
               <DropdownMenu>

@@ -13,8 +13,17 @@ import type { VariantTypeResponse } from "@/types/product/VariantType";
 import { Status } from "@/types/enum/status";
 import VariantValueForm from "./VariantValueForm";
 import { VariantValueColumns } from "./VariantValueColumn";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const VariantValuePage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.VARIANT_VALUE.CREATE);
+    const canRead = Can(PERMISSION.VARIANT_VALUE.READ);
+    const canUpdate = Can(PERMISSION.VARIANT_VALUE.UPDATE);
+    const canDelete = Can(PERMISSION.VARIANT_VALUE.DELETE);
+
     const [open, setOpen] = useState(false);
     const [variantValue, setVariantValue] = useState<VariantValueResponse | null>(null);
     const [page, setPage] = useState(1);
@@ -103,11 +112,13 @@ const VariantValuePage = () => {
     }, [searchedVariantValues, filterValues]);
 
     const handleEdit = (vv: VariantValueResponse) => {
+        if (!canUpdate) return;
         setVariantValue(vv);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = data?.payload?.data?.find((u: VariantValueResponse) => u.id === id);
         if (selected) {
             setVariantValue(selected);
@@ -149,6 +160,8 @@ const VariantValuePage = () => {
         printTable("Variant Values List");
     };
 
+    if (!canRead) return <AccessDenied resource="variant values" showBackButton />;
+
     return (
         <>
             <div className="space-y-4">
@@ -156,10 +169,11 @@ const VariantValuePage = () => {
                 <PageHeader
                     title="Variant Values"
                     featureName="Variant Value"
-                    onCreate={() => {
+                    onCreate={canCreate ? () => {
                         setVariantValue(null);
                         setOpen(true);
-                    }}
+                    } : undefined}
+                    hideButton={!canCreate}
                 />
 
                 {/* Main Card with Toolbar & Table */}

@@ -170,10 +170,15 @@ const ReportPage = () => {
       </div>
 
       <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
-        <div className="border-b p-4">
+        {/* <div className="border-b p-4">
           <PageFilter
             search={search}
             onSearchChange={setSearch}
+            showSearch={false}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={(value) => { setPage(1); setStartDate(value); }}
+            onEndDateChange={(value) => { setPage(1); setEndDate(value); }}
             filterGroups={filterGroups}
             filterValues={filterValues}
             onFilterChange={handleSearchFilterChange}
@@ -189,12 +194,12 @@ const ReportPage = () => {
               setPaymentStatus("all");
             }}
           />
-        </div>
+        </div> */}
 
         <div className="flex flex-col gap-3 border-b p-4">
-          <div>
+          {/* <div>
             <h2 className="text-lg font-semibold">Sales Transactions</h2>
-          </div>
+          </div> */}
 
           <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
             <input
@@ -223,7 +228,7 @@ const ReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Stores</option>
+              <option value="all">All</option>
               {stores.map((store: any) => (
                 <option key={store.id} value={store.id}>{store.name}</option>
               ))}
@@ -236,7 +241,7 @@ const ReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Customers</option>
+              <option value="all">All</option>
               {customers.map((customer: any) => (
                 <option key={customer.id} value={customer.id}>{customer.name}</option>
               ))}

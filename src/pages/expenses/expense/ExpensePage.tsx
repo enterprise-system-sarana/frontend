@@ -12,8 +12,17 @@ import FormExpense from "./ExpenseForm";
 import { ExpenseColumns } from "./ExpenseColumn";
 import { useExpense } from "@/hooks/expense/useExpense";
 import { useExpenseType } from "@/hooks/expense/useExpenseType";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 const ExpensePage = () => {
+    const { Can } = usePermission();
+    const canCreate = Can(PERMISSION.EXPENSE.CREATE);
+    const canRead = Can(PERMISSION.EXPENSE.READ);
+    const canUpdate = Can(PERMISSION.EXPENSE.UPDATE);
+    const canDelete = Can(PERMISSION.EXPENSE.DELETE);
+
     const [open, setOpen] = useState(false);
     const [expense, setExpense] = useState<ExpenseResponse | null>(null);
     const [page, setPage] = useState(1);
@@ -109,11 +118,13 @@ const ExpensePage = () => {
     }, [searchedExpenses, filterValues]);
 
     const handleEdit = (exp: ExpenseResponse) => {
+        if (!canUpdate) return;
         setExpense(exp);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
+        if (!canDelete) return;
         const selected = expenseList.find((u) => u.id === id);
         if (selected) {
             setExpense(selected);
@@ -156,6 +167,8 @@ const ExpensePage = () => {
         printTable("Expense List");
     };
 
+    if (!canRead) return <AccessDenied resource="expenses" showBackButton />;
+
     return (
         <>
             <div className="space-y-4">
@@ -163,10 +176,11 @@ const ExpensePage = () => {
                 <PageHeader
                     title="Expenses"
                     featureName="Expense"
-                    onCreate={() => {
+                    onCreate={canCreate ? () => {
                         setExpense(null);
                         setOpen(true);
-                    }}
+                    } : undefined}
+                    hideButton={!canCreate}
                 />
 
                 {/* Main Card with Toolbar & Table */}

@@ -23,8 +23,17 @@ import { toast } from "sonner";
 import { useModel } from "@/hooks/product/useModel";
 import type { ModelResponse } from "@/types/product/Model";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { usePermission } from "@/utils/UsePermission";
+import { PERMISSION } from "@/constants/Permission";
+import { AccessDenied } from "@/components/ui/access-denied";
 
 export const ProductPage = () => {
+  const { Can } = usePermission();
+  const canCreate = Can(PERMISSION.PRODUCT.CREATE);
+  const canRead = Can(PERMISSION.PRODUCT.READ);
+  const canUpdate = Can(PERMISSION.PRODUCT.UPDATE);
+  const canDelete = Can(PERMISSION.PRODUCT.DELETE);
+
   const navigate = useNavigate();
   const { t } = useLanguage();
   const [selectedProduct, setSelectedProduct] =
@@ -62,7 +71,7 @@ export const ProductPage = () => {
   const filterGroups: FilterGroup[] = useMemo(() => {
     const groups: FilterGroup[] = [
       {
-        key: "status",
+        key: " ",
         label: t("common.status"),
         options: [
           { label: t("common.active"), value: Status.ACTIVE },
@@ -143,10 +152,12 @@ export const ProductPage = () => {
   };
 
   const handleEdit = (product: ProductResponse) => {
+    if (!canUpdate) return;
     navigate(ROUTERS.PRODUCT_EDIT.replace(":id", String(product.id)));
   };
 
   const handleDelete = (id: number) => {
+    if (!canDelete) return;
     const selected = productList.find((p) => p.id === id);
     if (selected) {
       setSelectedProduct(selected);
@@ -192,6 +203,8 @@ export const ProductPage = () => {
     printTable("Products List");
   };
 
+  if (!canRead) return <AccessDenied resource="products" showBackButton />;
+
   return (
     <>
       <div className="space-y-4">
@@ -199,7 +212,8 @@ export const ProductPage = () => {
         <PageHeader
           title={t("product.title")}
           featureName={t("nav.product")}
-          onCreate={handleCreate}
+          onCreate={canCreate ? handleCreate : undefined}
+          hideButton={!canCreate}
         />
 
         {/* Main Card with Toolbar & Table */}

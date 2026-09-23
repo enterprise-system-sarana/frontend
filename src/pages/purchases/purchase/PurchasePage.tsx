@@ -80,7 +80,7 @@ const PurchasePage = () => {
       {
         key: "supplierId",
         placeholder: "Filter by Supplier",
-        allLabel: "All Suppliers",
+        allLabel: "All",
         options: suppliers.map((sup: SupplierResponse) => ({
           label: sup.name,
           value: String(sup.id),
@@ -89,7 +89,7 @@ const PurchasePage = () => {
       {
         key: "storeId",
         placeholder: "Filter by Store",
-        allLabel: "All Stores",
+        allLabel: "All",
         options: stores.map((store: StoreResponse) => ({
           label: store.name,
           value: String(store.id),
@@ -98,7 +98,7 @@ const PurchasePage = () => {
       {
         key: "status",
         placeholder: "Filter by Status",
-        allLabel: "All Statuses",
+        allLabel: "All",
         options: [
           { label: "COMPLETED", value: "COMPLETED" },
           { label: "CANCELLED", value: "CANCELLED" },

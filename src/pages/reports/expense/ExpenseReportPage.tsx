@@ -216,6 +216,11 @@ const ExpenseReportPage = () => {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
+            showSearch={false}
+            startDate={startDate}
+            endDate={endDate}
+            onStartDateChange={(value) => { setPage(1); setStartDate(value); }}
+            onEndDateChange={(value) => { setPage(1); setEndDate(value); }}
             filterGroups={filterGroups}
             filterValues={filterValues}
             onFilterChange={handleSearchFilterChange}
@@ -265,7 +270,7 @@ const ExpenseReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Stores</option>
+              <option value="all">All</option>
               {stores.map((store: any) => (
                 <option key={store.id} value={store.id}>{store.name}</option>
               ))}
@@ -278,7 +283,7 @@ const ExpenseReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Banks</option>
+              <option value="all">All</option>
               {banks.map((bank: any) => (
                 <option key={bank.id} value={bank.id}>{bank.name}</option>
               ))}
@@ -291,7 +296,7 @@ const ExpenseReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Expense Types</option>
+              <option value="all">All</option>
               {expenseTypes.map((expenseType: any) => (
                 <option key={expenseType.id} value={expenseType.id}>{expenseType.name}</option>
               ))}
@@ -304,7 +309,7 @@ const ExpenseReportPage = () => {
               }}
               className="rounded-md border bg-background px-3 py-2 text-sm"
             >
-              <option value="all">All Status</option>
+              <option value="all">All</option>
               <option value="PENDING">PENDING</option>
               <option value="APPROVED">APPROVED</option>
               <option value="PAID">PAID</option>

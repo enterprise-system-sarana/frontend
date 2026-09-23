@@ -25,6 +25,7 @@ export const ROUTERS = {
   SALE_CREATE: "/sale/create",
   SALE_EDIT: "/sale/edit/:id",
   SALE_DETAIL: "/sale/detail/:id",
+  SALE_INVOICE: "/sale/invoice/:id",
   SALE_COMPLETE: "/sale/complete/:id",
   PAYMENT: "/payment",
   SALES: "/sales",
