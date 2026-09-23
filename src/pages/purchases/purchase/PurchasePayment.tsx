@@ -17,11 +17,7 @@ import { toast } from "sonner";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useSupplier } from "@/hooks/purchases/useSupplier";
 import { usePurchase } from "@/hooks/purchases/usePurchase";
-import PaymentForm from "@/pages/sales/payment/PaymentForm";
-import {
-  normalizePurchasePaymentStatus,
-  PurchasePaymentStatus,
-} from "@/types/enum/purchasePaymentStatus";
+import { PurchasePaymentStatus } from "@/types/enum/purchasePaymentStatus";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { SupplierResponse } from "@/types/purchases/Supplier";
 
@@ -89,12 +85,13 @@ export const PurchasePaymentPage = () => {
           selectedSupplier &&
           purchaseSupplierName === String(selectedSupplier.name).toLowerCase();
 
-        const paymentStatus = normalizePurchasePaymentStatus(
-          purchase.paymentStatus,
-        );
+        const paymentStatus = String(purchase.paymentStatus || "")
+          .trim()
+          .toUpperCase();
         const isPending =
-          paymentStatus === PurchasePaymentStatus.Pending ||
-          paymentStatus === PurchasePaymentStatus.Partial;
+          paymentStatus ===
+            String(PurchasePaymentStatus.Pending).toUpperCase() ||
+          paymentStatus === String(PurchasePaymentStatus.Partial).toUpperCase();
         const isApprove =
           String(purchase.status || "").toUpperCase() === "APPROVED" ||
           String(purchase.status || "").toUpperCase() === "ACT";

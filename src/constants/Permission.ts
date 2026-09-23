@@ -134,6 +134,12 @@ export const PERMISSION = {
     UPDATE: "customer:update",
     DELETE: "customer:delete",
   },
+  QUOTE: {
+    READ: "quote:read",
+    CREATE: "quote:create",
+    UPDATE: "quote:update",
+    DELETE: "quote:delete",
+  },
   SALE: {
     READ: "sale:read",
     CREATE: "sale:create",
