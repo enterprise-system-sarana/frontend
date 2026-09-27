@@ -1,148 +1,326 @@
-import { ChevronRight, Home } from "lucide-react";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
+import {
+  TrendingDown,
+  DollarSign,
+  ArrowUpRight,
+  Calendar,
+  ShoppingCart,
+  CreditCard,
+  Plus,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { ROUTERS } from "@/constants/Route";
+import { useSale } from "@/hooks/sales/useSale";
+import { usePurchase } from "@/hooks/purchases/usePurchase";
+import { useExpense } from "@/hooks/expense/useExpense";
+import { usePayment } from "@/hooks/sales/usePayment";
+import { useProduct } from "@/hooks/product/useProduct";
+import { useCategory } from "@/hooks/product/useCategory";
+import InteractiveAreaChart from "./components/InteractiveAreaChart";
+import TopProductsPieChart from "./components/TopProductsPieChart";
 
-const quickLinks = ["Sales", "Inventory", "Expenses", "Customers"];
+function isToday(dateStr?: string | null): boolean {
+  if (!dateStr) return false;
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return false;
+    const today = new Date();
+    return (
+      d.getFullYear() === today.getFullYear() &&
+      d.getMonth() === today.getMonth() &&
+      d.getDate() === today.getDate()
+    );
+  } catch {
+    return false;
+  }
+}
 
 export const HomePage = () => {
   const [isReady, setIsReady] = useState(false);
+  const navigate = useNavigate();
+
+  /* -------------------------------------------------------
+     REAL DATABASE DATA FETCHING
+  ------------------------------------------------------- */
+  const { data: salesData, isLoading: isSalesLoading } = useSale.GetAll({ page: 1, size: 1000 });
+  const { data: purchasesData, isLoading: isPurchasesLoading } = usePurchase.GetAll({ page: 1, size: 1000 });
+  const { data: expensesData, isLoading: isExpensesLoading } = useExpense.useGetAllExpense({ page: 1, size: 1000 });
+  const { data: paymentsData, isLoading: isPaymentsLoading } = usePayment.getAllPayments({ page: 1, size: 1000 });
+  const { data: productsData } = useProduct.useGetAllProduct({ page: 1, size: 1000 });
+  const { data: categoriesData } = useCategory.useGetAllCategory({ page: 1, size: 1000 });
 
   useEffect(() => {
-    const timer = window.setTimeout(() => setIsReady(true), 60);
+    const timer = window.setTimeout(() => setIsReady(true), 80);
     return () => window.clearTimeout(timer);
   }, []);
 
+  const formatCurrency = (val: number) => {
+    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(val) || 0);
+  };
+
+
+  /* -------------------------------------------------------
+     EXTRACT REAL ENTITY ARRAYS
+  ------------------------------------------------------- */
+  const salesList: any[] = useMemo(() => {
+    const raw = (salesData as any)?.payload?.data ?? (salesData as any)?.payload?.content ?? (salesData as any)?.data ?? (salesData as any)?.payload ?? salesData ?? [];
+    return Array.isArray(raw) ? raw : [];
+  }, [salesData]);
+
+  const purchasesList: any[] = useMemo(() => {
+    const raw = (purchasesData as any)?.payload?.data ?? (purchasesData as any)?.payload?.content ?? (purchasesData as any)?.data ?? (purchasesData as any)?.payload ?? purchasesData ?? [];
+    return Array.isArray(raw) ? raw : [];
+  }, [purchasesData]);
+
+  const expensesList: any[] = useMemo(() => {
+    const raw = (expensesData as any)?.payload?.data ?? (expensesData as any)?.payload?.content ?? (expensesData as any)?.data ?? (expensesData as any)?.payload ?? expensesData ?? [];
+    return Array.isArray(raw) ? raw : [];
+  }, [expensesData]);
+
+  const paymentsList: any[] = useMemo(() => {
+    const raw = (paymentsData as any)?.payload?.data ?? (paymentsData as any)?.payload?.content ?? (paymentsData as any)?.data ?? (paymentsData as any)?.payload ?? paymentsData ?? [];
+    return Array.isArray(raw) ? raw : [];
+  }, [paymentsData]);
+
+  const productList: any[] = useMemo(() => {
+    const raw = (productsData as any)?.payload?.data ?? (productsData as any)?.payload?.content ?? (productsData as any)?.data ?? (productsData as any)?.payload ?? productsData ?? [];
+    return Array.isArray(raw) ? raw : [];
+  }, [productsData]);
+
+  const categoryList: any[] = useMemo(() => {
+    const raw = (categoriesData as any)?.payload?.data ?? (categoriesData as any)?.payload?.content ?? (categoriesData as any)?.data ?? (categoriesData as any)?.payload ?? categoriesData ?? [];
+    return Array.isArray(raw) ? raw : [];
+  }, [categoriesData]);
+
+  /* -------------------------------------------------------
+     REAL KPIS CALCULATIONS
+  ------------------------------------------------------- */
+
+  // 1. Total Purchase Today & All-time
+  const totalPurchaseToday = useMemo(() => {
+    return purchasesList
+      .filter((p: any) => isToday(p.purchaseDate || p.createdAt || p.date))
+      .reduce((sum: number, p: any) => sum + (Number(p.grandTotal ?? p.totalAmount ?? p.total ?? 0) || 0), 0);
+  }, [purchasesList]);
+
+  const totalPurchaseAllTime = useMemo(() => {
+    return purchasesList.reduce((sum: number, p: any) => sum + (Number(p.grandTotal ?? p.totalAmount ?? p.total ?? 0) || 0), 0);
+  }, [purchasesList]);
+
+  // 2. Total Sale Today & All-time
+  const totalSaleToday = useMemo(() => {
+    return salesList
+      .filter((s: any) => isToday(s.saleDate || s.createdAt || s.date))
+      .reduce((sum: number, s: any) => sum + (Number(s.grandTotal ?? s.totalAmount ?? s.total ?? 0) || 0), 0);
+  }, [salesList]);
+
+  const totalSaleAllTime = useMemo(() => {
+    return salesList.reduce((sum: number, s: any) => sum + (Number(s.grandTotal ?? s.totalAmount ?? s.total ?? 0) || 0), 0);
+  }, [salesList]);
+
+  // 3. Total Expense Today & All-time
+  const totalExpenseToday = useMemo(() => {
+    return expensesList
+      .filter((e: any) => isToday(e.expenseDate || e.date || e.createdAt))
+      .reduce((sum: number, e: any) => sum + (Number(e.amount ?? e.totalAmount ?? 0) || 0), 0);
+  }, [expensesList]);
+
+  const totalExpenseAllTime = useMemo(() => {
+    return expensesList.reduce((sum: number, e: any) => sum + (Number(e.amount ?? e.totalAmount ?? 0) || 0), 0);
+  }, [expensesList]);
+
+  // 4. Total Payment Today & All-time
+  const totalPaymentToday = useMemo(() => {
+    return paymentsList
+      .filter((p: any) => isToday(p.paymentDate || p.date || p.createdAt))
+      .reduce((sum: number, p: any) => sum + (Number(p.amount || 0) || 0), 0);
+  }, [paymentsList]);
+
+  const totalPaymentAllTime = useMemo(() => {
+    return paymentsList.reduce((sum: number, p: any) => sum + (Number(p.amount || 0) || 0), 0);
+  }, [paymentsList]);
+
+  // 5. Top Product
+  const topProduct = useMemo(() => {
+    const productCountMap = new Map<string, number>();
+    for (const sale of salesList) {
+      if (Array.isArray(sale.items)) {
+        for (const item of sale.items) {
+          const name = item.productName || (productList.find((p) => p.id === item.productId)?.name);
+          const qty = Number(item.quantity || 1);
+          if (name) {
+            productCountMap.set(name, (productCountMap.get(name) || 0) + qty);
+          }
+        }
+      }
+    }
+    let topName = "";
+    let maxQty = 0;
+    productCountMap.forEach((qty, name) => {
+      if (qty > maxQty) {
+        maxQty = qty;
+        topName = name;
+      }
+    });
+    if (topName) return `${topName} (${maxQty} sold)`;
+    return productList[0]?.name || "In Stock";
+  }, [salesList, productList]);
+
+  // 6. Top Category
+  const topCategory = useMemo(() => {
+    return categoryList[0]?.name || "General";
+  }, [categoryList]);
+
+
+  /* -------------------------------------------------------
+     KPI CARDS CONFIGURATION (4 CARDS WITH DIRECT NAVIGATION)
+  ------------------------------------------------------- */
+  const kpiData = [
+    {
+      title: "Total Sale Today",
+      value: formatCurrency(totalSaleToday),
+      subValue: `All-time: ${formatCurrency(totalSaleAllTime)}`,
+      route: ROUTERS.SALE,
+      icon: DollarSign,
+      color: "text-emerald-500",
+      bg: "bg-emerald-500/10",
+      borderHover: "hover:border-emerald-400 dark:hover:border-emerald-500",
+      tag: "Sales",
+    },
+    {
+      title: "Total Purchase Today",
+      value: formatCurrency(totalPurchaseToday),
+      subValue: `All-time: ${formatCurrency(totalPurchaseAllTime)}`,
+      route: ROUTERS.PURCHASE,
+      icon: ShoppingCart,
+      color: "text-blue-500",
+      bg: "bg-blue-500/10",
+      borderHover: "hover:border-blue-400 dark:hover:border-blue-500",
+      tag: "Purchases",
+    },
+    {
+      title: "Total Expense Today",
+      value: formatCurrency(totalExpenseToday),
+      subValue: `All-time: ${formatCurrency(totalExpenseAllTime)}`,
+      route: ROUTERS.EXPENSE,
+      icon: TrendingDown,
+      color: "text-rose-500",
+      bg: "bg-rose-500/10",
+      borderHover: "hover:border-rose-400 dark:hover:border-rose-500",
+      tag: "Expenses",
+    },
+    {
+      title: "Total Payment Today",
+      value: formatCurrency(totalPaymentToday),
+      subValue: `All-time: ${formatCurrency(totalPaymentAllTime)}`,
+      route: ROUTERS.PAYMENT,
+      icon: CreditCard,
+      color: "text-purple-500",
+      bg: "bg-purple-500/10",
+      borderHover: "hover:border-purple-400 dark:hover:border-purple-500",
+      tag: "Payments",
+    },
+  ];
+
+  const isLoading = isSalesLoading || isPurchasesLoading || isExpensesLoading || isPaymentsLoading;
+
   return (
     <main
-      className={`dashboard-enter mx-auto w-full max-w-[1600px] px-0 pb-6 text-[#2b2f36] transition-all duration-700 ease-out ${isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-2"
-        }`}
+      className={`mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8 py-8 transition-all duration-700 ease-out ${
+        isReady ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+      }`}
     >
-      <div className="mb-5 flex items-center justify-between px-0">
-        <h1 className="text-[18px] font-bold tracking-[-0.02em] text-[#2b2f36] sm:text-[20px]">
-          Dashboard
-        </h1>
-
-        <div className="flex items-center gap-2 text-[11px] font-medium text-[#7a7f88]">
-          <Home className="h-3.5 w-3.5" />
-          <span>Home</span>
-          <ChevronRight className="h-3.5 w-3.5" />
-          <span className="text-[#2b2f36]">Dashboard</span>
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+        <div>
+          <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground">
+            Dashboard Overview
+          </h1>
+          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-2">
+            <Calendar className="size-4" />
+            {new Date().toLocaleDateString("en-US", {
+              weekday: "long",
+              year: "numeric",
+              month: "long",
+              day: "numeric",
+            })}
+          </p>
+        </div>
+        <div className="flex items-center gap-2.5">
+          <Button
+            variant="outline"
+            onClick={() => navigate(ROUTERS.PURCHASE_CREATE)}
+            className="rounded-xl shadow-xs border-border/60 text-xs font-semibold cursor-pointer gap-1.5"
+          >
+            <Plus className="size-3.5" />
+            <span>New Purchase</span>
+          </Button>
+          <Button
+            onClick={() => navigate(ROUTERS.SALE_CREATE)}
+            className="rounded-xl shadow-xs bg-primary text-primary-foreground hover:bg-primary/90 text-xs font-semibold cursor-pointer gap-1.5"
+          >
+            <Plus className="size-3.5" />
+            <span>Create Sale</span>
+          </Button>
         </div>
       </div>
 
-      <section className="mb-6 rounded-[12px] border border-[#dfe4e8] bg-[#f4f5f5] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)]">
-        <div className="flex items-center gap-3">
-          <div className="flex h-4 w-4 items-center justify-center rounded-[3px] bg-[#2f2f35] p-[2px]">
-            <div className="grid h-full w-full grid-cols-2 gap-[2px]">
-              <span className="rounded-[1px] bg-white" />
-              <span className="rounded-[1px] bg-white" />
-              <span className="rounded-[1px] bg-white" />
-              <span className="rounded-[1px] bg-white" />
-            </div>
-          </div>
-          <p className="text-[13px] font-black uppercase tracking-[0.02em] text-[#2d3036]">
-            Quick Links
-          </p>
+      {isLoading && salesList.length === 0 && purchasesList.length === 0 ? (
+        <div className="flex flex-col items-center justify-center py-20">
+          <div className="size-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+          <p className="text-sm text-muted-foreground mt-4">Loading real database data...</p>
         </div>
-
-        <div className="mt-5 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-          {quickLinks.map((link, index) => (
-            <div
-              key={link}
-              className="dashboard-card flex min-h-[82px] items-center justify-center rounded-[10px] border border-[#dfe3e8] bg-[#f9fafb] text-base font-semibold text-[#6a6f78] shadow-[0_1px_0_rgba(0,0,0,0.02)] transition-transform duration-300 hover:-translate-y-0.5 hover:shadow-sm"
-              style={{ animationDelay: `${index * 90}ms` }}
-            >
-              {link}
-            </div>
-          ))}
-        </div>
-      </section>
-
-      <section className="grid gap-6 xl:grid-cols-[1.7fr_0.9fr]">
-        <article className="dashboard-card rounded-[12px] border border-[#dfe4e8] bg-[#f4f5f5] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:p-5" style={{ animationDelay: "120ms" }}>
-          <div className="mb-5 flex items-center justify-between">
-            <p className="text-[14px] font-black uppercase tracking-[0.02em] text-[#2d3036]">
-              Sales Chart
-            </p>
-          </div>
-
-          <div className="relative h-[300px] rounded-[8px] border border-transparent bg-transparent">
-            <div className="absolute left-0 top-0 bottom-0 w-[42px]">
-              {["2000", "1500", "1000", "500", "0"].map((label) => (
+      ) : (
+        <>
+          {/* 4 Primary KPI Cards in a 4-Column Grid */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-5 mb-8">
+            {kpiData.map((kpi, index) => {
+              const Icon = kpi.icon;
+              return (
                 <div
-                  key={label}
-                  className="absolute left-0 flex h-0 w-full -translate-y-1/2 items-center justify-start text-[11px] text-[#7d828d]"
-                  style={{ top: `${(label === "2000" ? 0 : label === "1500" ? 25 : label === "1000" ? 50 : label === "500" ? 75 : 100)}%` }}
+                  key={kpi.title}
+                  onClick={() => kpi.route && navigate(kpi.route)}
+                  className={`bg-card border border-border/60 rounded-2xl p-6 shadow-xs hover:shadow-md transition-all cursor-pointer group active:scale-[0.99] relative overflow-hidden ${kpi.borderHover}`}
+                  style={{ animationDelay: `${index * 80}ms` }}
+                  title={`Click to view ${kpi.tag}`}
                 >
-                  <span className="mr-2">{label}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="absolute left-[52px] right-0 top-0 bottom-0">
-              <div className="absolute inset-0">
-                {[0, 1, 2, 3, 4].map((row) => (
-                  <div
-                    key={row}
-                    className="absolute left-0 right-0 border-t border-[#d8dfe5]"
-                    style={{ top: `${(row / 4) * 100}%` }}
-                  />
-                ))}
-              </div>
-
-              <div className="absolute bottom-8 left-0 right-0 flex items-end justify-around gap-5 px-6">
-                {[1400, 1100].map((value, index) => (
-                  <div key={index} className="flex w-[38%] flex-col items-center">
+                  <div className="flex items-center justify-between mb-4">
                     <div
-                      className="w-full rounded-t-[6px] bg-[#1fbf8f]"
-                      style={{ height: `${value / 20}px` }}
-                    />
-                    <div className="mt-3 text-[11px] text-[#646b73]">
-                      {index === 0 ? "Aug-2026" : "Sep-2026"}
+                      className={`size-11 rounded-xl flex items-center justify-center transition-transform group-hover:scale-105 ${kpi.bg}`}
+                    >
+                      <Icon className={`size-5.5 ${kpi.color}`} />
+                    </div>
+                    <div className="flex items-center gap-1 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                      <span>{kpi.tag}</span>
+                      <ArrowUpRight className="size-3 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                     </div>
                   </div>
-                ))}
-              </div>
-            </div>
+                  <div>
+                    <h3 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-1">
+                      {kpi.title}
+                    </h3>
+                    <p className="text-2xl font-black font-mono tracking-tight text-foreground truncate">
+                      {kpi.value}
+                    </p>
+                    <p className="text-xs text-muted-foreground mt-1.5 font-medium">
+                      {kpi.subValue}
+                    </p>
+                  </div>
+                </div>
+              );
+            })}
           </div>
 
-          <div className="mt-2 flex items-center justify-center gap-6 text-[11px] text-[#4e535c]">
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-[#f4b93f]" />
-              <span>Tax</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-[#f26d71]" />
-              <span>Discount</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-[#1fbf8f]" />
-              <span>Sales</span>
-            </div>
+          {/* Charts Row: 2-Column Grid */}
+          <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 items-stretch">
+            <InteractiveAreaChart salesList={salesList} purchasesList={purchasesList} />
+            <TopProductsPieChart salesList={salesList} productList={productList} />
           </div>
-        </article>
-
-        <article className="dashboard-card rounded-[12px] border border-[#dfe4e8] bg-[#f4f5f5] p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.7)] sm:p-5" style={{ animationDelay: "180ms" }}>
-          <div className="mb-5 flex items-center justify-between">
-            <p className="text-[14px] font-black uppercase tracking-[0.02em] text-[#2d3036]">
-              Top Products <span className="normal-case">(September 2026)</span>
-            </p>
-          </div>
-
-          <div className="flex flex-col items-center justify-center">
-            <div className="relative h-[270px] w-[270px]">
-              <div className="absolute inset-0 rounded-full bg-[conic-gradient(#f06a76_0deg_300deg,#f0f2f4_300deg_360deg)] shadow-[inset_0_0_0_1px_rgba(0,0,0,0.02)]" />
-              <div className="absolute inset-[23px] rounded-full bg-[#f4f5f5]" />
-              <div className="absolute inset-[42px] rounded-full bg-[#f4f5f5]" />
-              <div className="absolute left-1/2 top-1/2 h-[90%] w-[4px] -translate-x-1/2 -translate-y-1/2 rotate-[18deg] bg-[#f1f3f4]" />
-            </div>
-
-            <div className="mt-4 flex items-center gap-2 text-[12px] text-[#4e535c]">
-              <span className="h-2.5 w-2.5 rounded-[2px] bg-[#f06a76]" />
-              <span>Galena Lang (Expedita illo exercit)</span>
-            </div>
-          </div>
-        </article>
-      </section>
+        </>
+      )}
     </main>
   );
 };
+
+export default HomePage;

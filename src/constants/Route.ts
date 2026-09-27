@@ -39,6 +39,7 @@ export const ROUTERS = {
   REPORT_SALES: "/report/sales",
   REPORT_SALES_ITEMS: "/report/sales-items",
   REPORT_EXPENSES: "/report/expenses",
+  REPORT_PROFIT_LOSS: "/report/profit-loss",
   REPORT_PRODUCT_SERIALS: "/report/product-serials",
   CHANGE_PASSWORD: "/change-password",
   LOGIN: "/login",

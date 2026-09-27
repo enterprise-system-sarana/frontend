@@ -21,6 +21,9 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { fileService } from "@/services/file/file.service";
+import api from "@/services/lib/axios";
+
+const imageCache = new Map<string, string>();
 
 interface ImageCellProps {
     fileName?: string;
@@ -28,6 +31,7 @@ interface ImageCellProps {
     bucketName?: string;
     className?: string;
     aspectRatio?: "square" | "video" | "auto";
+    preview?: boolean;
 }
 
 export const ImageCell = ({
@@ -36,23 +40,68 @@ export const ImageCell = ({
     bucketName = "default",
     className = "h-10 w-10",
     aspectRatio = "square",
+    preview = true,
 }: ImageCellProps) => {
     const [open, setOpen] = React.useState(false);
     const [hasError, setHasError] = React.useState(false);
     const [isLoaded, setIsLoaded] = React.useState(false);
     const [zoom, setZoom] = React.useState(1);
     const [rotation, setRotation] = React.useState(0);
+    const [blobUrl, setBlobUrl] = React.useState<string | null>(null);
 
     const hasValidFile = Boolean(fileName?.trim());
 
-    const imageUrl =
-        hasValidFile && fileName
-            ? fileName.startsWith("http") ||
-                fileName.startsWith("data:") ||
-                fileName.startsWith("blob:")
+    React.useEffect(() => {
+        setHasError(false);
+        setIsLoaded(false);
+
+        if (!hasValidFile || !fileName) {
+            setBlobUrl(null);
+            return;
+        }
+
+        if (fileName.startsWith("blob:") || fileName.startsWith("data:")) {
+            setBlobUrl(fileName);
+            return;
+        }
+
+        let isMounted = true;
+
+        const fetchImage = async () => {
+            const rawUrl = fileName.startsWith("http")
                 ? fileName
-                : fileService.getPreviewUrl(bucketName, fileName)
-            : "";
+                : fileService.getPreviewUrl(bucketName, fileName);
+
+            if (imageCache.has(rawUrl)) {
+                if (isMounted) {
+                    setBlobUrl(imageCache.get(rawUrl)!);
+                }
+                return;
+            }
+
+            try {
+                const response = await api.get(rawUrl, { responseType: "blob" });
+                if (isMounted) {
+                    const objectUrl = URL.createObjectURL(response.data);
+                    imageCache.set(rawUrl, objectUrl);
+                    setBlobUrl(objectUrl);
+                }
+            } catch (err) {
+                // If authenticated fetch fails, fallback to direct rawUrl
+                if (isMounted) {
+                    setBlobUrl(rawUrl);
+                }
+            }
+        };
+
+        fetchImage();
+
+        return () => {
+            isMounted = false;
+        };
+    }, [fileName, bucketName, hasValidFile]);
+
+    const imageUrl = blobUrl || "";
 
     const resetView = React.useCallback(() => {
         setZoom(1);
@@ -173,6 +222,40 @@ export const ImageCell = ({
                 <ImageIcon
                     className="size-4 transition-transform duration-200 group-hover:scale-110"
                     strokeWidth={1.5}
+                />
+            </div>
+        );
+    }
+
+    if (!preview) {
+        return (
+            <div
+                className={cn(
+                    "relative block shrink-0 overflow-hidden",
+                    "rounded-xl border border-border/60 bg-muted/30",
+                    "shadow-xs",
+                    className,
+                    aspectRatio === "video" && "aspect-video h-auto",
+                    aspectRatio === "auto" && "h-auto",
+                )}
+                title={name}
+            >
+                {!isLoaded && (
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted animate-pulse">
+                        <ImageIcon className="size-3.5 text-muted-foreground/40" />
+                    </div>
+                )}
+                <img
+                    src={imageUrl}
+                    alt={name}
+                    loading="lazy"
+                    onLoad={() => setIsLoaded(true)}
+                    onError={() => setHasError(true)}
+                    className={cn(
+                        "h-full w-full object-cover",
+                        "transition-opacity duration-200",
+                        isLoaded ? "opacity-100" : "opacity-0",
+                    )}
                 />
             </div>
         );

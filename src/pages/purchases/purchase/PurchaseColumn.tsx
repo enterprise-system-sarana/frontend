@@ -30,11 +30,32 @@ export const PurchaseColumns = ({
       header: ({ column }) => (
         <SortableHeader column={column} title="Reference" />
       ),
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-[#696cff]">
-          {row.original.referenceNo}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const match = (row.original.note || "").match(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]/i);
+        const imp = match ? match[1].toUpperCase() : null;
+        return (
+          <div className="flex flex-col gap-0.5">
+            <span className="font-mono text-xs text-[#696cff]">
+              {row.original.referenceNo}
+            </span>
+            {imp && (
+              <span
+                className={`w-fit inline-flex items-center rounded-full px-1.5 py-0.2 text-[9px] font-bold ${
+                  imp === "URGENT"
+                    ? "bg-rose-500/15 text-rose-600 border border-rose-500/25"
+                    : imp === "HIGH"
+                    ? "bg-amber-500/15 text-amber-600 border border-amber-500/25"
+                    : imp === "LOW"
+                    ? "bg-slate-500/15 text-slate-600 border border-slate-500/25"
+                    : "bg-blue-500/15 text-blue-600 border border-blue-500/25"
+                }`}
+              >
+                {imp}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       accessorKey: "purchaseDate",

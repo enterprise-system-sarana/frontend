@@ -169,12 +169,12 @@ const ReportPage = () => {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
-        {/* <div className="border-b p-4">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+        <div className="border-b border-border/60 p-4">
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            showSearch={false}
+            searchPlaceholder="Search reference, customer, store..."
             startDate={startDate}
             endDate={endDate}
             onStartDateChange={(value) => { setPage(1); setStartDate(value); }}
@@ -192,87 +192,11 @@ const ReportPage = () => {
               setCustomerId("all");
               setSaleStatus("all");
               setPaymentStatus("all");
+              setStartDate("");
+              setEndDate("");
+              setPage(1);
             }}
           />
-        </div> */}
-
-        <div className="flex flex-col gap-3 border-b p-4">
-          {/* <div>
-            <h2 className="text-lg font-semibold">Sales Transactions</h2>
-          </div> */}
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-6">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setPage(1);
-                setStartDate(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setPage(1);
-                setEndDate(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            />
-            <select
-              value={storeId}
-              onChange={(e) => {
-                setPage(1);
-                setStoreId(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">All</option>
-              {stores.map((store: any) => (
-                <option key={store.id} value={store.id}>{store.name}</option>
-              ))}
-            </select>
-            <select
-              value={customerId}
-              onChange={(e) => {
-                setPage(1);
-                setCustomerId(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">All</option>
-              {customers.map((customer: any) => (
-                <option key={customer.id} value={customer.id}>{customer.name}</option>
-              ))}
-            </select>
-            <select
-              value={saleStatus}
-              onChange={(e) => {
-                setPage(1);
-                setSaleStatus(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">All Sale Status</option>
-              {Object.values(SaleStatus).map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-            <select
-              value={paymentStatus}
-              onChange={(e) => {
-                setPage(1);
-                setPaymentStatus(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">All Payment Status</option>
-              {Object.values(SalePaymentStatus).map((status) => (
-                <option key={status} value={status}>{status}</option>
-              ))}
-            </select>
-          </div>
         </div>
 
         <DataTable

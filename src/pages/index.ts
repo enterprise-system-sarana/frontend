@@ -14,6 +14,9 @@ export { default as PurchaseForm } from "@/pages/purchases/purchase/PurchaseForm
 export { PurchaseDetailModal } from "@/pages/purchases/purchase/PurchaseDetail";
 export { default as PurchaseInvoice } from "@/pages/purchases/purchase/PurchaseInvoice";
 
+export { default as QuotePage } from "@/pages/sales/quotes/QuotePage";
+export { default as QuoteForm } from "@/pages/sales/quotes/QuoteForm";
+
 
 // auth 
 
@@ -64,6 +67,7 @@ export { default as ReportPage } from "@/pages/reports/sale/ReportPage";
 export { default as SalesItemReportPage } from "@/pages/reports/saleItem/SalesItemReportPage";
 export { default as ExpenseReportPage } from "@/pages/reports/expense/ExpenseReportPage";
 export { default as ProductSerialReportPage } from "@/pages/reports/productSerial/ProductSerialReportPage";
+export { default as ProfitLossReportPage } from "@/pages/reports/finance/ProfitLossReportPage";
 
 // File Upload Testing
 export { default as FileUploadPage, FileUpload } from "@/pages/FileUpload";

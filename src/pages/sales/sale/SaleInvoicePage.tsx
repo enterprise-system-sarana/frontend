@@ -5,15 +5,27 @@ import { useStore } from "@/hooks/inventory/useStore";
 import { useCustomer } from "@/hooks/sales/useCustomer";
 import { useAuth } from "@/store/useAuth";
 import { ROUTERS } from "@/constants/Route";
+import { ShieldCheck } from "lucide-react";
+import { fileService } from "@/services/file/file.service";
 
 /* ─── types (loose — API payload shapes vary by wrapper) ─── */
 interface SaleItem {
   productId?: number;
   productName?: string;
   quantity?: number;
+  qty?: number;
+  count?: number;
+  productQty?: number;
   price?: number;
+  unitPrice?: number;
   itemDiscount?: number;
+  discount?: number;
   subtotal?: number;
+  subTotal?: number;
+  total?: number;
+  serialNumberIds?: number[];
+  serialNumbers?: (string | number)[];
+  serials?: any[];
 }
 
 /* ─── helpers ─── */
@@ -50,11 +62,74 @@ function fmtDateTimeFull(d?: string | null) {
   }
 }
 
-function lineTotal(item: SaleItem) {
-  const unitPrice = Number(item.price || 0);
-  const qty = Number(item.quantity || 0);
-  const itemDisc = Number(item.itemDiscount || 0);
-  return Number(item.subtotal ?? unitPrice * qty - itemDisc);
+export function getItemQty(item: any): number {
+  if (!item) return 1;
+  const directQty = Number(
+    item.quantity ??
+    item.qty ??
+    item.productQty ??
+    item.count ??
+    item.quantitySold ??
+    item.itemQty
+  );
+  if (!isNaN(directQty) && directQty > 0) {
+    return directQty;
+  }
+  if (Array.isArray(item.serialNumberIds) && item.serialNumberIds.length > 0) {
+    return item.serialNumberIds.length;
+  }
+  if (Array.isArray(item.serialNumbers) && item.serialNumbers.length > 0) {
+    return item.serialNumbers.length;
+  }
+  if (Array.isArray(item.serials) && item.serials.length > 0) {
+    return item.serials.length;
+  }
+  const price = Number(item.price ?? item.unitPrice ?? item.salePrice ?? 0);
+  const subtotal = Number(item.subtotal ?? item.subTotal ?? item.total ?? item.lineTotal ?? item.amount ?? 0);
+  if (price > 0 && subtotal > 0) {
+    return Math.max(1, Math.round(subtotal / price));
+  }
+  return 1;
+}
+
+export function getItemPrice(item: any): number {
+  if (!item) return 0;
+  const directPrice = Number(item.price ?? item.unitPrice ?? item.salePrice ?? 0);
+  if (!isNaN(directPrice) && directPrice > 0) {
+    return directPrice;
+  }
+  const qty = getItemQty(item);
+  const subtotal = Number(item.subtotal ?? item.subTotal ?? item.total ?? item.lineTotal ?? item.amount ?? 0);
+  if (qty > 0 && subtotal > 0) {
+    return subtotal / qty;
+  }
+  return 0;
+}
+
+export function getItemDiscount(item: any): number {
+  if (!item) return 0;
+  return Number(item.itemDiscount ?? item.discount ?? item.discountAmount ?? 0) || 0;
+}
+
+export function lineTotal(item: any): number {
+  if (!item) return 0;
+  const rawSubtotal = Number(
+    item.subtotal ??
+    item.subTotal ??
+    item.total ??
+    item.lineTotal ??
+    item.amount ??
+    item.totalAmount ??
+    0
+  );
+  if (!isNaN(rawSubtotal) && rawSubtotal > 0) {
+    return rawSubtotal;
+  }
+  const unitPrice = getItemPrice(item);
+  const qty = getItemQty(item);
+  const itemDisc = getItemDiscount(item);
+  const calculated = unitPrice * qty - itemDisc;
+  return Math.max(calculated, 0);
 }
 
 /* ─── component ─── */
@@ -84,19 +159,81 @@ export default function SaleInvoicePage() {
     return customerList.find((c: any) => c.id === Number(sale.customerId)) ?? null;
   }, [sale, customerList]);
 
-  const items: SaleItem[] = sale?.items ?? [];
+  const items: any[] = sale?.items ?? sale?.saleItems ?? sale?.details ?? [];
 
   const computedSubtotal = useMemo(
     () => items.reduce((sum, item) => sum + lineTotal(item), 0),
     [items]
   );
 
-  const subtotal = Number(sale?.totalAmount ?? computedSubtotal);
-  const discount = Number(sale?.discount ?? 0);
-  const grandTotal = Number(sale?.grandTotal ?? subtotal - discount);
-  const paidAmount = Number(sale?.paidAmount ?? 0);
+  const discount = Number(sale?.discount ?? sale?.discountAmount ?? 0);
+  const rawGrandTotal = Number(sale?.grandTotal ?? sale?.total ?? 0);
+  const rawTotalAmount = Number(
+    sale?.totalAmount ??
+    sale?.subtotal ??
+    sale?.subTotal ??
+    sale?.totalPrice ??
+    0
+  );
+
+  const subtotal = rawTotalAmount > 0
+    ? rawTotalAmount
+    : computedSubtotal > 0
+      ? computedSubtotal
+      : rawGrandTotal > 0
+        ? rawGrandTotal + discount
+        : 0;
+
+  const grandTotal = rawGrandTotal > 0
+    ? rawGrandTotal
+    : subtotal > 0
+      ? Math.max(subtotal - discount, 0)
+      : 0;
+
+  const paidAmount = Number(
+    sale?.paidAmount ?? (sale?.paymentStatus === "PAID" ? grandTotal : 0)
+  );
   const change = Math.max(paidAmount - grandTotal, 0);
-  const dueAmount = Number(sale?.dueAmount ?? Math.max(grandTotal - paidAmount, 0));
+  const dueAmount = Number(
+    sale?.dueAmount ?? Math.max(grandTotal - paidAmount, 0)
+  );
+
+  const totalItemsCount = useMemo(
+    () => items.reduce((sum, item) => sum + getItemQty(item), 0),
+    [items]
+  );
+
+  const logoUrl = useMemo(() => {
+    if (store?.logo) {
+      if (
+        store.logo.startsWith("http://") ||
+        store.logo.startsWith("https://") ||
+        store.logo.startsWith("/") ||
+        store.logo.startsWith("data:") ||
+        store.logo.startsWith("blob:")
+      ) {
+        return store.logo;
+      }
+      return fileService.getPreviewUrl("store", store.logo);
+    }
+    return "/logo.png";
+  }, [store?.logo]);
+
+  const warrantyUntilDate = useMemo(() => {
+    const rawDate = sale?.saleDate || sale?.createdAt;
+    const baseDate = rawDate ? new Date(rawDate) : new Date();
+    if (isNaN(baseDate.getTime())) return "14 days from purchase";
+    const warrantyDate = new Date(baseDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+    try {
+      return warrantyDate.toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return "14 days from purchase";
+    }
+  }, [sale?.saleDate, sale?.createdAt]);
 
   /* ── loading / error ── */
   if (isLoading) {
@@ -135,11 +272,18 @@ export default function SaleInvoicePage() {
       <div id="receipt" className="bg-white w-full max-w-lg shadow print:shadow-none print:max-w-none">
         {/* ── Store Header ── */}
         <div className="text-center py-5 px-4 border-b border-slate-300">
-          {store?.logo ? (
-            <img src={store.logo} alt={store?.name} className="h-12 mx-auto mb-2 object-contain" />
-          ) : (
-            <p className="text-base font-bold text-slate-800">{store?.name ?? "Store"}</p>
-          )}
+          <img
+            src={logoUrl}
+            alt={store?.name ?? "Store Logo"}
+            onError={(e) => {
+              const target = e.currentTarget;
+              if (target.src !== window.location.origin + "/logo.png") {
+                target.src = "/logo.png";
+              }
+            }}
+            className="h-16 mx-auto mb-2 object-contain max-w-[200px]"
+          />
+          <p className="text-base font-bold text-slate-800 tracking-wide">{store?.name ?? "Store"}</p>
           {(store?.address1 || store?.city) && (
             <p className="text-sm text-slate-600 mt-0.5">
               {[store?.address1, store?.city].filter(Boolean).join(", ")}
@@ -175,7 +319,10 @@ export default function SaleInvoicePage() {
               Bill No: <span className="font-bold">#{String(sale.id).padStart(3, "0")}</span>
             </p>
             <p className="text-slate-700">
-              Items: <span className="font-bold">{items.length}</span>
+              Items: <span className="font-bold">{totalItemsCount || items.length}</span>
+            </p>
+            <p className="text-slate-700">
+              Warranty: <span className="font-bold text-emerald-700">14 Days</span>
             </p>
           </div>
         </div>
@@ -199,15 +346,16 @@ export default function SaleInvoicePage() {
               </tr>
             )}
             {items.map((item, i) => {
-              const unitPrice = Number(item.price || 0);
-              const qty = Number(item.quantity || 0);
-              const itemDisc = Number(item.itemDiscount || 0);
+              const unitPrice = getItemPrice(item);
+              const qty = getItemQty(item);
+              const itemDisc = getItemDiscount(item);
               const hasDiscount = itemDisc > 0;
+              const total = lineTotal(item);
 
               return (
                 <tr key={i} className="border-b border-slate-100 align-top">
                   <td className="px-5 py-1.5 text-slate-800">
-                    {item.productName ?? `Product #${item.productId}`}
+                    <span className="font-medium">{item.productName ?? `Product #${item.productId}`}</span>
                     {hasDiscount && (
                       <span className="block text-xs text-slate-400">
                         Discount: -{money(itemDisc)}
@@ -220,7 +368,7 @@ export default function SaleInvoicePage() {
                     className={`px-5 py-1.5 text-right tabular-nums font-medium ${hasDiscount ? "text-amber-700" : "text-slate-800"
                       }`}
                   >
-                    {fmt(lineTotal(item))}
+                    {fmt(total)}
                   </td>
                 </tr>
               );
@@ -265,11 +413,26 @@ export default function SaleInvoicePage() {
           ) : null}
         </div>
 
+        {/* ── 14-Day Warranty Guarantee Box ── */}
+        <div className="mx-4 mt-3 mb-2 p-3 bg-slate-50 border border-slate-300 rounded text-center">
+          <div className="flex items-center justify-center gap-1.5 font-bold text-slate-800 text-xs uppercase tracking-wider">
+            <ShieldCheck className="h-4 w-4 text-emerald-600 shrink-0" />
+            <span>14-Day Warranty Guarantee</span>
+          </div>
+          <p className="text-xs text-slate-700 mt-1">
+            This purchase is covered by a <strong>14-day warranty</strong> valid until{" "}
+            <strong>{warrantyUntilDate}</strong>.
+          </p>
+          <p className="text-[11px] text-slate-500 mt-0.5">
+            Warranty covers manufacturer and technical defects. Original invoice required for claims.
+          </p>
+        </div>
+
         {/* ── Thank You Box ── */}
-        <div className="mx-4 mb-4 mt-1 border border-dashed border-slate-300 rounded py-4 text-center text-sm text-slate-700">
+        <div className="mx-4 mb-4 border border-dashed border-slate-300 rounded py-3 text-center text-sm text-slate-700">
           <p className="font-semibold">Thank you for your purchase!</p>
-          <p className="text-slate-500">Please come again.</p>
-          <p className="text-slate-400 text-xs mt-1">{fmtDateTimeFull(sale.saleDate || sale.createdAt)}</p>
+          <p className="text-slate-500 text-xs mt-0.5">Please come again.</p>
+          <p className="text-slate-400 text-[11px] mt-1">{fmtDateTimeFull(sale.saleDate || sale.createdAt)}</p>
         </div>
       </div>
 
@@ -277,13 +440,13 @@ export default function SaleInvoicePage() {
       <div className="w-full max-w-lg mt-3 space-y-2 print:hidden">
         <button
           onClick={() => window.print()}
-          className="w-full py-3.5 bg-slate-900 text-white text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition"
+          className="w-full py-3.5 bg-slate-900 text-white text-sm font-bold uppercase tracking-widest hover:bg-slate-800 transition cursor-pointer"
         >
           Print
         </button>
         <button
           onClick={() => navigate(ROUTERS.SALE_CREATE)}
-          className="w-full py-3.5 bg-amber-600 text-white text-sm font-bold uppercase tracking-widest hover:bg-amber-700 transition"
+          className="w-full py-3.5 bg-amber-600 text-white text-sm font-bold uppercase tracking-widest hover:bg-amber-700 transition cursor-pointer"
         >
           Back to POS
         </button>
@@ -294,7 +457,12 @@ export default function SaleInvoicePage() {
         @media print {
           @page { margin: 0; }
           body { background: white !important; margin: 0; }
-          #receipt { box-shadow: none !important; max-width: 100% !important; }
+          #receipt { 
+            box-shadow: none !important; 
+            max-width: 100% !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
         }
       `}</style>
     </div>

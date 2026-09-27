@@ -14,9 +14,6 @@ import {
   CheckCircle2,
   Calendar,
   UserPlus,
-  Pause,
-  Printer,
-  ArrowRight,
   Check,
   AlertTriangle,
   Receipt,
@@ -24,7 +21,9 @@ import {
   User,
   Tag,
   Wallet,
-  X,
+  Printer,
+  PauseCircle,
+  RotateCcw,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -56,6 +55,8 @@ import { useAuth } from "@/store/useAuth";
 
 import FormCustomer from "@/pages/sales/customers/CustomerForm";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
+import PrintBillModal, { type BillData, type BillItem } from "./components/PrintBillModal";
+import HeldSalesModal, { type HeldSale, type HeldSaleItem } from "./components/HeldSalesModal";
 import ImageCell from "@/components/file/ImageCell";
 import { ROUTERS } from "@/constants/Route";
 import { toast } from "sonner";
@@ -160,6 +161,26 @@ export default function SaleForm() {
 
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const paymentSubmittedRef = useRef(false);
+
+  const [isPrintBillOpen, setIsPrintBillOpen] = useState(false);
+  const [isHeldSalesOpen, setIsHeldSalesOpen] = useState(false);
+  const [heldSales, setHeldSales] = useState<HeldSale[]>(() => {
+    try {
+      const stored = localStorage.getItem("pos_held_sales");
+      return stored ? JSON.parse(stored) : [];
+    } catch {
+      return [];
+    }
+  });
+
+  const saveHeldSales = (list: HeldSale[]) => {
+    setHeldSales(list);
+    try {
+      localStorage.setItem("pos_held_sales", JSON.stringify(list));
+    } catch {
+      // ignore
+    }
+  };
 
 
 
@@ -489,6 +510,154 @@ export default function SaleForm() {
     form.setFieldValue("discount", 0);
   };
 
+  /* -------------------------------------------------------
+     HOLD SALE HANDLERS
+  ------------------------------------------------------- */
+
+  const handleHoldSale = () => {
+    const currentItems = form.state.values.items || [];
+    if (currentItems.length === 0) {
+      if (heldSales.length > 0) {
+        setIsHeldSalesOpen(true);
+      } else {
+        toast.info("Cart is empty. Add products before holding a sale.");
+      }
+      return;
+    }
+
+    const currentValues = form.state.values;
+    const customer = customerList.find((c) => c.id === Number(currentValues.customerId));
+    const customerName = customer?.name || "Walk-In Customer";
+
+    const itemsSummary: HeldSaleItem[] = currentItems.map((item: any) => {
+      const p = productList.find((prod) => prod.id === Number(item.productId));
+      const price = Number(item.price) || Number(p?.salePrice) || 0;
+      const quantity = Number(item.quantity) || 1;
+      const itemDiscount = Number(item.itemDiscount) || 0;
+      return {
+        productId: Number(item.productId),
+        productName: p?.name || item.productName || `Product #${item.productId}`,
+        quantity,
+        price,
+        itemDiscount,
+        subtotal: price * quantity - itemDiscount,
+        serialNumberIds: item.serialNumberIds || [],
+      };
+    });
+
+    const subtotalCalc = itemsSummary.reduce((sum, it) => sum + it.subtotal, 0);
+    const discountVal = Number(currentValues.discount) || 0;
+    const totalCalc = Math.max(subtotalCalc - discountVal, 0);
+
+    const newHeld: HeldSale = {
+      id: `held-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+      reference: currentValues.reference || generateRef(),
+      heldAt: new Date().toISOString(),
+      note: currentValues.noted || undefined,
+      customerId: currentValues.customerId ? Number(currentValues.customerId) : null,
+      customerName,
+      storeId: Number(currentValues.storeId) || storeList[0]?.id || 1,
+      bankId: currentValues.bankId ? Number(currentValues.bankId) : null,
+      discount: discountVal,
+      items: itemsSummary,
+      totalAmount: totalCalc,
+    };
+
+    saveHeldSales([newHeld, ...heldSales]);
+    form.setFieldValue("items", []);
+    form.setFieldValue("discount", 0);
+    form.setFieldValue("paidAmount", 0);
+    form.setFieldValue("reference", generateRef());
+    toast.success(`Order #${newHeld.reference} placed on hold (${newHeld.items.length} items)`);
+  };
+
+  const handleResumeHeldSale = (sale: HeldSale) => {
+    const currentItems = form.state.values.items || [];
+    if (currentItems.length > 0) {
+      if (!window.confirm("Current items in cart will be replaced with this held order. Continue?")) {
+        return;
+      }
+    }
+
+    form.setFieldValue("items", sale.items);
+    form.setFieldValue("discount", sale.discount || 0);
+    form.setFieldValue("reference", sale.reference);
+    if (sale.customerId) form.setFieldValue("customerId", sale.customerId);
+    if (sale.storeId) form.setFieldValue("storeId", sale.storeId);
+    if (sale.bankId) form.setFieldValue("bankId", sale.bankId);
+    if (sale.note) form.setFieldValue("noted", sale.note);
+
+    const updated = heldSales.filter((h) => h.id !== sale.id);
+    saveHeldSales(updated);
+    setIsHeldSalesOpen(false);
+    toast.success(`Resumed held order #${sale.reference}`);
+  };
+
+  const handleDeleteHeldSale = (id: string) => {
+    const updated = heldSales.filter((h) => h.id !== id);
+    saveHeldSales(updated);
+    toast.info("Held sale discarded");
+  };
+
+  const handleClearAllHeldSales = () => {
+    saveHeldSales([]);
+    setIsHeldSalesOpen(false);
+    toast.info("All held sales cleared");
+  };
+
+  /* -------------------------------------------------------
+     PRINT BILL DATA & HANDLER
+  ------------------------------------------------------- */
+
+  const billData: BillData | null = useMemo(() => {
+    const currentItems = formValues.items || [];
+    if (currentItems.length === 0) return null;
+
+    const matchedStore = storeList.find((s) => s.id === Number(formValues.storeId)) || storeList[0] || null;
+    const matchedCustomer = customerList.find((c) => c.id === Number(formValues.customerId));
+
+    const formattedItems: BillItem[] = currentItems.map((item: any) => {
+      const p = productList.find((prod) => prod.id === Number(item.productId));
+      const price = Number(item.price) || Number(p?.salePrice) || 0;
+      const quantity = Number(item.quantity) || 1;
+      const itemDiscount = Number(item.itemDiscount) || 0;
+      return {
+        productName: p?.name || item.productName || `Product #${item.productId}`,
+        quantity,
+        price,
+        itemDiscount,
+        subtotal: price * quantity - itemDiscount,
+      };
+    });
+
+    const subtotalCalc = formattedItems.reduce((sum, it) => sum + it.subtotal, 0);
+    const discountVal = Number(formValues.discount) || 0;
+    const grandTotalCalc = Math.max(subtotalCalc - discountVal, 0);
+
+    return {
+      reference: formValues.reference || "POS-DRAFT",
+      date: formValues.saleDate || new Date().toISOString().split("T")[0],
+      cashierName: user?.username ?? "Staff",
+      customerName: matchedCustomer?.name || "Walk-In Customer",
+      customerPhone: matchedCustomer?.phone || undefined,
+      store: matchedStore,
+      items: formattedItems,
+      subtotal: subtotalCalc,
+      discount: discountVal,
+      grandTotal: grandTotalCalc,
+      noted: formValues.noted || null,
+    };
+  }, [formValues, productList, customerList, storeList, user?.username]);
+
+  const handleOpenPrintBill = () => {
+    const currentItems = form.state.values.items || [];
+    if (currentItems.length === 0) {
+      toast.error("Cart is empty. Add products to print a bill.");
+      return;
+    }
+    setIsPrintBillOpen(true);
+  };
+
 
 
   /* =========================================================
@@ -700,7 +869,20 @@ export default function SaleForm() {
                 </div>
               </div>
 
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1.5">
+                {heldSales.length > 0 && (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setIsHeldSalesOpen(true)}
+                    className="h-7 px-2 text-[11px] font-bold text-amber-700 bg-amber-50 dark:bg-amber-950/40 dark:text-amber-300 border-amber-300 dark:border-amber-700 rounded-lg gap-1 cursor-pointer hover:bg-amber-100"
+                    title="View Held Orders"
+                  >
+                    <PauseCircle className="size-3.5" />
+                    <span>Held ({heldSales.length})</span>
+                  </Button>
+                )}
                 <Button
                   type="button"
                   variant="ghost"
@@ -914,10 +1096,64 @@ export default function SaleForm() {
                     </div>
                   </div>
 
-                  <div className="rounded-xl bg-slate-200/80 p-2">
+                  <div className="rounded-xl bg-slate-200/80 dark:bg-slate-800/60 p-2">
                     <div className="grid grid-cols-4 gap-2">
+                      {/* 1. Hold Sale Button */}
+                      <button
+                        type="button"
+                        onClick={handleHoldSale}
+                        className="flex h-20 flex-col items-center justify-center gap-1.5 rounded-lg border border-amber-300 dark:border-amber-700/80 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-300 transition hover:bg-amber-100 dark:hover:bg-amber-900/50 cursor-pointer relative active:scale-[0.98]"
+                        title={
+                          !items || items.length === 0
+                            ? heldSales.length > 0
+                              ? "View Held Orders"
+                              : "Hold Sale (Cart is empty)"
+                            : "Hold this order"
+                        }
+                      >
+                        {heldSales.length > 0 && (
+                          <span className="absolute top-1.5 right-1.5 size-4.5 rounded-full bg-amber-500 text-white text-[10px] font-bold flex items-center justify-center shadow-xs">
+                            {heldSales.length}
+                          </span>
+                        )}
+                        <PauseCircle className="size-5" />
+                        <span className="text-xs font-semibold">
+                          {!items || items.length === 0 ? (heldSales.length > 0 ? `Held (${heldSales.length})` : "Hold") : "Hold"}
+                        </span>
+                      </button>
 
+                      {/* 2. Print Bill Button */}
+                      <button
+                        type="button"
+                        disabled={!items || items.length === 0}
+                        onClick={handleOpenPrintBill}
+                        className="flex h-20 flex-col items-center justify-center gap-1.5 rounded-lg border border-teal-300 dark:border-teal-700/80 bg-teal-50 dark:bg-teal-950/40 text-teal-800 dark:text-teal-300 transition hover:bg-teal-100 dark:hover:bg-teal-900/50 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+                        title="Print Customer Bill"
+                      >
+                        <Printer className="size-5" />
+                        <span className="text-xs font-semibold">Print Bill</span>
+                      </button>
 
+                      {/* 3. Reset Cart Button */}
+                      <button
+                        type="button"
+                        disabled={!items || items.length === 0}
+                        onClick={() => {
+                          if (items && items.length > 0) {
+                            if (window.confirm("Clear all items from this order?")) {
+                              handleVoidCart();
+                              toast.info("Cart cleared");
+                            }
+                          }
+                        }}
+                        className="flex h-20 flex-col items-center justify-center gap-1.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 transition hover:bg-slate-200 dark:hover:bg-slate-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 active:scale-[0.98]"
+                        title="Clear cart items"
+                      >
+                        <RotateCcw className="size-5" />
+                        <span className="text-xs font-semibold">Reset</span>
+                      </button>
+
+                      {/* 4. Payment Button */}
                       <button
                         type="button"
                         disabled={!items || items.length === 0}
@@ -934,10 +1170,11 @@ export default function SaleForm() {
                           setPaymentDate(formValues.saleDate || new Date().toISOString().split("T")[0]);
                           setIsPaymentModalOpen(true);
                         }}
-                        className="flex h-20 flex-col items-center justify-center gap-2 rounded-lg border border-slate-300 bg-slate-100 text-slate-700 transition hover:bg-slate-200 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40"
+                        className="flex h-20 flex-col items-center justify-center gap-1.5 rounded-lg border border-emerald-500 bg-emerald-600 text-white transition hover:bg-emerald-700 cursor-pointer disabled:cursor-not-allowed disabled:opacity-40 shadow-xs active:scale-[0.98]"
+                        title="Open Payment Modal"
                       >
                         <Wallet className="size-5" />
-                        <span className="text-sm font-medium">Payment</span>
+                        <span className="text-xs font-bold">Payment</span>
                       </button>
                     </div>
                   </div>
@@ -1038,6 +1275,23 @@ export default function SaleForm() {
             form.setFieldValue("customerId", res.payload.id);
           }
         }}
+      />
+
+      {/* 6. Print Bill Modal */}
+      <PrintBillModal
+        open={isPrintBillOpen}
+        onOpenChange={setIsPrintBillOpen}
+        billData={billData}
+      />
+
+      {/* 7. Held Sales Orders Modal */}
+      <HeldSalesModal
+        open={isHeldSalesOpen}
+        onOpenChange={setIsHeldSalesOpen}
+        heldSales={heldSales}
+        onResume={handleResumeHeldSale}
+        onDelete={handleDeleteHeldSale}
+        onClearAll={handleClearAllHeldSales}
       />
 
       {/* Hidden Submit Form */}

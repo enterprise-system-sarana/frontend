@@ -37,6 +37,8 @@ const UserPage = () => {
     const { data, isError, isLoading } = useUser({ page, size });
     const { mutate: deleteUserMutate } = useDeleteUser();
 
+    console.log("user page", data?.payload?.data)
+    
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(() => [
         {
@@ -49,6 +51,7 @@ const UserPage = () => {
         },
     ], [t]);
 
+    console.log("user page ", filterGroups)
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
             ...prev,

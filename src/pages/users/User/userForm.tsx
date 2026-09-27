@@ -8,14 +8,12 @@ import {
     Dialog,
     DialogClose,
     DialogContent,
-    DialogDescription,
     DialogFooter,
     DialogHeader,
     DialogTitle,
 } from "@/components/ui/dialog";
 
 import FormTextField, {
-    FormRadioGroupField,
     FormSelectField,
 } from "@/components/ui/FormTextField";
 
@@ -33,6 +31,8 @@ import type {
 import { Status } from "@/types/enum/status";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { RoleResponse } from "@/types/users/Role";
+import { Card, CardContent } from "@/components/ui/card";
+import FileUpload from "@/pages/FileUpload";
 
 type FormUserProps = {
     open: boolean;
@@ -115,18 +115,36 @@ const FormUser = ({
         },
 
         onSubmit: async ({ value }) => {
-            const payload: UserRequest = {
-                ...value,
-                storeId: value.storeId
-                    ? Number(value.storeId)
-                    : null,
+            // Keep default existing roleCodes if editing and none selected
+            const defaultRoles = (user as any)?.roleCodes ?? user?.roles ?? [];
+            const normalizedDefaultRoles = Array.isArray(defaultRoles)
+                ? defaultRoles
+                    .map((r: any) => (typeof r === "string" ? r : r.code || r.name))
+                    .filter(Boolean)
+                : [];
 
-                // Don't send empty password when editing
-                password:
-                    value.password?.trim()
-                        ? value.password
-                        : undefined,
+            const roleCodesToSubmit =
+                isEdit && (!value.roleCodes || value.roleCodes.length === 0)
+                    ? normalizedDefaultRoles
+                    : value.roleCodes;
+
+            // Password validation: required when creating
+            if (!isEdit && (!value.password || value.password.trim().length < 6)) {
+                toast.error("Password is required (minimum 6 characters)");
+                return;
+            }
+
+            const { password, ...rest } = value;
+            const payload: any = {
+                ...rest,
+                roleCodes: roleCodesToSubmit,
+                storeId: value.storeId ? Number(value.storeId) : null,
             };
+
+            // Only send password if a new one is provided; otherwise keep existing default password
+            if (value.password && value.password.trim().length > 0) {
+                payload.password = value.password.trim();
+            }
 
             const handleSuccess = () => {
                 setOpen(false);
@@ -222,14 +240,29 @@ const FormUser = ({
                 user.storeId ?? null
             );
 
+            const rawRoles = (user as any).roleCodes ?? user.roles ?? [];
+            const mappedRoles = Array.isArray(rawRoles)
+                ? rawRoles
+                    .map((r: any) => {
+                        const val = typeof r === "string" ? r : r.code || r.name;
+                        const matchedOption = roleOptions.find(
+                            (opt) =>
+                                opt.value.toLowerCase() === String(val).toLowerCase() ||
+                                opt.label.toLowerCase() === String(val).toLowerCase()
+                        );
+                        return matchedOption ? matchedOption.value : val;
+                    })
+                    .filter(Boolean)
+                : [];
+
             form.setFieldValue(
                 "roleCodes",
-                user.roles ?? []
+                mappedRoles
             );
         } else {
             form.reset();
         }
-    }, [user, open]);
+    }, [user, open, rolesData]);
 
     const handleClose = () => {
         if (isPending) return;
@@ -249,7 +282,7 @@ const FormUser = ({
                 }
             }}
         >
-            <DialogContent className="w-full max-w-[900px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-full max-w-/[900px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-lg">
                         {isEdit
@@ -335,17 +368,37 @@ const FormUser = ({
                             placeholder={
                                 isEdit
                                     ? "Leave blank to keep current password"
-                                    : "Enter password"
+                                    : ""
                             }
                             type="password"
                             required={!isEdit}
-                            autoComplete={
-                                isEdit
-                                    ? "new-password"
-                                    : "new-password"
-                            }
+                            autoComplete={isEdit ? "new-password"   : "new-password"}
                         />
                     </section>
+
+                    {/* <Card className="rounded-2xl border-border/60 shadow-2xs"> */}
+                    <CardContent className="space-y-5">
+                        <FieldGroup>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                <form.Subscribe selector={(state) => [state.values.profileImage]}>
+                                    {([profileImage]) => (
+                                        <FileUpload
+                                            label={"Profile Image"}
+                                            value={profileImage || ""}
+                                            onUploaded={(fileName) => {
+                                                form.setFieldValue("profileImage", fileName);
+                                            }}
+                                            onRemove={() => {
+                                                form.setFieldValue("profileImage", "");
+                                            }}
+                                            defaultBucket="user"
+                                        />
+                                    )}
+                                </form.Subscribe>
+                            </div>
+
+                        </FieldGroup>
+                    </CardContent>
 
                     {/* =========================
                         ACCESS CONTROL

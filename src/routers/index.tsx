@@ -27,16 +27,15 @@ import {
   ExpenseTypePage,
   PurchasePage,
   PurchaseForm,
-  PurchaseInvoice,
   SalePage,
   SaleForm,
   SaleInvoicePage,
   PaymentPage,
-  // SaleDetail,
   ReportPage,
   SalesItemReportPage,
   ExpenseReportPage,
   ProductSerialReportPage,
+  ProfitLossReportPage,
   NotFoundPage,
   QuotePage,
   QuoteForm,
@@ -295,6 +294,10 @@ const router = createBrowserRouter([
           {
             path: ROUTERS.REPORT_PRODUCT_SERIALS,
             element: <ProductSerialReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_PROFIT_LOSS,
+            element: <ProfitLossReportPage />,
           },
           {
             path: ROUTERS.FILE_UPLOAD,

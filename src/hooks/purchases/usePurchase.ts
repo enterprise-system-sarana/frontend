@@ -5,6 +5,8 @@ import type {
   PurchaseRequest,
 } from "@/types/purchases/Purchase";
 import { purchaseService } from "@/services/purchases/purchase.service";
+import { useProduct } from "../product/useProduct";
+import { useProductSerial } from "../product/useProductSerial";
 
 export const usePurchase = {
   keys: {
@@ -29,6 +31,7 @@ export const usePurchase = {
       ...mutationHandler({
         queryClient,
         queryKey: usePurchase.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -40,6 +43,7 @@ export const usePurchase = {
       ...mutationHandler({
         queryClient,
         queryKey: usePurchase.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -60,6 +64,7 @@ export const usePurchase = {
       ...mutationHandler({
         queryClient,
         queryKey: usePurchase.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -71,6 +76,7 @@ export const usePurchase = {
       ...mutationHandler({
         queryClient,
         queryKey: usePurchase.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },

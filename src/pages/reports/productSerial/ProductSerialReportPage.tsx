@@ -199,12 +199,12 @@ const ProductSerialReportPage = () => {
         ))}
       </div>
 
-      <div className="rounded-2xl border border-border/60 bg-card shadow-sm overflow-hidden">
-        <div className="border-b p-4">
+      <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+        <div className="border-b border-border/60 p-4">
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            showSearch={false}
+            searchPlaceholder="Search serials, barcode, product, store..."
             startDate={startDate}
             endDate={endDate}
             onStartDateChange={(value) => { setPage(1); setStartDate(value); }}
@@ -222,85 +222,11 @@ const ProductSerialReportPage = () => {
               setProductId("all");
               setStatus("all");
               setBarcode("");
+              setStartDate("");
+              setEndDate("");
+              setPage(1);
             }}
           />
-        </div>
-
-        <div className="flex flex-col gap-3 border-b p-4">
-          <div>
-            <h2 className="text-lg font-semibold">Filtered Serial Inventory</h2>
-          </div>
-
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-7">
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => {
-                setPage(1);
-                setStartDate(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            />
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => {
-                setPage(1);
-                setEndDate(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            />
-            <select
-              value={storeId}
-              onChange={(e) => {
-                setPage(1);
-                setStoreId(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">All</option>
-              {stores.map((store: any) => (
-                <option key={store.id} value={store.id}>{store.name}</option>
-              ))}
-            </select>
-            <select
-              value={productId}
-              onChange={(e) => {
-                setPage(1);
-                setProductId(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">All</option>
-              {products.map((product: any) => (
-                <option key={product.id} value={product.id}>{product.name}</option>
-              ))}
-            </select>
-            <select
-              value={status}
-              onChange={(e) => {
-                setPage(1);
-                setStatus(e.target.value);
-              }}
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            >
-              <option value="all">All</option>
-              <option value="AVAILABLE">AVAILABLE</option>
-              <option value="SOLD">SOLD</option>
-              <option value="DAMAGED">DAMAGED</option>
-              <option value="RETURNED">RETURNED</option>
-            </select>
-            <input
-              type="text"
-              value={barcode}
-              onChange={(e) => {
-                setPage(1);
-                setBarcode(e.target.value);
-              }}
-              placeholder="Barcode"
-              className="rounded-md border bg-background px-3 py-2 text-sm"
-            />
-          </div>
         </div>
 
         <DataTable

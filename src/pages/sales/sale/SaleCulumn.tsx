@@ -161,12 +161,13 @@ export const SaleColumns = ({
         const currentStatus = row.original.status?.toUpperCase();
         const isPendingLike = currentStatus === "PENDING" || currentStatus === "ACT" || currentStatus === "ACTIVE";
         const isCompleted = currentStatus === "COMPLETED";
+        const isReturnable = currentStatus === "COMPLETED" || currentStatus === "PARTIAL_RETURNED";
 
         const hasActions =
           (onComplete && isPendingLike) ||
           (onCancel && isPendingLike) ||
-          (onReturn && isCompleted) ||
-          (canEdit && isPendingLike) ||
+          (onReturn && isReturnable) ||
+          canEdit ||
           canDelete;
 
         if (!hasActions) {
@@ -177,7 +178,7 @@ export const SaleColumns = ({
           <div className="flex items-center gap-1">
             <TableActions
               onView={onView ? () => onView(row.original) : undefined}
-              onEdit={canEdit && isPendingLike ? () => onEdit(row.original) : undefined}
+              onEdit={canEdit ? () => onEdit(row.original) : undefined}
               onDelete={canDelete ? () => onDelete(row.original.id) : undefined}
             />
             {onPayment && row.original.dueAmount > 0 && (
@@ -191,7 +192,7 @@ export const SaleColumns = ({
                 <Wallet className="h-4 w-4" />
               </Button>
             )}
-            {onReturn && isCompleted && (
+            {onReturn && isReturnable && (
               <Button
                 variant="ghost"
                 size="icon"
@@ -242,7 +243,9 @@ export const SaleColumnsReturn = ({
       cell: ({ row }) => {
         const isCompleted =
           row.original.status?.toUpperCase() === "COMPLETED";
-        if (!onReturn || !isCompleted) {
+        const isPartialReturned =
+          row.original.status?.toUpperCase() === "PARTIAL_RETURNED";
+        if (!onReturn || (!isCompleted && !isPartialReturned)) {
           return <span className="text-[#a1acb8] text-sm">-</span>;
         }
         return (

@@ -21,6 +21,7 @@ import type { StoreResponse } from "@/types/inventory/Store";
 import type { CustomerResponse } from "@/types/sales/Customer";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
 import ReturnSaleModal from "./components/ReturnSaleModal";
+import EditSaleModal from "./components/EditSaleModal";
 import { toast } from "sonner";
 
 const SalePage = () => {
@@ -39,6 +40,8 @@ const SalePage = () => {
   const [openPaymentModal, setOpenPaymentModal] = useState(false);
   const [returningSale, setReturningSale] = useState<SaleResponse | null>(null);
   const [openReturnModal, setOpenReturnModal] = useState(false);
+  const [editingSale, setEditingSale] = useState<SaleResponse | null>(null);
+  const [openEditModal, setOpenEditModal] = useState(false);
 
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
@@ -167,7 +170,8 @@ const SalePage = () => {
 
   const handleEdit = (selectedSale: SaleResponse) => {
     if (!canUpdate) return;
-    navigate(ROUTERS.SALE_EDIT.replace(":id", String(selectedSale.id)));
+    setEditingSale(selectedSale);
+    setOpenEditModal(true);
   };
 
   const handleDelete = (id: number) => {
@@ -196,23 +200,26 @@ const SalePage = () => {
     }
   };
 
-  const handleReturnConfirm = (_reason: string) => {
+  const handleReturnConfirm = (returnData: any) => {
     if (!returningSale?.id) return;
-    returnSaleMutate(returningSale.id, {
-      onSuccess: () => {
-        toast.success(`Sale #${returningSale.reference} has been returned.`);
-        setOpenReturnModal(false);
-        setReturningSale(null);
-      },
-      onError: (err: any) => {
-        const msg =
-          err?.response?.data?.message ||
-          (typeof err?.response?.data === "string" ? err.response.data : null) ||
-          err?.message ||
-          "Failed to return sale. Please try again.";
-        toast.error(msg);
-      },
-    });
+    returnSaleMutate(
+      { id: returningSale.id, payload: returnData },
+      {
+        onSuccess: () => {
+          toast.success(`Sale #${returningSale.reference} return processed successfully.`);
+          setOpenReturnModal(false);
+          setReturningSale(null);
+        },
+        onError: (err: any) => {
+          const msg =
+            err?.response?.data?.message ||
+            (typeof err?.response?.data === "string" ? err.response.data : null) ||
+            err?.message ||
+            "Failed to return sale. Please try again.";
+          toast.error(msg);
+        },
+      }
+    );
   };
 
   const handlePayment = (selectedSale: SaleResponse) => {
@@ -316,14 +323,27 @@ const SalePage = () => {
         amount={paymentSale?.dueAmount}
       />
 
-      <ReturnSaleModal
-        open={openReturnModal}
-        onOpenChange={setOpenReturnModal}
-        saleReference={returningSale?.reference}
-        grandTotal={returningSale?.grandTotal}
-        onConfirm={handleReturnConfirm}
-        isPending={isReturning}
-      />
+      {openReturnModal && (
+        <ReturnSaleModal
+          open={openReturnModal}
+          onOpenChange={setOpenReturnModal}
+          sale={returningSale}
+          saleId={returningSale?.id}
+          saleReference={returningSale?.reference}
+          grandTotal={returningSale?.grandTotal}
+          onConfirm={handleReturnConfirm}
+          isPending={isReturning}
+        />
+      )}
+
+      {openEditModal && (
+        <EditSaleModal
+          open={openEditModal}
+          onOpenChange={setOpenEditModal}
+          sale={editingSale}
+          saleId={editingSale?.id}
+        />
+      )}
     </>
   );
 };

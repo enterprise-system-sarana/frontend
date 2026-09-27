@@ -9,7 +9,6 @@ export interface UserResponse extends BaseResponse {
   username: string;
   email: string;
   profileImage?: string ;
-
   isActive: string;
   isVerified: boolean;
   isLocked: boolean;
@@ -26,7 +25,14 @@ export const UserSchema = z.object({
   lastName: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   email: z.string().email("Invalid email address"),
-  password: z.string().min(6, "Password must be at least 6 characters").optional().nullable(),
+  password: z
+    .string()
+    .optional()
+    .nullable()
+    .or(z.literal(""))
+    .refine((val) => !val || val.length >= 6, {
+      message: "Password must be at least 6 characters",
+    }),
   profileImage: z.string().optional().nullable(),
   isActive: z.string().default(Status.ACTIVE),
   storeId: z.number().optional().nullable(),

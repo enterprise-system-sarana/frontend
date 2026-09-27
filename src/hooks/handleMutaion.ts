@@ -4,14 +4,21 @@ import { toast } from "sonner";
 type MutationHandlerProps = {
     queryClient: QueryClient;
     queryKey: readonly unknown[];
+    additionalQueryKeys?: (readonly unknown[])[];
 };
 
 export const mutationHandler = ({
     queryClient,
     queryKey,
+    additionalQueryKeys,
 }: MutationHandlerProps) => ({
     onSuccess: (res: any) => {
         queryClient.invalidateQueries({ queryKey });
+        if (additionalQueryKeys?.length) {
+            additionalQueryKeys.forEach((key) => {
+                queryClient.invalidateQueries({ queryKey: key });
+            });
+        }
         toast.success(res?.message || "Success");
     },
 

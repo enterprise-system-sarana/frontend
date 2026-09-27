@@ -133,26 +133,29 @@ export const SaleDetailModal = ({
     statusUpper === "ACT" ||
     statusUpper === "ACTIVE";
   const isCompleted = statusUpper === "COMPLETED";
+  const isReturnable = statusUpper === "COMPLETED" || statusUpper === "PARTIAL_RETURNED";
   const isPaid = (sale?.paymentStatus || "").toUpperCase() === "PAID";
 
-  const handleReturn = (reason: string) => {
+  const handleReturn = (returnData: any) => {
     if (!sale?.id) return;
-    returnSaleMutate(sale.id, {
-      onSuccess: () => {
-        toast.success(`Sale #${sale.reference} has been returned.`);
-        setOpenReturnModal(false);
-        onOpenChange(false);
-      },
-      onError: (err: any) => {
-        const msg =
-          err?.response?.data?.message ||
-          (typeof err?.response?.data === "string" ? err.response.data : null) ||
-          err?.message ||
-          "Failed to return sale. Please try again.";
-        toast.error(msg);
-      },
-    });
-    void reason; // reserved for future backend support
+    returnSaleMutate(
+      { id: sale.id, payload: returnData },
+      {
+        onSuccess: () => {
+          toast.success(`Sale #${sale.reference} return processed successfully.`);
+          setOpenReturnModal(false);
+          onOpenChange(false);
+        },
+        onError: (err: any) => {
+          const msg =
+            err?.response?.data?.message ||
+            (typeof err?.response?.data === "string" ? err.response.data : null) ||
+            err?.message ||
+            "Failed to return sale. Please try again.";
+          toast.error(msg);
+        },
+      }
+    );
   };
 
   const receiptData: PosReceiptData | null = sale
@@ -360,16 +363,26 @@ export const SaleDetailModal = ({
                                     )}
                                 </td>
                                 <td className="py-3.5 px-4 text-right text-slate-600 dark:text-slate-300 tabular-nums">
-                                  {Number(item.price || 0).toFixed(2)}
+                                  {Number((item as any).price ?? (item as any).unitPrice ?? 0).toFixed(2)}
                                 </td>
                                 <td className="py-3.5 px-4 text-center font-medium text-slate-700 dark:text-slate-200 tabular-nums">
-                                  {item.quantity}
+                                  {(() => {
+                                    const q = Number(item.quantity ?? (item as any).qty ?? (item.serialNumberIds?.length ? item.serialNumberIds.length : null));
+                                    return !isNaN(q) && q > 0 ? q : 1;
+                                  })()}
                                 </td>
                                 <td className="py-3.5 px-4 text-right text-slate-600 dark:text-slate-300 tabular-nums">
-                                  {Number(item.itemDiscount || 0).toFixed(2)}
+                                  {Number((item as any).itemDiscount ?? (item as any).discount ?? 0).toFixed(2)}
                                 </td>
                                 <td className="py-3.5 px-4 text-right font-semibold text-slate-900 dark:text-white tabular-nums">
-                                  {Number(item.subtotal || 0).toFixed(2)}
+                                  {(() => {
+                                    const rawSub = Number(item.subtotal ?? (item as any).subTotal ?? (item as any).total ?? 0);
+                                    if (rawSub > 0) return rawSub.toFixed(2);
+                                    const p = Number((item as any).price ?? (item as any).unitPrice ?? 0);
+                                    const q = Number(item.quantity ?? (item as any).qty ?? (item.serialNumberIds?.length ? item.serialNumberIds.length : null) ?? 1);
+                                    const d = Number((item as any).itemDiscount ?? (item as any).discount ?? 0);
+                                    return Math.max(p * q - d, 0).toFixed(2);
+                                  })()}
                                 </td>
                               </tr>
                             ))
@@ -432,7 +445,7 @@ export const SaleDetailModal = ({
                   Print
                 </Button>
 
-                {canUpdate && isCompleted && (
+                {canUpdate && isReturnable && (
                   <Button
                     type="button"
                     onClick={() => setOpenReturnModal(true)}
@@ -472,10 +485,12 @@ export const SaleDetailModal = ({
       </Dialog>
 
       {/* Return Sale Confirmation Modal */}
-      {sale && (
+      {sale && openReturnModal && (
         <ReturnSaleModal
           open={openReturnModal}
           onOpenChange={setOpenReturnModal}
+          sale={sale}
+          saleId={sale.id}
           saleReference={sale.reference}
           grandTotal={sale.grandTotal}
           onConfirm={handleReturn}

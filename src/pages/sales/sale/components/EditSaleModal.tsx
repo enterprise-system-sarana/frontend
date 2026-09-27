@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
 import {
   X,
   Plus,
@@ -35,23 +34,19 @@ import FormCustomer from "@/pages/sales/customers/CustomerForm";
 import type {
   SaleResponse,
   SaleItemResponse,
-  SaleReturnRequest,
-  SaleReturnItemRequest,
+  SaleRequest,
 } from "@/types/sales/Sale";
 import type { CustomerResponse } from "@/types/sales/Customer";
 import type { ProductResponse } from "@/types/product/Product";
 import type { ProductSerialResponse } from "@/types/product/ProductSerial";
 import { toast } from "sonner";
 
-export interface ReturnItemState {
-  saleItemId: number;
+export interface EditSaleItemState {
+  id?: number;
   productId: number;
   productName: string;
   price: number;
   stock: number;
-  originalQuantity: number;
-  returnedQuantity: number;
-  remainingQuantity: number;
   quantity: number;
   discount: number;
   tax: number;
@@ -62,15 +57,12 @@ export interface ReturnItemState {
   selectedSerialIds: number[];
 }
 
-interface ReturnSaleModalProps {
+interface EditSaleModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   sale?: SaleResponse | null;
   saleId?: number | null;
-  saleReference?: string | null;
-  grandTotal?: number;
-  onConfirm: (payload: SaleReturnRequest | any) => void;
-  isPending?: boolean;
+  onSuccess?: () => void;
 }
 
 function formatCurrency(value: number) {
@@ -80,19 +72,16 @@ function formatCurrency(value: number) {
   }).format(Number(value) || 0);
 }
 
-export default function ReturnSaleModal({
+export default function EditSaleModal({
   open,
   onOpenChange,
   sale: initialSale,
   saleId: initialSaleId,
-  saleReference,
-  grandTotal: initialGrandTotal = 0,
-  onConfirm,
-  isPending = false,
-}: ReturnSaleModalProps) {
+  onSuccess,
+}: EditSaleModalProps) {
   const effectiveSaleId = initialSale?.id || initialSaleId;
 
-  // Fetch full sale detail to ensure all SaleItems, IDs, and serial lists are fresh
+  // Fetch full sale detail
   const { data: saleDetailData, isLoading: isLoadingSale } =
     useSale.GetSaleById(effectiveSaleId ?? 0, {
       enabled: open && !!effectiveSaleId,
@@ -103,6 +92,8 @@ export default function ReturnSaleModal({
     saleDetailData?.payload ||
     initialSale ||
     undefined;
+
+  const { mutate: updateSaleMutate, isPending: isUpdating } = useSale.Update();
 
   // Customers
   const { data: customerData } = useCustomer.useGetAllCustomer(
@@ -149,18 +140,18 @@ export default function ReturnSaleModal({
 
   // Form State
   const [customerId, setCustomerId] = useState<string>("");
-  const [returnDate, setReturnDate] = useState<string>("");
+  const [saleDate, setSaleDate] = useState<string>("");
   const [reference, setReference] = useState<string>("");
   const [productSearch, setProductSearch] = useState<string>("");
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const searchRef = useRef<HTMLDivElement>(null);
   const initializedSaleIdRef = useRef<number | null>(null);
 
-  const [items, setItems] = useState<ReturnItemState[]>([]);
+  const [items, setItems] = useState<EditSaleItemState[]>([]);
   const [orderTax, setOrderTax] = useState<number>(0);
   const [discount, setDiscount] = useState<number>(0);
   const [shipping, setShipping] = useState<number>(0);
-  const [status, setStatus] = useState<string>("Received");
+  const [status, setStatus] = useState<string>("COMPLETED");
 
   // Sync state when fullSale or modal opens - runs ONCE per sale id
   useEffect(() => {
@@ -169,72 +160,54 @@ export default function ReturnSaleModal({
     initializedSaleIdRef.current = fullSale.id;
 
     setCustomerId(fullSale.customerId ? String(fullSale.customerId) : "");
-    setReturnDate(
+    setSaleDate(
       fullSale.saleDate
         ? fullSale.saleDate.split("T")[0]
         : new Date().toISOString().split("T")[0]
     );
-    setReference(fullSale.reference || saleReference || "");
+    setReference(fullSale.reference || "");
 
     const rawItems = fullSale.items || [];
-    const mappedItems: ReturnItemState[] = rawItems
-      .map((item: SaleItemResponse) => {
-        const saleItemId = Number(item.id);
+    const mappedItems: EditSaleItemState[] = rawItems.map(
+      (item: SaleItemResponse) => {
         const prod = products.find((p) => p.id === item.productId);
         const unitPrice = Number(item.price) || 0;
-        const origQty = Number(item.quantity) || 1;
-        const alreadyReturned = Number(item.returnedQuantity) || 0;
-        const remainingQty = Math.max(0, origQty - alreadyReturned);
-
-        // Serial number resolution
-        const allSerials: number[] =
-          item.productSerialIds || item.serialNumberIds || [];
-        const returnedSerials: number[] = item.returnedProductSerialIds || [];
-        const availableSerialIds = allSerials.filter(
-          (sid) => !returnedSerials.includes(sid)
-        );
-        const isSerialized = allSerials.length > 0;
-
-        // Default return quantity is remaining quantity
-        const defaultReturnQty = remainingQty;
-        const selectedSerialIds = isSerialized
-          ? availableSerialIds.slice(0, defaultReturnQty)
-          : [];
-
+        const qty = Number(item.quantity) || 1;
         const itemDiscount = Number(item.itemDiscount) || 0;
         const itemTax = 0;
-        const lineSubtotal = Math.max(
-          0,
-          unitPrice * defaultReturnQty - itemDiscount
-        );
+
+        // Serials
+        const allSerials: number[] =
+          item.productSerialIds || item.serialNumberIds || [];
+        const isSerialized = allSerials.length > 0;
+        const selectedSerialIds = isSerialized ? allSerials.slice(0, qty) : [];
+
+        const lineSubtotal = Math.max(0, unitPrice * qty - itemDiscount);
 
         return {
-          saleItemId,
+          id: item.id,
           productId: item.productId,
           productName:
             item.productName || prod?.name || `Product #${item.productId}`,
           price: unitPrice,
-          stock: prod?.quantity ?? origQty,
-          originalQuantity: origQty,
-          returnedQuantity: alreadyReturned,
-          remainingQuantity: remainingQty,
-          quantity: defaultReturnQty,
+          stock: prod?.quantity ?? qty,
+          quantity: qty,
           discount: itemDiscount,
           tax: itemTax,
-          subtotal: lineSubtotal,
+          subtotal: Number(item.subtotal) || lineSubtotal,
           imageUrl: prod?.imageUrl || "",
           isSerialized,
-          availableSerialIds,
+          availableSerialIds: allSerials,
           selectedSerialIds,
         };
-      })
-      .filter((item) => item.remainingQuantity > 0);
+      }
+    );
 
     setItems(mappedItems);
     setOrderTax(0);
-    setDiscount(0);
+    setDiscount(Number(fullSale.discount) || 0);
     setShipping(0);
-    setStatus("Received");
+    setStatus(fullSale.status || "COMPLETED");
     setProductSearch("");
   }, [open, fullSale?.id, products.length]);
 
@@ -251,22 +224,17 @@ export default function ReturnSaleModal({
 
   // Update item field and recalculate subtotal
   const updateItem = (
-    saleItemId: number,
+    productId: number,
     field: "quantity" | "price" | "discount" | "tax",
     value: number
   ) => {
     setItems((prev) =>
       prev.map((item) => {
-        if (item.saleItemId !== saleItemId) return item;
+        if (item.productId !== productId) return item;
 
-        let newQty = field === "quantity" ? value : item.quantity;
-        // Clamp return quantity to remaining returnable quantity
-        if (field === "quantity") {
-          newQty = Math.min(Math.max(1, newQty), item.remainingQuantity);
-        }
-
+        const newQty = field === "quantity" ? Math.max(1, value) : item.quantity;
         let newSelectedSerials = item.selectedSerialIds;
-        // For serialized items, sync selected serial numbers count with quantity
+
         if (item.isSerialized && field === "quantity") {
           if (newQty > item.selectedSerialIds.length) {
             const needed = newQty - item.selectedSerialIds.length;
@@ -282,16 +250,23 @@ export default function ReturnSaleModal({
           }
         }
 
-        const price = field === "price" ? value : item.price;
-        const disc = field === "discount" ? value : item.discount;
-        const taxRate = field === "tax" ? value : item.tax;
+        const price = field === "price" ? Math.max(0, value) : item.price;
+        const disc = field === "discount" ? Math.max(0, value) : item.discount;
+        const taxRate = field === "tax" ? Math.max(0, value) : item.tax;
 
         const base = Math.max(0, price * newQty - disc);
         const subtotal = base + base * (taxRate / 100);
 
         return {
           ...item,
-          [field]: field === "quantity" ? newQty : value,
+          [field]:
+            field === "quantity"
+              ? newQty
+              : field === "price"
+              ? price
+              : field === "discount"
+              ? disc
+              : taxRate,
           quantity: newQty,
           selectedSerialIds: newSelectedSerials,
           subtotal: Math.round(subtotal * 100) / 100,
@@ -301,16 +276,15 @@ export default function ReturnSaleModal({
   };
 
   // Toggle specific serial number selection
-  const toggleSerial = (saleItemId: number, serialId: number) => {
+  const toggleSerial = (productId: number, serialId: number) => {
     setItems((prev) =>
       prev.map((item) => {
-        if (item.saleItemId !== saleItemId) return item;
+        if (item.productId !== productId) return item;
         const alreadySelected = item.selectedSerialIds.includes(serialId);
-        let newSelected = alreadySelected
+        const newSelected = alreadySelected
           ? item.selectedSerialIds.filter((id) => id !== serialId)
           : [...item.selectedSerialIds, serialId];
 
-        // Serial count must match return quantity
         const newQty = Math.max(1, newSelected.length);
         const base = Math.max(0, item.price * newQty - item.discount);
         const subtotal = base + base * (item.tax / 100);
@@ -325,9 +299,54 @@ export default function ReturnSaleModal({
     );
   };
 
-  // Remove item from return list (so only some items are returned)
-  const removeItem = (saleItemId: number) => {
-    setItems((prev) => prev.filter((item) => item.saleItemId !== saleItemId));
+  // Remove item from sale
+  const removeItem = (productId: number) => {
+    setItems((prev) => prev.filter((item) => item.productId !== productId));
+  };
+
+  // Add product from search
+  const addProductToSale = (prod: ProductResponse) => {
+    setItems((prev) => {
+      const existing = prev.find((i) => i.productId === prod.id);
+      if (existing) {
+        return prev.map((i) =>
+          i.productId === prod.id
+            ? {
+                ...i,
+                quantity: i.quantity + 1,
+                subtotal: Math.round((i.quantity + 1) * i.price * 100) / 100,
+              }
+            : i
+        );
+      }
+
+      const price = Number(prod.salePrice || prod.costPrice || 0);
+      const isSerialized = Boolean(
+        prod.serialized || prod.isSerialized || prod.hasSerialNumber
+      );
+      const serialIds = (prod.serials || []).map((s) => s.id);
+
+      return [
+        ...prev,
+        {
+          productId: prod.id,
+          productName: prod.name,
+          price,
+          stock: prod.quantity ?? 0,
+          quantity: 1,
+          discount: 0,
+          tax: 0,
+          subtotal: price,
+          imageUrl: prod.imageUrl || "",
+          isSerialized,
+          availableSerialIds: serialIds,
+          selectedSerialIds: serialIds.slice(0, 1),
+        },
+      ];
+    });
+
+    setProductSearch("");
+    setIsSearchOpen(false);
   };
 
   // Filter products for the search box
@@ -367,38 +386,70 @@ export default function ReturnSaleModal({
   };
 
   const handleSave = () => {
+    if (!effectiveSaleId) return;
+
     if (items.length === 0) {
-      toast.error("Please select at least one item to return.");
+      toast.error("Please add at least one product to the sale.");
       return;
     }
 
     // Validate serialized items
     for (const it of items) {
-      if (it.isSerialized) {
+      if (it.isSerialized && it.availableSerialIds.length > 0) {
         if (it.selectedSerialIds.length !== it.quantity) {
           toast.error(
-            `Item "${it.productName}" has ${it.selectedSerialIds.length} serial(s) selected, but quantity is ${it.quantity}. Serial count must match return quantity.`
+            `Product "${it.productName}" has ${it.selectedSerialIds.length} serials selected, but quantity is ${it.quantity}. Serials count must match quantity.`
           );
           return;
         }
       }
     }
 
-    // Construct request conforming exactly to SaleReturnRequest
-    const payload: SaleReturnRequest = {
-      items: items.map((it) => {
-        const itemReq: SaleReturnItemRequest = {
-          saleItemId: it.saleItemId,
-          quantity: it.quantity,
-        };
-        if (it.isSerialized) {
-          itemReq.serialNumberIds = it.selectedSerialIds;
-        }
-        return itemReq;
-      }),
+    const request: SaleRequest = {
+      reference,
+      saleDate,
+      storeId: fullSale?.storeId || 1,
+      customerId: customerId ? Number(customerId) : null,
+      bankId: fullSale?.bankId || null,
+      discount: Number(discount) || 0,
+      paidAmount: fullSale?.paidAmount || 0,
+      noted: fullSale?.noted || null,
+      status: status || fullSale?.status || "COMPLETED",
+      paymentStatus: fullSale?.paymentStatus || "PAID",
+      paymentOption: (fullSale?.dueAmount ?? 0) > 0 ? "DUE" : "PAID",
+      items: items.map((it) => ({
+        productId: it.productId,
+        quantity: it.quantity,
+        price: it.price,
+        itemDiscount: it.discount,
+        subtotal: it.subtotal,
+        serialNumberIds:
+          it.isSerialized && it.selectedSerialIds.length > 0
+            ? it.selectedSerialIds
+            : undefined,
+      })),
     };
 
-    onConfirm(payload);
+    updateSaleMutate(
+      { id: effectiveSaleId, request },
+      {
+        onSuccess: () => {
+          toast.success(`Sale #${reference} updated successfully.`);
+          onOpenChange(false);
+          onSuccess?.();
+        },
+        onError: (err: any) => {
+          const msg =
+            err?.response?.data?.message ||
+            (typeof err?.response?.data === "string"
+              ? err.response.data
+              : null) ||
+            err?.message ||
+            "Failed to update sale. Please try again.";
+          toast.error(msg);
+        },
+      }
+    );
   };
 
   return (
@@ -416,13 +467,13 @@ export default function ReturnSaleModal({
           {/* Header */}
           <DialogHeader className="flex flex-row items-center justify-between border-b border-border/60 px-6 py-4">
             <DialogTitle className="text-xl font-bold tracking-tight text-foreground">
-              Edit Sales Return
+              Edit Sale
             </DialogTitle>
             <button
               type="button"
               onClick={handleCancel}
               aria-label="Close"
-              className="h-6 w-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400"
+              className="h-6 w-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400 cursor-pointer"
             >
               <X className="h-3.5 w-3.5 stroke-[2.5]" />
             </button>
@@ -459,7 +510,7 @@ export default function ReturnSaleModal({
                       type="button"
                       size="icon"
                       onClick={() => setOpenCustomerModal(true)}
-                      className="h-10 w-10 shrink-0 rounded-md bg-[#1c2437] hover:bg-[#2b354f] text-white"
+                      className="h-10 w-10 shrink-0 rounded-md bg-[#1c2437] hover:bg-[#2b354f] text-white cursor-pointer"
                       title="Add Customer"
                     >
                       <Plus className="h-4 w-4" />
@@ -475,8 +526,8 @@ export default function ReturnSaleModal({
                   <div className="relative">
                     <Input
                       type="date"
-                      value={returnDate}
-                      onChange={(e) => setReturnDate(e.target.value)}
+                      value={saleDate}
+                      onChange={(e) => setSaleDate(e.target.value)}
                       className="h-10 border-border/80 bg-background pr-9 text-sm"
                     />
                     <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -498,7 +549,7 @@ export default function ReturnSaleModal({
                 </div>
               </div>
 
-              {/* Row 2: Product Search / Filter */}
+              {/* Row 2: Product Search */}
               <div className="space-y-1.5" ref={searchRef}>
                 <label className="text-xs font-semibold text-foreground">
                   Product <span className="text-red-500">*</span>
@@ -514,7 +565,7 @@ export default function ReturnSaleModal({
                     onFocus={() => {
                       if (productSearch.trim()) setIsSearchOpen(true);
                     }}
-                    placeholder="Search product in this return..."
+                    placeholder="Search product by name, code or barcode to add..."
                     className="h-10 border-border/80 bg-background pr-10 text-sm"
                   />
                   <ScanLine className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -526,10 +577,7 @@ export default function ReturnSaleModal({
                         <div
                           key={p.id}
                           className="flex w-full items-center justify-between rounded-sm px-3 py-2 text-left text-sm hover:bg-accent hover:text-accent-foreground cursor-pointer"
-                          onClick={() => {
-                            setProductSearch(p.name);
-                            setIsSearchOpen(false);
-                          }}
+                          onClick={() => addProductToSale(p)}
                         >
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-muted-foreground" />
@@ -557,7 +605,7 @@ export default function ReturnSaleModal({
                       <th className="px-3 py-3 text-center w-[14%]">
                         Net Unit Price($)
                       </th>
-                      <th className="px-3 py-3 text-center w-[10%]">Remaining</th>
+                      <th className="px-3 py-3 text-center w-[10%]">Stock</th>
                       <th className="px-3 py-3 text-center w-[11%]">QTY</th>
                       <th className="px-3 py-3 text-center w-[11%]">Discount($)</th>
                       <th className="px-3 py-3 text-center w-[9%]">Tax %</th>
@@ -572,14 +620,13 @@ export default function ReturnSaleModal({
                           colSpan={8}
                           className="py-8 text-center text-sm text-muted-foreground"
                         >
-                          No items eligible for return (all items may have already
-                          been returned).
+                          No items in this sale. Use the search bar above to add products.
                         </td>
                       </tr>
                     ) : (
                       items.map((item) => (
                         <tr
-                          key={item.saleItemId}
+                          key={item.productId}
                           className="hover:bg-muted/30 transition-colors"
                         >
                           {/* Product Name + Serials */}
@@ -611,8 +658,7 @@ export default function ReturnSaleModal({
                                     <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
                                       <Barcode className="h-3 w-3" />
                                       <span>
-                                        Select serials to return (
-                                        {item.selectedSerialIds.length}/
+                                        Serials ({item.selectedSerialIds.length}/
                                         {item.quantity}):
                                       </span>
                                     </div>
@@ -627,9 +673,9 @@ export default function ReturnSaleModal({
                                             key={sid}
                                             type="button"
                                             onClick={() =>
-                                              toggleSerial(item.saleItemId, sid)
+                                              toggleSerial(item.productId, sid)
                                             }
-                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono transition-colors border ${
+                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono transition-colors border cursor-pointer ${
                                               isSelected
                                                 ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40 font-semibold"
                                                 : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted"
@@ -650,32 +696,37 @@ export default function ReturnSaleModal({
                           </td>
 
                           {/* Net Unit Price */}
-                          <td className="px-3 py-3 text-center font-medium text-foreground align-top">
-                            {formatCurrency(item.price)}
+                          <td className="px-3 py-3 text-center align-top">
+                            <Input
+                              type="number"
+                              min={0}
+                              step={0.5}
+                              value={item.price}
+                              onChange={(e) =>
+                                updateItem(
+                                  item.productId,
+                                  "price",
+                                  Number(e.target.value) || 0
+                                )
+                              }
+                              className="h-8 w-24 text-center border-border/80 mx-auto"
+                            />
                           </td>
 
-                          {/* Remaining returnable stock */}
-                          <td className="px-3 py-3 text-center text-muted-foreground align-top">
-                            <span className="font-semibold text-foreground">
-                              {item.remainingQuantity}
-                            </span>
-                            {item.returnedQuantity > 0 && (
-                              <span className="block text-[11px] text-muted-foreground">
-                                (returned: {item.returnedQuantity})
-                              </span>
-                            )}
+                          {/* Stock */}
+                          <td className="px-3 py-3 text-center text-muted-foreground align-top pt-4">
+                            {item.stock}
                           </td>
 
-                          {/* QTY (Editable return quantity) */}
+                          {/* QTY */}
                           <td className="px-3 py-3 text-center align-top">
                             <Input
                               type="number"
                               min={1}
-                              max={item.remainingQuantity}
                               value={item.quantity}
                               onChange={(e) =>
                                 updateItem(
-                                  item.saleItemId,
+                                  item.productId,
                                   "quantity",
                                   Math.max(1, Number(e.target.value) || 1)
                                 )
@@ -693,7 +744,7 @@ export default function ReturnSaleModal({
                               value={item.discount}
                               onChange={(e) =>
                                 updateItem(
-                                  item.saleItemId,
+                                  item.productId,
                                   "discount",
                                   Math.max(0, Number(e.target.value) || 0)
                                 )
@@ -712,7 +763,7 @@ export default function ReturnSaleModal({
                               value={item.tax}
                               onChange={(e) =>
                                 updateItem(
-                                  item.saleItemId,
+                                  item.productId,
                                   "tax",
                                   Math.max(0, Number(e.target.value) || 0)
                                 )
@@ -722,19 +773,19 @@ export default function ReturnSaleModal({
                           </td>
 
                           {/* Subtotal */}
-                          <td className="px-3 py-3 text-center font-semibold text-foreground align-top">
+                          <td className="px-3 py-3 text-center font-semibold text-foreground align-top pt-4">
                             {formatCurrency(item.subtotal)}
                           </td>
 
-                          {/* Delete Item from Return */}
-                          <td className="px-2 py-3 text-center align-top">
+                          {/* Delete Item */}
+                          <td className="px-2 py-3 text-center align-top pt-3">
                             <Button
                               type="button"
                               variant="ghost"
                               size="icon"
-                              onClick={() => removeItem(item.saleItemId)}
-                              className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded"
-                              title="Do not return this item"
+                              onClick={() => removeItem(item.productId)}
+                              className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded cursor-pointer"
+                              title="Remove item from sale"
                             >
                               <Trash2 className="h-4 w-4" />
                             </Button>
@@ -841,10 +892,9 @@ export default function ReturnSaleModal({
                       <SelectValue placeholder="Select" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Received">Received</SelectItem>
-                      <SelectItem value="Pending">Pending</SelectItem>
-                      <SelectItem value="Ordered">Ordered</SelectItem>
-                      <SelectItem value="Completed">Completed</SelectItem>
+                      <SelectItem value="COMPLETED">Completed</SelectItem>
+                      <SelectItem value="PENDING">Pending</SelectItem>
+                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -858,7 +908,7 @@ export default function ReturnSaleModal({
               type="button"
               variant="outline"
               onClick={handleCancel}
-              disabled={isPending}
+              disabled={isUpdating}
               className="h-10 rounded-md bg-[#1c2437] hover:bg-[#2b354f] text-white border-none px-6 font-medium text-sm transition-colors cursor-pointer"
             >
               Cancel
@@ -866,10 +916,10 @@ export default function ReturnSaleModal({
             <Button
               type="button"
               onClick={handleSave}
-              disabled={isPending || items.length === 0}
+              disabled={isUpdating || items.length === 0}
               className="h-10 rounded-md bg-[#ff9f43] hover:bg-[#f08c2a] text-white font-semibold px-6 shadow-sm disabled:opacity-60 transition-colors cursor-pointer"
             >
-              {isPending ? (
+              {isUpdating ? (
                 <span className="flex items-center gap-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                   Saving…

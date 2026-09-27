@@ -13,6 +13,7 @@ import { PaymentColumns } from "./PaymentColumn";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { PageFilter } from "@/utils/PageFilter";
 
 const formatCurrency = (value: number) => `$${(Number(value) || 0).toFixed(2)}`;
 
@@ -73,9 +74,32 @@ const PaymentPage = () => {
                 <Card size="sm"><CardContent className="flex items-center justify-between"><div><p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">Bank </p><p className="mt-1 text-2xl font-bold">{formatCurrency(bankAmount)}</p></div><div className="rounded-xl bg-sky-500/10 p-3 text-sky-600"><CalendarDays className="h-5 w-5" /></div></CardContent></Card>
             </div>
 
-            <Card>
-                <CardContent className="p-0">
+            <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+                <div className="p-4 border-b border-border/60">
+                    <PageFilter
+                        search={search}
+                        onSearchChange={setSearch}
+                        searchPlaceholder="Search payments..."
+                        filterGroups={[
+                            {
+                                key: "method",
+                                label: "Method",
+                                options: [
+                                    { label: "Cash", value: "CASH" },
+                                    { label: "Bank", value: "BANK" },
+                                ],
+                            },
+                        ]}
+                        filterValues={{ method: method || "all" }}
+                        onFilterChange={(key, val) => {
+                            if (key === "method") setMethod(val || "all");
+                            setPage(1);
+                        }}
+                        onReset={clearFilters}
+                    />
+                </div>
 
+                <div className="px-0">
                     <QueryBoundary isLoading={isLoading} isError={isError}>
                         <DataTable columns={columns} data={payments} pagination={{
                             currentPage: page, pageSize: size,
@@ -84,8 +108,8 @@ const PaymentPage = () => {
                             onPageChange: setPage, onPageSizeChange: setSize,
                         }} />
                     </QueryBoundary>
-                </CardContent>
-            </Card>
+                </div>
+            </div>
 
             <PaymentForm open={open} setOpen={setOpen} payment={payment} />
             <ConfirmDelete isOpen={openConfirmDelete} setIsOpen={setOpenConfirmDelete} entityName="Payment" confirmDelete={() => {

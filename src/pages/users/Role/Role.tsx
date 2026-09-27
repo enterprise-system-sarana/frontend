@@ -185,7 +185,7 @@ const RolePage = () => {
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search categories..."
+              searchPlaceholder="Search roles..."
               filterGroups={filterGroups}
               filterValues={filterValues}
               onFilterChange={handleFilterChange}

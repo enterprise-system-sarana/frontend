@@ -6,10 +6,23 @@ export interface SaleItemResponse extends BaseResponse {
   productId: number;
   productName: string;
   quantity: number;
+  returnedQuantity?: number;
   price: number;
   itemDiscount: number;
   subtotal: number;
   serialNumberIds?: number[];
+  productSerialIds?: number[];
+  returnedProductSerialIds?: number[];
+}
+
+export interface SaleReturnItemRequest {
+  saleItemId: number;
+  quantity: number;
+  serialNumberIds?: number[];
+}
+
+export interface SaleReturnRequest {
+  items: SaleReturnItemRequest[];
 }
 
 export type SaleItem = {
@@ -47,6 +60,7 @@ export const SaleStatus = {
   Completed: "COMPLETED",
   Cancelled: "CANCELLED",
   Returned: "RETURNED",
+  PartialReturned: "PARTIAL_RETURNED",
 } as const;
 
 export type SaleStatus = (typeof SaleStatus)[keyof typeof SaleStatus];

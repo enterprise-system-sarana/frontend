@@ -10,18 +10,20 @@ export const useProduct = {
         list: (filter: ProductFilter) => [...useProduct.keys.all, "list", { ...filter }],
         detail: (id: number) => [...useProduct.keys.all, "detail", id]
     },
-    useGetAllProduct: (filter: ProductFilter = { page: 1, size: 10 }) => {
+    useGetAllProduct: (filter: ProductFilter = { page: 1, size: 10 }, options?: any) => {
         return useQuery({
             queryKey: useProduct.keys.list(filter),
             queryFn: () => ProductService.findAll(filter),
-            retry: 1
+            retry: 1,
+            ...options,
         });
     },
-    GetAllProduct: (filter: ProductFilter = { page: 1, size: 10 }) => {
+    GetAllProduct: (filter: ProductFilter = { page: 1, size: 10 }, options?: any) => {
         return useQuery({
             queryKey: useProduct.keys.list(filter),
             queryFn: () => ProductService.findAll(filter),
-            retry: 1
+            retry: 1,
+            ...options,
         });
     },
     useGetProductById: (id: number, enabled: boolean = true) => {

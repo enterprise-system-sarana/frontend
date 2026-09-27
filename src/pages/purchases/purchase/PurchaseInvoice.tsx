@@ -143,13 +143,20 @@ export default function PurchaseInvoice() {
           >
             {/* ===== Header ===== */}
             <div className="flex items-start justify-between pb-6 mb-6 border-b-2 border-slate-900">
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight uppercase">
-                  Purchase Invoice
-                </h1>
-                <p className="text-xs text-slate-500 mt-1">
-                  Invoice :{purchase.referenceNo}
-                </p>
+              <div className="flex items-center gap-4">
+                <img
+                  src="/logo.png"
+                  alt="Company Logo"
+                  className="h-14 max-w-[160px] object-contain"
+                />
+                <div>
+                  <h1 className="text-2xl font-bold tracking-tight text-slate-900 leading-tight uppercase">
+                    Purchase Invoice
+                  </h1>
+                  <p className="text-xs text-slate-500 mt-1">
+                    Invoice: {purchase.referenceNo}
+                  </p>
+                </div>
               </div>
 
               <div className="text-right">

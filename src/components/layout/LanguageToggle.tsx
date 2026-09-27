@@ -20,13 +20,13 @@ export function LanguageToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex items-center gap-2 px-2.5 py-1  border border-border/60 bg-card shadow-2xs cursor-pointer hover:bg-muted/60 transition-all select-none text-xs font-semibold text-foreground">
+        <div className="flex items-center gap-2.5 h-10 px-3.5 rounded-lg border border-border/70 bg-card shadow-2xs cursor-pointer hover:bg-muted/70 transition-all select-none text-sm font-bold text-foreground">
           <img
             src={activeLang.flagImg}
             alt={activeLang.label}
-            className="w-4.5 h-3 object-cover rounded-xs shadow-xs border border-border/40 shrink-0"
+            className="w-5.5 h-4 object-cover rounded-xs shadow-xs border border-border/40 shrink-0"
           />
-          <span className="uppercase text-[11px] font-bold tracking-wider">{activeLang.code}</span>
+          <span className="uppercase text-xs font-bold tracking-wider">{activeLang.code}</span>
         </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-38  border-border/60 shadow-lg">

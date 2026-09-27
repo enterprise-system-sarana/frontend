@@ -24,7 +24,7 @@ export const salesService = {
     cancel(id: number) {
         return api.patch(`/sales/${id}/cancel`).then((res) => res.data);
     },
-    returnSale(id: number) {
-        return api.patch(`/sales/${id}/return`).then((res) => res.data);
+    returnSale(id: number, payload?: any) {
+        return api.patch(`/sales/${id}/return`, payload).then((res) => res.data);
     }
 };

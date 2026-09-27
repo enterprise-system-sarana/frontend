@@ -6,7 +6,8 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import { Printer, X, CheckCircle2, Store, User, ShoppingBag } from "lucide-react";
+import { Printer, X, CheckCircle2, Store, User, ShoppingBag, ShieldCheck } from "lucide-react";
+import { fileService } from "@/services/file/file.service";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { CustomerResponse } from "@/types/sales/Customer";
 import type { SaleItemResponse } from "@/types/sales/Sale";
@@ -102,6 +103,56 @@ export default function SaleInvoiceModal({
   const isPaid = invoice.paymentStatus?.toUpperCase() === "PAID";
   const store = invoice.store;
 
+  const logoUrl = (() => {
+    if (store?.logo) {
+      if (
+        store.logo.startsWith("http://") ||
+        store.logo.startsWith("https://") ||
+        store.logo.startsWith("/") ||
+        store.logo.startsWith("data:") ||
+        store.logo.startsWith("blob:")
+      ) {
+        return store.logo;
+      }
+      return fileService.getPreviewUrl("store", store.logo);
+    }
+    return "/logo.png";
+  })();
+
+  const warrantyUntilDate = (() => {
+    const rawDate = invoice?.saleDate;
+    const baseDate = rawDate ? new Date(rawDate) : new Date();
+    if (isNaN(baseDate.getTime())) return "14 days from purchase";
+    const warrantyDate = new Date(baseDate.getTime() + 14 * 24 * 60 * 60 * 1000);
+    try {
+      return warrantyDate.toLocaleDateString("en-US", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+    } catch {
+      return "14 days from purchase";
+    }
+  })();
+
+  const computedSubtotal = (invoice.items || []).reduce((sum, item: any) => {
+    const q = Number(item.quantity ?? item.qty ?? item.productQty ?? (item.serialNumberIds?.length > 0 ? item.serialNumberIds.length : null) ?? 1);
+    const p = Number(item.price ?? item.unitPrice ?? 0);
+    const d = Number(item.itemDiscount ?? item.discount ?? 0);
+    const s = Number(item.subtotal ?? item.subTotal ?? item.total ?? 0);
+    return sum + (s > 0 ? s : Math.max(p * q - d, 0));
+  }, 0);
+
+  const resolvedSubtotal = Number(
+    invoice.subtotal > 0
+      ? invoice.subtotal
+      : computedSubtotal > 0
+        ? computedSubtotal
+        : invoice.grandTotal > 0
+          ? invoice.grandTotal + (invoice.discount || 0)
+          : 0
+  );
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
@@ -148,10 +199,20 @@ export default function SaleInvoiceModal({
 
             {/* Header: Store + Invoice Info */}
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
-              {/* Store Info */}
-              <div className="flex items-start gap-3">
-                <div className="size-12 shrink-0 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <Store className="size-6 text-primary" />
+              {/* Store Info & Logo */}
+              <div className="flex items-start gap-3.5">
+                <div className="size-14 shrink-0 rounded-xl bg-white border border-border/80 p-1 flex items-center justify-center shadow-xs overflow-hidden">
+                  <img
+                    src={logoUrl}
+                    alt={store?.name ?? "Store Logo"}
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (target.src !== window.location.origin + "/logo.png") {
+                        target.src = "/logo.png";
+                      }
+                    }}
+                    className="h-full w-full object-contain"
+                  />
                 </div>
                 <div>
                   <h2 className="text-base font-extrabold text-foreground leading-tight">
@@ -241,25 +302,41 @@ export default function SaleInvoiceModal({
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border/50">
-                  {invoice.items.map((item, i) => (
-                    <tr key={i} className="hover:bg-muted/20 transition-colors">
-                      <td className="px-4 py-3 font-medium text-foreground">
-                        {item.productName || `Product #${item.productId}`}
-                      </td>
-                      <td className="px-4 py-3 text-center text-muted-foreground tabular-nums">
-                        {item.quantity}
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
-                        {fmt(item.price)}
-                      </td>
-                      <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
-                        {item.itemDiscount > 0 ? `-${fmt(item.itemDiscount)}` : "-"}
-                      </td>
-                      <td className="px-4 py-3 text-right font-bold text-foreground tabular-nums">
-                        {fmt(item.subtotal)}
-                      </td>
-                    </tr>
-                  ))}
+                  {invoice.items.map((item: any, i) => {
+                    const itemQty = Number(
+                      item.quantity ??
+                      item.qty ??
+                      item.productQty ??
+                      item.count ??
+                      (item.serialNumberIds && item.serialNumberIds.length > 0 ? item.serialNumberIds.length : null) ??
+                      (item.serialNumbers && item.serialNumbers.length > 0 ? item.serialNumbers.length : null) ??
+                      1
+                    );
+                    const itemPrice = Number(item.price ?? item.unitPrice ?? 0);
+                    const itemDisc = Number(item.itemDiscount ?? item.discount ?? 0);
+                    const rawSub = Number(item.subtotal ?? item.subTotal ?? item.total ?? 0);
+                    const itemSubtotal = rawSub > 0 ? rawSub : Math.max(itemPrice * itemQty - itemDisc, 0);
+
+                    return (
+                      <tr key={i} className="hover:bg-muted/20 transition-colors">
+                        <td className="px-4 py-3 font-medium text-foreground">
+                          {item.productName || `Product #${item.productId}`}
+                        </td>
+                        <td className="px-4 py-3 text-center text-muted-foreground tabular-nums">
+                          {itemQty}
+                        </td>
+                        <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
+                          {fmt(itemPrice)}
+                        </td>
+                        <td className="px-4 py-3 text-right text-muted-foreground tabular-nums">
+                          {itemDisc > 0 ? `-${fmt(itemDisc)}` : "-"}
+                        </td>
+                        <td className="px-4 py-3 text-right font-bold text-foreground tabular-nums">
+                          {fmt(itemSubtotal)}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
@@ -285,7 +362,7 @@ export default function SaleInvoiceModal({
               <div className="w-full sm:w-72 rounded-xl border border-border/60 overflow-hidden text-xs">
                 <div className="flex justify-between px-4 py-2.5 border-b border-border/40">
                   <span className="text-muted-foreground">Subtotal</span>
-                  <span className="tabular-nums font-medium">{fmt(invoice.subtotal)}</span>
+                  <span className="tabular-nums font-medium">{fmt(resolvedSubtotal)}</span>
                 </div>
                 {invoice.discount > 0 && (
                   <div className="flex justify-between px-4 py-2.5 border-b border-border/40">
@@ -308,6 +385,24 @@ export default function SaleInvoiceModal({
                   </span>
                 </div>
               </div>
+            </div>
+
+            {/* 14-Day Warranty Policy Banner */}
+            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 flex items-center justify-between gap-3">
+              <div className="flex items-center gap-2.5">
+                <div className="size-8 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                  <ShieldCheck className="size-4" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-foreground">14-Day Warranty Guarantee</p>
+                  <p className="text-[11px] text-muted-foreground">
+                    Valid until <span className="font-semibold text-foreground">{warrantyUntilDate}</span> • Covers hardware & manufacturer defects
+                  </p>
+                </div>
+              </div>
+              <span className="shrink-0 rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-bold tracking-wide">
+                14 DAYS
+              </span>
             </div>
 
             {/* Footer */}

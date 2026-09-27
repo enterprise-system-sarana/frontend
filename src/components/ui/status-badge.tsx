@@ -63,6 +63,12 @@ const statusConfig: Record<string, { labelKey?: "common.active" | "common.inacti
         className:
             "bg-purple-500/15 text-purple-600 border-purple-500/25 hover:bg-purple-500/25 dark:text-purple-400 font-medium rounded-lg",
     },
+    PARTIAL_RETURNED: {
+        labelKey: undefined,
+        defaultLabel: "Partial Returned",
+        className:
+            "bg-indigo-500/15 text-indigo-600 border-indigo-500/25 hover:bg-indigo-500/25 dark:text-indigo-400 font-medium rounded-lg",
+    },
     PAID: {
         labelKey: undefined,
         defaultLabel: "Paid",

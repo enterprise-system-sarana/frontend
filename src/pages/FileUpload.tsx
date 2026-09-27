@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, type ChangeEvent, type DragEvent } from "react";
 import { Input } from "@/components/ui/input";
 import { fileService } from "@/services/file/file.service";
+import api from "@/services/lib/axios";
 import { Eye, Trash2, Plus, Loader2 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
@@ -37,25 +38,46 @@ export function FileUpload({
   const [isDragging, setIsDragging] = useState(false);
   const [previewOpen, setPreviewOpen] = useState(false);
   const [uploadedFileName, setUploadedFileName] = useState<string | null>(value || null);
-  const [serverPreviewUrl, setServerPreviewUrl] = useState<string | null>(
-    value ? fileService.getPreviewUrl(activeBucket, value) : null
-  );
+  const [serverPreviewUrl, setServerPreviewUrl] = useState<string | null>(null);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
+    let isMounted = true;
+    let createdUrl = "";
+
     if (value) {
       setUploadedFileName(value);
-      setServerPreviewUrl(
-        value.startsWith("http") || value.startsWith("blob:") || value.startsWith("data:")
-          ? value
-          : fileService.getPreviewUrl(activeBucket, value)
-      );
+      if (value.startsWith("http") || value.startsWith("blob:") || value.startsWith("data:")) {
+        setServerPreviewUrl(value);
+      } else {
+        const previewUrl = fileService.getPreviewUrl(activeBucket, value);
+        api
+          .get(previewUrl, { responseType: "blob" })
+          .then((res) => {
+            if (isMounted) {
+              createdUrl = URL.createObjectURL(res.data);
+              setServerPreviewUrl(createdUrl);
+            }
+          })
+          .catch(() => {
+            if (isMounted) {
+              setServerPreviewUrl(previewUrl);
+            }
+          });
+      }
     } else if (!file) {
       setUploadedFileName(null);
       setServerPreviewUrl(null);
     }
-  }, [value, activeBucket]);
+
+    return () => {
+      isMounted = false;
+      if (createdUrl) {
+        URL.revokeObjectURL(createdUrl);
+      }
+    };
+  }, [value, activeBucket, file]);
 
   const handleFileSelect = async (selectedFile: File | undefined) => {
     if (!selectedFile) return;

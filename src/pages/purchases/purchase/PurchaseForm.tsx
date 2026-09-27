@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useForm, useStore as useFormStore } from "@tanstack/react-form";
+import { useQueryClient } from "@tanstack/react-query";
 import { useNavigate, useParams, useSearchParams } from "react-router-dom";
 import {
   ArrowLeft,
@@ -11,6 +12,9 @@ import {
   Trash2,
   Wallet,
   X,
+  FileSpreadsheet,
+  DollarSign,
+  AlertCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -53,6 +57,7 @@ import { useBank } from "@/hooks/finance/useBank";
 import FormSupplier from "@/pages/purchases/supplier/SupplierForm";
 import FormBank from "@/pages/finance/bank/BankForm";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
+import ExcelSerialModal from "./ExcelSerialModal";
 
 import { ROUTERS } from "@/constants/Route";
 
@@ -70,6 +75,53 @@ function formatCurrency(value: number) {
     currency: "USD",
   }).format(value || 0);
 }
+
+export type ImportanceLevel = "LOW" | "NORMAL" | "HIGH" | "URGENT";
+
+export const IMPORTANCE_CONFIG: Record<
+  ImportanceLevel,
+  {
+    label: string;
+    description: string;
+    badgeClass: string;
+    dotClass: string;
+    buttonActiveClass: string;
+    iconColor: string;
+  }
+> = {
+  LOW: {
+    label: "Low",
+    description: "Low priority / Routine non-urgent stock intake",
+    badgeClass: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/25",
+    dotClass: "bg-slate-400",
+    buttonActiveClass: "bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900 border-slate-700 shadow-xs",
+    iconColor: "text-slate-500",
+  },
+  NORMAL: {
+    label: "Normal",
+    description: "Standard regular stock replenishment",
+    badgeClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/25",
+    dotClass: "bg-blue-500",
+    buttonActiveClass: "bg-blue-600 text-white border-blue-600 shadow-xs",
+    iconColor: "text-blue-500",
+  },
+  HIGH: {
+    label: "High",
+    description: "High priority order / Inventory running low",
+    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25",
+    dotClass: "bg-amber-500",
+    buttonActiveClass: "bg-amber-600 text-white border-amber-600 shadow-xs",
+    iconColor: "text-amber-500",
+  },
+  URGENT: {
+    label: "Urgent",
+    description: "Critical / Out of stock emergency purchase",
+    badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25 animate-pulse",
+    dotClass: "bg-rose-500",
+    buttonActiveClass: "bg-rose-600 text-white border-rose-600 shadow-xs",
+    iconColor: "text-rose-500",
+  },
+};
 
 function emptyItem() {
   return {
@@ -140,6 +192,7 @@ export default function PurchaseForm() {
 
   /* ------------------------------- Mutations ------------------------------ */
 
+  const queryClient = useQueryClient();
   const createPurchase = usePurchase.Create();
   const updatePurchase = usePurchase.Update();
   const isPending = createPurchase.isPending || updatePurchase.isPending;
@@ -152,6 +205,7 @@ export default function PurchaseForm() {
   const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
   const [bankFormOpen, setBankFormOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
+  const [importance, setImportance] = useState<ImportanceLevel>("NORMAL");
 
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
@@ -218,8 +272,15 @@ export default function PurchaseForm() {
             ? "PARTIAL"
             : "PENDING";
 
+      const rawUserNote = (value.note || "")
+        .replace(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]\s*/gi, "")
+        .trim();
+      const finalNote = `[Importance: ${importance}]${rawUserNote ? " " + rawUserNote : ""}`;
+
       const payload = {
         ...value,
+        note: finalNote,
+        importance,
         supplierId: Number(value.supplierId),
         storeId: Number(value.storeId),
         bankId: Number(value.bankId),
@@ -237,6 +298,7 @@ export default function PurchaseForm() {
         await createPurchase.mutateAsync(payload);
       }
 
+      await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
       navigate(ROUTERS.PURCHASE);
     },
   });
@@ -244,6 +306,40 @@ export default function PurchaseForm() {
   /* ----------------------------- Form values ----------------------------- */
 
   const formValues = useFormStore(form.store, (state) => state.values);
+
+  /* ----------------------- Top Overview Calculations --------------------- */
+
+  const topSubtotal = useMemo(() => {
+    return (formValues.items || []).reduce(
+      (sum: number, item: any) =>
+        sum + (Number(item.cost) || 0) * (Number(item.quantity) || 0),
+      0,
+    );
+  }, [formValues.items]);
+
+  const topDiscount = Number(formValues.discount) || 0;
+  const topGrandTotal = Math.max(topSubtotal - topDiscount, 0);
+  const topPaidAmount = Number(formValues.paidAmount) || 0;
+  const topBalanceDue = Math.max(topGrandTotal - topPaidAmount, 0);
+  const topTotalUnits = useMemo(() => {
+    return (formValues.items || []).reduce(
+      (sum: number, item: any) => sum + (Number(item.quantity) || 0),
+      0,
+    );
+  }, [formValues.items]);
+
+  const topItemsCount = useMemo(() => {
+    return (formValues.items || []).filter(
+      (item: any) => item.productId && item.productId !== 0,
+    ).length;
+  }, [formValues.items]);
+
+  const topPaymentStatus =
+    topPaidAmount >= topGrandTotal && topGrandTotal > 0
+      ? "PAID"
+      : topPaidAmount > 0
+        ? "PARTIAL"
+        : "PENDING";
 
   /* ------------------------- Calculate totals ---------------------------- */
 
@@ -297,10 +393,26 @@ export default function PurchaseForm() {
       purchase.purchaseDetails ??
       [];
 
+    const rawNote = purchase.note ?? "";
+    let initialImportance: ImportanceLevel = "NORMAL";
+    let cleanNote = rawNote;
+
+    const match = rawNote.match(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]/i);
+    if (match) {
+      initialImportance = match[1].toUpperCase() as ImportanceLevel;
+      cleanNote = rawNote.replace(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]\s*/gi, "").trim();
+    } else if ((purchase as any).importance) {
+      const imp = String((purchase as any).importance).toUpperCase();
+      if (imp === "LOW" || imp === "NORMAL" || imp === "HIGH" || imp === "URGENT") {
+        initialImportance = imp as ImportanceLevel;
+      }
+    }
+    setImportance(initialImportance);
+
     form.reset({
       referenceNo: purchase.referenceNo ?? "",
       purchaseDate: formattedDate,
-      note: purchase.note ?? "",
+      note: cleanNote,
       supplierId,
       storeId,
       bankId,
@@ -477,6 +589,31 @@ export default function PurchaseForm() {
               </div>
             </div>
 
+            {/* Header Live Total Purchase & Importance Badges */}
+            <div className="flex items-center gap-2 sm:gap-3">
+              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 shadow-2xs">
+                <DollarSign className="size-4 text-emerald-600 dark:text-emerald-400" />
+                <div className="flex flex-col">
+                  <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-300/80 leading-none">
+                    Total Purchase
+                  </span>
+                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300 leading-tight">
+                    {formatCurrency(topGrandTotal)}
+                  </span>
+                </div>
+              </div>
+
+              <div className="hidden sm:flex items-center">
+                <span
+                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold ${IMPORTANCE_CONFIG[importance].badgeClass}`}
+                  title={IMPORTANCE_CONFIG[importance].description}
+                >
+                  <span className={`size-1.5 rounded-full ${IMPORTANCE_CONFIG[importance].dotClass}`} />
+                  <span className="font-bold">{IMPORTANCE_CONFIG[importance].label}</span> Priority
+                </span>
+              </div>
+            </div>
+
             <div className="flex items-center gap-2">
               <Button
                 type="button"
@@ -530,6 +667,156 @@ export default function PurchaseForm() {
             form.handleSubmit();
           }}
         >
+          {/* ================================================================ */}
+          {/* TOP SUMMARY & IMPORTANCE KPI BAR                                  */}
+          {/* ================================================================ */}
+          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+            {/* 1. Total Purchase Hero Card */}
+            <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-card p-4.5 shadow-xs transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800/80 dark:text-emerald-300/80">
+                      Total Purchase
+                    </span>
+                    <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
+                      Grand Total
+                    </span>
+                  </div>
+                  <h3 className="mt-1.5 text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
+                    {formatCurrency(topGrandTotal)}
+                  </h3>
+                </div>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 shadow-inner dark:text-emerald-400">
+                  <DollarSign className="size-6" />
+                </div>
+              </div>
+              <div className="mt-3.5 flex items-center justify-between border-t border-emerald-500/15 pt-2.5 text-xs text-muted-foreground">
+                <span>
+                  Subtotal: <strong className="text-foreground">{formatCurrency(topSubtotal)}</strong>
+                </span>
+                {topDiscount > 0 ? (
+                  <span className="font-semibold text-rose-600 dark:text-rose-400">
+                    Disc: -{formatCurrency(topDiscount)}
+                  </span>
+                ) : (
+                  <span className="text-[11px] text-muted-foreground/80">No discount applied</span>
+                )}
+              </div>
+            </div>
+
+            {/* 2. Purchase Importance Selector Card */}
+            <div className="relative overflow-hidden rounded-2xl border bg-card p-4.5 shadow-xs transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3">
+                <div className="min-w-0">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Importance / Priority
+                    </span>
+                  </div>
+                  <div className="mt-1.5 flex items-center gap-2">
+                    <span
+                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${IMPORTANCE_CONFIG[importance].badgeClass}`}
+                    >
+                      <span className={`size-1.5 rounded-full ${IMPORTANCE_CONFIG[importance].dotClass}`} />
+                      {IMPORTANCE_CONFIG[importance].label} Priority
+                    </span>
+                  </div>
+                </div>
+                <div
+                  className={`flex size-11 shrink-0 items-center justify-center rounded-2xl bg-muted/70 ${IMPORTANCE_CONFIG[importance].iconColor}`}
+                >
+                  <AlertCircle className="size-6" />
+                </div>
+              </div>
+
+              {/* Interactive Priority Selector */}
+              <div className="mt-3.5 border-t pt-2.5">
+                <div className="grid grid-cols-4 gap-1 rounded-xl bg-muted/60 p-1">
+                  {(["LOW", "NORMAL", "HIGH", "URGENT"] as ImportanceLevel[]).map((level) => {
+                    const isSelected = importance === level;
+                    return (
+                      <button
+                        key={level}
+                        type="button"
+                        onClick={() => setImportance(level)}
+                        className={`cursor-pointer rounded-lg py-1 text-center text-xs font-semibold transition-all ${
+                          isSelected
+                            ? IMPORTANCE_CONFIG[level].buttonActiveClass + " ring-1 ring-black/5 dark:ring-white/10"
+                            : "text-muted-foreground hover:bg-background/80 hover:text-foreground"
+                        }`}
+                      >
+                        {IMPORTANCE_CONFIG[level].label}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Items & Units Card */}
+            <div className="relative overflow-hidden rounded-2xl border bg-card p-4.5 shadow-xs transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Intake Volume
+                  </span>
+                  <h3 className="mt-1.5 text-2xl font-bold tracking-tight">
+                    {topTotalUnits} <span className="text-sm font-normal text-muted-foreground">units</span>
+                  </h3>
+                </div>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
+                  <Package className="size-6" />
+                </div>
+              </div>
+              <div className="mt-3.5 flex items-center justify-between border-t pt-2.5 text-xs text-muted-foreground">
+                <span>
+                  Total Lines:{" "}
+                  <strong className="text-foreground">
+                    {topItemsCount || (formValues.items?.length ?? 0)}
+                  </strong>{" "}
+                  items
+                </span>
+                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                  Ready to intake
+                </span>
+              </div>
+            </div>
+
+            {/* 4. Payment & Balance Due Card */}
+            <div className="relative overflow-hidden rounded-2xl border bg-card p-4.5 shadow-xs transition-all hover:shadow-md">
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                    Payment Balance
+                  </span>
+                  <h3 className="mt-1.5 text-2xl font-bold tracking-tight">
+                    {formatCurrency(topBalanceDue)}
+                  </h3>
+                </div>
+                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
+                  <Wallet className="size-6" />
+                </div>
+              </div>
+              <div className="mt-3.5 flex items-center justify-between border-t pt-2.5 text-xs">
+                <span className="text-muted-foreground">
+                  Paid: <strong className="text-foreground">{formatCurrency(topPaidAmount)}</strong>
+                </span>
+                <span
+                  className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${
+                    topPaymentStatus === "PAID"
+                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                      : topPaymentStatus === "PARTIAL"
+                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
+                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20"
+                  }`}
+                >
+                  {topPaymentStatus}
+                </span>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
             {/* ========================================================== */}
             {/* LEFT                                                         */}
@@ -1072,8 +1359,28 @@ function PurchaseItemRow({
   );
 
   const [isSerialDialogOpen, setIsSerialDialogOpen] = useState(false);
+  const [isExcelModalOpen, setIsExcelModalOpen] = useState(false);
   const [scanValue, setScanValue] = useState("");
   const [serialDialogError, setSerialDialogError] = useState("");
+
+  const handleApplyExcelSerials = (importedSerials: string[], updateQty: boolean) => {
+    const currentQty = Math.max(0, Number(quantity) || 0);
+    const targetQty =
+      updateQty || importedSerials.length > currentQty
+        ? importedSerials.length
+        : currentQty;
+
+    if (updateQty || importedSerials.length > currentQty) {
+      form.setFieldValue(`items[${index}].quantity`, targetQty);
+      form.setFieldValue(`items[${index}].subtotal`, cost * targetQty);
+    }
+
+    const nextSerials = [...importedSerials];
+    while (nextSerials.length < targetQty) {
+      nextSerials.push("");
+    }
+    form.setFieldValue(`items[${index}].serialNumbers`, nextSerials.slice(0, targetQty));
+  };
 
   const selectedProduct = products.find((product) => product.id === Number(productId));
 
@@ -1331,19 +1638,32 @@ function PurchaseItemRow({
               </p> */}
             </div>
 
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="rounded-lg"
-              onClick={() => {
-                setSerialDialogError("");
-                setIsSerialDialogOpen(true);
-              }}
-            >
-              <ScanLine className="mr-2 size-4" />
-              Scan serials
-            </Button>
+            <div className="flex items-center gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-lg border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-medium"
+                onClick={() => setIsExcelModalOpen(true)}
+              >
+                <FileSpreadsheet className="mr-2 size-4 text-emerald-600 dark:text-emerald-400" />
+                Import Excel
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="rounded-lg"
+                onClick={() => {
+                  setSerialDialogError("");
+                  setIsSerialDialogOpen(true);
+                }}
+              >
+                <ScanLine className="mr-2 size-4" />
+                Scan serials
+              </Button>
+            </div>
           </div>
 
           {/* Serial inputs */}
@@ -1385,9 +1705,24 @@ function PurchaseItemRow({
       <Dialog open={isSerialDialogOpen} onOpenChange={setIsSerialDialogOpen}>
         <DialogContent className="sm:max-w-lg">
           <DialogHeader>
-            <DialogTitle>Scan serial numbers</DialogTitle>
+            <div className="flex items-center justify-between">
+              <DialogTitle>Scan serial numbers</DialogTitle>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 gap-1.5 border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-medium"
+                onClick={() => {
+                  setIsSerialDialogOpen(false);
+                  setIsExcelModalOpen(true);
+                }}
+              >
+                <FileSpreadsheet className="size-3.5 text-emerald-600 dark:text-emerald-400" />
+                Import Excel
+              </Button>
+            </div>
             <DialogDescription>
-              Scan the barcode or enter the serial / IMEI manually. Press Enter after each scan.
+              Scan the barcode or enter manually, or import multiple records from Excel.
             </DialogDescription>
           </DialogHeader>
 
@@ -1476,6 +1811,14 @@ function PurchaseItemRow({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <ExcelSerialModal
+        open={isExcelModalOpen}
+        onOpenChange={setIsExcelModalOpen}
+        productName={productName || selectedProduct?.name}
+        currentQuantity={expectedSerialCount}
+        onApplySerials={handleApplyExcelSerials}
+      />
     </div>
   );
 }

@@ -488,6 +488,40 @@ export const PurchaseDetailModal = ({
                         : "Dec 24, 2024"}
                     </span>
                   </p>
+                  {purchase.note && (
+                    <div className="pt-1">
+                      {(() => {
+                        const match = purchase.note.match(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]/i);
+                        const cleanNote = purchase.note.replace(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]\s*/gi, "").trim();
+                        const imp = match ? match[1].toUpperCase() : null;
+                        return (
+                          <div className="space-y-1">
+                            {imp && (
+                              <p className="flex items-center gap-1.5">
+                                <span>Importance:</span>
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                  imp === "URGENT"
+                                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25"
+                                    : imp === "HIGH"
+                                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+                                    : imp === "LOW"
+                                    ? "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/25"
+                                    : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25"
+                                }`}>
+                                  {imp} Priority
+                                </span>
+                              </p>
+                            )}
+                            {cleanNote && (
+                              <p className="text-slate-600 dark:text-slate-400">
+                                Note: <span className="italic">{cleanNote}</span>
+                              </p>
+                            )}
+                          </div>
+                        );
+                      })()}
+                    </div>
+                  )}
                   {/* <div className="flex items-center gap-1.5">
                     <span>Status:</span>
                     <span

@@ -24,27 +24,48 @@ export const UserColumns = ({
     t,
 }: UserColumnsProps): ColumnDef<UserResponse>[] => [
         {
-            id: "user",
+            // id: "user",
             accessorKey: "username",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("nav.user") : "User"} />,
             cell: ({ row }) => {
                 const user = row.original;
                 const fullName = [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username;
+                const imageFile =
+                    user.profileImage ||
+                    (user as any).avatar ||
+                    (user as any).imageUrl ||
+                    (user as any).image ||
+                    (user as any).profile_image;
+
+                const initials = fullName
+                    ? fullName
+                        .split(" ")
+                        .map((n) => n[0])
+                        .join("")
+                        .slice(0, 2)
+                        .toUpperCase()
+                    : (user.username?.slice(0, 2).toUpperCase() || "US");
 
                 return (
                     <div className="flex items-center gap-3 min-w-[220px]">
-                        <ImageCell
-                            fileName={user.profileImage}
-                            name={fullName}
-                            bucketName="user"
-                            className="h-10 w-10 rounded-lg shadow-sm flex-shrink-0"
-                        />
+                        {imageFile ? (
+                            <ImageCell
+                                fileName={imageFile}
+                                name={fullName}
+                                bucketName="user"
+                                className="h-10 w-10 rounded-lg shadow-sm shrink-0"
+                            />
+                        ) : (
+                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-border/60 bg-primary/10 text-xs font-bold text-primary shadow-xs">
+                                {initials}
+                            </div>
+                        )}
                         <div className="flex flex-col min-w-0">
                             <span className="text-sm font-semibold text-foreground truncate">
                                 {fullName || "-"}
                             </span>
                             <span className="text-[11px] text-muted-foreground font-mono truncate">
-                                {user.username || "-"}
+                                {user?.username || "-"}
                             </span>
                         </div>
                     </div>
@@ -111,7 +132,7 @@ export const UserColumns = ({
         {
             id: "createdAt",
             accessorKey: "createdAt",
-            header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : "Created Date"} />,
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : " Date"} />,
             cell: ({ row }) => (
                 <span className="text-xs text-[#566a7f]">
                     {formatDate(row.original.createdAt)}

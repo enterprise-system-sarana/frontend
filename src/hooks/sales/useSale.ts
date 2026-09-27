@@ -2,6 +2,8 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { mutationHandler } from "../handleMutaion";
 import type { SaleFilter, SaleRequest } from "@/types/sales/Sale";
 import { salesService } from "@/services/sales/sales.service";
+import { useProduct } from "../product/useProduct";
+import { useProductSerial } from "../product/useProductSerial";
 
 export const useSale = {
   keys: {
@@ -35,6 +37,7 @@ export const useSale = {
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -47,6 +50,7 @@ export const useSale = {
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -58,6 +62,7 @@ export const useSale = {
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -69,6 +74,7 @@ export const useSale = {
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -76,10 +82,16 @@ export const useSale = {
   ReturnSale: () => {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: salesService.returnSale,
+      mutationFn: (args: number | { id: number; payload?: any }) => {
+        if (typeof args === "number") {
+          return salesService.returnSale(args);
+        }
+        return salesService.returnSale(args.id, args.payload);
+      },
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },
@@ -91,6 +103,7 @@ export const useSale = {
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
+        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
       }),
     });
   },

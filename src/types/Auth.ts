@@ -5,6 +5,10 @@ export interface AuthUser {
   roles: string[];
   permissions: string[];
   storeId: number | null;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  profileImage?: string;
 }
 
 export interface AuthResponse {
@@ -18,6 +22,10 @@ export interface AuthResponse {
   roles: string[];
   permissions: string[];
   storeId: number | null;
+  firstName?: string;
+  lastName?: string;
+  phone?: string;
+  profileImage?: string;
 }
 
 
