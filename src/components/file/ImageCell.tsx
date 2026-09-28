@@ -30,8 +30,11 @@ interface ImageCellProps {
     name: string;
     bucketName?: string;
     className?: string;
+    imageClassName?: string;
     aspectRatio?: "square" | "video" | "auto";
     preview?: boolean;
+    fit?: "contain" | "cover" | "fill";
+    showBorder?: boolean;
 }
 
 export const ImageCell = ({
@@ -39,8 +42,11 @@ export const ImageCell = ({
     name,
     bucketName = "default",
     className = "h-10 w-10",
+    imageClassName,
     aspectRatio = "square",
     preview = true,
+    fit = "cover",
+    showBorder = true,
 }: ImageCellProps) => {
     const [open, setOpen] = React.useState(false);
     const [hasError, setHasError] = React.useState(false);
@@ -210,9 +216,8 @@ export const ImageCell = ({
             <div
                 className={cn(
                     "group relative flex shrink-0 items-center justify-center",
-                    "rounded-xl border border-border/60 bg-muted/30",
+                    showBorder && "rounded-xl border border-border/60 bg-muted/30 shadow-sm",
                     "text-muted-foreground/50",
-                    "shadow-sm",
                     className,
                     aspectRatio === "video" && "aspect-video h-auto",
                     aspectRatio === "auto" && "h-auto",
@@ -220,7 +225,7 @@ export const ImageCell = ({
                 title={`${name} - No image`}
             >
                 <ImageIcon
-                    className="size-4 transition-transform duration-200 group-hover:scale-110"
+                    className="size-5 opacity-40 transition-transform duration-200 group-hover:scale-110"
                     strokeWidth={1.5}
                 />
             </div>
@@ -232,8 +237,7 @@ export const ImageCell = ({
             <div
                 className={cn(
                     "relative block shrink-0 overflow-hidden",
-                    "rounded-xl border border-border/60 bg-muted/30",
-                    "shadow-xs",
+                    showBorder && "rounded-xl border border-border/60 bg-muted/30 shadow-xs",
                     className,
                     aspectRatio === "video" && "aspect-video h-auto",
                     aspectRatio === "auto" && "h-auto",
@@ -241,8 +245,8 @@ export const ImageCell = ({
                 title={name}
             >
                 {!isLoaded && (
-                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted animate-pulse">
-                        <ImageIcon className="size-3.5 text-muted-foreground/40" />
+                    <div className="absolute inset-0 z-10 flex items-center justify-center bg-muted/40 animate-pulse">
+                        <ImageIcon className="size-4 text-muted-foreground/40" />
                     </div>
                 )}
                 <img
@@ -252,9 +256,15 @@ export const ImageCell = ({
                     onLoad={() => setIsLoaded(true)}
                     onError={() => setHasError(true)}
                     className={cn(
-                        "h-full w-full object-cover",
-                        "transition-opacity duration-200",
+                        "h-full w-full",
+                        fit === "contain"
+                            ? "object-contain"
+                            : fit === "fill"
+                              ? "object-fill"
+                              : "object-cover",
+                        "transition-all duration-300",
                         isLoaded ? "opacity-100" : "opacity-0",
+                        imageClassName
                     )}
                 />
             </div>

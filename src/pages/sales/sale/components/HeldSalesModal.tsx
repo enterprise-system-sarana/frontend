@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   Dialog,
   DialogContent,
@@ -78,6 +79,8 @@ export default function HeldSalesModal({
   onDelete,
   onClearAll,
 }: HeldSalesModalProps) {
+  const { language } = useLanguage();
+  const isKm = language === "km";
   const [search, setSearch] = useState("");
 
   const filteredSales = heldSales.filter((sale) => {
@@ -102,14 +105,16 @@ export default function HeldSalesModal({
             <div>
               <div className="flex items-center gap-2">
                 <DialogTitle className="text-base font-bold text-foreground">
-                  Held Sales Orders
+                  {isKm ? "ការលក់ដែលផ្អាកទុក" : "Held Sales Orders"}
                 </DialogTitle>
                 <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
                   {heldSales.length}
                 </span>
               </div>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
-                Parked transactions waiting to be resumed or checked out
+                {isKm
+                  ? "ប្រតិបត្តិការដែលបានផ្អាក រង់ចាំការបន្ត ឬទូទាត់ប្រាក់"
+                  : "Parked transactions waiting to be resumed or checked out"}
               </DialogDescription>
             </div>
           </div>
@@ -120,14 +125,20 @@ export default function HeldSalesModal({
               variant="ghost"
               size="sm"
               onClick={() => {
-                if (window.confirm("Are you sure you want to discard all held sales?")) {
+                if (
+                  window.confirm(
+                    isKm
+                      ? "តើអ្នកប្រាកដជាចង់លុបការលក់ដែលផ្អាកទាំងអស់មែនទេ?"
+                      : "Are you sure you want to discard all held sales?"
+                  )
+                ) {
                   onClearAll();
                 }
               }}
               className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1 h-8 rounded-lg cursor-pointer"
             >
               <Trash2 className="size-3.5" />
-              <span>Clear All</span>
+              <span>{isKm ? "លុបទាំងអស់" : "Clear All"}</span>
             </Button>
           )}
         </DialogHeader>
@@ -140,7 +151,11 @@ export default function HeldSalesModal({
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search held orders by reference, customer, product..."
+                placeholder={
+                  isKm
+                    ? "ស្វែងរកការលក់ផ្អាកតាមលេខយោង អតិថិជន ផលិតផល..."
+                    : "Search held orders by reference, customer, product..."
+                }
                 className="pl-9 h-8 text-xs bg-white dark:bg-slate-900 rounded-lg border-slate-200 dark:border-slate-800"
               />
             </div>
@@ -155,16 +170,29 @@ export default function HeldSalesModal({
                 <PauseCircle className="size-7" />
               </div>
               <div className="space-y-1">
-                <h4 className="text-sm font-semibold text-foreground">No Sales on Hold</h4>
+                <h4 className="text-sm font-semibold text-foreground">
+                  {isKm ? "គ្មានការលក់ផ្អាកទុកទេ" : "No Sales on Hold"}
+                </h4>
                 <p className="text-xs text-muted-foreground max-w-sm mx-auto">
-                  When a customer steps away or needs more time, click{" "}
-                  <strong className="text-foreground">"Hold Sale"</strong> on the POS cart to park their order and serve the next customer.
+                  {isKm ? (
+                    <>
+                      នៅពេលអតិថិជនត្រូវការពេលបន្ថែម សូមចុច{" "}
+                      <strong className="text-foreground">"ផ្អាកការលក់"</strong> នៅលើរទេះទំនិញ POS ដើម្បីទុកការបញ្ជាទិញនេះសិន ហើយបម្រើអតិថិជនបន្ទាប់។
+                    </>
+                  ) : (
+                    <>
+                      When a customer steps away or needs more time, click{" "}
+                      <strong className="text-foreground">"Hold Sale"</strong> on the POS cart to park their order and serve the next customer.
+                    </>
+                  )}
                 </p>
               </div>
             </div>
           ) : filteredSales.length === 0 ? (
             <div className="text-center py-8 text-xs text-muted-foreground">
-              No held sales matching "{search}"
+              {isKm
+                ? `រកមិនឃើញការលក់ដែលផ្អាកត្រូវគ្នានឹង "${search}" ទេ`
+                : `No held sales matching "${search}"`}
             </div>
           ) : (
             filteredSales.map((sale) => {
@@ -197,12 +225,14 @@ export default function HeldSalesModal({
                       <div className="flex items-center gap-3 text-xs text-muted-foreground">
                         <span className="flex items-center gap-1 font-medium text-foreground">
                           <User className="size-3 text-muted-foreground" />
-                          {sale.customerName || "Walk-In Customer"}
+                          {sale.customerName || (isKm ? "អតិថិជនទូទៅ" : "Walk-In Customer")}
                         </span>
                         <span>•</span>
                         <span className="flex items-center gap-1">
                           <ShoppingBag className="size-3 text-muted-foreground" />
-                          {totalItems} item{totalItems !== 1 ? "s" : ""}
+                          {isKm
+                            ? `${totalItems} មុខទំនិញ`
+                            : `${totalItems} item${totalItems !== 1 ? "s" : ""}`}
                         </span>
                       </div>
                     </div>
@@ -213,7 +243,7 @@ export default function HeldSalesModal({
                       </div>
                       {sale.discount > 0 && (
                         <div className="text-[10px] text-rose-500 font-mono">
-                          Disc: -{fmtCurrency(sale.discount)}
+                          {isKm ? "បញ្ចុះតម្លៃ:" : "Disc:"} -{fmtCurrency(sale.discount)}
                         </div>
                       )}
                     </div>
@@ -237,7 +267,8 @@ export default function HeldSalesModal({
                   {/* Actions Bar */}
                   <div className="flex items-center justify-between pt-1">
                     <span className="text-[10px] text-slate-400">
-                      Held on {new Date(sale.heldAt).toLocaleDateString()}
+                      {isKm ? "ផ្អាកនៅថ្ងៃ " : "Held on "}
+                      {new Date(sale.heldAt).toLocaleDateString()}
                     </span>
                     <div className="flex items-center gap-2">
                       <Button
@@ -248,7 +279,7 @@ export default function HeldSalesModal({
                         className="h-8 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer px-2.5"
                       >
                         <Trash2 className="size-3.5" />
-                        <span className="hidden sm:inline">Discard</span>
+                        <span className="hidden sm:inline">{isKm ? "បោះបង់" : "Discard"}</span>
                       </Button>
                       <Button
                         type="button"
@@ -257,7 +288,7 @@ export default function HeldSalesModal({
                         className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold px-3 cursor-pointer shadow-xs"
                       >
                         <Play className="size-3 fill-current" />
-                        <span>Resume Sale</span>
+                        <span>{isKm ? "បន្តការលក់" : "Resume Sale"}</span>
                       </Button>
                     </div>
                   </div>

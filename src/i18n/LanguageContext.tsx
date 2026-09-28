@@ -7,10 +7,10 @@ export type Language = "en" | "km";
 interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
-  t: (key: TranslationKey, fallback?: string) => string;
+  t: (key: TranslationKey | string, fallback?: string) => string;
 }
 
-const dictionaries: Record<Language, Record<TranslationKey, string>> = {
+const dictionaries: Record<Language, Record<string, string>> = {
   en,
   km,
 };
@@ -30,14 +30,14 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     localStorage.setItem(LANGUAGE_STORAGE_KEY, lang);
   };
 
-  const t = (key: TranslationKey, fallback?: string): string => {
+  const t = (key: TranslationKey | string, fallback?: string): string => {
     const dict = dictionaries[language] || dictionaries.en;
-    if (dict[key]) {
-      return dict[key];
+    if (dict[key as string]) {
+      return dict[key as string];
     }
     // Fallback to English dictionary
-    if (dictionaries.en[key]) {
-      return dictionaries.en[key];
+    if (dictionaries.en[key as string]) {
+      return dictionaries.en[key as string];
     }
     return fallback || key;
   };

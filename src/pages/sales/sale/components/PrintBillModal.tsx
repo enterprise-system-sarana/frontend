@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Printer, X, ShieldCheck, Store, User, ShoppingBag } from "lucide-react";
 import { fileService } from "@/services/file/file.service";
 import type { StoreResponse } from "@/types/inventory/Store";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export interface BillItem {
   productName: string;
@@ -53,6 +54,7 @@ export default function PrintBillModal({
   billData,
 }: PrintBillModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
+  const { t, language } = useLanguage();
 
   if (!billData) return null;
 
@@ -184,7 +186,7 @@ export default function PrintBillModal({
                 className="h-12 mx-auto mb-2 object-contain max-w-[160px]"
               />
               <h2 className="text-sm font-bold tracking-wide text-slate-900 dark:text-white">
-                {store?.name ?? "Store POS"}
+                {store?.name ?? "360° Phone Shop"}
               </h2>
               {(store?.address1 || store?.city) && (
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
@@ -202,21 +204,21 @@ export default function PrintBillModal({
             <div className="flex justify-between py-3 border-b border-slate-200 dark:border-slate-800 text-[11px]">
               <div className="space-y-0.5">
                 <p>
-                  Date:{" "}
+                  {language === "km" ? "កាលបរិច្ឆេទ: " : "Date: "}
                   <span className="font-semibold text-amber-700 dark:text-amber-400">
                     {billData.date}
                   </span>
                 </p>
                 <p>
-                  Cashier:{" "}
+                  {language === "km" ? "អ្នកគិតប្រាក់: " : "Cashier: "}
                   <span className="font-semibold text-amber-700 dark:text-amber-400">
                     {billData.cashierName || "Staff"}
                   </span>
                 </p>
                 <p>
-                  Customer:{" "}
+                  {language === "km" ? "អតិថិជន: " : "Customer: "}
                   <span className="font-semibold text-amber-700 dark:text-amber-400">
-                    {billData.customerName || "Walk-In"}
+                    {billData.customerName || (language === "km" ? "អតិថិជនទូទៅ" : "Walk-In")}
                   </span>
                 </p>
                 {billData.customerPhone && (
@@ -225,21 +227,21 @@ export default function PrintBillModal({
               </div>
               <div className="text-right space-y-0.5 shrink-0">
                 <p>
-                  Bill Ref:{" "}
+                  {language === "km" ? "លេខវិក្កយបត្រ: " : "Bill Ref: "}
                   <span className="font-mono font-bold text-slate-900 dark:text-white">
                     #{billData.reference}
                   </span>
                 </p>
                 <p>
-                  Items:{" "}
+                  {language === "km" ? "ចំនួនមុខ: " : "Items: "}
                   <span className="font-bold">
                     {billData.items.reduce((s, it) => s + (Number(it.quantity) || 1), 0)}
                   </span>
                 </p>
                 <p>
-                  Warranty:{" "}
+                  {language === "km" ? "ការធានា: " : "Warranty: "}
                   <span className="font-semibold text-emerald-600 dark:text-emerald-400">
-                    14 Days
+                    {language === "km" ? "១៤ ថ្ងៃ" : "14 Days"}
                   </span>
                 </p>
               </div>
@@ -249,10 +251,10 @@ export default function PrintBillModal({
             <table className="w-full text-xs my-2.5" style={{ borderCollapse: "collapse" }}>
               <thead>
                 <tr className="border-b-2 border-slate-800 dark:border-slate-600">
-                  <th className="text-left py-1.5 font-bold">Item Name</th>
-                  <th className="text-right py-1.5 font-bold px-1">Qty</th>
-                  <th className="text-right py-1.5 font-bold px-1">Price</th>
-                  <th className="text-right py-1.5 font-bold">subTotal</th>
+                  <th className="text-left py-1.5 font-bold">{language === "km" ? "ឈ្មោះទំនិញ" : "Item Name"}</th>
+                  <th className="text-right py-1.5 font-bold px-1">{language === "km" ? "ចំនួន" : "Qty"}</th>
+                  <th className="text-right py-1.5 font-bold px-1">{language === "km" ? "តម្លៃ" : "Price"}</th>
+                  <th className="text-right py-1.5 font-bold">{language === "km" ? "សរុប" : "subTotal"}</th>
                 </tr>
               </thead>
               <tbody>
@@ -269,7 +271,7 @@ export default function PrintBillModal({
                       )}
                       {Number(item.itemDiscount || 0) > 0 && (
                         <span className="block text-[10px] text-slate-400">
-                          Disc: -{money(Number(item.itemDiscount))}
+                          {language === "km" ? "ចុះ: " : "Disc: "}-{money(Number(item.itemDiscount))}
                         </span>
                       )}
                     </td>
@@ -290,17 +292,17 @@ export default function PrintBillModal({
             {/* Totals */}
             <div className="pt-2 border-t-2 border-slate-800 dark:border-slate-600 space-y-1 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-600 dark:text-slate-400">Subtotal:</span>
+                <span className="text-slate-600 dark:text-slate-400">{language === "km" ? "សរុបបឋម:" : "Subtotal:"}</span>
                 <span className="font-medium tabular-nums">{money(billData.subtotal)}</span>
               </div>
               {billData.discount > 0 && (
                 <div className="flex justify-between text-rose-600 dark:text-rose-400">
-                  <span>Discount:</span>
+                  <span>{language === "km" ? "បញ្ចុះតម្លៃ:" : "Discount:"}</span>
                   <span className="font-medium tabular-nums">-{money(billData.discount)}</span>
                 </div>
               )}
               <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 font-bold text-sm text-slate-900 dark:text-white">
-                <span>Total Due:</span>
+                <span>{language === "km" ? "សរុបត្រូវបង់:" : "Total Due:"}</span>
                 <span className="tabular-nums font-mono">{money(billData.grandTotal)}</span>
               </div>
             </div>
@@ -309,19 +311,23 @@ export default function PrintBillModal({
             <div className="mt-3 p-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-md text-center">
               <div className="flex items-center justify-center gap-1 font-bold text-[11px] text-slate-800 dark:text-slate-200 uppercase tracking-wider">
                 <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                <span>14-Day Warranty Guarantee</span>
+                <span>{language === "km" ? "ការធានារយៈពេល ១៤ ថ្ងៃ" : "14-Day Warranty Guarantee"}</span>
               </div>
               <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5">
-                Valid until <strong>{warrantyUntilDate}</strong>. Original bill required for claims.
+                {language === "km"
+                  ? `មានសុពលភាពដល់ ${warrantyUntilDate}។ សូមរក្សាទុកវិក្កយបត្រសម្រាប់ការធានា។`
+                  : `Valid until ${warrantyUntilDate}. Original bill required for claims.`}
               </p>
             </div>
 
             {/* Thank You Footer */}
             <div className="mt-3 border border-dashed border-slate-300 dark:border-slate-700 rounded-md py-2 text-center text-slate-600 dark:text-slate-400 text-[11px]">
               <p className="font-semibold text-slate-800 dark:text-slate-200">
-                Thank you for your purchase!
+                {language === "km" ? "សូមអរគុណសម្រាប់ការជាវទំនិញ!" : "Thank you for your purchase!"}
               </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">Customer Bill - Please come again.</p>
+              <p className="text-[10px] text-slate-400 mt-0.5">
+                {language === "km" ? "វិក្កយបត្រអតិថិជន - សូមអញ្ជើញមកម្តងទៀត" : "Customer Bill - Please come again."}
+              </p>
             </div>
           </div>
         </div>

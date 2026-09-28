@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Check } from "lucide-react";
 
-export function LanguageToggle() {
+export function LanguageToggle({ className }: { className?: string } = {}) {
   const { language, setLanguage } = useLanguage();
 
   const languages: { code: Language; label: string; flagImg: string }[] = [
@@ -20,7 +20,12 @@ export function LanguageToggle() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div className="flex items-center gap-2.5 h-10 px-3.5 rounded-lg border border-border/70 bg-card shadow-2xs cursor-pointer hover:bg-muted/70 transition-all select-none text-sm font-bold text-foreground">
+        <div
+          className={
+            className ??
+            "flex items-center gap-2.5 h-10 px-3.5 rounded-lg border border-border/70 bg-card shadow-2xs cursor-pointer hover:bg-muted/70 transition-all select-none text-sm font-bold text-foreground"
+          }
+        >
           <img
             src={activeLang.flagImg}
             alt={activeLang.label}
