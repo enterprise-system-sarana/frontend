@@ -23,6 +23,7 @@ import FormRole from "./RoleForm";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { KeyRound, ShieldCheck, UsersRound } from "lucide-react";
 
 
 const RolePage = () => {
@@ -34,7 +35,7 @@ const RolePage = () => {
 
   const navigate = useNavigate();
   const [open, setOpen] = useState(false);
-  const [role, setRole] = useState<RoleResponse>();
+  const [role, setRole] = useState<RoleResponse | null>(null);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -47,7 +48,6 @@ const RolePage = () => {
     size,
   });
 
-  console.log("data", data)
   const { mutate: deleteRoleMutate } = useRole.DeleteRole();
 
   // Filter Groups for Filter +
@@ -135,15 +135,18 @@ const RolePage = () => {
     navigate(`${ROUTERS.ROLE_PERMISSIONS}?roleId=${r.id}`);
   };
 
-  const columns = useMemo(
-    () =>
-      RoleColumns({
-        onEdit: handleEdit,
-        onDelete: handleDelete,
-        onViewPermissions: handleViewPermissions,
-      }),
-    [],
-  );
+  const columns = RoleColumns({
+    onEdit: handleEdit,
+    onDelete: handleDelete,
+    onViewPermissions: handleViewPermissions,
+    canEdit: canUpdate,
+    canDelete,
+  });
+
+  const pageRoles: RoleResponse[] = data?.payload?.data || [];
+  const totalRoles = data?.payload?.pagination?.totalElements ?? pageRoles.length;
+  const activeRoles = pageRoles.filter((item) => item.status?.toUpperCase() === "ACTIVE").length;
+  const permissionCount = pageRoles.reduce((count, item) => count + (item.permissionIds?.length || 0), 0);
 
   const handleExportCsv = () => {
     exportTableToCsv(filteredRole, columns, "Roles");
@@ -166,10 +169,12 @@ const RolePage = () => {
 
   return (
     <>
-      <div className="space-y-4">
+      <div className="role-page space-y-5">
         {/* Top Header */}
         <PageHeader
           title="Roles"
+          description="Create roles and manage what each role can access."
+          titleIcon={<span className="role-page-title-icon"><ShieldCheck className="h-5 w-5" /></span>}
           featureName="Role"
           onCreate={canCreate ? () => {
             setRole(null);
@@ -178,8 +183,15 @@ const RolePage = () => {
           hideButton={!canCreate}
         />
 
+        <div className="role-overview-grid">
+          <div className="role-overview-card"><span className="role-overview-icon blue"><UsersRound size={20} /></span><span><small>Total roles</small><strong>{totalRoles}</strong></span></div>
+          <div className="role-overview-card"><span className="role-overview-icon green"><ShieldCheck size={20} /></span><span><small>Active on this page</small><strong>{activeRoles}</strong></span></div>
+          <div className="role-overview-card"><span className="role-overview-icon orange"><KeyRound size={20} /></span><span><small>Assigned permissions on this page</small><strong>{permissionCount}</strong></span></div>
+        </div>
+
         {/* Main Card with Toolbar & Table */}
-        <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+        <div className="role-table-card rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+          <div className="role-table-heading"><div><h2>Role directory</h2><p>Search roles, review access, and manage permissions.</p></div><span>{totalRoles} total</span></div>
           {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
           <div className="p-4 border-b border-border/60">
             <PageFilter

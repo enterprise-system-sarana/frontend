@@ -18,6 +18,9 @@ import { Link, useLocation } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { ROUTERS } from "@/constants/Route";
 
+const isRouteActive = (pathname: string, url: string) =>
+  url !== "#" && (pathname === url || pathname.startsWith(`${url}/`));
+
 export function NavMain({
   items,
 }: {
@@ -42,9 +45,7 @@ export function NavMain({
   const activeMenuTitle =
     items.find((item) =>
       item.items?.some(
-        (subItem) =>
-          location.pathname === subItem.url ||
-          location.pathname.startsWith(subItem.url),
+        (subItem) => isRouteActive(location.pathname, subItem.url),
       ),
     )?.title || null;
 
@@ -80,8 +81,10 @@ export function NavMain({
       "Expense Type": t("nav.expense_type"),
       Setting: t("nav.settings"),
       Settings: t("nav.settings"),
+      "Catalog Setup": t("nav.settings"),
       Purchases: t("nav.purchases"),
       Supplier: t("nav.supplier"),
+      Suppliers: t("nav.suppliers"),
       Purchase: t("nav.purchase"),
       "Create Purchase": t("nav.create_purchase"),
       "Purchase Payment": t("nav.purchase_payment"),
@@ -93,10 +96,13 @@ export function NavMain({
       Bank: t("nav.bank"),
       Currency: t("nav.currency"),
       Security: t("nav.security"),
+      People: t("nav.people"),
       User: t("nav.user"),
       Role: t("nav.role"),
       "Sales": t("nav.sales"),
+      "Sales Return": t("nav.sales_return"),
       "Customer": t("nav.customer"),
+      Customers: t("nav.customers"),
       "Quotes": t("nav.quotes"),
       "Quote": t("nav.quote"),
       "Create Quote": t("nav.create_quote"),
@@ -137,13 +143,10 @@ export function NavMain({
               // Direct route check for items without children (e.g., Dashboard)
               const isDirectActive =
                 !hasSubItems &&
-                (location.pathname === item.url ||
-                  (item.url !== "#" && location.pathname.startsWith(item.url)));
+                isRouteActive(location.pathname, item.url);
 
               const hasActiveChild = item.items?.some(
-                (subItem) =>
-                  location.pathname === subItem.url ||
-                  location.pathname.startsWith(subItem.url),
+                (subItem) => isRouteActive(location.pathname, subItem.url),
               );
 
               // ----------------------------------------------------
@@ -218,6 +221,7 @@ export function NavMain({
                         isActive={Boolean(hasActiveChild)}
                         className={`
                           group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
+                          ${item.title === "Reports" ? "reference-reports-trigger" : ""}
                           shadow-none transition-all duration-200
                           ${hasActiveChild
                             ? "bg-primary/12 text-primary font-semibold ring-1 ring-primary/30 before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
@@ -252,11 +256,9 @@ export function NavMain({
                     </CollapsibleTrigger>
 
                     <CollapsibleContent>
-                      <SidebarMenuSub className="mt-0.5 ml-[18px] border-l border-border/40 py-0.5 pl-3">
+                      <SidebarMenuSub className={`mt-0.5 ml-[18px] border-l border-border/40 py-0.5 pl-3 ${item.title === "Reports" ? "reference-reports-submenu" : ""}`}>
                         {item.items?.map((subItem) => {
-                          const isActive =
-                            location.pathname === subItem.url ||
-                            location.pathname.startsWith(subItem.url);
+                          const isActive = isRouteActive(location.pathname, subItem.url);
                           const SubIcon = subItem.icon;
 
                           return (

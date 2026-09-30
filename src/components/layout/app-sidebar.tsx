@@ -8,9 +8,7 @@ import {
   Box,
   PlusCircle,
   ShoppingCart,
-  Truck,
   Shield,
-  Warehouse,
   StoreIcon,
   Wallet,
   Coins,
@@ -20,10 +18,10 @@ import {
   Users,
   BadgeDollarSign,
   Settings,
-  CircleSmall,
   LayoutDashboard,
   Receipt,
   FileText,
+  RotateCcw,
 } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
@@ -87,7 +85,7 @@ const data = {
       ],
     },
     {
-      title: "Setting",
+      title: "Catalog Setup",
       url: "#",
       icon: Settings,
       items: [
@@ -121,6 +119,36 @@ const data = {
           icon: Layers,
           permission: PERMISSION.VARIANT_VALUE.READ,
         },
+        {
+          title: "Bank",
+          url: ROUTERS.BANK,
+          icon: Wallet,
+          permission: PERMISSION.BANK.READ,
+        },
+        {
+          title: "Store",
+          url: ROUTERS.STORE,
+          icon: StoreIcon,
+          permission: PERMISSION.STORE.READ,
+        },
+        {
+          title: "Stock",
+          url: ROUTERS.STOCK,
+          icon: Boxes,
+          permission: PERMISSION.STOCK.READ,
+        },
+        {
+          title: "Role",
+          url: ROUTERS.ROLE,
+          icon: Shield,
+          permission: PERMISSION.ROLE.READ,
+        },
+        {
+          title: "Role Permissions",
+          url: ROUTERS.ROLE_PERMISSIONS,
+          icon: Shield,
+          permission: PERMISSION.PERMISSION.READ,
+        },
       ],
     },
     {
@@ -129,12 +157,6 @@ const data = {
       icon: ShoppingCart,
       badge: undefined as string | undefined,
       items: [
-        {
-          title: "Supplier",
-          url: ROUTERS.SUPPLIER,
-          icon: Truck,
-          permission: PERMISSION.SUPPLIER.READ,
-        },
         {
           title: "Purchase",
           url: ROUTERS.PURCHASE,
@@ -168,16 +190,16 @@ const data = {
           permission: PERMISSION.SALE.READ,
         },
         {
+          title: "Sales Return",
+          url: ROUTERS.SALE_RETURN,
+          icon: RotateCcw,
+          permission: PERMISSION.SALE.READ,
+        },
+        {
           title: "Create Sale",
           url: ROUTERS.SALE_CREATE,
           icon: PlusCircle,
           permission: PERMISSION.SALE.CREATE,
-        },
-        {
-          title: "Customers",
-          url: ROUTERS.CUSTOMER,
-          icon: Users,
-          permission: PERMISSION.CUSTOMER.READ,
         },
         {
           title: "Payments",
@@ -200,37 +222,11 @@ const data = {
       ],
     },
     {
-      title: "Inventory",
-      url: "#",
-      icon: Warehouse,
-      badge: undefined as string | undefined,
-      items: [
-        {
-          title: "Store",
-          url: ROUTERS.STORE,
-          icon: StoreIcon,
-          permission: PERMISSION.STORE.READ,
-        },
-        {
-          title: "Stock",
-          url: ROUTERS.STOCK,
-          icon: Boxes,
-          permission: PERMISSION.STOCK.READ,
-        },
-      ],
-    },
-    {
       title: "Finance",
       url: "#",
       icon: Wallet,
       badge: undefined as string | undefined,
       items: [
-        {
-          title: "Bank",
-          url: ROUTERS.BANK,
-          icon: Wallet,
-          permission: PERMISSION.BANK.READ,
-        },
         {
           title: "Currency",
           url: ROUTERS.CURRENCY,
@@ -247,7 +243,19 @@ const data = {
       permission: PERMISSION.REPORT.READ,
       items: [
         {
-          title: "Sales Reports",
+          title: "Daily Sales",
+          url: ROUTERS.REPORT_DAILY_SALES,
+          icon: Receipt,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Monthly Sales",
+          url: ROUTERS.REPORT_MONTHLY_SALES,
+          icon: Receipt,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Sales Report",
           url: ROUTERS.REPORT_SALES,
           icon: Receipt,
           permission: PERMISSION.REPORT.READ,
@@ -265,6 +273,12 @@ const data = {
           permission: PERMISSION.REPORT.READ,
         },
         {
+          title: "Profit & Loss",
+          url: ROUTERS.REPORT_PROFIT_LOSS,
+          icon: BadgeDollarSign,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
           title: "Product Serial Reports",
           url: ROUTERS.REPORT_PRODUCT_SERIALS,
           icon: Boxes,
@@ -273,28 +287,28 @@ const data = {
       ],
     },
     {
-      title: "Security",
+      title: "People",
       url: "#",
-      icon: Shield,
+      icon: Users,
       badge: undefined as string | undefined,
       items: [
         {
           title: "User",
           url: ROUTERS.USER,
-          icon: CircleSmall,
+          icon: Users,
           permission: PERMISSION.USER.READ,
         },
         {
-          title: "Role",
-          url: ROUTERS.ROLE,
-          icon: CircleSmall,
-          permission: PERMISSION.ROLE.READ,
+          title: "Customers",
+          url: ROUTERS.CUSTOMER,
+          icon: Users,
+          permission: PERMISSION.CUSTOMER.READ,
         },
         {
-          title: "Role Permissions",
-          url: ROUTERS.ROLE_PERMISSIONS,
-          icon: CircleSmall,
-          permission: PERMISSION.PERMISSION.READ,
+          title: "Suppliers",
+          url: ROUTERS.SUPPLIER,
+          icon: Users,
+          permission: PERMISSION.SUPPLIER.READ,
         },
       ],
     },
@@ -315,29 +329,23 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
         items: groupHasPermission ? filteredItems : [],
       };
     })
-    .filter((group) => !group.items || group.items.length > 0);
+    .filter((group) => !group.items || group.items.length > 0)
+    .sort((a, b) => {
+      const order = ["Dashboard", "Sales", "Products", "Purchases", "Expenses", "Finance", "Catalog Setup", "People", "Reports"];
+      return order.indexOf(a.title) - order.indexOf(b.title);
+    });
 
   return (
     <Sidebar
       collapsible="icon"
-      variant="inset"
+      variant="sidebar"
       {...props}
-      className="h-screen border-r border-sidebar-border/60 bg-sidebar shadow-none"
+      className="h-screen border-r-0 bg-sidebar shadow-none reference-sidebar"
     >
-      <SidebarHeader className="border-b-0 px-4 py-4">
-        <div className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.04] px-3 py-2.5 shadow-sm backdrop-blur-sm">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/12 ring-1 ring-primary/30">
-            <img src="/logo.png" alt="Logo" className="size-7 object-contain" />
-          </div>
-
-          <div className="min-w-0">
-            <p className="truncate text-sm font-black uppercase tracking-[0.12em] text-sidebar-foreground">
-              360System
-            </p>
-            <p className="truncate text-[11px] font-medium text-sidebar-foreground/60">
-              Inventory Management
-            </p>
-          </div>
+      <SidebarHeader className="reference-sidebar-header">
+        <div className="reference-brand" aria-label="360System Inventory Management">
+          <strong>360<span>°</span></strong>
+          <small>360 SYSTEM</small>
         </div>
       </SidebarHeader>
 

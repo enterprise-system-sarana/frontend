@@ -2,19 +2,36 @@ import { useState } from "react";
 import { useProfitLoss } from "@/hooks/reports/useProfitLoss";
 import { Button } from "@/components/ui/button";
 import { Calendar } from "lucide-react";
+import { toast } from "sonner";
+
+const localDate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+const currentRange = () => {
+  const today = new Date();
+  return {
+    startDate: localDate(new Date(today.getFullYear(), today.getMonth() - 5, 1)),
+    endDate: localDate(today),
+  };
+};
 
 export default function ProfitLossReportPage() {
-  const [startDate, setStartDate] = useState("2026-01-01");
-  const [endDate, setEndDate] = useState("2026-06-30");
+  const [initialRange] = useState(currentRange);
+  const [startDate, setStartDate] = useState(initialRange.startDate);
+  const [endDate, setEndDate] = useState(initialRange.endDate);
+  const [activeFilter, setActiveFilter] = useState(initialRange);
 
-  const [activeFilter, setActiveFilter] = useState({
-    startDate: "2026-01-01",
-    endDate: "2026-06-30"
-  });
-
-  const { data, isLoading, isError } = useProfitLoss.useGetReport(activeFilter);
+  const { data, isLoading, isFetching, isError, error, refetch } = useProfitLoss.useGetReport(activeFilter);
 
   const handleGenerate = () => {
+    if (!startDate || !endDate || startDate > endDate) {
+      toast.error("Choose a valid date range.");
+      return;
+    }
+    if (activeFilter.startDate === startDate && activeFilter.endDate === endDate) {
+      void refetch();
+      return;
+    }
     setActiveFilter({ startDate, endDate });
   };
 
@@ -49,9 +66,10 @@ export default function ProfitLossReportPage() {
 
           <Button
             onClick={handleGenerate}
+            disabled={isFetching}
             className="bg-[#f39c12] hover:bg-[#e67e22] text-white font-medium rounded-md px-5"
           >
-            Generate Report
+            {isFetching ? "Loading..." : "Generate Report"}
           </Button>
         </div>
       </div>
@@ -65,8 +83,10 @@ export default function ProfitLossReportPage() {
             </div>
           ) : isError ? (
             <div className="flex justify-center items-center py-20 text-red-500">
-              Failed to load report data.
+              {error instanceof Error ? error.message : "Failed to load report data."}
             </div>
+          ) : data && data.months.length === 0 ? (
+            <div className="flex justify-center items-center py-20 text-gray-500">No report data for this date range.</div>
           ) : data ? (
             <table className="w-full text-sm text-left text-gray-600">
               <thead className="text-xs text-gray-700 bg-gray-50 border-b border-gray-200">
@@ -152,7 +172,7 @@ export default function ProfitLossReportPage() {
                 <tr className="bg-gray-100">
                   <td className="px-6 py-4 font-bold text-gray-900 border-r border-gray-200">Net Profit</td>
                   {data.netProfit.map((val, idx) => (
-                    <td key={idx} className="px-6 py-4 font-bold text-center text-gray-900">{formatCurrency(val)}</td>
+                    <td key={idx} className={`px-6 py-4 font-bold text-center ${val < 0 ? "text-red-600" : "text-emerald-700"}`}>{formatCurrency(val)}</td>
                   ))}
                 </tr>
               </tbody>

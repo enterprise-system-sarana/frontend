@@ -238,7 +238,8 @@ export default function PurchaseForm() {
           .map((serial: string) => serial.trim())
           .filter(Boolean);
         const quantity = Math.max(0, Number(item.quantity) || 0);
-        return serials.length !== quantity || new Set(serials).size !== serials.length;
+        return serials.length !== quantity ||
+          new Set(serials.map((serial: string) => serial.toLowerCase())).size !== serials.length;
       });
 
       if (missingSerials) {
@@ -1402,8 +1403,15 @@ function PurchaseItemRow({
     serial.trim(),
   ).length;
 
+  const uniqueSerialCount = new Set(
+    normalizedSerialNumbers
+      .map((serial: string) => serial.trim().toLowerCase())
+      .filter(Boolean),
+  ).size;
+  const hasDuplicateSerials = uniqueSerialCount < enteredSerialCount;
+
   const serialsComplete =
-    expectedSerialCount > 0 && enteredSerialCount === expectedSerialCount;
+    expectedSerialCount > 0 && enteredSerialCount === expectedSerialCount && !hasDuplicateSerials;
 
   /* --------------------------- Add serial ------------------------------- */
 
@@ -1480,6 +1488,12 @@ function PurchaseItemRow({
                   value={currentValStr}
                   onValueChange={(value) => {
                     const numVal = Number(value);
+                    if (numVal !== Number(currentVal)) {
+                      form.setFieldValue(
+                        `items[${index}].serialNumbers`,
+                        Array.from({ length: Math.max(0, Number(quantity) || 0) }, () => ""),
+                      );
+                    }
                     field.handleChange(numVal);
                     const prod = products.find((p) => p.id === numVal);
                     if (prod) {
@@ -1493,12 +1507,15 @@ function PurchaseItemRow({
                     setScanValue("");
                   }}
                 >
-                  <SelectTrigger className="h-10 w-full rounded-xl bg-background">
+                  <SelectTrigger
+                    aria-label={`Choose product for row ${index + 1}`}
+                    className="h-10 w-full cursor-pointer rounded-xl bg-background text-left hover:border-primary/50 focus:ring-primary/20"
+                  >
                     <SelectValue placeholder="Select product">
                       {displayName || undefined}
                     </SelectValue>
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="max-h-72">
                     {Boolean(currentValStr) && !existsInProducts && (
                       <SelectItem value={currentValStr}>
                         {displayName}
@@ -1520,20 +1537,20 @@ function PurchaseItemRow({
           <span className="mb-1 block text-xs font-medium text-muted-foreground md:hidden">
             Qty
           </span>
-          <form.Field name={`items[${index}].quantity`}>
-            {(field: any) => (
-              <Input
-                type="number"
-                min={1}
-                value={field.state.value ?? ""}
-                onChange={(e) =>
-                  field.handleChange(e.target.value === "" ? 0 : Number(e.target.value))
-                }
-                placeholder="Qty"
-                className="h-10 rounded-xl bg-background text-center font-medium"
-              />
-            )}
-          </form.Field>
+          <button
+            type="button"
+            disabled={!Number(productId)}
+            onClick={() => {
+              setSerialDialogError("");
+              setIsSerialDialogOpen(true);
+            }}
+            title={Number(productId) ? "Set quantity and scan serial numbers" : "Select a product first"}
+            aria-label={`Set quantity and scan serial numbers for ${productName || "this product"}`}
+            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border bg-background font-medium transition-colors hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <span>{quantity ?? 0}</span>
+            <ScanLine className="size-3.5 text-primary" />
+          </button>
         </div>
 
         <div className="col-span-4 md:col-span-2">
@@ -1633,9 +1650,9 @@ function PurchaseItemRow({
                 </span>
               </div>
 
-              {/* <p className="mt-1 text-xs text-muted-foreground">
-                One unique serial number is required for each unit.
-              </p> */}
+              <p className="mt-1 text-xs text-muted-foreground">
+                Click the quantity above to set the count and scan one serial per unit.
+              </p>
             </div>
 
             <div className="flex items-center gap-2">
@@ -1666,47 +1683,21 @@ function PurchaseItemRow({
             </div>
           </div>
 
-          {/* Serial inputs */}
-
-          <form.Field name={`items[${index}].serialNumbers`} mode="array">
-            {(serialField: any) => (
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-3">
-                {(Array.isArray(serialField.state.value) ? serialField.state.value : []).map(
-                  (_: string, serialIndex: number) => (
-                    <form.Field
-                      key={serialIndex}
-                      name={`items[${index}].serialNumbers[${serialIndex}]`}
-                    >
-                      {(sf: any) => (
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[10px] font-semibold text-muted-foreground">
-                            #{serialIndex + 1}
-                          </span>
-
-                          <Input
-                            value={sf.state.value ?? ""}
-                            onChange={(event) => sf.handleChange(event.target.value)}
-                            placeholder="Enter Serial Number"
-                            className="h-9 rounded-lg pl-9 font-mono text-xs"
-                          />
-                        </div>
-                      )}
-                    </form.Field>
-                  ),
-                )}
-              </div>
-            )}
-          </form.Field>
+          {enteredSerialCount > 0 && (
+            <p className="mt-3 truncate rounded-lg bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
+              {normalizedSerialNumbers.filter((serial: string) => serial.trim()).join("  ·  ")}
+            </p>
+          )}
         </div>
       )}
 
       {/* Serial dialog */}
 
       <Dialog open={isSerialDialogOpen} onOpenChange={setIsSerialDialogOpen}>
-        <DialogContent className="sm:max-w-lg">
+        <DialogContent className="sm:max-w-xl">
           <DialogHeader>
             <div className="flex items-center justify-between">
-              <DialogTitle>Scan serial numbers</DialogTitle>
+              <DialogTitle>Quantity & serial numbers</DialogTitle>
               <Button
                 type="button"
                 variant="outline"
@@ -1722,9 +1713,38 @@ function PurchaseItemRow({
               </Button>
             </div>
             <DialogDescription>
-              Scan the barcode or enter manually, or import multiple records from Excel.
+              {productName || selectedProduct?.name || "Selected product"} · Set the quantity, then scan or enter one serial number for each unit.
             </DialogDescription>
           </DialogHeader>
+
+          <form.Field name={`items[${index}].quantity`}>
+            {(field: any) => (
+              <div className="flex items-center justify-between gap-4 rounded-xl border bg-muted/20 p-3">
+                <div>
+                  <label htmlFor={`purchase-quantity-${index}`} className="text-sm font-semibold">Quantity</label>
+                  <p className="text-xs text-muted-foreground">One serial number is required per unit.</p>
+                </div>
+                <Input
+                  id={`purchase-quantity-${index}`}
+                  type="number"
+                  min={1}
+                  step={1}
+                  value={field.state.value ?? 1}
+                  onChange={(event) => {
+                    const next = Number(event.target.value);
+                    if (!Number.isInteger(next) || next < 1) return;
+                    if (next < enteredSerialCount) {
+                      setSerialDialogError("Remove extra serial numbers before reducing the quantity.");
+                      return;
+                    }
+                    setSerialDialogError("");
+                    field.handleChange(next);
+                  }}
+                  className="h-10 w-24 rounded-lg bg-background text-center font-semibold"
+                />
+              </div>
+            )}
+          </form.Field>
 
           <div className="rounded-xl bg-muted/30 p-3">
             <div className="flex items-center gap-2">
@@ -1743,6 +1763,9 @@ function PurchaseItemRow({
                 placeholder="Scan barcode / IMEI..."
                 className="h-11 rounded-lg bg-background font-mono"
               />
+              <Button type="button" onClick={addSerialNumber} className="h-11 shrink-0 rounded-lg">
+                Add
+              </Button>
             </div>
 
             {serialDialogError && (
@@ -1767,7 +1790,13 @@ function PurchaseItemRow({
 
                   <Input
                     value={serial}
-                    readOnly
+                    onChange={(event) =>
+                      form.setFieldValue(
+                        `items[${index}].serialNumbers[${serialIndex}]`,
+                        event.target.value,
+                      )
+                    }
+                    aria-label={`Serial number ${serialIndex + 1}`}
                     placeholder={`Serial #${serialIndex + 1}`}
                     className="rounded-lg font-mono text-xs"
                   />
@@ -1791,6 +1820,9 @@ function PurchaseItemRow({
                 </div>
               ))}
             </div>
+            {hasDuplicateSerials && (
+              <p className="mt-2 text-xs text-destructive">Serial numbers must be unique for this product.</p>
+            )}
           </div>
 
           <DialogFooter>
@@ -1802,7 +1834,7 @@ function PurchaseItemRow({
                 setSerialDialogError("");
               }}
             >
-              Clear
+              Clear scan input
             </Button>
 
             <Button type="button" onClick={() => setIsSerialDialogOpen(false)}>

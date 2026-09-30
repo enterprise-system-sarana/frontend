@@ -21,36 +21,36 @@ export const ProductColumns = ({
   t,
 }: ProductColumnsProps): ColumnDef<ProductResponse>[] => [
     {
+      accessorKey: "imageUrl",
+      header: "Images",
+      enableSorting: false,
+      cell: ({ row }) => (
+        <ImageCell
+          fileName={row.original.imageUrl}
+          name={row.original.name || row.original.code}
+          bucketName="product"
+          className="h-10 w-10 rounded-lg shadow-sm"
+        />
+      ),
+    },
+    {
       accessorKey: "code",
       header: ({ column }) => (
         <SortableHeader
           column={column}
-          title={t ? t("common.code") : "Product"}
+          title={t ? t("common.code") : "Code"}
         />
       ),
       cell: ({ row }) => {
         const product = row.original;
         return (
-          <div className="flex items-center gap-3 min-w-[220px]">
-            <ImageCell
-              fileName={product.imageUrl}
-              name={product.code}
-              bucketName="product"
-              className="h-10 w-10 rounded-lg shadow-sm flex-shrink-0"
-            />
-            <div className="flex flex-col min-w-0">
-              <button
-                type="button"
-                onClick={() => onView?.(product)}
-                className="font-semibold text-sm text-foreground truncate text-left hover:underline hover:text-primary transition-colors cursor-pointer"
-              >
-                {product.modelName || product.name || product.code}
-              </button>
-              <span className="text-xs text-muted-foreground font-mono">
-                {product.code}
-              </span>
-            </div>
-          </div>
+          <button
+            type="button"
+            onClick={() => onView?.(product)}
+            className="font-semibold text-sm text-foreground whitespace-nowrap text-left hover:underline hover:text-primary transition-colors cursor-pointer"
+          >
+            {product.code}
+          </button>
         );
       },
     },
@@ -74,18 +74,6 @@ export const ProductColumns = ({
         return (
           <span className="text-sm font-medium text-foreground">
             {product.categoryName}
-          </span>
-        );
-      },
-    },
-    {
-      accessorKey: "modelName",
-      header: ({ column }) => <SortableHeader column={column} title={"Model"} />,
-      cell: ({ row }) => {
-        const product = row.original;
-        return (
-          <span className="text-sm font-medium text-foreground">
-            {product.modelName}
           </span>
         );
       },

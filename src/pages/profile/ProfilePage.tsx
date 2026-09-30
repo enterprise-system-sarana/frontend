@@ -17,7 +17,6 @@ import { FileUpload } from "@/components/ui/FileUpload";
 import { toast } from "sonner";
 import {
   Mail,
-  Shield,
   Lock,
   Eye,
   EyeOff,
@@ -30,7 +29,6 @@ import {
   Check,
   Copy,
   Phone,
-  User as UserIcon,
 } from "lucide-react";
 
 export default function ProfilePage() {
@@ -270,22 +268,11 @@ export default function ProfilePage() {
   const fullName = [currentFirstName, currentLastName].filter(Boolean).join(" ");
   const displayName = fullName || currentUsername || "User";
 
-  const initials = fullName
-    ? fullName
-        .split(" ")
-        .map((part) => part[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
-    : currentUsername
-    ? currentUsername.slice(0, 2).toUpperCase()
-    : "US";
-
   const avatarSrc = currentProfileImage
     ? currentProfileImage.startsWith("http") || currentProfileImage.startsWith("blob")
       ? currentProfileImage
       : fileService.getPreviewUrl("user", currentProfileImage)
-    : "";
+    : "/default-user-avatar.png";
 
   return (
     <div className="mx-auto max-w-5xl space-y-6">
@@ -304,7 +291,7 @@ export default function ProfilePage() {
                   <AvatarImage src={avatarSrc} alt={displayName} className="object-cover" />
                 ) : null}
                 <AvatarFallback className="text-xl font-bold bg-primary/10 text-primary">
-                  {initials}
+                  <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
                 </AvatarFallback>
               </Avatar>
 

@@ -20,7 +20,8 @@ export function LanguageToggle({ className }: { className?: string } = {}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <div
+        <button
+          type="button"
           className={
             className ??
             "flex items-center gap-2.5 h-10 px-3.5 rounded-lg border border-border/70 bg-card shadow-2xs cursor-pointer hover:bg-muted/70 transition-all select-none text-sm font-bold text-foreground"
@@ -32,7 +33,7 @@ export function LanguageToggle({ className }: { className?: string } = {}) {
             className="w-5.5 h-4 object-cover rounded-xs shadow-xs border border-border/40 shrink-0"
           />
           <span className="uppercase text-xs font-bold tracking-wider">{activeLang.code}</span>
-        </div>
+        </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-38  border-border/60 shadow-lg">
         {languages.map((item) => (

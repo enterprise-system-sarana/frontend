@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useState, useEffect, useMemo } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { toast } from "sonner";
-import { Search, Shield, Save, X, ArrowLeft } from "lucide-react";
+import { Search, ShieldCheck, Save, X, ArrowLeft, KeyRound, LockKeyhole, Layers3 } from "lucide-react";
 // import { useAllRoles, useRolePermissions, useUpdateRolePermissions } from "@/hooks/users/useRole";
 import { usePermission } from "@/hooks/users/usePermission";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -64,10 +64,6 @@ export const PermissionPage = () => {
     const selectedRole = useMemo(() => {
         return roles.find((r: any) => r.id?.toString() === selectedRoleId);
     }, [roles, selectedRoleId]);
-    if (!canRead) {
-        return <AccessDenied resource="permissions" showBackButton />;
-    }
-
     const isLoading = isLoadingRoles || (selectedRoleId ? isLoadingRolePerms : isLoadingAllPerms);
     const isError = isErrorRoles || (selectedRoleId ? isErrorRolePerms : isErrorAllPerms);
 
@@ -100,7 +96,7 @@ export const PermissionPage = () => {
     const handleGroupToggle = (groupName: string, checked: boolean) => {
         setPermissions((prev) =>
             prev.map((p) => {
-                if (p.groupName === groupName) {
+                if ((p.groupName || "Other") === groupName) {
                     return { ...p, checked };
                 }
                 return p;
@@ -134,23 +130,30 @@ export const PermissionPage = () => {
     const filteredGroups = useMemo(() => {
         const result: Record<string, any[]> = {};
         Object.entries(grouped).forEach(([groupName, list]) => {
-            if (groupName.toLowerCase().includes(searchTerm.toLowerCase())) {
+            const term = searchTerm.trim().toLowerCase();
+            if (!term || groupName.toLowerCase().includes(term) || list.some((permission) => `${permission.name || ""} ${permission.code || ""}`.toLowerCase().includes(term))) {
                 result[groupName] = list;
             }
         });
         return result;
     }, [grouped, searchTerm]);
 
+    const checkedCount = permissions.filter((permission) => permission.checked).length;
+    const moduleCount = Object.keys(grouped).length;
+
+    if (!canRead) {
+        return <AccessDenied resource="permissions" showBackButton />;
+    }
+
     return (
-        <div className="space-y-6">
+        <div className="role-permissions-page space-y-5">
             {/* Header section */}
             <PageHeader
                 title="Role Permissions"
-                // description={
-                //     selectedRole
-                //         ? `Configuring permissions for "${selectedRole.name}" (${selectedRole.code})`
-                //         : "Select a role to configure module access and permissions"
-                // }
+                titleIcon={<span className="role-page-title-icon"><LockKeyhole className="h-5 w-5" /></span>}
+                description={selectedRole
+                    ? `Manage access for ${selectedRole.name} (${selectedRole.code}).`
+                    : "Choose a role to review and assign access by module."}
                 hideButton
                 actions={
                     <Button
@@ -165,10 +168,18 @@ export const PermissionPage = () => {
                 }
             />
 
-            {/* Selection and Filter toolbar */}
-            <div className="flex flex-col sm:flex-row gap-4 max-w-2xl px-2">
+            <div className="role-overview-grid">
+                <div className="role-overview-card"><span className="role-overview-icon blue"><ShieldCheck size={20} /></span><span><small>Selected role</small><strong className="role-overview-name">{selectedRole?.name || "No role selected"}</strong></span></div>
+                <div className="role-overview-card"><span className="role-overview-icon green"><KeyRound size={20} /></span><span><small>Enabled permissions</small><strong>{checkedCount} <em>/ {permissions.length}</em></strong></span></div>
+                <div className="role-overview-card"><span className="role-overview-icon orange"><Layers3 size={20} /></span><span><small>Modules</small><strong>{moduleCount}</strong></span></div>
+            </div>
+
+            <div className="role-permissions-card">
+              <div className="role-permissions-card-heading"><div><h2>Access by module</h2><p>Choose a role, then select the actions it can perform.</p></div><span>{moduleCount} modules</span></div>
+              {/* Selection and Filter toolbar */}
+              <div className="role-permissions-toolbar flex flex-col sm:flex-row gap-4">
                 {/* Role Selector */}
-                <div className="flex flex-col gap-1.5 w-[240px]">
+                <div className="flex flex-col gap-1.5 w-full sm:w-[260px]">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Role</span>
                     <Select value={selectedRoleId} onValueChange={handleRoleChange}>
                         <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
@@ -192,7 +203,7 @@ export const PermissionPage = () => {
                         <Input
                             type="text"
                             className="pl-9 pr-8 h-9 border-border/80 rounded-lg focus-visible:ring-primary/20 bg-background"
-                            placeholder="Filter by Module Name..."
+                            placeholder="Search modules or permissions..."
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -208,19 +219,19 @@ export const PermissionPage = () => {
                         )}
                     </div>
                 </div>
-            </div>
+              </div>
 
             {/* Matrix Table */}
             <QueryBoundary isLoading={isLoading} isError={isError} fullScreen={false}>
-                <Card className="border border-border/70 overflow-hidden shadow-xs">
+                <Card className="role-permissions-matrix gap-0 border-0 rounded-none overflow-hidden py-0 shadow-none">
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse text-left text-sm">
-                            <thead className="bg-primary text-primary-foreground border-b border-border/50">
+                            <thead className="border-b border-border/50">
                                 <tr>
                                     <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase min-w-[200px]">Module Name</th>
                                     <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">READ</th>
-                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">WRITE</th>
-                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">EDIT</th>
+                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">CREATE</th>
+                                    <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">UPDATE</th>
                                     <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">DELETE</th>
                                     <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase">Other Permissions</th>
                                 </tr>
@@ -252,6 +263,7 @@ export const PermissionPage = () => {
                                                         disabled={!canUpdate}
                                                     />
                                                     <span className="font-semibold text-foreground/90">{groupName}</span>
+                                                    <span className="role-module-count">{groupPermissions.filter(p => p.checked).length}/{groupPermissions.length}</span>
                                                 </label>
                                             </td>
 
@@ -336,6 +348,7 @@ export const PermissionPage = () => {
                                         </tr>
                                     );
                                 })}
+                                {Object.keys(filteredGroups).length === 0 && <tr><td colSpan={6} className="px-6 py-10 text-center text-sm text-muted-foreground">No modules match your search.</td></tr>}
                             </tbody>
                         </table>
                     </div>
@@ -343,16 +356,18 @@ export const PermissionPage = () => {
             </QueryBoundary>
 
             {/* Bottom Actions footer */}
-            <div className="flex items-center justify-start gap-4 px-2">
+            <div className="role-permissions-footer flex items-center justify-between gap-4">
+                <p>{selectedRole ? `Changes to ${selectedRole.name} take effect after saving.` : "Select a role to save permissions."}</p>
                 <Button
                     onClick={handleSave}
-                    disabled={!canUpdate}
+                    disabled={!canUpdate || !selectedRoleId || updatePermissionsMutation.isPending}
                     size="default"
                     className="h-10 px-6 gap-1.5 font-semibold bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Save className="h-4 w-4" />
-                    Update
+                    {updatePermissionsMutation.isPending ? "Saving..." : "Save permissions"}
                 </Button>
+            </div>
             </div>
         </div>
     );

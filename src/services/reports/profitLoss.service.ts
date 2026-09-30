@@ -1,35 +1,29 @@
+import api from "@/services/lib/axios";
 import type { ProfitLossReportFilter, ProfitLossReportResponse } from "@/types/reports/ProfitLoss";
-
-// Mock Data Generator for Frontend Development
-const generateMockData = (): ProfitLossReportResponse => {
-  return {
-    months: ["Jan 2026", "Feb 2026", "Mar 2026", "Apr 2026", "May 2026", "Jun 2026"],
-    income: {
-      sales: [50000, 50000, 50000, 50000, 50000, 50000],
-      service: [30000, 30000, 30000, 30000, 30000, 30000],
-      purchaseReturn: [7000, 7000, 7000, 7000, 7000, 7000],
-      grossProfit: [8000, 8000, 8000, 8000, 8000, 8000]
-    },
-    expenses: {
-      sales: [50000, 50000, 50000, 50000, 50000, 50000],
-      purchase: [30000, 30000, 30000, 30000, 30000, 30000],
-      salesReturn: [7000, 7000, 7000, 7000, 7000, 7000],
-      totalExpense: [8000, 8000, 8000, 8000, 8000, 8000]
-    },
-    netProfit: [8000, 8000, 8000, 8000, 8000, 8000]
-  };
-};
 
 export const profitLossService = {
   getReport: async (filter: ProfitLossReportFilter): Promise<ProfitLossReportResponse> => {
-    // Uncomment this when backend is ready:
-    // return api.get("/reports/profit-loss", { params: filter }).then((res) => res.data);
+    const response = await api.get("/reports/profit-loss", { params: filter });
+    const report = response.data?.payload?.data ?? response.data?.payload ?? response.data;
 
-    // Using mock data for now
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(generateMockData());
-      }, 500);
-    });
-  }
+    if (!report || !Array.isArray(report.months) || !report.income || !report.expenses || !Array.isArray(report.netProfit)) {
+      throw new Error("The profit and loss report has an unexpected response format.");
+    }
+    const series = [
+      report.income.sales,
+      report.income.service,
+      report.income.purchaseReturn,
+      report.income.grossProfit,
+      report.expenses.sales,
+      report.expenses.purchase,
+      report.expenses.salesReturn,
+      report.expenses.totalExpense,
+      report.netProfit,
+    ];
+    if (series.some((values) => !Array.isArray(values) || values.length !== report.months.length)) {
+      throw new Error("The profit and loss report has incomplete monthly values.");
+    }
+
+    return report as ProfitLossReportResponse;
+  },
 };

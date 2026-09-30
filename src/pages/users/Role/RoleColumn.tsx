@@ -107,14 +107,14 @@ export const RoleColumns = ({
     header: t ? t("common.action") : "Action",
     enableHiding: false,
     cell: ({ row }) => {
-      if (!canEdit && !canDelete) {
+      if (!canEdit && !canDelete && !onViewPermissions) {
         return <span className="text-[#a1acb8] text-sm">-</span>;
       }
       return (
         <TableActions
           onView={onViewPermissions ? () => onViewPermissions(row.original) : undefined}
-          onEdit={() => onEdit(row.original)}
-          onDelete={() => onDelete(row.original.id)}
+          onEdit={canEdit ? () => onEdit(row.original) : undefined}
+          onDelete={canDelete ? () => onDelete(row.original.id) : undefined}
           t={t}
         />
       );

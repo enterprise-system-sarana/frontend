@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   DataTable,
   exportTableToCsv,
@@ -15,7 +16,26 @@ import { useCustomer } from "@/hooks/sales/useCustomer";
 import { SalePaymentStatus, SaleStatus } from "@/types/sales/Sale";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
-import { SalesReportColumns } from "./SalesReportColumn";
+import { SalesReportColumns, type SaleReportRow } from "./SalesReportColumn";
+import { ROUTERS } from "@/constants/Route";
+
+type SalesReportMode = "daily" | "monthly" | "all";
+
+const localDate = (date: Date) =>
+  `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+
+const getPeriod = (mode: SalesReportMode, value: string) => {
+  if (mode === "daily") return { startDate: value, endDate: value };
+  if (mode === "monthly") {
+    const [year, month] = value.split("-").map(Number);
+    if (!year || !month) return { startDate: "", endDate: "" };
+    return {
+      startDate: localDate(new Date(year, month - 1, 1)),
+      endDate: localDate(new Date(year, month, 0)),
+    };
+  }
+  return { startDate: "", endDate: "" };
+};
 
 const formatCurrency = (value: number | string | undefined) => {
   const numeric = Number(value ?? 0);
@@ -26,7 +46,7 @@ const formatCurrency = (value: number | string | undefined) => {
   }).format(numeric);
 };
 
-const ReportPage = () => {
+const ReportPage = ({ mode = "all" }: { mode?: SalesReportMode }) => {
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.REPORT.READ);
 
@@ -34,8 +54,13 @@ const ReportPage = () => {
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
+  const [initialPeriod] = useState(() => {
+    const today = new Date();
+    return mode === "monthly" ? localDate(today).slice(0, 7) : localDate(today);
+  });
+  const [periodValue, setPeriodValue] = useState(initialPeriod);
+  const [startDate, setStartDate] = useState(() => getPeriod(mode, initialPeriod).startDate);
+  const [endDate, setEndDate] = useState(() => getPeriod(mode, initialPeriod).endDate);
   const [storeId, setStoreId] = useState<string>("all");
   const [customerId, setCustomerId] = useState<string>("all");
   const [saleStatus, setSaleStatus] = useState<string>("all");
@@ -64,7 +89,7 @@ const ReportPage = () => {
   const { data: summaryData } = useReport.useSalesReport(filter);
 
   const summary = summaryData?.payload ?? summaryData ?? {};
-  const salesRows = Array.isArray(summary.sales) ? summary.sales : [];
+  const salesRows: SaleReportRow[] = Array.isArray(summary.sales) ? summary.sales : [];
 
   const filterGroups = useMemo(
     () => [
@@ -92,7 +117,7 @@ const ReportPage = () => {
     [stores, customers],
   );
 
-  const searchFilteredRows = useSearch(salesRows, search, [
+  const searchFilteredRows = useSearch<SaleReportRow>(salesRows, search, [
     "reference",
     "customerName",
     "storeName",
@@ -120,16 +145,27 @@ const ReportPage = () => {
     if (key === "paymentStatus") setPaymentStatus(value || "all");
   };
 
+  const handlePeriodChange = (value: string) => {
+    if (!value) return;
+    setPeriodValue(value);
+    const range = getPeriod(mode, value);
+    setStartDate(range.startDate);
+    setEndDate(range.endDate);
+    setPage(1);
+  };
+
+  const reportTitle = mode === "daily" ? "Daily Sales" : mode === "monthly" ? "Monthly Sales" : "Sales Report";
+
   const handleExportExcel = () => {
-    exportTableToCsv(filteredRows, columns, "sales-report");
+    exportTableToCsv(filteredRows, columns, reportTitle.toLowerCase().replaceAll(" ", "-"));
   };
 
   const handleDownloadPdf = () => {
-    exportTableToPdf(filteredRows, columns, "sales-report", "Sales Report");
+    exportTableToPdf(filteredRows, columns, reportTitle.toLowerCase().replaceAll(" ", "-"), reportTitle);
   };
 
   const handlePrint = () => {
-    printTable("Sales Report");
+    printTable(reportTitle);
   };
 
   if (!canRead) {
@@ -139,9 +175,28 @@ const ReportPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Sales Reports"
-        description="Overview of sales performance and transactions"
+        title={reportTitle}
+        description={mode === "daily" ? "Sales for a selected day" : mode === "monthly" ? "Sales for a selected month" : "Overview of sales performance and transactions"}
       />
+
+      <div className="flex flex-wrap items-center gap-2">
+        {[
+          { label: "Daily Sales", route: ROUTERS.REPORT_DAILY_SALES, value: "daily" },
+          { label: "Monthly Sales", route: ROUTERS.REPORT_MONTHLY_SALES, value: "monthly" },
+          { label: "Sales Report", route: ROUTERS.REPORT_SALES, value: "all" },
+        ].map((tab) => (
+          <Link key={tab.value} to={tab.route} className={`rounded-lg border px-3 py-2 text-xs font-semibold transition-colors ${mode === tab.value ? "border-primary bg-primary text-primary-foreground" : "border-border bg-card text-muted-foreground hover:text-foreground"}`}>
+            {tab.label}
+          </Link>
+        ))}
+      </div>
+
+      {mode !== "all" && (
+        <label className="flex w-fit items-center gap-3 rounded-xl border bg-card px-4 py-3 text-sm font-medium">
+          {mode === "daily" ? "Select day" : "Select month"}
+          <input type={mode === "daily" ? "date" : "month"} value={periodValue} onChange={(event) => handlePeriodChange(event.target.value)} className="rounded-md border border-border bg-background px-2 py-1.5 text-sm" />
+        </label>
+      )}
 
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
@@ -175,10 +230,10 @@ const ReportPage = () => {
             search={search}
             onSearchChange={setSearch}
             searchPlaceholder="Search reference, customer, store..."
-            startDate={startDate}
-            endDate={endDate}
-            onStartDateChange={(value) => { setPage(1); setStartDate(value); }}
-            onEndDateChange={(value) => { setPage(1); setEndDate(value); }}
+            startDate={mode === "all" ? startDate : undefined}
+            endDate={mode === "all" ? endDate : undefined}
+            onStartDateChange={mode === "all" ? (value) => { setPage(1); setStartDate(value); } : undefined}
+            onEndDateChange={mode === "all" ? (value) => { setPage(1); setEndDate(value); } : undefined}
             filterGroups={filterGroups}
             filterValues={filterValues}
             onFilterChange={handleSearchFilterChange}
@@ -192,8 +247,10 @@ const ReportPage = () => {
               setCustomerId("all");
               setSaleStatus("all");
               setPaymentStatus("all");
-              setStartDate("");
-              setEndDate("");
+              const range = getPeriod(mode, initialPeriod);
+              setPeriodValue(initialPeriod);
+              setStartDate(range.startDate);
+              setEndDate(range.endDate);
               setPage(1);
             }}
           />

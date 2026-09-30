@@ -15,6 +15,7 @@ import type { RoleResponse, RoleRequest } from "@/types/users/Role";
 import FormTextField, { FormTextareaField } from "@/components/ui/FormTextField";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { useRole } from "@/hooks/users/useRole";
+import { ShieldCheck } from "lucide-react";
 
 type FormRoleProps = {
     open: boolean;
@@ -45,10 +46,9 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
             };
 
             if (role) {
-                updateRoleMutate({ id: role.id, req: payload });
-                handleSuccess();
+                updateRoleMutate({ id: role.id, req: payload }, { onSuccess: handleSuccess });
             } else {
-                createRoleMutate(payload);
+                createRoleMutate(payload, { onSuccess: handleSuccess });
             }
         },
     });
@@ -65,9 +65,13 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
-            <DialogContent className="md:max-w-2xl">
-                <DialogHeader>
-                    <DialogTitle>{role ? t("common.edit") : t("common.add")} {t("nav.role")}</DialogTitle>
+            <DialogContent className="role-form-dialog md:max-w-2xl">
+                <DialogHeader className="role-form-header">
+                    <div className="role-form-icon"><ShieldCheck className="h-5 w-5" /></div>
+                    <div>
+                        <DialogTitle>{role ? t("common.edit") : t("common.add")} {t("nav.role")}</DialogTitle>
+                        <p>Set the role details. You can assign permissions after saving.</p>
+                    </div>
                 </DialogHeader>
                 <form
                     id="role-form"
@@ -76,7 +80,7 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
                         form.handleSubmit();
                     }}
                 >
-                    <FieldGroup>
+                    <FieldGroup className="role-form-fields">
                         <FormTextField
                             form={form}
                             name="code"
@@ -103,7 +107,7 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
                         />
                     </FieldGroup>
                 </form>
-                <DialogFooter>
+                <DialogFooter className="role-form-footer">
                     <DialogClose asChild>
                         <Button variant="outline">{t("common.cancel")}</Button>
                     </DialogClose>

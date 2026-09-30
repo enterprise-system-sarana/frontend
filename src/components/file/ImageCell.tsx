@@ -35,6 +35,7 @@ interface ImageCellProps {
     preview?: boolean;
     fit?: "contain" | "cover" | "fill";
     showBorder?: boolean;
+    fallbackSrc?: string;
 }
 
 export const ImageCell = ({
@@ -47,6 +48,7 @@ export const ImageCell = ({
     preview = true,
     fit = "cover",
     showBorder = true,
+    fallbackSrc,
 }: ImageCellProps) => {
     const [open, setOpen] = React.useState(false);
     const [hasError, setHasError] = React.useState(false);
@@ -215,7 +217,7 @@ export const ImageCell = ({
         return (
             <div
                 className={cn(
-                    "group relative flex shrink-0 items-center justify-center",
+                    "group relative flex shrink-0 items-center justify-center overflow-hidden",
                     showBorder && "rounded-xl border border-border/60 bg-muted/30 shadow-sm",
                     "text-muted-foreground/50",
                     className,
@@ -224,10 +226,14 @@ export const ImageCell = ({
                 )}
                 title={`${name} - No image`}
             >
-                <ImageIcon
-                    className="size-5 opacity-40 transition-transform duration-200 group-hover:scale-110"
-                    strokeWidth={1.5}
-                />
+                {fallbackSrc ? (
+                    <img src={fallbackSrc} alt={name} className="h-full w-full object-cover" />
+                ) : (
+                    <ImageIcon
+                        className="size-5 opacity-40 transition-transform duration-200 group-hover:scale-110"
+                        strokeWidth={1.5}
+                    />
+                )}
             </div>
         );
     }
@@ -591,7 +597,7 @@ function ViewerButton({
                 "disabled:pointer-events-none disabled:opacity-25",
             )}
         >
-            {React.cloneElement(icon as React.ReactElement, {
+            {React.cloneElement(icon as React.ReactElement<{ className?: string }>, {
                 className: "size-4",
             })}
         </button>

@@ -28,6 +28,7 @@ import {
   PurchasePage,
   PurchaseForm,
   SalePage,
+  SaleReturnPage,
   SaleForm,
   SaleInvoicePage,
   PaymentPage,
@@ -204,6 +205,7 @@ const router = createBrowserRouter([
           },
           // sales
           { path: ROUTERS.SALE, element: <SalePage /> },
+          { path: ROUTERS.SALE_RETURN, element: <SaleReturnPage /> },
           // { path: ROUTERS.SALE_DETAIL, element: <SaleDetail /> },
           {
             path: ROUTERS.SALE_EDIT,
@@ -280,8 +282,16 @@ const router = createBrowserRouter([
             element: <ProfilePage />,
           },
           {
+            path: ROUTERS.REPORT_DAILY_SALES,
+            element: <ReportPage key="daily-sales" mode="daily" />,
+          },
+          {
+            path: ROUTERS.REPORT_MONTHLY_SALES,
+            element: <ReportPage key="monthly-sales" mode="monthly" />,
+          },
+          {
             path: ROUTERS.REPORT_SALES,
-            element: <ReportPage />,
+            element: <ReportPage key="sales-report" />,
           },
           {
             path: ROUTERS.REPORT_SALES_ITEMS,

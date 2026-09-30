@@ -1,5 +1,4 @@
 import { AppSidebar } from "@/components/layout/app-sidebar";
-import { Separator } from "@/components/ui/separator";
 import {
   SidebarInset,
   SidebarProvider,
@@ -7,8 +6,7 @@ import {
 } from "@/components/ui/sidebar";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/store/useAuth";
-import { useEffect, useState } from "react";
-import { ChevronDown, LogOut, BadgeCheck, CreditCard, Search, Store as StoreIcon, PlusCircle, Monitor, Maximize, Mail, Bell, Settings, AlertTriangle } from "lucide-react";
+import { LogOut, BadgeCheck, CreditCard, Monitor, AlertTriangle, CalendarDays, ChevronDown } from "lucide-react";
 import { useAppDispatch } from "@/store/store";
 import { logout } from "@/store/authSlice";
 import { AuthService } from "@/services/auth/auth.service";
@@ -26,9 +24,10 @@ import { useLanguage } from "@/i18n/LanguageContext";
 import { KeyRound } from "lucide-react";
 import { ROUTERS } from "@/constants/Route";
 import { Button } from "@/components/ui/button";
-import { useStore } from "@/hooks/inventory/useStore";
 import { useProduct } from "@/hooks/product/useProduct";
 import type { ProductResponse } from "@/types/product/Product";
+import { useStock } from "@/hooks/inventory/useStock";
+import type { StockResponse } from "@/types/inventory/Stock";
 import ImageCell from "@/components/file/ImageCell";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { fileService } from "@/services/file/file.service";
@@ -39,40 +38,32 @@ const DashboardLayout = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const { t, language } = useLanguage();
-  const [currentDateString, setCurrentDateString] = useState("");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [selectedStoreId, setSelectedStoreId] = useState<number | null>(null);
+  const currentDateString = new Date().toLocaleDateString(language === "km" ? "km-KH" : "en-GB", { day: "2-digit", month: "short", year: "numeric" });
+  const currentPageTitle = location.pathname === ROUTERS.DASHBOARD
+    ? "Dashboard"
+    : location.pathname === ROUTERS.SALE
+      ? "Sales"
+      : location.pathname.split("/").filter(Boolean).at(-1)?.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Dashboard";
 
-  const { data: stores } = useStore.useGetAllStore({ page: 0, size: 1000 });
   const { data: products } = useProduct.useGetAllProduct({ page: 1, size: 1000 });
-  const storeOptions = stores?.payload?.data ?? stores?.data ?? [] as any[];
-  const productOptions = (products?.payload?.data ?? products?.data ?? []) as ProductResponse[];
-  const stockAlerts = productOptions.filter((product) => {
-    const quantity = Number(product.qty ?? product.quantity ?? 0);
-    const reorderLevel = Number(product.reorderLevel ?? 0);
-    return quantity <= reorderLevel;
-  });
-  const selectedStore =
-    storeOptions.find((store: any) => Number(store.id) === Number(selectedStoreId)) ??
-    storeOptions[0] ??
-    null;
-
-  useEffect(() => {
-    const locale = language === "km" ? "km-KH" : "en-GB";
-    const day = new Date().toLocaleDateString(locale, {
-      day: "2-digit",
-      month: "long",
-      year: "numeric",
+  const { data: stocks, isError: isStocksError } = useStock.useGetAllStock({ page: 1, size: 1000 });
+  const productOptions = ((products as any)?.payload?.data ?? (products as any)?.data ?? []) as ProductResponse[];
+  const rawStocks = (stocks as any)?.payload?.data ?? (stocks as any)?.payload?.content ?? (stocks as any)?.data ?? [];
+  const stockRecords: StockResponse[] = Array.isArray(rawStocks) ? rawStocks : [];
+  const stockAlerts = stockRecords
+    .filter((stock) => Number(stock.quantity) <= Number(stock.alertQuantity ?? stock.reorderLevel ?? 0))
+    .map((stock) => {
+      const product = productOptions.find((item) => item.id === stock.productId);
+      return {
+        id: stock.productId,
+        name: stock.productName || product?.name || `Product #${stock.productId}`,
+        code: product?.code || "",
+        imageUrl: product?.imageUrl || "",
+        qty: Number(stock.quantity) || 0,
+        storeName: stock.storeName || "",
+        storeId: stock.storeId,
+      };
     });
-    const weekday = new Date().toLocaleDateString(locale, { weekday: "long" });
-    setCurrentDateString(`${weekday}, ${day}`);
-  }, [language]);
-
-  useEffect(() => {
-    if (!selectedStoreId && storeOptions.length > 0) {
-      setSelectedStoreId(Number(storeOptions[0].id));
-    }
-  }, [selectedStoreId, storeOptions]);
 
   const activeUser = user
     ? {
@@ -90,9 +81,7 @@ const DashboardLayout = () => {
     ? user.profileImage.startsWith("http") || user.profileImage.startsWith("blob")
       ? user.profileImage
       : fileService.getPreviewUrl("user", user.profileImage)
-    : "https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80";
-
-  const userInitials = (user?.username || activeUser.name || "YO").slice(0, 2).toUpperCase();
+    : "/default-user-avatar.png";
 
   const handleLogout = async () => {
     try {
@@ -104,60 +93,31 @@ const DashboardLayout = () => {
     navigate(ROUTERS.LOGIN);
   };
 
-  const handleGlobalSearch = () => {
-    const trimmed = searchQuery.trim();
-    const targetPath = trimmed ? `${ROUTERS.PRODUCT}?search=${encodeURIComponent(trimmed)}` : ROUTERS.PRODUCT;
-    navigate(targetPath);
-  };
-
-  const handleAddNew = () => {
-    const currentPath = location.pathname;
-
-    if (currentPath.startsWith(ROUTERS.PRODUCT)) {
-      navigate(ROUTERS.PRODUCT_CREATE);
-      return;
-    }
-
-    if (currentPath.startsWith(ROUTERS.PURCHASE)) {
-      navigate(ROUTERS.PURCHASE_CREATE);
-      return;
-    }
-
-    if (currentPath.startsWith(ROUTERS.SALE)) {
-      navigate(ROUTERS.SALE_CREATE);
-      return;
-    }
-
-    if (currentPath.startsWith(ROUTERS.STORE)) {
-      navigate(ROUTERS.STORE_CREATE);
-      return;
-    }
-
-    navigate(ROUTERS.PRODUCT_CREATE);
-  };
-
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-[#f4f5f4] dark:bg-background overflow-hidden flex flex-col h-screen">
+      <SidebarInset className="bg-[#edf2f8] dark:bg-background overflow-hidden flex flex-col h-screen reference-layout">
         <div className="sticky top-0 z-20 w-full">
-          <header className="flex h-16 items-center justify-between gap-4 border-b bg-white dark:bg-card px-4 md:px-6 shadow-xs w-full transition-all">
-            {/* Left side: Sidebar Trigger + Search */}
-            <div className="flex items-center gap-3 md:gap-6 flex-1">
-              <SidebarTrigger className="h-9 w-9 rounded-full bg-orange-400 hover:bg-orange-500 hover:text-white text-white flex items-center justify-center transition-colors shadow-sm cursor-pointer" />
+          <header className="reference-topbar">
+            <div className="reference-topbar-left">
+              <SidebarTrigger className="reference-menu-trigger" />
+              <span className="reference-header-divider" aria-hidden="true" />
+              <div className="reference-workspace-title">
+                <span>360 SYSTEM <i>/</i> WORKSPACE</span>
+                <strong>{currentPageTitle}</strong>
+              </div>
             </div>
 
-            {/* Right side: Actions & User Menu */}
-            <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="reference-topbar-actions">
               {/* POS Button */}
-              <Button size="sm" onClick={() => window.open(ROUTERS.SALE_CREATE, "_blank")} className="hidden sm:flex bg-[#0e4091] hover:bg-slate-800 text-white gap-2 h-10 px-4.5 rounded-lg cursor-pointer font-semibold shadow-xs">
-                <Monitor className="h-4.5 w-4.5" />
-                POS
+              <Button size="sm" onClick={() => window.open(ROUTERS.SALE_CREATE, "_blank")} className="reference-pos-button">
+                <Monitor className="h-4 w-4" />
+                <span>POS</span>
               </Button>
 
-              <Separator orientation="vertical" className="h-7 bg-border/80 mx-1 hidden sm:block" />
-
-              <LanguageToggle />
+              <span className="reference-header-divider reference-actions-divider" aria-hidden="true" />
+              <LanguageToggle className="reference-language-toggle" />
+              <span className="reference-date"><CalendarDays className="h-4 w-4" /><span>{currentDateString}</span></span>
 
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -165,9 +125,9 @@ const DashboardLayout = () => {
                     variant="ghost"
                     size="icon"
                     aria-label={`${stockAlerts.length} stock alerts`}
-                    className="relative hidden h-10 w-10 rounded-lg border border-border/70 bg-card shadow-2xs hover:bg-muted/70 text-muted-foreground hover:text-foreground md:flex cursor-pointer"
+                    className="reference-alert-button"
                   >
-                    <Mail className="h-5 w-5" />
+                    <AlertTriangle className="h-5 w-5" />
                     {stockAlerts.length > 0 && (
                       <span className="absolute -top-1 -right-1 flex h-5 min-w-5 px-1 items-center justify-center rounded-full border-2 border-background bg-red-500 text-[10px] font-bold text-white shadow-xs">
                         {stockAlerts.length > 99 ? "99+" : stockAlerts.length}
@@ -190,10 +150,10 @@ const DashboardLayout = () => {
                   {stockAlerts.length > 0 ? (
                     <div className="max-h-80 overflow-y-auto space-y-0.5">
                       {stockAlerts.slice(0, 8).map((product) => {
-                        const quantity = Number(product.qty ?? product.quantity ?? 0);
+                        const quantity = product.qty;
                         return (
                           <DropdownMenuItem
-                            key={product.id}
+                            key={`${product.id}-${product.storeId}`}
                             className="cursor-pointer gap-2.5 p-2 rounded-lg items-center"
                             onClick={() => navigate(`${ROUTERS.PURCHASE_CREATE}?productId=${product.id}`)}
                           >
@@ -210,7 +170,7 @@ const DashboardLayout = () => {
                                 {product.name}
                               </span>
                               <span className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
-                                {product.code || `#${product.id}`}
+                                {[product.code || `#${product.id}`, product.storeName].filter(Boolean).join(" · ")}
                               </span>
                             </div>
 
@@ -231,7 +191,7 @@ const DashboardLayout = () => {
                     </div>
                   ) : (
                     <DropdownMenuItem disabled className="justify-center py-4 text-xs text-muted-foreground">
-                      No stock alerts
+                      {isStocksError ? "Stock alerts unavailable" : "No stock alerts"}
                     </DropdownMenuItem>
                   )}
                   {stockAlerts.length > 8 && (
@@ -239,7 +199,7 @@ const DashboardLayout = () => {
                       <DropdownMenuSeparator className="my-1" />
                       <DropdownMenuItem
                         className="cursor-pointer justify-center text-xs text-muted-foreground hover:text-foreground font-medium py-1.5"
-                        onClick={() => navigate(ROUTERS.PRODUCT)}
+                        onClick={() => navigate(ROUTERS.STOCK)}
                       >
                         View all alerts ({stockAlerts.length})
                       </DropdownMenuItem>
@@ -252,25 +212,23 @@ const DashboardLayout = () => {
               {/* User Menu */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <div className="flex items-center cursor-pointer ml-1 select-none focus:outline-none">
-                    <Avatar className="size-10 rounded-full ring-2 ring-border/80 hover:ring-primary/60 transition-all shadow-xs overflow-hidden">
-                      {/* <AvatarImage
-                        src={userAvatarSrc}
-                        alt={activeUser.name}
-                        className="object-cover size-full rounded-full"
-                      /> */}
+                  <button type="button" className="reference-user-trigger">
+                    <Avatar className="reference-user-avatar">
                       <ImageCell
                         fileName={activeUser?.avatar}
                         name={activeUser.name}
                         bucketName="user"
                         preview={false}
                         className="size-full rounded-full"
+                        fallbackSrc="/default-user-avatar.png"
                       />
                       <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
-                        {userInitials}
+                        <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
                       </AvatarFallback>
                     </Avatar>
-                  </div>
+                    <span className="reference-user-copy"><strong className="reference-user-name">{activeUser.name}</strong><small>My account</small></span>
+                    <ChevronDown className="reference-user-chevron" />
+                  </button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent
                   className="w-56 shadow-lg border-border/60 rounded-xl"
@@ -282,7 +240,7 @@ const DashboardLayout = () => {
                       <Avatar className="size-9 rounded-full ring-1 ring-border/60 shrink-0">
                         <AvatarImage src={userAvatarSrc} alt={activeUser.name} className="object-cover" />
                         <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
-                          {userInitials}
+                          <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
                         </AvatarFallback>
                       </Avatar>
                       <div className="flex flex-col space-y-0.5 min-w-0">
@@ -337,9 +295,11 @@ const DashboardLayout = () => {
             location.pathname.includes("/sale/create") ||
             location.pathname.includes("/sale/edit") ||
             location.pathname.includes("/purchase/create") ||
-            location.pathname.includes("/purchase/edit");
+            location.pathname.includes("/purchase/edit") ||
+            location.pathname === ROUTERS.PURCHASE_PAYMENT ||
+            location.pathname === ROUTERS.HOME;
           return (
-            <div className={`flex-1 overflow-auto bg-background dark:bg-background ${isNoPaddingPage ? "p-0" : "p-4 sm:p-6"}`}>
+            <div className={`flex-1 overflow-auto bg-[#edf2f8] dark:bg-background ${isNoPaddingPage ? "p-0" : "p-4 sm:p-6"}`}>
               <Outlet />
             </div>
           );

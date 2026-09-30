@@ -13,8 +13,8 @@ import { formatDate } from "@/utils/formatDate";
 
 interface SaleColumnProps {
   onView?: (sale: SaleResponse) => void;
-  onEdit: (sale: SaleResponse) => void;
-  onDelete: (id: number) => void;
+  onEdit?: (sale: SaleResponse) => void;
+  onDelete?: (id: number) => void;
   onComplete?: (id: number) => void;
   onCancel?: (id: number) => void;
   onReturn?: (id: number) => void;
@@ -160,10 +160,10 @@ export const SaleColumns = ({
       cell: ({ row }) => {
         const currentStatus = row.original.status?.toUpperCase();
         const isPendingLike = currentStatus === "PENDING" || currentStatus === "ACT" || currentStatus === "ACTIVE";
-        const isCompleted = currentStatus === "COMPLETED";
         const isReturnable = currentStatus === "COMPLETED" || currentStatus === "PARTIAL_RETURNED";
 
         const hasActions =
+          Boolean(onView) ||
           (onComplete && isPendingLike) ||
           (onCancel && isPendingLike) ||
           (onReturn && isReturnable) ||
@@ -178,8 +178,8 @@ export const SaleColumns = ({
           <div className="flex items-center gap-1">
             <TableActions
               onView={onView ? () => onView(row.original) : undefined}
-              onEdit={canEdit ? () => onEdit(row.original) : undefined}
-              onDelete={canDelete ? () => onDelete(row.original.id) : undefined}
+              onEdit={canEdit && onEdit ? () => onEdit(row.original) : undefined}
+              onDelete={canDelete && onDelete ? () => onDelete(row.original.id) : undefined}
             />
             {onPayment && row.original.dueAmount > 0 && (
               <Button
