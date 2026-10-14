@@ -102,10 +102,9 @@ const DashboardLayout = () => {
             <div className="reference-topbar-left">
               <SidebarTrigger className="reference-menu-trigger" />
               <span className="reference-header-divider" aria-hidden="true" />
-              <div className="reference-workspace-title">
-                <span>360 SYSTEM <i>/</i> WORKSPACE</span>
+              {/* <div className="reference-workspace-title">
                 <strong>{currentPageTitle}</strong>
-              </div>
+              </div> */}
             </div>
 
             <div className="reference-topbar-actions">

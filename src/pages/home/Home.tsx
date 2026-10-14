@@ -1,7 +1,7 @@
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { ArrowRight, Boxes, ChartColumn, FolderOpen, Package, Settings, ShoppingCart, Tags, Users, UserRound } from "lucide-react";
+import { ArrowRight, Boxes, ChartColumn, FolderOpen, Package, Settings, ShoppingCart, Users, UserRound } from "lucide-react";
 import { ROUTERS } from "@/constants/Route";
 import { useSale } from "@/hooks/sales/useSale";
 import { usePurchase } from "@/hooks/purchases/usePurchase";
@@ -37,7 +37,23 @@ export const HomePage = () => {
   const monthlyPurchases = purchases.filter((item) => thisMonth(item.purchaseDate ?? item.createdAt ?? item.date, now));
   const totalSales = monthlySales.reduce((sum, item) => sum + (Number(item.grandTotal ?? item.totalAmount ?? item.total) || 0), 0);
   const totalPurchases = monthlyPurchases.reduce((sum, item) => sum + (Number(item.grandTotal ?? item.totalAmount ?? item.total) || 0), 0);
-  const totalDiscount = monthlySales.reduce((sum, item) => sum + (Number(item.discount) || 0), 0);
+  const productCosts = useMemo(
+    () => new Map(products.map((product) => [Number(product.id), Number(product.costPrice) || 0])),
+    [products],
+  );
+  const totalProfit = monthlySales.reduce((sum, sale) => {
+    const cost = Array.isArray(sale.items)
+      ? sale.items.reduce(
+          (itemSum: number, item: DataRow) =>
+            itemSum +
+            (Number(item.quantity) || 0) *
+              (productCosts.get(Number(item.productId)) ??
+                (Number(item.costPrice) || 0)),
+          0,
+        )
+      : 0;
+    return sum + (Number(sale.grandTotal ?? sale.totalAmount ?? sale.total) || 0) - cost;
+  }, 0);
   const stockByProduct = useMemo(() => {
     const items = new Map<number, { id: number; name: string; quantity: number; stores: Set<string>; lowStock: boolean }>();
     for (const product of products) {
@@ -62,7 +78,7 @@ export const HomePage = () => {
   const summaries = [
     { label: "Sales", value: totalSales, icon: ShoppingCart, color: "blue", route: ROUTERS.SALE },
     { label: "Purchases", value: totalPurchases, icon: ShoppingCart, color: "orange", route: ROUTERS.PURCHASE },
-    { label: "Discount", value: totalDiscount, icon: Tags, color: "pink", route: ROUTERS.SALE },
+    { label: "Profit", value: totalProfit, icon: ChartColumn, color: "pink", route: ROUTERS.REPORT_PROFIT_LOSS },
   ];
   const links = [
     { label: "Products", icon: Boxes, route: ROUTERS.PRODUCT },
@@ -92,11 +108,11 @@ export const HomePage = () => {
   }, [sales, now]);
 
   return <main className="reference-dashboard">
-    <div className="reference-heading"><h1>Dashboard</h1><div className="reference-breadcrumb"><span>◉</span> Home <span className="reference-divider">›</span> Dashboard</div></div>
+    {/* <div className="reference-heading"><h1>Dashboard</h1><div className="reference-breadcrumb"><span>◉</span> Home <span className="reference-divider">›</span> Dashboard</div></div> */}
     <section className="reference-summary-grid" aria-label="Monthly summary">
       {summaries.map(({ label, value, icon: Icon, color, route }) => <button key={label} type="button" className="reference-summary-card" onClick={() => navigate(route)}>
         <span className={`reference-summary-icon ${color}`}><Icon size={23} strokeWidth={2.6} /></span>
-        <span className="reference-summary-copy"><span className="reference-summary-label">{label}</span><strong>{salesLoading || purchasesLoading ? "—" : money(value)}</strong></span>
+        <span className="reference-summary-copy"><span className="reference-summary-label">{label}</span><strong>{salesLoading || purchasesLoading || productsLoading ? "—" : money(value)}</strong></span>
       </button>)}
     </section>
     <section className="reference-panel reference-quick-links"><div className="reference-panel-head"><h2>Quick Links</h2><span>SHORTCUTS</span></div>
@@ -116,8 +132,8 @@ export const HomePage = () => {
         {stockByProduct.map((product) => <div className="reference-stock-row" key={product.id}><span className="reference-product-name"><Package size={16} />{product.name}</span><span>{[...product.stores].join(", ") || "—"}</span><strong>{product.quantity.toLocaleString()}</strong><span className={`reference-stock-status ${product.quantity <= 0 ? "out" : product.lowStock ? "low" : "in"}`}>{product.quantity <= 0 ? "Out" : product.lowStock ? "Low" : "In stock"}</span></div>)}
       </div>}
       </section>
-    </div>
-    <footer className="reference-footer"><span>Copyright © {now.getFullYear()} 360System. All rights reserved.</span><span>Inventory Management</span></footer>
+    </div>P
+    {/* <footer className="reference-footer"><span>Copyright © {now.getFullYear()} 360System. All rights reserved.</span><span>Inventory Management</span></footer> */}
   </main>;
 };
 

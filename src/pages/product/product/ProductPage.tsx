@@ -22,6 +22,10 @@ import { ROUTERS } from "@/constants/Route";
 import { toast } from "sonner";
 import { useModel } from "@/hooks/product/useModel";
 import type { ModelResponse } from "@/types/product/Model";
+import { useBrand } from "@/hooks/product/useBrand";
+import type { BrandResponse } from "@/types/product/Brand";
+import { useCategory } from "@/hooks/product/useCategory";
+import type { CategoryResponse } from "@/types/product/Category";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
@@ -57,21 +61,45 @@ export const ProductPage = () => {
     page,
     size,
     status: filterValues.status as Status,
+    categoryId: filterValues.categoryId
+      ? Number(filterValues.categoryId)
+      : undefined,
+    brandId: filterValues.brandId
+      ? Number(filterValues.brandId)
+      : undefined,
     modelId: filterValues.modelId ? Number(filterValues.modelId) : undefined,
   });
-  console.log(data);
 
   const { mutate: deleteProductMutate } = useProduct.useDeleteProduct();
 
-  const { data: modelData } = useModel.GetAllModel({
+  // Fetch categories & brands for filter dropdowns
+  const { data: categoryData } = useCategory.useGetAllCategory({
     page: 1,
     size: 100,
   });
+
+  const { data: brandData } = useBrand.useGetAllBrand({
+    page: 1,
+    size: 100,
+  });
+
+  // Fetch models filtered by selected category & brand (cascading filter)
+  const { data: modelData } = useModel.GetAllModel({
+    page: 1,
+    size: 100,
+    categoryId: filterValues.categoryId
+      ? Number(filterValues.categoryId)
+      : undefined,
+    brandId: filterValues.brandId
+      ? Number(filterValues.brandId)
+      : undefined,
+  });
+
   // Filter Groups
   const filterGroups: FilterGroup[] = useMemo(() => {
     const groups: FilterGroup[] = [
       {
-        key: " ",
+        key: "status",
         label: t("common.status"),
         options: [
           { label: t("common.active"), value: Status.ACTIVE },
@@ -80,6 +108,31 @@ export const ProductPage = () => {
       },
     ];
 
+    // Category filter
+    if (categoryData?.payload?.data && categoryData.payload.data.length > 0) {
+      groups.push({
+        key: "categoryId",
+        label: t("product.category"),
+        options: categoryData.payload.data.map((c: CategoryResponse) => ({
+          label: c.name,
+          value: String(c.id),
+        })),
+      });
+    }
+
+    // Brand filter
+    if (brandData?.payload?.data && brandData.payload.data.length > 0) {
+      groups.push({
+        key: "brandId",
+        label: t("product.brand"),
+        options: brandData.payload.data.map((b: BrandResponse) => ({
+          label: b.name,
+          value: String(b.id),
+        })),
+      });
+    }
+
+    // Model filter (already filtered by selected category/brand via API)
     if (modelData?.payload?.data && modelData.payload.data.length > 0) {
       groups.push({
         key: "modelId",
@@ -92,7 +145,7 @@ export const ProductPage = () => {
     }
 
     return groups;
-  }, [modelData, t]);
+  }, [categoryData, brandData, modelData, t]);
 
   const handleColumnToggle = (columnId: string) => {
     setColumnVisibility((prev) => ({
@@ -109,6 +162,13 @@ export const ProductPage = () => {
       } else {
         next[key] = value;
       }
+
+      // Cascading clear: when category or brand changes, reset model selection
+      // because the available models depend on the selected category/brand
+      if (key === "categoryId" || key === "brandId") {
+        delete next["modelId"];
+      }
+
       return next;
     });
     setPage(1);
@@ -130,6 +190,18 @@ export const ProductPage = () => {
   const filteredProducts = useMemo(() => {
     return searchedProducts.filter((item) => {
       if (filterValues.status && item.status !== filterValues.status) {
+        return false;
+      }
+      if (
+        filterValues.categoryId &&
+        String(item.categoryId) !== filterValues.categoryId
+      ) {
+        return false;
+      }
+      if (
+        filterValues.brandId &&
+        String(item.brandId) !== filterValues.brandId
+      ) {
         return false;
       }
       if (

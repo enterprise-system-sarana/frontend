@@ -1,0 +1,13 @@
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-/api/v1}
+        VITE_ACCESS_TOKEN_KEY: ${VITE_ACCESS_TOKEN_KEY:-access_token}
+        VITE_REFRESH_TOKEN_KEY: ${VITE_REFRESH_TOKEN_KEY:-refresh_token}
+        VITE_USER_KEY: ${VITE_USER_KEY:-auth_user}
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    restart: unless-stopped

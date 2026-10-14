@@ -26,6 +26,9 @@ export interface ProductResponse extends BaseResponse {
   brandName: string;
   categoryId?: number;
   categoryName: string;
+  totalPrice: number;
+  totalSale: number ;
+  profit: number;   
   costPrice: number;
   salePrice: number;
   quantity?: number;
@@ -54,6 +57,8 @@ export const ProductSchema = z.object({
 
 export interface ProductFilter extends PageFilter {
   modelId?: number;
+  brandId?: number;
+  categoryId?: number;
   name?: string;
   code?: string;
 }

@@ -342,11 +342,12 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
       className="h-screen border-r-0 bg-sidebar shadow-none reference-sidebar"
     >
-      <SidebarHeader className="reference-sidebar-header">
-        <div className="reference-brand" aria-label="360System Inventory Management">
-          <strong>360<span>°</span></strong>
-          <small>360 SYSTEM</small>
-        </div>
+      <SidebarHeader className="flex items-center justify-center border-b bg-sidebar">
+        <img
+          className="reference-brand-logo"
+          src="/logo.png"
+          alt="360 Phone Shop"
+        />
       </SidebarHeader>
 
       <SidebarContent className="px-1 py-2">

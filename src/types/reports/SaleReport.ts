@@ -9,6 +9,7 @@ export interface SaleReportFilter extends PageFilter {
   saleStatus?: string;
   paymentStatus?: string;
   productId?: number;
+
 }
 
 export interface ExpenseReportFilter extends PageFilter {
@@ -88,6 +89,7 @@ export interface SaleReportResponse {
   startDate?: string;
   endDate?: string;
   sales?: SaleResponse[];
+  totalProfit : number;
 }
 
 // export interface SalesReportPageResponse<T> {

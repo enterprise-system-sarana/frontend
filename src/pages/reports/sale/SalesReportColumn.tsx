@@ -24,6 +24,7 @@ export interface SaleReportRow {
   grandTotal?: number;
   paidAmount?: number;
   dueAmount?: number;
+  totalProfit?: number;
   paymentStatus?: string;
   status?: string;
 }
@@ -106,6 +107,15 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
     cell: ({ row }) => (
       <span className="text-[#71dd37] font-medium">
         {formatCurrency(row.original.paidAmount)}
+      </span>
+    ),
+  },
+  {
+    accessorKey: "totalProfit",
+    header: ({ column }) => <SortableHeader column={column} title="Profit" />,
+    cell: ({ row }) => (
+      <span className="text-[#71dd37] font-medium">
+        {formatCurrency(row.original.totalProfit)}
       </span>
     ),
   },

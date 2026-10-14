@@ -139,6 +139,42 @@ export const ProductColumns = ({
         );
       },
     },
+    {
+      accessorKey: "totalPrice",
+      header: ({ column }) => <SortableHeader column={column} title={"Total Price"} />,
+      cell: ({ row }) => {
+        const qty = row.original.totalPrice;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20 tabular-nums">
+            {qty != null ? `${qty} $` : "-"}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "totalSale",
+      header: ({ column }) => <SortableHeader column={column} title={"Total Sale"} />,
+      cell: ({ row }) => {
+        const qty = row.original.totalSale;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20 tabular-nums">
+            {qty != null ? `${qty} $` : "-"}
+          </span>
+        );
+      },
+    },
+    {
+      accessorKey: "profit",
+      header: ({ column }) => <SortableHeader column={column} title={"Profit"} />,
+      cell: ({ row }) => {
+        const qty = row.original.profit;
+        return (
+          <span className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-semibold bg-primary/10 text-primary border border-primary/20 tabular-nums">
+            {qty != null ? `${qty} $` : "-"}
+          </span>
+        );
+      },
+    },
     // {
     //   accessorKey: "reorderLevel",
     //   header: ({ column }) => (
@@ -158,25 +194,25 @@ export const ProductColumns = ({
     //     );
     //   },
     // },
-    {
-      accessorKey: "status",
-      header: t ? t("common.status") : "Status",
-      cell: ({ row }) => <StatusBadge status={row.original.status} />,
-    },
-    {
-      accessorKey: "createdAt",
-      header: ({ column }) => (
-        <SortableHeader
-          column={column}
-          title={"Date"}
-        />
-      ),
-      cell: ({ row }) => (
-        <span className="text-xs text-muted-foreground whitespace-nowrap">
-          {formatDate(row.original.createdAt)}
-        </span>
-      ),
-    },
+    // {
+    //   accessorKey: "status",
+    //   header: t ? t("common.status") : "Status",
+    //   cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    // },
+    // {
+    //   accessorKey: "createdAt",
+    //   header: ({ column }) => (
+    //     <SortableHeader
+    //       column={column}
+    //       title={"Date"}
+    //     />
+    //   ),
+    //   cell: ({ row }) => (
+    //     <span className="text-xs text-muted-foreground whitespace-nowrap">
+    //       {formatDate(row.original.createdAt)}
+    //     </span>
+    //   ),
+    // },
     {
       id: "actions",
       header: t ? t("common.action") : "Action",

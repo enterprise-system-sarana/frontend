@@ -14,7 +14,6 @@ import {
   X,
   FileSpreadsheet,
   DollarSign,
-  AlertCircle,
 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -307,40 +306,14 @@ export default function PurchaseForm() {
   /* ----------------------------- Form values ----------------------------- */
 
   const formValues = useFormStore(form.store, (state) => state.values);
-
-  /* ----------------------- Top Overview Calculations --------------------- */
-
-  const topSubtotal = useMemo(() => {
-    return (formValues.items || []).reduce(
+  const topGrandTotal = useMemo(() => {
+    const subtotal = (formValues.items || []).reduce(
       (sum: number, item: any) =>
         sum + (Number(item.cost) || 0) * (Number(item.quantity) || 0),
       0,
     );
-  }, [formValues.items]);
-
-  const topDiscount = Number(formValues.discount) || 0;
-  const topGrandTotal = Math.max(topSubtotal - topDiscount, 0);
-  const topPaidAmount = Number(formValues.paidAmount) || 0;
-  const topBalanceDue = Math.max(topGrandTotal - topPaidAmount, 0);
-  const topTotalUnits = useMemo(() => {
-    return (formValues.items || []).reduce(
-      (sum: number, item: any) => sum + (Number(item.quantity) || 0),
-      0,
-    );
-  }, [formValues.items]);
-
-  const topItemsCount = useMemo(() => {
-    return (formValues.items || []).filter(
-      (item: any) => item.productId && item.productId !== 0,
-    ).length;
-  }, [formValues.items]);
-
-  const topPaymentStatus =
-    topPaidAmount >= topGrandTotal && topGrandTotal > 0
-      ? "PAID"
-      : topPaidAmount > 0
-        ? "PARTIAL"
-        : "PENDING";
+    return Math.max(subtotal - (Number(formValues.discount) || 0), 0);
+  }, [formValues.items, formValues.discount]);
 
   /* ------------------------- Calculate totals ---------------------------- */
 
@@ -668,156 +641,6 @@ export default function PurchaseForm() {
             form.handleSubmit();
           }}
         >
-          {/* ================================================================ */}
-          {/* TOP SUMMARY & IMPORTANCE KPI BAR                                  */}
-          {/* ================================================================ */}
-          <div className="mb-6 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-            {/* 1. Total Purchase Hero Card */}
-            <div className="relative overflow-hidden rounded-2xl border border-emerald-500/30 bg-gradient-to-br from-emerald-500/15 via-emerald-500/5 to-card p-4.5 shadow-xs transition-all hover:shadow-md">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-emerald-800/80 dark:text-emerald-300/80">
-                      Total Purchase
-                    </span>
-                    <span className="rounded-full bg-emerald-500/20 px-1.5 py-0.2 text-[10px] font-bold text-emerald-700 dark:text-emerald-300">
-                      Grand Total
-                    </span>
-                  </div>
-                  <h3 className="mt-1.5 text-2xl font-black tracking-tight text-emerald-600 dark:text-emerald-400">
-                    {formatCurrency(topGrandTotal)}
-                  </h3>
-                </div>
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-emerald-500/20 text-emerald-600 shadow-inner dark:text-emerald-400">
-                  <DollarSign className="size-6" />
-                </div>
-              </div>
-              <div className="mt-3.5 flex items-center justify-between border-t border-emerald-500/15 pt-2.5 text-xs text-muted-foreground">
-                <span>
-                  Subtotal: <strong className="text-foreground">{formatCurrency(topSubtotal)}</strong>
-                </span>
-                {topDiscount > 0 ? (
-                  <span className="font-semibold text-rose-600 dark:text-rose-400">
-                    Disc: -{formatCurrency(topDiscount)}
-                  </span>
-                ) : (
-                  <span className="text-[11px] text-muted-foreground/80">No discount applied</span>
-                )}
-              </div>
-            </div>
-
-            {/* 2. Purchase Importance Selector Card */}
-            <div className="relative overflow-hidden rounded-2xl border bg-card p-4.5 shadow-xs transition-all hover:shadow-md">
-              <div className="flex items-start justify-between gap-3">
-                <div className="min-w-0">
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                      Importance / Priority
-                    </span>
-                  </div>
-                  <div className="mt-1.5 flex items-center gap-2">
-                    <span
-                      className={`inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-xs font-bold ${IMPORTANCE_CONFIG[importance].badgeClass}`}
-                    >
-                      <span className={`size-1.5 rounded-full ${IMPORTANCE_CONFIG[importance].dotClass}`} />
-                      {IMPORTANCE_CONFIG[importance].label} Priority
-                    </span>
-                  </div>
-                </div>
-                <div
-                  className={`flex size-11 shrink-0 items-center justify-center rounded-2xl bg-muted/70 ${IMPORTANCE_CONFIG[importance].iconColor}`}
-                >
-                  <AlertCircle className="size-6" />
-                </div>
-              </div>
-
-              {/* Interactive Priority Selector */}
-              <div className="mt-3.5 border-t pt-2.5">
-                <div className="grid grid-cols-4 gap-1 rounded-xl bg-muted/60 p-1">
-                  {(["LOW", "NORMAL", "HIGH", "URGENT"] as ImportanceLevel[]).map((level) => {
-                    const isSelected = importance === level;
-                    return (
-                      <button
-                        key={level}
-                        type="button"
-                        onClick={() => setImportance(level)}
-                        className={`cursor-pointer rounded-lg py-1 text-center text-xs font-semibold transition-all ${
-                          isSelected
-                            ? IMPORTANCE_CONFIG[level].buttonActiveClass + " ring-1 ring-black/5 dark:ring-white/10"
-                            : "text-muted-foreground hover:bg-background/80 hover:text-foreground"
-                        }`}
-                      >
-                        {IMPORTANCE_CONFIG[level].label}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-
-            {/* 3. Items & Units Card */}
-            <div className="relative overflow-hidden rounded-2xl border bg-card p-4.5 shadow-xs transition-all hover:shadow-md">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Intake Volume
-                  </span>
-                  <h3 className="mt-1.5 text-2xl font-bold tracking-tight">
-                    {topTotalUnits} <span className="text-sm font-normal text-muted-foreground">units</span>
-                  </h3>
-                </div>
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Package className="size-6" />
-                </div>
-              </div>
-              <div className="mt-3.5 flex items-center justify-between border-t pt-2.5 text-xs text-muted-foreground">
-                <span>
-                  Total Lines:{" "}
-                  <strong className="text-foreground">
-                    {topItemsCount || (formValues.items?.length ?? 0)}
-                  </strong>{" "}
-                  items
-                </span>
-                <span className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
-                  Ready to intake
-                </span>
-              </div>
-            </div>
-
-            {/* 4. Payment & Balance Due Card */}
-            <div className="relative overflow-hidden rounded-2xl border bg-card p-4.5 shadow-xs transition-all hover:shadow-md">
-              <div className="flex items-start justify-between gap-3">
-                <div>
-                  <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Payment Balance
-                  </span>
-                  <h3 className="mt-1.5 text-2xl font-bold tracking-tight">
-                    {formatCurrency(topBalanceDue)}
-                  </h3>
-                </div>
-                <div className="flex size-11 shrink-0 items-center justify-center rounded-2xl bg-amber-500/10 text-amber-600 dark:text-amber-400">
-                  <Wallet className="size-6" />
-                </div>
-              </div>
-              <div className="mt-3.5 flex items-center justify-between border-t pt-2.5 text-xs">
-                <span className="text-muted-foreground">
-                  Paid: <strong className="text-foreground">{formatCurrency(topPaidAmount)}</strong>
-                </span>
-                <span
-                  className={`rounded-md px-2 py-0.5 text-[11px] font-bold ${
-                    topPaymentStatus === "PAID"
-                      ? "bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
-                      : topPaymentStatus === "PARTIAL"
-                        ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20"
-                        : "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/20"
-                  }`}
-                >
-                  {topPaymentStatus}
-                </span>
-              </div>
-            </div>
-          </div>
-
           <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
             {/* ========================================================== */}
             {/* LEFT                                                         */}

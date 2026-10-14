@@ -16,10 +16,10 @@ import { store } from "@/store/store";
 import { updateTokens, logout as logoutAction } from "@/store/authSlice";
 import { ROUTERS } from "@/constants/Route";
 
-const API_URL = import.meta.env.VITE_API_URL || "http://169.58.63.127/api/v1";
+const API_URL =  "http://localhost:8081/api/v1";
 
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL:  API_URL,
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
 });

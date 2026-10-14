@@ -98,15 +98,10 @@
 
 /* Dashboard reference layout */
 .reference-sidebar { --sidebar: #082c4d; --sidebar-foreground: #fff; }
-.reference-sidebar-header { height: 64px; min-height: 64px; padding: 0 16px; background: linear-gradient(135deg, #fff, #fff6f0); border-bottom: 1px solid #f2e4dc; display: flex; align-items: center; justify-content: center; }
-.reference-brand { display: flex; align-items: center; flex-direction: column; justify-content: center; height: 56px; line-height: 1; color: #f26731; }
-.reference-brand strong { font-size: 31px; font-style: italic; font-weight: 900; letter-spacing: -4px; text-shadow: 0 2px 4px rgb(242 103 49 / 12%); }
-.reference-brand strong span { font-size: 17px; vertical-align: top; letter-spacing: 0; }
-.reference-brand small { margin-top: 2px; font-size: 6px; letter-spacing: 2.3px; font-weight: 800; }
+.reference-sidebar-header { height: 64px; min-height: 64px; padding: 6px 16px; background: linear-gradient(135deg, #fff, #fff6f0); border-bottom: 1px solid #f2e4dc; display: flex; align-items: center; justify-content: center; }
+.reference-brand-logo { display: block; width: 54px; height: 54px; flex: none; border-radius: 9999px; object-fit: cover; box-shadow: 0 3px 10px rgb(20 55 80 / 14%); }
 .group[data-state="collapsed"] .reference-sidebar-header { padding-inline: 2px; }
-.group[data-state="collapsed"] .reference-brand strong { font-size: 17px; letter-spacing: -2px; }
-.group[data-state="collapsed"] .reference-brand strong span { font-size: 9px; }
-.group[data-state="collapsed"] .reference-brand small { display: none; }
+.group[data-state="collapsed"] .reference-brand-logo { width: 36px; height: 36px; }
 .reference-sidebar [data-sidebar="content"] { padding: 4px 2px; }
 .reference-sidebar [data-sidebar="menu-button"] { height: 35px; border-radius: 5px; font-size: 11px; margin: 0; padding: 0 12px; color: #fff; }
 .reference-sidebar [data-sidebar="menu-button"] svg { width: 14px; height: 14px; color: #fff; }
