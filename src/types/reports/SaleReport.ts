@@ -1,4 +1,4 @@
-﻿import type { PageFilter } from @/types/pagination;
+import type { PageFilter } from "@/types/pagination";
 
 export interface SaleReportFilter extends PageFilter {
   startDate?: string;

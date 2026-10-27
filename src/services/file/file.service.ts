@@ -32,7 +32,7 @@ export const fileService = {
 
     async downloadFile(fileName: string, bucketName: string) {
         const response = await api.get(
-            `${baseUrl}/files/download-file?bucketName=${bucketName}&fileName=${fileName}`,
+            `/files/download-file?bucketName=${bucketName}&fileName=${fileName}`,
             {
                 responseType: "blob",
             }
