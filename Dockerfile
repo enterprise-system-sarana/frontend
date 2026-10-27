@@ -1,3 +1,4 @@
+# Stage 1: Build React Project
 FROM node:22-alpine AS build
 
 WORKDIR /app
@@ -19,6 +20,7 @@ ENV VITE_API_URL=$VITE_API_URL \
 
 RUN npm run build
 
+# Stage 2: Serve តាម Nginx
 FROM nginx:1.27-alpine AS runtime
 
 COPY nginx.conf /etc/nginx/conf.d/default.conf

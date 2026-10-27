@@ -8,6 +8,11 @@ services:
         VITE_ACCESS_TOKEN_KEY: ${VITE_ACCESS_TOKEN_KEY:-access_token}
         VITE_REFRESH_TOKEN_KEY: ${VITE_REFRESH_TOKEN_KEY:-refresh_token}
         VITE_USER_KEY: ${VITE_USER_KEY:-auth_user}
-    ports:
-      - "${FRONTEND_PORT:-8080}:80"
+    container_name: 360-phone-shop-frontend
     restart: unless-stopped
+    networks:
+      - 360-phone-shop-service
+
+networks:
+  360-phone-shop-service:
+    external: true
