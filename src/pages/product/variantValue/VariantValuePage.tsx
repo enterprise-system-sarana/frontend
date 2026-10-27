@@ -16,8 +16,10 @@ import { VariantValueColumns } from "./VariantValueColumn";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const VariantValuePage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.VARIANT_VALUE.CREATE);
     const canRead = Can(PERMISSION.VARIANT_VALUE.READ);
@@ -43,10 +45,10 @@ const VariantValuePage = () => {
         const groups: FilterGroup[] = [
             {
                 key: "status",
-                label: "Status",
+                label: t("common.status"),
                 options: [
-                    { label: "Active", value: Status.ACTIVE },
-                    { label: "Inactive", value: Status.INACTIVE },
+                    { label: t("common.active"), value: Status.ACTIVE },
+                    { label: t("common.inactive"), value: Status.INACTIVE },
                 ],
             },
         ];
@@ -57,7 +59,7 @@ const VariantValuePage = () => {
         ) {
             groups.push({
                 key: "variantTypeId",
-                label: "Variant Type",
+                label: t("variant.type"),
                 options: variantTypeData.payload.data.map(
                     (vt: VariantTypeResponse) => ({
                         label: vt.name,
@@ -68,7 +70,7 @@ const VariantValuePage = () => {
         }
 
         return groups;
-    }, [variantTypeData]);
+    }, [variantTypeData, t]);
 
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
@@ -144,8 +146,9 @@ const VariantValuePage = () => {
             VariantValueColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                t,
             }),
-        []
+        [handleEdit, handleDelete, t]
     );
 
     const handleExportCsv = () => {
@@ -167,8 +170,8 @@ const VariantValuePage = () => {
             <div className="space-y-4">
                 {/* Top Header */}
                 <PageHeader
-                    title="Variant Values"
-                    featureName="Variant Value"
+                    title={t("variant.values", "Variant Values")}
+                    featureName={t("variant.value", "Variant Value")}
                     onCreate={canCreate ? () => {
                         setVariantValue(null);
                         setOpen(true);
@@ -183,7 +186,7 @@ const VariantValuePage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search variant values..."
+                            searchPlaceholder={t("common.search", "Search...")}
                             filterGroups={filterGroups}
                             filterValues={filterValues}
                             onFilterChange={handleFilterChange}
@@ -223,7 +226,7 @@ const VariantValuePage = () => {
             <ConfirmDelete
                 isOpen={openConfirmDelete}
                 setIsOpen={setOpenConfirmDelete}
-                entityName={"Variant Value"}
+                entityName={t("variant.value", "Variant Value")}
                 confirmDelete={confirmDelete}
             />
         </>

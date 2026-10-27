@@ -19,11 +19,13 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { PageHeader } from "@/components/ui/page-header";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const StockPage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canRead = Can(PERMISSION.STOCK.READ);
-    const canUpdate = Can(PERMISSION.STOCK.UPDATE);
+    // const canUpdate = Can(PERMISSION.STOCK.UPDATE);
 
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
@@ -75,25 +77,25 @@ export const StockPage = () => {
         () => [
             {
                 key: "storeId",
-                label: "Store",
+                label: t("inventory.store"),
                 options: storeOptions,
             },
             {
                 key: "productId",
-                label: "Product",
+                label: t("nav.product"),
                 options: productOptions,
             },
             {
                 key: "stockStatus",
-                label: "Stock Status",
+                label: t("common.status"),
                 options: [
-                    { label: "Low Stock", value: "LOW" },
-                    { label: "In Stock", value: "IN_STOCK" },
-                    { label: "Out of Stock", value: "OUT_OF_STOCK" },
+                    { label: t("pos.low_stock"), value: "LOW" },
+                    { label: t("pos.in_stock"), value: "IN_STOCK" },
+                    { label: t("pos.out_of_stock"), value: "OUT_OF_STOCK" },
                 ],
             },
         ],
-        [storeOptions, productOptions]
+        [storeOptions, productOptions, t]
     );
 
     const handleColumnToggle = (columnId: string) => {
@@ -154,14 +156,7 @@ export const StockPage = () => {
         });
     }, [searchedStocks, filterValues, storeId, productId]);
 
-    const columns = useMemo(
-        () =>
-            StockColumns({
-                canEdit: canUpdate,
-                canDelete: false,
-            }),
-        [canUpdate]
-    );
+    const columns = useMemo(() => StockColumns({ t }), [t]);
 
     const handleExportCsv = () => {
         exportTableToCsv(filteredStocks, columns, "stocks");
@@ -183,8 +178,7 @@ export const StockPage = () => {
         <div className="space-y-4">
             {/* Top Header */}
             <PageHeader
-                title="Stock Inventory"
-                // description="Manage and track real-time stock levels across all stores and products."
+                title={t("inventory.stock")}
             />
 
             {/* Main Card with Toolbar & Table */}
@@ -194,7 +188,7 @@ export const StockPage = () => {
                     <PageFilter
                         search={search}
                         onSearchChange={setSearch}
-                        searchPlaceholder="Search product or store..."
+                        searchPlaceholder={t("common.search")}
                         filterGroups={filterGroups}
                         filterValues={filterValues}
                         onFilterChange={handleFilterChange}

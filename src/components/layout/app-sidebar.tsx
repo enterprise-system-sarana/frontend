@@ -44,6 +44,12 @@ const data = {
       // permission: PERMISSION.DASHBOARD.READ,
     },
     {
+      title: "POS",
+      url: ROUTERS.SALE_CREATE,
+      icon: LayoutDashboard,
+      permission: PERMISSION.SALE.CREATE,
+    },
+    {
       title: "Products",
       url: "#",
       icon: Package,
@@ -202,6 +208,12 @@ const data = {
           permission: PERMISSION.SALE.CREATE,
         },
         {
+          title: "Cash Registers",
+          url: ROUTERS.CASH_REGISTER,
+          icon: Receipt,
+          permission: PERMISSION.SALE.READ,
+        },
+        {
           title: "Payments",
           url: ROUTERS.PAYMENT,
           icon: CreditCard,
@@ -231,7 +243,7 @@ const data = {
           title: "Currency",
           url: ROUTERS.CURRENCY,
           icon: Coins,
-          permission: PERMISSION.CURRENCY.READ,
+          // permission: PERMISSION.CURRENCY.READ,
         },
       ],
     },
@@ -267,6 +279,30 @@ const data = {
           permission: PERMISSION.REPORT.READ,
         },
         {
+          title: "Purchase Report",
+          url: ROUTERS.REPORT_PURCHASES,
+          icon: ShoppingBag,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Purchase Item Reports",
+          url: ROUTERS.REPORT_PURCHASE_ITEMS,
+          icon: Package,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Sale Payments",
+          url: ROUTERS.REPORT_SALE_PAYMENTS,
+          icon: CreditCard,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Purchase Payments",
+          url: ROUTERS.REPORT_PURCHASE_PAYMENTS,
+          icon: Wallet,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
           title: "Expense Reports",
           url: ROUTERS.REPORT_EXPENSES,
           icon: Wallet,
@@ -282,6 +318,12 @@ const data = {
           title: "Product Serial Reports",
           url: ROUTERS.REPORT_PRODUCT_SERIALS,
           icon: Boxes,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Stock Reports",
+          url: ROUTERS.REPORT_STOCK,
+          icon: Box,
           permission: PERMISSION.REPORT.READ,
         },
       ],

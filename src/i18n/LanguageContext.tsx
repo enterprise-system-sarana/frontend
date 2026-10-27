@@ -22,7 +22,7 @@ const LANGUAGE_STORAGE_KEY = "app_language";
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const savedLang = localStorage.getItem(LANGUAGE_STORAGE_KEY) as Language;
-    return savedLang === "km" || savedLang === "en" ? savedLang : "en";
+    return savedLang === "en" ? "en" : "km";
   });
 
   const setLanguage = (lang: Language) => {

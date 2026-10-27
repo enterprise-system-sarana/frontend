@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import type { CurrencyResponse } from "@/types/finance/Currency";
-import { useCurrency, useDeleteCurrency } from "@/hooks/finance/useCurrency";
+import { useCurrency } from "@/hooks/finance/useCurrency";
 import { DataTable } from "@/components/ui/data-table";
 import { CurrencyColumns } from "./CurrencyColumn";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -12,8 +12,10 @@ import { PERMISSION } from "@/constants/Permission";
 import { useSearch } from "@/utils/useSearch";
 import { PageFilter } from "@/utils/PageFilter";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const CurrencyPage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.CURRENCY.CREATE);
     const canRead = Can(PERMISSION.CURRENCY.READ);
@@ -27,18 +29,28 @@ export const CurrencyPage = () => {
     const [search, setSearch] = useState("");
     const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
 
-    const { data, isError, isLoading } = useCurrency({ page, size });
-    const { mutate: deleteCurrencyMutate } = useDeleteCurrency();
+    const { data, isError, isLoading } = useCurrency.GetAllCurrency({ page, size });
+    const { mutate: deleteCurrencyMutate } = useCurrency.DeleteCurrency();
 
-    const filteredCurrencies = useSearch<CurrencyResponse>(data?.payload?.data || [], search, ["code", "name", "symbol"]);
+    const currencyList: CurrencyResponse[] = useMemo(() => {
+        const payload = data?.payload;
+        if (Array.isArray(payload?.data)) return payload.data;
+        if (Array.isArray(payload?.content)) return payload.content;
+        if (Array.isArray(payload)) return payload;
+        if (Array.isArray((data as any)?.data)) return (data as any).data;
+        if (Array.isArray(data)) return data;
+        return [];
+    }, [data]);
 
-    const handleEdit = (currency: CurrencyResponse) => {
-        setCurrency(currency);
+    const filteredCurrencies = useSearch<CurrencyResponse>(currencyList, search, ["code", "name", "symbol"]);
+
+    const handleEdit = (curr: CurrencyResponse) => {
+        setCurrency(curr);
         setOpen(true);
     };
 
     const handleDelete = (id: number) => {
-        const selected = data?.payload?.data?.find((c: CurrencyResponse) => c.id === id);
+        const selected = currencyList.find((c: CurrencyResponse) => c.id === id);
         if (selected) {
             setCurrency(selected);
             setOpenConfirmDelete(true);
@@ -47,13 +59,22 @@ export const CurrencyPage = () => {
 
     const confirmDelete = () => {
         if (currency?.id) {
-            deleteCurrencyMutate(currency.id, {
+            deleteCurrencyMutate({ id: currency.id }, {
                 onSuccess: () => {
                     setOpenConfirmDelete(false);
                 }
             });
         }
     };
+
+    const totalElements =
+        data?.payload?.pagination?.totalElements ||
+        data?.payload?.totalElements ||
+        currencyList.length;
+    const totalPages =
+        data?.payload?.pagination?.totalPages ||
+        data?.payload?.totalPages ||
+        Math.max(1, Math.ceil(totalElements / size));
 
     if (!canRead) {
         return <AccessDenied resource="currencies" showBackButton />;
@@ -64,8 +85,8 @@ export const CurrencyPage = () => {
             <div className="space-y-4">
                 {/* Top Header */}
                 <PageHeader
-                    title="Currencies"
-                    buttonLabel="Add Currency"
+                    title={t("finance.currencies")}
+                    buttonLabel={t("common.create")}
                     onCreate={canCreate ? () => { setCurrency(null); setOpen(true); } : undefined}
                     hideButton={!canCreate}
                 />
@@ -75,7 +96,7 @@ export const CurrencyPage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search currencies..."
+                            searchPlaceholder={t("common.search")}
                             onReset={() => setSearch("")}
                         />
                     </div>
@@ -88,13 +109,14 @@ export const CurrencyPage = () => {
                                     onDelete: handleDelete,
                                     canEdit: canUpdate,
                                     canDelete: canDelete,
+                                    t,
                                 })}
                                 data={filteredCurrencies}
                                 pagination={{
                                     currentPage: page,
                                     pageSize: size,
-                                    totalElements: data?.payload?.pagination?.totalElements || 0,
-                                    totalPages: data?.payload?.pagination?.totalPages || 1,
+                                    totalElements,
+                                    totalPages,
                                     onPageChange: setPage,
                                     onPageSizeChange: setSize,
                                 }}
@@ -113,7 +135,7 @@ export const CurrencyPage = () => {
             <ConfirmDelete
                 isOpen={openConfirmDelete}
                 setIsOpen={setOpenConfirmDelete}
-                entityName="Currency"
+                entityName={t("finance.currency")}
                 confirmDelete={confirmDelete}
             />
         </>

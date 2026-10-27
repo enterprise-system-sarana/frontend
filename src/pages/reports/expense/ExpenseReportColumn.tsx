@@ -27,11 +27,17 @@ export interface ExpenseReportRow {
   createdAt?: string;
 }
 
-export const ExpenseReportColumns = (): ColumnDef<ExpenseReportRow>[] => [
+interface ExpenseReportColumnsProps {
+  t?: (key: any, fallback?: string) => string;
+}
+
+export const ExpenseReportColumns = ({
+  t,
+}: ExpenseReportColumnsProps = {}): ColumnDef<ExpenseReportRow>[] => [
   {
     accessorKey: "reference",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Reference" />
+      <SortableHeader column={column} title={t ? t("common.reference", "Reference") : "Reference"} />
     ),
     cell: ({ row }) => (
       <span className="font-mono text-xs text-[#696cff]">
@@ -41,7 +47,7 @@ export const ExpenseReportColumns = (): ColumnDef<ExpenseReportRow>[] => [
   },
   {
     accessorKey: "storeName",
-    header: ({ column }) => <SortableHeader column={column} title="Store" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store", "Store") : "Store"} />,
     cell: ({ row }) => (
       <span className="font-semibold text-[#566a7f]">
         {row.original.storeName || "-"}
@@ -51,7 +57,7 @@ export const ExpenseReportColumns = (): ColumnDef<ExpenseReportRow>[] => [
   {
     accessorKey: "expenseTypeName",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Expense Type" />
+      <SortableHeader column={column} title={t ? t("nav.expense_type", "Expense Type") : "Expense Type"} />
     ),
     cell: ({ row }) => (
       <span className="font-semibold text-[#566a7f]">
@@ -61,7 +67,7 @@ export const ExpenseReportColumns = (): ColumnDef<ExpenseReportRow>[] => [
   },
   {
     accessorKey: "bankName",
-    header: ({ column }) => <SortableHeader column={column} title="Bank" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("nav.bank", "Bank") : "Bank"} />,
     cell: ({ row }) => (
       <span className="font-semibold text-[#566a7f]">
         {row.original.bankName || "-"}
@@ -71,7 +77,7 @@ export const ExpenseReportColumns = (): ColumnDef<ExpenseReportRow>[] => [
   {
     accessorKey: "description",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Description" />
+      <SortableHeader column={column} title={t ? t("common.description", "Description") : "Description"} />
     ),
     cell: ({ row }) => (
       <span className="text-xs text-[#566a7f] max-w-[200px] truncate block">
@@ -81,12 +87,12 @@ export const ExpenseReportColumns = (): ColumnDef<ExpenseReportRow>[] => [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t ? t("common.status", "Status") : "Status",
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {
     accessorKey: "amount",
-    header: ({ column }) => <SortableHeader column={column} title="Amount" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("common.amount", "Amount") : "Amount"} />,
     cell: ({ row }) => (
       <span className="text-[#ff3e1d] font-medium">
         {formatCurrency(row.original.amount)}
@@ -96,7 +102,7 @@ export const ExpenseReportColumns = (): ColumnDef<ExpenseReportRow>[] => [
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Created At" />
+      <SortableHeader column={column} title={t ? t("common.created_at", "Created At") : "Created At"} />
     ),
     cell: ({ row }) => {
       const raw = row.original.createdAt;

@@ -22,7 +22,7 @@ export const ProductColumns = ({
 }: ProductColumnsProps): ColumnDef<ProductResponse>[] => [
     {
       accessorKey: "imageUrl",
-      header: "Images",
+      header: t ? t("common.image", "Images") : "Images",
       enableSorting: false,
       cell: ({ row }) => (
         <ImageCell
@@ -56,7 +56,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "name",
-      header: ({ column }) => <SortableHeader column={column} title={"Name"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.name", "Name") : "Name"}
+        />
+      ),
       cell: ({ row }) => {
         const product = row.original;
         return (
@@ -68,7 +73,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "categoryName",
-      header: ({ column }) => <SortableHeader column={column} title={"Category"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.category", "Category") : "Category"}
+        />
+      ),
       cell: ({ row }) => {
         const product = row.original;
         return (
@@ -80,7 +90,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "brandName",
-      header: ({ column }) => <SortableHeader column={column} title={"Brand"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.brand", "Brand") : "Brand"}
+        />
+      ),
       cell: ({ row }) => {
         const product = row.original;
         return (
@@ -93,7 +108,12 @@ export const ProductColumns = ({
 
     {
       accessorKey: "costPrice",
-      header: ({ column }) => <SortableHeader column={column} title={"Cost"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.cost", "Cost") : "Cost"}
+        />
+      ),
       cell: ({ row }) => {
         const price = row.original.costPrice;
         return price != null ? (
@@ -111,7 +131,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "salePrice",
-      header: ({ column }) => <SortableHeader column={column} title={"Sale"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.sale", "Sale") : "Sale"}
+        />
+      ),
       cell: ({ row }) => {
         const price = row.original.salePrice;
         return price != null ? (
@@ -129,7 +154,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "qty",
-      header: ({ column }) => <SortableHeader column={column} title={"Quantity"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.quantity", "Quantity") : "Quantity"}
+        />
+      ),
       cell: ({ row }) => {
         const qty = row.original.qty ?? row.original.quantity;
         return (
@@ -141,7 +171,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "totalPrice",
-      header: ({ column }) => <SortableHeader column={column} title={"Total Price"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.total_price", "Total Price") : "Total Price"}
+        />
+      ),
       cell: ({ row }) => {
         const qty = row.original.totalPrice;
         return (
@@ -153,7 +188,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "totalSale",
-      header: ({ column }) => <SortableHeader column={column} title={"Total Sale"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.total_sale", "Total Sale") : "Total Sale"}
+        />
+      ),
       cell: ({ row }) => {
         const qty = row.original.totalSale;
         return (
@@ -165,7 +205,12 @@ export const ProductColumns = ({
     },
     {
       accessorKey: "profit",
-      header: ({ column }) => <SortableHeader column={column} title={"Profit"} />,
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={t ? t("common.profit", "Profit") : "Profit"}
+        />
+      ),
       cell: ({ row }) => {
         const qty = row.original.profit;
         return (

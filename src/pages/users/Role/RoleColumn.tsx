@@ -85,7 +85,7 @@ export const RoleColumns = ({
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t ? t("common.status") : "Status",
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
   {

@@ -1,6 +1,7 @@
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { ROUTERS } from "@/constants/Route";
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   ArrowLeft,
   Home,
@@ -11,23 +12,24 @@ import {
 
 export const NotFoundPage = () => {
   const navigate = useNavigate();
+  const { t } = useLanguage();
 
   const quickLinks = [
     {
-      title: "Products",
-      description: "Manage catalog, models, and variants",
+      title: t("product.title", "Products"),
+      description: t("product.subtitle", "Manage catalog, models, and variants"),
       icon: Package,
       path: ROUTERS.PRODUCT,
     },
     {
-      title: "Purchases",
-      description: "Track supplier orders and records",
+      title: t("purchase.title", "Purchases"),
+      description: t("purchase.subtitle", "Track supplier orders and records"),
       icon: ShoppingCart,
       path: ROUTERS.PURCHASE,
     },
     {
-      title: "Stock",
-      description: "View real-time store inventories",
+      title: t("stock.title", "Stock"),
+      description: t("stock.subtitle", "View real-time store inventories"),
       icon: Boxes,
       path: ROUTERS.STOCK,
     },
@@ -44,19 +46,14 @@ export const NotFoundPage = () => {
             404
           </span>
         </div>
-
-        {/* <div className="absolute -bottom-2 right-1/2 translate-x-1/2 inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-primary/30 bg-primary/10 text-primary text-xs font-semibold shadow-xs">
-          <HelpCircle className="h-3.5 w-3.5" />
-          Page Not Found
-        </div> */}
       </div>
 
       {/* Main Title and Message */}
       <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2 mt-4">
-        Oops! Page not found
+        {t("error.not_found_title", "Oops! Page not found")}
       </h1>
       <p className="text-sm text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
-        The page you are looking for doesn't exist, may have been removed, or is temporarily unavailable.
+        {t("error.not_found_desc", "The page you are looking for doesn't exist, may have been removed, or is temporarily unavailable.")}
       </p>
 
       {/* Primary Actions */}
@@ -66,7 +63,7 @@ export const NotFoundPage = () => {
           className="rounded-md gap-2 h-10 px-5 shadow-xs"
         >
           <Home className="h-4 w-4" />
-          Back to Dashboard
+          {t("error.back_dashboard", "Back to Dashboard")}
         </Button>
         <Button
           variant="outline"
@@ -74,14 +71,14 @@ export const NotFoundPage = () => {
           className="rounded-md gap-2 h-10 px-5 border-border/80"
         >
           <ArrowLeft className="h-4 w-4" />
-          Go Back
+          {t("error.go_back", "Go Back")}
         </Button>
       </div>
 
       {/* Helpful Navigation Cards */}
       <div className="w-full max-w-2xl border-t border-border/60 pt-8">
         <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-          Or explore helpful sections:
+          {t("error.explore_sections", "Or explore helpful sections:")}
         </p>
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
           {quickLinks.map((link) => {

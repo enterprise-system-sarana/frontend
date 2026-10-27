@@ -1,59 +1,51 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import type { CurrencyRequest } from "@/types/finance/Currency";
-import { toast } from "sonner";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { currencyService } from "@/services/finance/currency.service";
+import type { CurrencyFilter, CurrencyRequest } from "@/types/finance/Currency";
+import { mutationHandler } from "../handleMutaion";
 
-export const currencyKeys = {
-    all: ["currencies"],
-    list: (filter: any) => [...currencyKeys.all, "list", { ...filter }],
-    details: (id: number) => [...currencyKeys.all, "detail", id],
-};
+export const useCurrency = {
+    currency: {
+        all: ["currency"],
+        list: (filter: CurrencyFilter) => [...useCurrency.currency.all, "list", { ...filter }],
+        detail: (id: number) => [...useCurrency.currency.all, "detail", id]
+    },
+    GetAllCurrency: (filter: CurrencyFilter = { page: 1, size: 10 }) => {
+        return useQuery({
 
-export const useCurrency = (filter: any) => {
-    return useQuery({
-        queryKey: currencyKeys.list(filter),
-        queryFn: () => currencyService.findAll(filter),
-    });
-};
+            queryKey: useCurrency.currency.list(filter),
+            queryFn: () => currencyService.findAll(filter),
+            retry: 1
+        });
+    },
 
-export const useCreateCurrency = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: currencyService.create,
-        onSuccess: (res: any) => {
-            queryClient.invalidateQueries({ queryKey: currencyKeys.all });
-            toast.success(res?.message || "Currency created successfully");
-        },
-        onError: (error: any) => {
-            toast.error(error?.message || "Failed to create currency");
-        },
-    });
-};
-
-export const useUpdateCurrency = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: ({ id, request }: { id: number; request: CurrencyRequest }) => currencyService.update(id, request),
-        onSuccess: (res: any) => {
-            queryClient.invalidateQueries({ queryKey: currencyKeys.all });
-            toast.success(res?.message || "Currency updated successfully");
-        },
-        onError: (error: any) => {
-            toast.error(error?.message || "Failed to update currency");
-        },
-    });
-};
-
-export const useDeleteCurrency = () => {
-    const queryClient = useQueryClient();
-    return useMutation({
-        mutationFn: currencyService.delete,
-        onSuccess: (res: any) => {
-            queryClient.invalidateQueries({ queryKey: currencyKeys.all });
-            toast.success(res?.message || "Currency deleted successfully");
-        },
-        onError: (error: any) => {
-            toast.error(error?.message || "Failed to delete currency");
-        },
-    });
-};
+    CreateCurrency: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: (req: CurrencyRequest) => currencyService.create(req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useCurrency.currency.all
+            })
+        });
+    },
+    UpdateCurrency: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id, req }: { id: number; req: CurrencyRequest }) => currencyService.update(id, req),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useCurrency.currency.all
+            })
+        });
+    },
+    DeleteCurrency: () => {
+        const queryClient = useQueryClient();
+        return useMutation({
+            mutationFn: ({ id }: { id: number }) => currencyService.delete(id),
+            ...mutationHandler({
+                queryClient,
+                queryKey: useCurrency.currency.all
+            })
+        });
+    }
+}

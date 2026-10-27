@@ -16,7 +16,6 @@ import {
   AlertCircle,
   User,
   Monitor,
-  ListChecks,
   CalendarCheck,
   X,
   XCircle,
@@ -74,6 +73,11 @@ import FormCustomer from "@/pages/sales/customers/CustomerForm";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
 import PrintBillModal, { type BillData, type BillItem } from "./components/PrintBillModal";
 import HeldSalesModal, { type HeldSale, type HeldSaleItem } from "./components/HeldSalesModal";
+import { useCashRegister } from "@/hooks/sales/useCashRegister";
+import OpenRegisterModal from "./components/OpenRegisterModal";
+import CloseRegisterModal from "./components/CloseRegisterModal";
+import RegisterDetailsModal from "./components/RegisterDetailsModal";
+import TodaySaleModal from "./components/TodaySaleModal";
 import ImageCell from "@/components/file/ImageCell";
 import { ROUTERS } from "@/constants/Route";
 import { toast } from "sonner";
@@ -100,6 +104,56 @@ function generateRef() {
   const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
   const rand = Math.floor(1000 + Math.random() * 9000);
   return `POS-${dateStr}-${rand}`;
+}
+
+export function isProductSerialized(product: any): boolean {
+  if (!product) return false;
+  // If explicitly declared false
+  if (
+    product.hasSerial === false ||
+    product.hasSerial === "false" ||
+    product.hasSerial === 0 ||
+    product.hasSerialNumber === false ||
+    product.hasSerialNumber === "false" ||
+    product.hasSerialNumber === 0 ||
+    product.isSerialized === false ||
+    product.isSerialized === "false" ||
+    product.isSerialized === 0 ||
+    product.serialized === false ||
+    product.serialized === "false" ||
+    product.serialized === 0
+  ) {
+    return false;
+  }
+  // If explicitly declared true
+  if (
+    product.hasSerial === true ||
+    product.hasSerial === "true" ||
+    product.hasSerial === 1 ||
+    product.hasSerialNumber === true ||
+    product.hasSerialNumber === "true" ||
+    product.hasSerialNumber === 1 ||
+    product.isSerialized === true ||
+    product.isSerialized === "true" ||
+    product.isSerialized === 1 ||
+    product.serialized === true ||
+    product.serialized === "true" ||
+    product.serialized === 1
+  ) {
+    return true;
+  }
+  // If product has serials array with elements
+  if (Array.isArray(product.serials) && product.serials.length > 0) {
+    return true;
+  }
+  if (
+    product.availableSerials !== undefined &&
+    product.availableSerials !== null &&
+    Number(product.availableSerials) > 0
+  ) {
+    return true;
+  }
+  return false;
 }
 
 function getProductStock(product: any): number {
@@ -204,6 +258,7 @@ export default function SaleForm() {
   const updateSale = useSale.Update();
   const completeSale = useSale.Complete();
   const createPayment = usePayment.createPayment();
+  const [registeredSaleId, setRegisteredSaleId] = useState<number | null>(null);
 
   /* -------------------------------------------------------
      LOCAL UI STATE
@@ -264,6 +319,8 @@ export default function SaleForm() {
   };
 
   /* POS Tools State */
+  const { data: currentRegister, isLoading: isLoadingRegister } = useCashRegister.GetCurrent();
+  const [isOpenRegisterOpen, setIsOpenRegisterOpen] = useState(false);
   const [isRegisterDetailsOpen, setIsRegisterDetailsOpen] = useState(false);
   const [isTodaySaleOpen, setIsTodaySaleOpen] = useState(false);
   const [isDiscountPopoverOpen, setIsDiscountPopoverOpen] = useState(false);
@@ -272,6 +329,15 @@ export default function SaleForm() {
   const [taxInputValue, setTaxInputValue] = useState(0);
   const [isCloseRegisterOpen, setIsCloseRegisterOpen] = useState(false);
   const [cartBarcodeScan, setCartBarcodeScan] = useState("");
+
+  // Automatically prompt Open Register when entering POS if no shift is currently open
+  const hasAutoPromptedRegister = useRef(false);
+  useEffect(() => {
+    if (!isLoadingRegister && currentRegister === null && !hasAutoPromptedRegister.current) {
+      hasAutoPromptedRegister.current = true;
+      setIsOpenRegisterOpen(true);
+    }
+  }, [isLoadingRegister, currentRegister]);
 
   const toggleFullscreen = () => {
     if (!document.fullscreenElement) {
@@ -306,7 +372,7 @@ export default function SaleForm() {
      FORM INITIALIZATION
   ------------------------------------------------------- */
 
-  const submitSale = async (paymentOverride?: PaymentRequest): Promise<number> => {
+  const submitSale = async (paymentOverride?: PaymentRequest | any): Promise<number> => {
     const currentValues = form.state.values;
 
     if (!currentValues.items || currentValues.items.length === 0) {
@@ -379,54 +445,99 @@ export default function SaleForm() {
       items,
     };
 
-    let savedSaleId = isEditing && id ? Number(id) : 0;
-    if (isEditing && id) {
+    let savedSaleId = isEditing && id ? Number(id) : (registeredSaleId || 0);
+    if ((isEditing && id) || registeredSaleId) {
       await updateSale.mutateAsync({
-        id: Number(id),
+        id: savedSaleId,
         request: payload,
       });
-      toast.success("Sale updated successfully!");
-      navigate(ROUTERS.SALE);
+      if (isEditing) {
+        toast.success("Sale updated successfully!");
+        navigate(ROUTERS.SALE);
+      }
     } else {
       const createdSale: any = await createSale.mutateAsync(payload);
-      const createdSaleData = createdSale?.payload?.data ?? createdSale?.data ?? createdSale?.payload ?? createdSale;
+      const createdSaleData =
+        createdSale?.payload?.data ??
+        createdSale?.data ??
+        createdSale?.payload ??
+        createdSale;
       savedSaleId = Number(createdSaleData?.id || 0);
-      toast.success("Sale created successfully!");
+      setRegisteredSaleId(savedSaleId);
+      toast.success("Sale registered successfully!");
     }
 
-    // Handle payment creation for both direct and modal flows
+    // Handle payment creation for split, multi-row, and direct flows
     if (savedSaleId > 0 && finalPaidAmount > 0) {
-      const paymentRequest: PaymentRequest = {
-        paymentNo: paymentOverride?.paymentNo || `PAY-${payload.reference}-${Date.now()}`,
-        paymentMethod: paymentOverride?.paymentMethod || "CASH",
-        bankId: paymentOverride?.bankId || null,
-        saleId: savedSaleId,
-        amount: recordedPaidAmount,
-        transactionNo: paymentOverride?.transactionNo || null,
-        paymentDate: paymentOverride?.paymentDate || payload.saleDate,
-        status: isPaidInFull ? "PAID" : "PARTIAL",
-      };
+      const multiPayments = (paymentOverride as any)?.payments || (paymentOverride as any)?.lines || (paymentOverride as any)?.paymentLines;
+      if (Array.isArray(multiPayments) && multiPayments.length > 0) {
+        // Multi-method split payment
+        try {
+          const splitPayload: PaymentRequest = {
+            ...paymentOverride,
+            saleId: savedSaleId,
+            purchaseId: null,
+            idempotencyKey:
+              (paymentOverride as any).idempotencyKey ||
+              `IDEM-SALE-${savedSaleId}-${Date.now()}`,
+            totalAmount: recordedPaidAmount,
+            amount: recordedPaidAmount,
+            lines: multiPayments,
+            paymentLines: multiPayments,
+            payments: multiPayments,
+          };
+          await createPayment.mutateAsync(splitPayload);
 
-      try {
-        const paymentResponse: any = await createPayment.mutateAsync(paymentRequest);
-        const responseStatus = String(
-          paymentResponse?.status ??
-          paymentResponse?.payload?.status ??
-          paymentResponse?.data?.status ??
-          ""
-        ).toUpperCase();
-        const httpStatus = Number(responseStatus);
-        const paymentSucceeded =
-          !responseStatus ||
-          (httpStatus >= 200 && httpStatus < 300) ||
-          ["SUCCESS", "SUCCEEDED", "PAID", "COMPLETED"].includes(responseStatus);
-
-        if (paymentSucceeded && isPaidInFull) {
-          await completeSale.mutateAsync(savedSaleId);
+          if (isPaidInFull) {
+            try {
+              await completeSale.mutateAsync(savedSaleId);
+            } catch (e) {
+              // already completed
+            }
+          }
           await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+          await queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all });
+        } catch (payErr) {
+          console.warn("Split payment recording error:", payErr);
         }
-      } catch (payErr) {
-        console.warn("Payment recording warning:", payErr);
+      } else {
+        // Single payment fallback
+        const paymentRequest: PaymentRequest = {
+          totalAmount: recordedPaidAmount,
+          paymentNo:
+            paymentOverride?.paymentNo || `PAY-${payload.reference}-${Date.now()}`,
+          paymentMethod: paymentOverride?.paymentMethod || "CASH",
+          bankId: paymentOverride?.bankId || null,
+          saleId: savedSaleId,
+          amount: recordedPaidAmount,
+          transactionNo: paymentOverride?.transactionNo || null,
+          paymentDate: paymentOverride?.paymentDate || payload.saleDate,
+          status: isPaidInFull ? "PAID" : "PARTIAL",
+        };
+
+        try {
+          const paymentResponse: any = await createPayment.mutateAsync(
+            paymentRequest
+          );
+          const responseStatus = String(
+            paymentResponse?.status ??
+              paymentResponse?.payload?.status ??
+              paymentResponse?.data?.status ??
+              ""
+          ).toUpperCase();
+          const httpStatus = Number(responseStatus);
+          const paymentSucceeded =
+            !responseStatus ||
+            (httpStatus >= 200 && httpStatus < 300) ||
+            ["SUCCESS", "SUCCEEDED", "PAID", "COMPLETED"].includes(responseStatus);
+
+          if (paymentSucceeded && isPaidInFull) {
+            await completeSale.mutateAsync(savedSaleId);
+            await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+          }
+        } catch (payErr) {
+          console.warn("Payment recording warning:", payErr);
+        }
       }
     }
 
@@ -599,6 +710,7 @@ export default function SaleForm() {
       );
     }
 
+    const isSerialized = isProductSerialized(product);
     const currentItems = form.state.values.items || [];
     const existingIndex = currentItems.findIndex(
       (item: any) => Number(item.productId) === Number(product.id)
@@ -624,7 +736,9 @@ export default function SaleForm() {
         subtotal: price * newQuantity - (Number(existing.itemDiscount) || 0),
       };
       form.setFieldValue("items", updated);
-      setActiveSerialRowIndex(existingIndex);
+      if (isSerialized) {
+        setActiveSerialRowIndex(existingIndex);
+      }
     } else {
       const price = Number(product.salePrice) || 0;
       form.setFieldValue("items", [
@@ -638,7 +752,9 @@ export default function SaleForm() {
           serialNumberIds: [],
         },
       ]);
-      setActiveSerialRowIndex(currentItems.length);
+      if (isSerialized) {
+        setActiveSerialRowIndex(currentItems.length);
+      }
     }
   };
 
@@ -825,6 +941,7 @@ export default function SaleForm() {
     form.setFieldValue("discount", 0);
     setDiscountInputValue(0);
     setDiscountType("FIXED");
+    setRegisteredSaleId(null);
   };
 
   /* -------------------------------------------------------
@@ -1054,14 +1171,43 @@ export default function SaleForm() {
             <Monitor className="size-4.5" />
           </button>
 
-          <button
-            type="button"
-            onClick={() => setIsRegisterDetailsOpen(true)}
-            className="hidden sm:flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-medium px-2 py-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
-          >
-            <ListChecks className="size-4 text-slate-500" />
-            <span>{t("pos.register_details", "Register Details")}</span>
-          </button>
+          {/* Register Status & Actions */}
+          {currentRegister ? (
+            <div className="flex items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsRegisterDetailsOpen(true)}
+                className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 font-semibold px-2.5 py-1 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-950/60 transition cursor-pointer"
+                title={isKm ? "ព័ត៌មានលម្អិតវេនលក់" : "Register Shift Details"}
+              >
+                <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className="font-mono">{currentRegister.registerNo}</span>
+                <span className="hidden md:inline text-muted-foreground font-normal">
+                  (${Number(currentRegister.openingBalance || 0).toFixed(2)})
+                </span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsCloseRegisterOpen(true)}
+                className="flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400 font-medium px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
+                title={isKm ? "បិទបញ្ជីលក់" : "Close Register"}
+              >
+                <X className="size-4 text-rose-500 stroke-[2.5]" />
+                <span className="hidden md:inline">{t("pos.close_register", "Close Register")}</span>
+              </button>
+            </div>
+          ) : (
+            <button
+              type="button"
+              onClick={() => setIsOpenRegisterOpen(true)}
+              className="flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 font-semibold px-2.5 py-1 rounded-full hover:bg-amber-100 transition cursor-pointer"
+              title={isKm ? "បើកបញ្ជីលក់ដើម្បីចាប់ផ្តើមវេន" : "Open Register Shift"}
+            >
+              <span className="size-2 rounded-full bg-amber-500 animate-ping shrink-0" />
+              <span>{isKm ? "បើកបញ្ជីលក់" : "Open Register"}</span>
+            </button>
+          )}
 
           <button
             type="button"
@@ -1070,15 +1216,6 @@ export default function SaleForm() {
           >
             <CalendarCheck className="size-4 text-slate-500" />
             <span>{t("pos.today_sale", "Today's Sale")}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => setIsCloseRegisterOpen(true)}
-            className="flex items-center gap-1 text-xs text-slate-700 dark:text-slate-200 hover:text-rose-600 font-medium px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
-          >
-            <X className="size-4 text-rose-500 stroke-[2.5]" />
-            <span className="hidden md:inline">{t("pos.close_register", "Close Register")}</span>
           </button>
 
           {/* User Profile & Logout Dropdown */}
@@ -1160,6 +1297,27 @@ export default function SaleForm() {
           </span>
         </div>
       </header>
+
+      {/* Closed Shift Alert Banner */}
+      {!isLoadingRegister && currentRegister === null && (
+        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shrink-0">
+          <div className="flex items-center gap-2">
+            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
+            <span className="font-semibold">
+              {isKm
+                ? "វេនលក់មិនទាន់បានបើកនៅឡើយទេ — សូមបើកបញ្ជីលក់ដើម្បីចាប់ផ្តើមធ្វើការលក់"
+                : "Cash register shift is currently closed — please open your register to record sales."}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setIsOpenRegisterOpen(true)}
+            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs transition cursor-pointer"
+          >
+            {isKm ? "បើកបញ្ជីលក់ឥឡូវនេះ" : "Open Register Now"}
+          </button>
+        </div>
+      )}
 
       {/* 2. MAIN POS WORKSPACE SPLIT */}
       <div className="flex min-h-0 flex-1 overflow-hidden">
@@ -1296,7 +1454,6 @@ export default function SaleForm() {
                     type="button"
                     onClick={() => {
                       setSelectedCategory(cat.id);
-                      setCurrentPage(1);
                     }}
                     className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
                       isSelected
@@ -1682,7 +1839,28 @@ export default function SaleForm() {
                     toast.error(t("pos.empty_cart", "Cart is empty. Please add products first."));
                     return;
                   }
-                  setIsPaymentModalOpen(true);
+                  if (!currentRegister) {
+                      toast.error(
+                        isKm
+                          ? "សូមបើកបញ្ជីសាច់ប្រាក់ (Open Register) ជាមុនសិន មុនពេលទូទាត់ប្រាក់"
+                          : "Please open a cash register before completing checkout."
+                      );
+                      setIsOpenRegisterOpen(true);
+                      return;
+                    }
+
+                    const missingSerialsItem = (formValues.items || []).find((it: any) => {
+                      const prod = productList.find((p: any) => p.id === it.productId);
+                      const reqSerial = isProductSerialized(prod);
+                      return reqSerial && (it.serialNumberIds || []).length !== it.quantity;
+                    });
+                    if (missingSerialsItem) {
+                      const prod = productList.find((p: any) => p.id === missingSerialsItem.productId);
+                      toast.error(`Please select serial numbers for "${prod?.name || "serialized item"}" before payment.`);
+                      return;
+                    }
+
+                    setIsPaymentModalOpen(true);
                 }}
                 className="h-10 sm:h-11 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition cursor-pointer shadow-xs select-none"
               >
@@ -1703,14 +1881,16 @@ export default function SaleForm() {
             void queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
             void queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all });
             void queryClient.invalidateQueries({ queryKey: useSale.keys.all });
+            void queryClient.invalidateQueries({ queryKey: useCashRegister.keys.all });
           }
           setIsPaymentModalOpen(open);
         }}
         payment={null}
         mode="sale"
-        saleId={isEditing && id ? Number(id) : undefined}
+        saleId={isEditing && id ? Number(id) : (registeredSaleId || undefined)}
         orderRef={formValues.reference}
         amount={grandTotalCalc}
+        banks={bankList}
         onPaymentSubmit={async (request) => {
           try {
             const savedSaleId = await submitSale(request);
@@ -1762,97 +1942,21 @@ export default function SaleForm() {
       />
 
       {/* 8. Register Details Dialog */}
-      <Dialog open={isRegisterDetailsOpen} onOpenChange={setIsRegisterDetailsOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-0 overflow-hidden">
-          <DialogHeader className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <ListChecks className="size-5 text-sky-600" />
-              {t("pos.register_details", "Register Details")}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-4 space-y-3 text-xs">
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "អ្នកគិតប្រាក់:" : "Cashier:"}</span>
-              <span className="font-semibold text-foreground">{user?.username || "Wintech Cambodia"}</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "ហាង/បញ្ជរ:" : "Store / Counter:"}</span>
-              <span className="font-semibold text-foreground">{storeList[0]?.name || "CAFA"}</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "ម៉ោងបើក:" : "Opening Time:"}</span>
-              <span className="font-semibold text-foreground">{language === "km" ? "ថ្ងៃនេះ ម៉ោង 08:00 ព្រឹក" : "Today at 08:00 AM"}</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "សាច់ប្រាក់ដើមគ្រា:" : "Opening Cash:"}</span>
-              <span className="font-semibold font-mono text-emerald-600">$100.00</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "ការលក់សាច់ប្រាក់:" : "Cash Sales:"}</span>
-              <span className="font-semibold font-mono text-foreground">$450.00</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "ការលក់តាមធនាគារ/QR:" : "Bank / QR Sales:"}</span>
-              <span className="font-semibold font-mono text-foreground">$620.00</span>
-            </div>
-            <div className="flex justify-between py-2 bg-emerald-50 dark:bg-emerald-950/40 px-3 rounded-lg font-bold text-sm text-emerald-700 dark:text-emerald-300">
-              <span>{language === "km" ? "សរុបសាច់ប្រាក់ក្នុងបញ្ជរបច្ចុប្បន្ន:" : "Current Register Total:"}</span>
-              <span className="font-mono">$1,170.00</span>
-            </div>
-          </div>
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <Button size="sm" variant="outline" onClick={() => setIsRegisterDetailsOpen(false)}>
-              {language === "km" ? "បិទ" : "Close"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <RegisterDetailsModal
+        open={isRegisterDetailsOpen}
+        onOpenChange={setIsRegisterDetailsOpen}
+        register={currentRegister ?? null}
+        onOpenCloseModal={() => setIsCloseRegisterOpen(true)}
+      />
 
       {/* 9. Today's Sale Dialog */}
-      <Dialog open={isTodaySaleOpen} onOpenChange={setIsTodaySaleOpen}>
-        <DialogContent className="sm:max-w-md bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-0 overflow-hidden">
-          <DialogHeader className="p-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
-            <DialogTitle className="text-base font-bold flex items-center gap-2">
-              <CalendarCheck className="size-5 text-emerald-600" />
-              {t("pos.today_sale", "Today's Sales Report")}
-            </DialogTitle>
-          </DialogHeader>
-          <div className="p-4 space-y-3 text-xs">
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "កាលបរិច្ឆេទ:" : "Date:"}</span>
-              <span className="font-semibold">
-                {new Date().toLocaleDateString(language === "km" ? "km-KH" : "en-US", {
-                  weekday: "long",
-                  year: "numeric",
-                  month: "short",
-                  day: "numeric",
-                })}
-              </span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "វិក្កយបត្រសរុប:" : "Total Invoices:"}</span>
-              <span className="font-semibold">18 Orders</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "ការលក់សរុប:" : "Gross Sales:"}</span>
-              <span className="font-semibold font-mono">$1,450.00</span>
-            </div>
-            <div className="flex justify-between py-1.5 border-b border-slate-100 dark:border-slate-800">
-              <span className="text-muted-foreground">{language === "km" ? "បញ្ចុះតម្លៃសរុប:" : "Discounts Given:"}</span>
-              <span className="font-semibold font-mono text-rose-500">-$45.00</span>
-            </div>
-            <div className="flex justify-between py-2 bg-sky-50 dark:bg-sky-950/40 px-3 rounded-lg font-bold text-sm text-sky-700 dark:text-sky-300">
-              <span>{language === "km" ? "ចំណូលសុទ្ធ:" : "Net Revenue:"}</span>
-              <span className="font-mono">$1,405.00</span>
-            </div>
-          </div>
-          <div className="p-3 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-100 dark:border-slate-800 flex justify-end">
-            <Button size="sm" variant="outline" onClick={() => setIsTodaySaleOpen(false)}>
-              {language === "km" ? "បិទ" : "Close"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <TodaySaleModal
+        open={isTodaySaleOpen}
+        onOpenChange={setIsTodaySaleOpen}
+        storeId={storeList[0]?.id}
+        storeName={storeList[0]?.name}
+        currentRegister={currentRegister ?? null}
+      />
 
       {/* 10. Discount Dialog */}
       <Dialog open={isDiscountPopoverOpen} onOpenChange={setIsDiscountPopoverOpen}>
@@ -1991,42 +2095,21 @@ export default function SaleForm() {
         </DialogContent>
       </Dialog>
 
-      {/* 12. Close Register Confirmation Dialog */}
-      <Dialog open={isCloseRegisterOpen} onOpenChange={setIsCloseRegisterOpen}>
-        <DialogContent className="sm:max-w-xs bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-sm font-bold flex items-center gap-1.5 text-rose-600">
-              <XCircle className="size-4" />
-              {language === "km" ? "បិទវេនបញ្ជរ?" : "Close Register?"}
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-xs text-muted-foreground">
-            {language === "km"
-              ? "តើអ្នកប្រាកដជាចង់បិទវេនបញ្ជរនេះមែនទេ? វានឹងបញ្ចប់របាយការណ៍វេនរបស់អ្នក។"
-              : "Are you sure you want to close this register session? This will finalize your shift summary."}
-          </p>
-          <div className="pt-4 flex justify-end gap-2">
-            <Button size="sm" variant="outline" onClick={() => setIsCloseRegisterOpen(false)}>
-              {t("common.cancel", "Cancel")}
-            </Button>
-            <Button
-              size="sm"
-              variant="destructive"
-              onClick={() => {
-                setIsCloseRegisterOpen(false);
-                toast.success(
-                  language === "km"
-                    ? "វេនបញ្ជរត្រូវបានបិទដោយជោគជ័យ។"
-                    : "Register session closed successfully."
-                );
-                navigate(ROUTERS.SALE);
-              }}
-            >
-              {language === "km" ? "បិទបញ្ជរ" : "Close Register"}
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
+      {/* 12. Close & Open Register Modals */}
+      <CloseRegisterModal
+        open={isCloseRegisterOpen}
+        onOpenChange={setIsCloseRegisterOpen}
+        register={currentRegister ?? null}
+        onSuccess={() => {
+          navigate(ROUTERS.SALE);
+        }}
+      />
+
+      <OpenRegisterModal
+        open={isOpenRegisterOpen}
+        onOpenChange={setIsOpenRegisterOpen}
+        defaultStoreId={storeList[0]?.id}
+      />
 
       {/* Hidden Submit Form */}
       <form
@@ -2086,11 +2169,16 @@ function PosItemRow({
   const modalSearch = "";
   const [serialError, setSerialError] = useState("");
 
-  useEffect(() => {
-    setIsSerialModalOpen(isOpenModal);
-  }, [isOpenModal]);
-
   const selectedProduct = products.find((p) => p.id === Number(productId));
+  const hasSerial = isProductSerialized(selectedProduct);
+
+  useEffect(() => {
+    if (hasSerial) {
+      setIsSerialModalOpen(isOpenModal);
+    } else {
+      setIsSerialModalOpen(false);
+    }
+  }, [isOpenModal, hasSerial]);
 
   /* -------------------------------------------------------
      SERIALS DATA
@@ -2103,7 +2191,7 @@ function PosItemRow({
       size: 100,
     },
     {
-      enabled: Number(productId) > 0,
+      enabled: hasSerial && Number(productId) > 0,
     }
   );
 
@@ -2133,7 +2221,7 @@ function PosItemRow({
 
 
 
-  const serialsComplete = serialNumberIds.length === quantity;
+  const serialsComplete = !hasSerial || serialNumberIds.length === quantity;
 
   const toggleSerial = (serial: any) => {
     if (Number(serial.quantity ?? 0) <= 0 || serial.status === "SOLD") {
@@ -2189,14 +2277,22 @@ function PosItemRow({
             >
               {selectedProduct?.name || `Product #${productId}`}
             </span>
-            {serialNumberIds.length > 0 && (
+            {hasSerial && (
               <button
                 type="button"
                 onClick={() => setIsSerialModalOpen(true)}
-                className="inline-flex items-center gap-0.5 text-[10px] text-primary hover:underline font-mono"
+                className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded cursor-pointer transition ${
+                  serialsComplete
+                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
+                    : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                }`}
+                title="Click to select serial numbers"
               >
                 <Hash className="size-2.5" />
-                <span>{serialNumberIds.length} serial{serialNumberIds.length > 1 ? "s" : ""}</span>
+                <span>
+                  {serialNumberIds.length} / {quantity} serials
+                  {serialsComplete ? " ✓" : " (select)"}
+                </span>
               </button>
             )}
           </div>
@@ -2262,14 +2358,15 @@ function PosItemRow({
         </td>
       </tr>
 
-      {/* Serial Numbers Modal */}
-      <Dialog
-        open={isSerialModalOpen}
-        onOpenChange={(open) => {
-          setIsSerialModalOpen(open);
-          if (!open) onCloseModal();
-        }}
-      >
+      {/* Serial Numbers Modal - only rendered when product is serialized */}
+      {hasSerial && (
+        <Dialog
+          open={isSerialModalOpen}
+          onOpenChange={(open) => {
+            setIsSerialModalOpen(open);
+            if (!open) onCloseModal();
+          }}
+        >
         <DialogContent className="sm:max-w-135 max-h-[85vh] p-0 overflow-hidden bg-background rounded-2xl border border-border/60 shadow-2xl flex flex-col">
           {/* Modal Header */}
           <DialogHeader className="px-5 py-4 border-b border-border/60 bg-muted/20 shrink-0">
@@ -2455,6 +2552,7 @@ function PosItemRow({
           </div>
         </DialogContent>
       </Dialog>
+      )}
     </>
   );
 }

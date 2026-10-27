@@ -227,27 +227,27 @@ export const ProductDetailModal = ({
               {/* 4 Essential Metrics */}
               <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">Sale Price</span>
+                  <span className="text-[11px] text-muted-foreground block font-medium">{t("common.sale")}</span>
                   <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
                     {formatPrice(product.salePrice)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">Cost Price</span>
+                  <span className="text-[11px] text-muted-foreground block font-medium">{t("common.cost")}</span>
                   <span className="text-base font-bold text-foreground tabular-nums">
                     {formatPrice(product.costPrice)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">Total Quantity</span>
+                  <span className="text-[11px] text-muted-foreground block font-medium">{t("inventory.total_quantity")}</span>
                   <span className="text-base font-bold text-foreground tabular-nums">
-                    {totalQuantity} <span className="text-xs font-normal text-muted-foreground">units</span>
+                    {totalQuantity} <span className="text-xs font-normal text-muted-foreground">{t("inventory.units")}</span>
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">Available</span>
+                  <span className="text-[11px] text-muted-foreground block font-medium">{t("inventory.available")}</span>
                   <span className="inline-flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md mt-0.5 border border-emerald-500/20">
-                    {availableCount} ready
+                    {availableCount} {t("inventory.ready")}
                   </span>
                 </div>
               </div>
@@ -257,27 +257,27 @@ export const ProductDetailModal = ({
             <div className="flex flex-wrap items-center gap-2 text-xs">
               {product.modelName && (
                 <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/50 text-foreground">
-                  <span className="text-muted-foreground">Model:</span> <strong>{product.modelName}</strong>
+                  <span className="text-muted-foreground">{t("product.model")}:</span> <strong>{product.modelName}</strong>
                 </span>
               )}
               {product.categoryName && (
                 <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/50 text-foreground">
-                  <span className="text-muted-foreground">Category:</span> <strong>{product.categoryName}</strong>
+                  <span className="text-muted-foreground">{t("common.category")}:</span> <strong>{product.categoryName}</strong>
                 </span>
               )}
               {product.brandName && (
                 <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/50 text-foreground">
-                  <span className="text-muted-foreground">Brand:</span> <strong>{product.brandName}</strong>
+                  <span className="text-muted-foreground">{t("common.brand")}:</span> <strong>{product.brandName}</strong>
                 </span>
               )}
               {product.reorderLevel != null && (
                 <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
-                  <span className="text-amber-600/70">Reorder Alert:</span> <strong>{product.reorderLevel} units</strong>
+                  <span className="text-amber-600/70">{t("inventory.reorder")}:</span> <strong>{product.reorderLevel} {t("inventory.units")}</strong>
                 </span>
               )}
               {product.createdAt && (
                 <span className="px-2.5 py-1 rounded-lg bg-muted/50 border border-border/50 text-muted-foreground ml-auto">
-                  Created: {formatDate(product.createdAt)}
+                  {t("common.created_date")}: {formatDate(product.createdAt)}
                 </span>
               )}
             </div>
@@ -285,7 +285,7 @@ export const ProductDetailModal = ({
             {/* Variant Values */}
             {product.variantValues && product.variantValues.length > 0 && (
               <div className="flex flex-wrap items-center gap-1.5 text-xs">
-                <span className="text-muted-foreground mr-1">Variants:</span>
+                <span className="text-muted-foreground mr-1">{t("product.variants")}:</span>
                 {product.variantValues.map((v) => (
                   <span key={v.id} className="px-2.5 py-0.5 rounded-md bg-muted/60 border border-border/50 font-medium">
                     {v.variantTypeName ? `${v.variantTypeName}: ` : ""}{v.name}
@@ -307,10 +307,10 @@ export const ProductDetailModal = ({
                 <div className="flex items-center gap-2">
                   <h4 className="text-sm font-bold text-foreground flex items-center gap-1.5">
                     <Barcode className="h-4 w-4 text-primary" />
-                    Serials & Barcodes
+                    {t("nav.product_serials")}
                   </h4>
                   <Badge variant="secondary" className="font-mono text-xs px-2 py-0">
-                    {filteredSerials.length} of {allSerials.length}
+                    {filteredSerials.length} {t("common.of")} {allSerials.length}
                   </Badge>
                 </div>
 
@@ -319,7 +319,7 @@ export const ProductDetailModal = ({
                     <div className="relative w-44 sm:w-56">
                       <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-muted-foreground" />
                       <Input
-                        placeholder="Search serial, barcode..."
+                        placeholder={t("common.search")}
                         value={serialSearch}
                         onChange={(e) => setSerialSearch(e.target.value)}
                         className="h-8 pl-8 text-xs rounded-lg border-border/60"
@@ -336,7 +336,7 @@ export const ProductDetailModal = ({
                               : "bg-muted hover:bg-muted/80 text-muted-foreground"
                             }`}
                         >
-                          {st}
+                          {st === "ALL" ? t("common.all") : st === "AVAILABLE" ? t("inventory.available") : st}
                         </button>
                       ))}
                     </div>
@@ -348,7 +348,7 @@ export const ProductDetailModal = ({
               <div className="rounded-xl border border-border/60 overflow-hidden bg-card">
                 {isLoadingSerials && allSerials.length === 0 ? (
                   <div className="p-8 text-center text-xs text-muted-foreground animate-pulse">
-                    Loading serial numbers...
+                    {t("common.loading")}
                   </div>
                 ) : (
                   <div className="overflow-x-auto max-h-[280px] overflow-y-auto">
@@ -356,13 +356,13 @@ export const ProductDetailModal = ({
                       <thead className="bg-muted/60 border-b border-border/60 text-muted-foreground font-semibold sticky top-0 z-10 backdrop-blur-md">
                         <tr>
                           <th className="py-2 px-3 w-8 text-center">#</th>
-                          <th className="py-2 px-3">Serial Number</th>
-                          <th className="py-2 px-3">Barcode</th>
-                          <th className="py-2 px-3">Store</th>
-                          <th className="py-2 px-3 text-center">Qty</th>
-                          <th className="py-2 px-3 text-right">Cost</th>
-                          <th className="py-2 px-3 text-right">Price</th>
-                          <th className="py-2 px-3 text-center">Status</th>
+                          <th className="py-2 px-3">{t("inventory.serial_number")}</th>
+                          <th className="py-2 px-3">{t("inventory.barcode")}</th>
+                          <th className="py-2 px-3">{t("inventory.store")}</th>
+                          <th className="py-2 px-3 text-center">{t("common.quantity")}</th>
+                          <th className="py-2 px-3 text-right">{t("common.cost")}</th>
+                          <th className="py-2 px-3 text-right">{t("common.sale")}</th>
+                          <th className="py-2 px-3 text-center">{t("common.status")}</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border/40">
@@ -434,10 +434,10 @@ export const ProductDetailModal = ({
                   {product.code}
                 </span>
                 <span>•</span>
-                <span>{totalQuantity} {totalQuantity === 1 ? "unit" : "units"} total</span>
+                <span>{totalQuantity} {t("inventory.units")} {t("common.total")}</span>
                 <span>•</span>
                 <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
-                  {availableCount} available
+                  {availableCount} {t("inventory.available")}
                 </span>
               </>
             )}
@@ -451,7 +451,7 @@ export const ProductDetailModal = ({
               onClick={() => onOpenChange(false)}
               className="h-9 px-4 text-xs font-medium rounded-xl border-border/60 hover:bg-muted transition cursor-pointer"
             >
-              Close
+              {t("common.close")}
             </Button>
 
             {product && (
@@ -462,7 +462,7 @@ export const ProductDetailModal = ({
                 className="h-9 px-4 gap-2 text-xs font-semibold rounded-xl bg-primary text-primary-foreground hover:bg-primary/90 shadow-sm transition cursor-pointer"
               >
                 <Pencil className="h-3.5 w-3.5" />
-                {t("common.edit") || "Edit Product"}
+                {t("common.edit")}
               </Button>
             )}
           </div>

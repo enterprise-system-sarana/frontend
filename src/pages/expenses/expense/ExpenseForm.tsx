@@ -18,6 +18,7 @@ import { useExpenseType } from "@/hooks/expense/useExpenseType";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useBank } from "@/hooks/finance/useBank";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type ExpenseFormProps = {
     open: boolean;
@@ -26,6 +27,7 @@ type ExpenseFormProps = {
 };
 
 const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
+    const { t } = useLanguage();
     const isEditing = Boolean(expense);
     const { mutate: createExpenseMutate, isPending: isCreating } = useExpense.useCreateExpense();
     const { mutate: updateExpenseMutate, isPending: isUpdating } = useExpense.useUpdateExpense();
@@ -137,12 +139,18 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
         }
     }, [expense, open]);
 
+    const statusOptions = [
+        { value: Status.ACTIVE, label: t("common.active") },
+        { value: Status.INACTIVE, label: t("common.inactive") },
+        { value: Status.DELETE, label: t("common.deleted") },
+    ];
+
     return (
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="md:max-w-[550px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-lg font-bold font-heading">
-                        {isEditing ? "Edit Expense" : "Record New Expense"}
+                        {isEditing ? t("common.edit") : t("common.create")} {t("nav.expense")}
                     </DialogTitle>
                 </DialogHeader>
                 <form
@@ -160,14 +168,14 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                             <FormTextField
                                 form={form}
                                 name="reference"
-                                label="Reference / Voucher #"
+                                label={t("common.reference")}
                                 placeholder="e.g. EXP-2026-001"
                                 type="text"
                             />
                             <FormTextField
                                 form={form}
                                 name="amount"
-                                label="Amount ($)"
+                                label={`${t("common.amount")} ($)`}
                                 required={true}
                                 placeholder="0.00"
                                 type="number"
@@ -178,9 +186,9 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                         <FormSelectField
                             form={form}
                             name="expenseTypeId"
-                            label="Expense Type"
+                            label={t("nav.expense_type")}
                             required={true}
-                            placeholder="Select Expense Category"
+                            placeholder={t("common.select_option")}
                             options={expenseTypeOptions}
                         />
 
@@ -189,15 +197,15 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                             <FormSelectField
                                 form={form}
                                 name="storeId"
-                                label="Store / Branch"
-                                placeholder="Select Store"
+                                label={t("inventory.store")}
+                                placeholder={t("common.select_option")}
                                 options={storeOptions}
                             />
                             <FormSelectField
                                 form={form}
                                 name="bankId"
-                                label="Payment Account / Bank"
-                                placeholder="Select Bank/Account"
+                                label={t("finance.bank")}
+                                placeholder={t("common.select_option")}
                                 options={bankOptions}
                             />
                         </div>
@@ -206,7 +214,7 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                         <FormTextField
                             form={form}
                             name="note"
-                            label="Note / Payee"
+                            label={t("common.notes")}
                             placeholder="e.g. Paid to Electricity Provider"
                             type="text"
                         />
@@ -215,16 +223,16 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                         <FormRadioGroupField
                             form={form}
                             name="status"
-                            label="Status"
+                            label={t("common.status")}
                             required={true}
-                            options={StatusOptions}
+                            options={statusOptions}
                         />
                     </FieldGroup>
                 </form>
                 <DialogFooter className="pt-2">
                     <DialogClose asChild>
                         <Button variant="outline" type="button">
-                            Cancel
+                            {t("common.cancel")}
                         </Button>
                     </DialogClose>
                     <Button
@@ -233,7 +241,7 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                         disabled={isPending}
                         className="font-semibold"
                     >
-                        {isPending ? "Saving..." : isEditing ? "Update Expense" : "Create Expense"}
+                        {isPending ? t("common.saving") : isEditing ? t("common.save") : `${t("common.create")} ${t("nav.expense")}`}
                     </Button>
                 </DialogFooter>
             </DialogContent>

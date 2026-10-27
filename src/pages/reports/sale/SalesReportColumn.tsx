@@ -29,11 +29,17 @@ export interface SaleReportRow {
   status?: string;
 }
 
-export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
+interface SalesReportColumnsProps {
+  t?: (key: any, fallback?: string) => string;
+}
+
+export const SalesReportColumns = ({
+  t,
+}: SalesReportColumnsProps = {}): ColumnDef<SaleReportRow>[] => [
   {
     accessorKey: "reference",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Reference" />
+      <SortableHeader column={column} title={t ? t("common.reference", "Reference") : "Reference"} />
     ),
     cell: ({ row }) => (
       <span className="font-mono text-xs text-[#696cff]">
@@ -44,7 +50,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   {
     accessorKey: "customerName",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Customer" />
+      <SortableHeader column={column} title={t ? t("sale.customer", "Customer") : "Customer"} />
     ),
     cell: ({ row }) => (
       <span className="font-semibold text-[#566a7f]">
@@ -54,7 +60,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   },
   {
     accessorKey: "storeName",
-    header: ({ column }) => <SortableHeader column={column} title="Store" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store", "Store") : "Store"} />,
     cell: ({ row }) => (
       <span className="font-semibold text-[#566a7f]">
         {row.original.storeName || "-"}
@@ -63,7 +69,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   },
   {
     accessorKey: "saleDate",
-    header: ({ column }) => <SortableHeader column={column} title="Date" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("common.date", "Date") : "Date"} />,
     cell: ({ row }) => {
       const raw = row.original.saleDate || row.original.date;
       if (!raw) return <span className="text-muted-foreground text-xs">-</span>;
@@ -82,7 +88,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   {
     accessorKey: "totalAmount",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Total Amount" />
+      <SortableHeader column={column} title={t ? t("common.total", "Total Amount") : "Total Amount"} />
     ),
     cell: ({ row }) => (
       <span className="font-semibold text-[#566a7f]">
@@ -93,7 +99,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   {
     accessorKey: "grandTotal",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Grand Total" />
+      <SortableHeader column={column} title={t ? t("sale.grand_total", "Grand Total") : "Grand Total"} />
     ),
     cell: ({ row }) => (
       <span className="font-semibold text-[#566a7f]">
@@ -103,7 +109,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   },
   {
     accessorKey: "paidAmount",
-    header: ({ column }) => <SortableHeader column={column} title="Paid" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("common.paid", "Paid") : "Paid"} />,
     cell: ({ row }) => (
       <span className="text-[#71dd37] font-medium">
         {formatCurrency(row.original.paidAmount)}
@@ -112,7 +118,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   },
   {
     accessorKey: "totalProfit",
-    header: ({ column }) => <SortableHeader column={column} title="Profit" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("common.profit", "Profit") : "Profit"} />,
     cell: ({ row }) => (
       <span className="text-[#71dd37] font-medium">
         {formatCurrency(row.original.totalProfit)}
@@ -121,7 +127,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   },
   {
     accessorKey: "dueAmount",
-    header: ({ column }) => <SortableHeader column={column} title="Due" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("common.due", "Due") : "Due"} />,
     cell: ({ row }) => (
       <span className="text-[#ff3e1d] font-medium">
         {formatCurrency(row.original.dueAmount)}
@@ -130,7 +136,7 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   },
   {
     accessorKey: "paymentStatus",
-    header: "Payment Status",
+    header: t ? t("purchase.payment_status", "Payment Status") : "Payment Status",
     cell: ({ row }) => {
       const ps = row.original.paymentStatus?.toUpperCase();
       const isPaid = ps === "PAID";
@@ -150,7 +156,11 @@ export const SalesReportColumns = (): ColumnDef<SaleReportRow>[] => [
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t ? t("common.status", "Status") : "Status",
     cell: ({ row }) => <StatusBadge status={row.original.status} />,
   },
 ];
+
+
+
+

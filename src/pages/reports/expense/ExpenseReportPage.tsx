@@ -16,6 +16,7 @@ import { useExpenseType } from "@/hooks/expense/useExpenseType";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
 import { ExpenseReportColumns } from "./ExpenseReportColumn";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const formatCurrency = (value: number | string | undefined) => {
   const numeric = Number(value ?? 0);
@@ -27,6 +28,7 @@ const formatCurrency = (value: number | string | undefined) => {
 };
 
 const ExpenseReportPage = () => {
+  const { t } = useLanguage();
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.REPORT.READ);
 
@@ -80,22 +82,22 @@ const ExpenseReportPage = () => {
     () => [
       {
         key: "storeId",
-        label: "Store",
+        label: t("inventory.store", "Store"),
         options: stores.map((store: any) => ({ label: store.name, value: String(store.id) })),
       },
       {
         key: "bankId",
-        label: "Bank",
+        label: t("nav.bank", "Bank"),
         options: banks.map((bank: any) => ({ label: bank.name, value: String(bank.id) })),
       },
       {
         key: "expenseTypeId",
-        label: "Expense Type",
+        label: t("nav.expense_type", "Expense Type"),
         options: expenseTypes.map((expenseType: any) => ({ label: expenseType.name, value: String(expenseType.id) })),
       },
       {
         key: "status",
-        label: "Status",
+        label: t("common.status", "Status"),
         options: [
           { label: "PENDING", value: "PENDING" },
           { label: "APPROVED", value: "APPROVED" },
@@ -104,7 +106,7 @@ const ExpenseReportPage = () => {
         ],
       },
     ],
-    [stores, banks, expenseTypes],
+    [stores, banks, expenseTypes, t],
   );
 
   const searchFilteredRows = useSearch(rows, search, [
@@ -131,7 +133,7 @@ const ExpenseReportPage = () => {
     (expenseData as any)?.payload?.pagination?.totalElements ??
     rows.length;
 
-  const columns = ExpenseReportColumns();
+  const columns = useMemo(() => ExpenseReportColumns({ t }), [t]);
 
   const handleSearchFilterChange = (key: string, value: string) => {
     setFilterValues((prev) => ({ ...prev, [key]: value }));
@@ -146,11 +148,11 @@ const ExpenseReportPage = () => {
   };
 
   const handleDownloadPdf = () => {
-    exportTableToPdf(filteredRows, columns, "expense-report", "Expense Report");
+    exportTableToPdf(filteredRows, columns, "expense-report", t("nav.expense_reports", "Expense Report"));
   };
 
   const handlePrint = () => {
-    printTable("Expense Report");
+    printTable(t("nav.expense_reports", "Expense Report"));
   };
 
   if (!canRead) {
@@ -180,27 +182,27 @@ const ExpenseReportPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Expense Reports"
-        description="Overview of expenses by store, payment account, and type"
+        title={t("nav.expense_reports", "Expense Reports")}
+        description={t("report.expenses", "Overview of expenses by store, payment account, and type")}
       />
 
       {/* Summary KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            label: "Total Expenses",
+            label: t("dashboard.total_expense", "Total Expenses"),
             value: formatCurrency(summary.totalExpense),
           },
           {
-            label: "Paid Expenses",
+            label: t("common.paid", "Paid Expenses"),
             value: formatCurrency(summary.paidAmount),
           },
           {
-            label: "Pending Expenses",
+            label: t("common.pending", "Pending Expenses"),
             value: formatCurrency(summary.pendingAmount),
           },
           {
-            label: "Transactions",
+            label: t("pos.items", "Transactions"),
             value: Number(summary.totalCount).toLocaleString(),
           },
         ].map((card) => (
@@ -216,7 +218,7 @@ const ExpenseReportPage = () => {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search expense reference, type, store..."
+            searchPlaceholder={t("common.search", "Search expense reference, type, store...")}
             startDate={startDate}
             endDate={endDate}
             onStartDateChange={(value) => { setPage(1); setStartDate(value); }}

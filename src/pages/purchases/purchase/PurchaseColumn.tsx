@@ -6,12 +6,19 @@ import { TableActions } from "@/components/ui/table-actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/utils/formatDate";
 
+import { Wallet } from "lucide-react";
+import { Button } from "@/components/ui/button";
+
+import type { TranslationKey } from "@/i18n/locales/en";
+
 interface PurchaseColumnProps {
   onView: (purchase: PurchaseResponse) => void;
   onEdit: (purchase: PurchaseResponse) => void;
   onDelete: (id: number) => void;
+  onPayment?: (purchase: PurchaseResponse) => void;
   canEdit: boolean;
   canDelete: boolean;
+  t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 const formatCurrency = (value: number) => `$${(value || 0).toFixed(2)}`;
@@ -21,14 +28,16 @@ export const PurchaseColumns = ({
   onView,
   onEdit,
   onDelete,
+  onPayment,
   canEdit,
   canDelete,
+  t,
 }: PurchaseColumnProps): ColumnDef<PurchaseResponse>[] => [
 
     {
       accessorKey: "referenceNo",
       header: ({ column }) => (
-        <SortableHeader column={column} title="Reference" />
+        <SortableHeader column={column} title={t ? t("purchase.reference") : "Reference"} />
       ),
       cell: ({ row }) => {
         const match = (row.original.note || "").match(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]/i);
@@ -59,7 +68,7 @@ export const PurchaseColumns = ({
     },
     {
       accessorKey: "purchaseDate",
-      header: ({ column }) => <SortableHeader column={column} title="Date" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("purchase.date") : "Date"} />,
       cell: ({ row }) => (
         <span className="text-[#6cacf4]">
           {formatDate(row.original.purchaseDate)}
@@ -68,7 +77,7 @@ export const PurchaseColumns = ({
     },
     {
       accessorKey: "store",
-      header: ({ column }) => <SortableHeader column={column} title="Store" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("purchase.store") : "Store"} />,
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {safeText(row.original.storeName)}
@@ -77,7 +86,7 @@ export const PurchaseColumns = ({
     },
     {
       accessorKey: "supplier",
-      header: ({ column }) => <SortableHeader column={column} title="Supplier" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("purchase.supplier") : "Supplier"} />,
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {safeText(row.original.supplierName)}
@@ -86,7 +95,7 @@ export const PurchaseColumns = ({
     },
     {
       accessorKey: "Bank",
-      header: ({ column }) => <SortableHeader column={column} title="Bank" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank"} />,
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {safeText(row.original.bankName)}
@@ -96,7 +105,7 @@ export const PurchaseColumns = ({
 
     {
       accessorKey: "grandTotal",
-      header: "Grand Total",
+      header: t ? t("sale.grand_total") : "Grand Total",
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {formatCurrency(row.original.grandTotal)}
@@ -105,7 +114,7 @@ export const PurchaseColumns = ({
     },
     {
       accessorKey: "paidAmount",
-      header: "Paid",
+      header: t ? t("purchase.paid_amount") : "Paid",
       cell: ({ row }) => {
         const paid = row.original.paidAmount;
         return (
@@ -117,7 +126,7 @@ export const PurchaseColumns = ({
     },
     {
       accessorKey: "dueAmount",
-      header: "Due",
+      header: t ? t("purchase.due_amount") : "Due",
       cell: ({ row }) => {
         const due = row.original.dueAmount ?? 0;
         return (
@@ -129,10 +138,11 @@ export const PurchaseColumns = ({
     },
     {
       accessorKey: "paymentStatus",
-      header: "Payment",
+      header: t ? t("purchase.payment_status") : "Payment",
       cell: ({ row }) => {
         const status = row.original.paymentStatus?.toUpperCase();
         const isPaid = status === "PAID";
+        const label = status === "PAID" && t ? t("common.paid") : status === "PARTIAL" && t ? t("common.partial") : status === "PENDING" && t ? t("common.pending") : row.original.paymentStatus;
         return (
           <Badge
             variant="outline"
@@ -142,31 +152,47 @@ export const PurchaseColumns = ({
                 : "bg-[#ffab00]/10 text-[#ffab00] border-[#ffab00]/20"
             }
           >
-            {row.original.paymentStatus}
+            {label}
           </Badge>
         );
       },
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t ? t("purchase.status") : "Status",
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
       accessorKey: "Action",
-      header: "Action",
+      header: t ? t("common.action") : "Action",
       enableHiding: false,
       cell: ({ row }) => {
-        if (!canEdit && !canDelete) {
+        const due = row.original.dueAmount ?? 0;
+        const hasActions = canEdit || canDelete || Boolean(onView) || (Boolean(onPayment) && due > 0);
+
+        if (!hasActions) {
           return <span className="text-[#a1acb8] text-sm">-</span>;
         }
 
         return (
-          <TableActions
-            onView={onView ? () => onView(row.original) : undefined}
-            onEdit={() => onEdit(row.original)}
-            onDelete={() => onDelete(row.original.id)}
-          />
+          <div className="flex items-center gap-1">
+            <TableActions
+              onView={onView ? () => onView(row.original) : undefined}
+              onEdit={canEdit ? () => onEdit(row.original) : undefined}
+              onDelete={canDelete ? () => onDelete(row.original.id) : undefined}
+            />
+            {onPayment && due > 0 && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title={t ? t("common.payment") : "Payment"}
+                className="h-8 w-8 text-[#10b981] hover:bg-[#10b981]/10 rounded-lg cursor-pointer"
+                onClick={() => onPayment(row.original)}
+              >
+                <Wallet className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         );
       },
     },

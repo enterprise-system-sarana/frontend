@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Plus } from "lucide-react";
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export interface PageHeaderProps {
     /** Main heading / page title (e.g. "Products") */
@@ -53,44 +54,46 @@ export function PageHeader({
     className,
     buttonClassName,
 }: PageHeaderProps) {
+    const { t } = useLanguage();
     const handleAction = onCreate || onButtonClick;
     const resolvedLabel =
         buttonLabel ||
         buttonText ||
-        (featureName ? `Create ${featureName}` : undefined);
+        (featureName ? `${t("common.create")} ${featureName}` : undefined);
     const showCreateButton = !hideButton && (handleAction || resolvedLabel);
 
     return (
-        <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-4", className)}>
+        <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3", className)}>
             <div>
                 <div className="flex items-center gap-2">
                     {titleIcon}
-                    <h1 className="text-2xl font-bold text-foreground font-heading tracking-tight flex items-center gap-2">
+                    <h1 className="text-lg font-semibold text-foreground font-heading tracking-tight flex items-center gap-2">
                         {title}
                     </h1>
                     {badge}
                 </div>
                 {description && (
-                    <p className="text-sm text-muted-foreground mt-0.5">
+                    <p className="text-xs text-muted-foreground mt-0.5">
                         {description}
                     </p>
                 )}
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex items-center gap-2">
                 {children}
                 {actions}
 
                 {showCreateButton && (
                     <Button
                         onClick={handleAction}
+                        size="sm"
                         className={cn(
-                            "h-10 px-4 rounded-xl bg-primary hover:bg-primary/90 text-primary-foreground font-medium shadow-sm flex items-center gap-2 transition-all cursor-pointer",
+                            "h-7 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium shadow-sm flex items-center gap-1.5 transition-all cursor-pointer",
                             buttonClassName
                         )}
                     >
-                        {buttonIcon !== undefined ? buttonIcon : <Plus className="h-4 w-4" />}
-                        {resolvedLabel || "Create"}
+                        {buttonIcon !== undefined ? buttonIcon : <Plus className="h-3 w-3" />}
+                        {resolvedLabel || t("common.create")}
                     </Button>
                 )}
             </div>

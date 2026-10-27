@@ -22,9 +22,13 @@ import type { CustomerResponse } from "@/types/sales/Customer";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
 import ReturnSaleModal from "./components/ReturnSaleModal";
 import EditSaleModal from "./components/EditSaleModal";
+import { Button } from "@/components/ui/button";
+import { Receipt } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const SalePage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.SALE.CREATE);
@@ -97,8 +101,8 @@ const SalePage = () => {
     () => [
       {
         key: "customerId",
-        placeholder: "Filter by Customer",
-        allLabel: "All",
+        placeholder: t("sale.customer"),
+        allLabel: t("common.all"),
         options: customers.map((cust: CustomerResponse) => ({
           label: cust.name,
           value: String(cust.id),
@@ -106,8 +110,8 @@ const SalePage = () => {
       },
       {
         key: "storeId",
-        placeholder: "Filter by Store",
-        allLabel: "All",
+        placeholder: t("inventory.store"),
+        allLabel: t("common.all"),
         options: stores.map((store: StoreResponse) => ({
           label: store.name,
           value: String(store.id),
@@ -115,17 +119,17 @@ const SalePage = () => {
       },
       {
         key: "status",
-        placeholder: "Filter by Status",
-        allLabel: "All",
+        placeholder: t("common.status"),
+        allLabel: t("common.all_status"),
         options: [
-          { label: "Pending", value: "PENDING" },
-          { label: "Completed", value: "COMPLETED" },
-          { label: "Cancelled", value: "CANCELLED" },
-          { label: "Returned", value: "RETURNED" },
+          { label: t("common.pending"), value: "PENDING" },
+          { label: t("common.completed"), value: "COMPLETED" },
+          { label: t("common.cancelled"), value: "CANCELLED" },
+          { label: t("common.returned"), value: "RETURNED" },
         ],
       },
     ],
-    [customers, stores],
+    [customers, stores, t],
   );
 
   const dropdownValues = useMemo(
@@ -245,23 +249,33 @@ const SalePage = () => {
     <>
       <div className="space-y-4">
         <PageHeader
-          title="Sales"
-          buttonLabel="Create Sale"
+          title={t("sale.title")}
+          buttonLabel={t("sale.create")}
           onCreate={
             canCreate ? () => window.open(ROUTERS.SALE_CREATE, "_blank") : undefined
           }
           hideButton={!canCreate}
-        />
+        >
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => navigate(ROUTERS.CASH_REGISTER)}
+            className="text-xs gap-1.5"
+          >
+            <Receipt className="size-3.5" />
+            <span>{t("nav.cash_registers")}</span>
+          </Button>
+        </PageHeader>
 
         <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
           <div className="p-4 border-b border-border/60">
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search reference..."
+              searchPlaceholder={t("common.search")}
               filterGroups={dropdowns.map((dropdown) => ({
                 key: dropdown.key,
-                label: dropdown.placeholder.replace("Filter by ", ""),
+                label: dropdown.placeholder,
                 options: dropdown.options,
               }))}
               filterValues={dropdownValues}
@@ -283,6 +297,7 @@ const SalePage = () => {
                   onPayment: handlePayment,
                   canEdit: canUpdate,
                   canDelete: canDelete,
+                  t,
                 })}
                 data={filteredSales}
                 pagination={{
@@ -302,7 +317,7 @@ const SalePage = () => {
       <ConfirmDelete
         isOpen={openConfirmDelete}
         setIsOpen={setOpenConfirmDelete}
-        entityName={"Sale"}
+        entityName={t("sale.title")}
         confirmDelete={confirmDelete}
       />
 

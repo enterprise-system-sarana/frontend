@@ -1,6 +1,6 @@
 export interface BaseResponse {
     id: number;
-    status?: string;
+    status?: string | null;
     createdAt?: Date | string;
     createdBy?: string;
     updatedAt?: Date | string;

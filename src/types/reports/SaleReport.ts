@@ -1,15 +1,19 @@
-import type { PageFilter } from "@/types/pagination";
-import type { SaleResponse } from "@/types/sales/Sale";
+﻿import type { PageFilter } from @/types/pagination;
 
 export interface SaleReportFilter extends PageFilter {
   startDate?: string;
   endDate?: string;
   storeId?: number;
+  storeName?: string;
   customerId?: number;
+  customerName?: string;
   saleStatus?: string;
   paymentStatus?: string;
   productId?: number;
-
+  productName?: string;
+  categoryId?: number;
+  brandId?: number;
+  search?: string;
 }
 
 export interface ExpenseReportFilter extends PageFilter {
@@ -64,23 +68,45 @@ export interface ProductSerialReportResponse {
 }
 
 export interface SaleItemReportResponse {
+  itemId?: number;
   saleId?: number;
   saleReference?: string;
+  saleNo?: string;
   saleDate?: string;
+  saleStatus?: string;
+  paymentStatus?: string;
   storeId?: number;
+  storeName?: string;
+  customerId?: number;
+  customerName?: string;
   productId?: number;
   productName?: string;
+  productCode?: string;
+  modelId?: number;
+  modelName?: string;
+  brandId?: number;
+  brandName?: string;
+  categoryId?: number;
+  categoryName?: string;
   quantity?: number;
+  returnedQuantity?: number;
   price?: number;
+  unitPrice?: number;
+  unitCost?: number;
   itemDiscount?: number;
   subTotal?: number;
-  serialNumbers?: string[];
+  totalCost?: number;
+  totalProfit?: number;
+  serialNumbers?: (string | number)[];
 }
 
 export interface SaleReportResponse {
   totalSalesAmount?: number;
   totalDiscount?: number;
   totalPaidAmount?: number;
+  totalCost?: number;
+  totalProfit?: number;
+  totalExpense?: number;
   totalTransactions?: number;
   storeId?: number;
   storeName?: string;
@@ -88,17 +114,5 @@ export interface SaleReportResponse {
   customerName?: string;
   startDate?: string;
   endDate?: string;
-  sales?: SaleResponse[];
-  totalProfit : number;
+  sales?: any[];
 }
-
-// export interface SalesReportPageResponse<T> {
-//   content?: T[];
-//   data?: T[];
-//   items?: T[];
-//   totalElements?: number;
-//   totalPages?: number;
-//   number?: number;
-//   size?: number;
-//   [key: string]: unknown;
-// }

@@ -20,8 +20,10 @@ import { CategoryColumns } from "./CategoryColumn";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const CategoryPage = () => {
+  const { t } = useLanguage();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.CATEGORY.CREATE);
   const canRead = Can(PERMISSION.CATEGORY.READ);
@@ -45,16 +47,19 @@ const CategoryPage = () => {
   const { mutate: deleteCategoryMutate } = useCategory.useDeleteCategory();
 
   // Filter Groups for Filter +
-  const filterGroups: FilterGroup[] = [
-    {
-      key: "status",
-      label: "Status",
-      options: [
-        { label: "Active", value: Status.ACTIVE },
-        { label: "Inactive", value: Status.INACTIVE },
-      ],
-    },
-  ];
+  const filterGroups: FilterGroup[] = useMemo(
+    () => [
+      {
+        key: "status",
+        label: t("common.status"),
+        options: [
+          { label: t("common.active"), value: Status.ACTIVE },
+          { label: t("common.inactive"), value: Status.INACTIVE },
+        ],
+      },
+    ],
+    [t],
+  );
 
   const handleColumnToggle = (columnId: string) => {
     setColumnVisibility((prev) => ({
@@ -134,8 +139,9 @@ const CategoryPage = () => {
       CategoryColumns({
         onEdit: handleEdit,
         onDelete: handleDelete,
+        t,
       }),
-    [handleEdit, handleDelete],
+    [handleEdit, handleDelete, t],
   );
 
   const handleExportCsv = () => {
@@ -162,8 +168,8 @@ const CategoryPage = () => {
       <div className="space-y-4">
         {/* Top Header */}
         <PageHeader
-          title="Categories"
-          featureName="Category"
+          title={t("nav.category")}
+          featureName={t("common.category")}
           onCreate={canCreate ? () => {
             setCategory(null);
             setOpen(true);
@@ -178,7 +184,7 @@ const CategoryPage = () => {
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search categories..."
+              searchPlaceholder={t("common.search")}
               filterGroups={filterGroups}
               filterValues={filterValues}
               onFilterChange={handleFilterChange}

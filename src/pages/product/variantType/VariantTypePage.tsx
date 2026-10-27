@@ -14,8 +14,10 @@ import { VariantTypeColumns } from "./VariantTypeColumn";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const VariantTypePage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.VARIANT_TYPE.CREATE);
     const canRead = Can(PERMISSION.VARIANT_TYPE.READ);
@@ -40,16 +42,16 @@ const VariantTypePage = () => {
         useVariantType.useDeleteVariantType();
 
     // Filter Groups for Filter +
-    const filterGroups: FilterGroup[] = [
+    const filterGroups: FilterGroup[] = useMemo(() => [
         {
             key: "status",
-            label: "Status",
+            label: t("common.status"),
             options: [
-                { label: "Active", value: Status.ACTIVE },
-                { label: "Inactive", value: Status.INACTIVE },
+                { label: t("common.active"), value: Status.ACTIVE },
+                { label: t("common.inactive"), value: Status.INACTIVE },
             ],
         },
-    ];
+    ], [t]);
 
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
@@ -125,8 +127,9 @@ const VariantTypePage = () => {
             VariantTypeColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                t,
             }),
-        []
+        [handleEdit, handleDelete, t]
     );
 
     const handleExportCsv = () => {
@@ -148,8 +151,8 @@ const VariantTypePage = () => {
             <div className="space-y-4">
                 {/* Top Header */}
                 <PageHeader
-                    title="Variant Types"
-                    featureName="Variant Type"
+                    title={t("variant.types", "Variant Types")}
+                    featureName={t("variant.type", "Variant Type")}
                     onCreate={canCreate ? () => {
                         setVariantType(null);
                         setOpen(true);
@@ -164,7 +167,7 @@ const VariantTypePage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search variant types..."
+                            searchPlaceholder={t("common.search", "Search...")}
                             filterGroups={filterGroups}
                             filterValues={filterValues}
                             onFilterChange={handleFilterChange}
@@ -204,7 +207,7 @@ const VariantTypePage = () => {
             <ConfirmDelete
                 isOpen={openConfirmDelete}
                 setIsOpen={setOpenConfirmDelete}
-                entityName={"Variant Type"}
+                entityName={t("variant.type", "Variant Type")}
                 confirmDelete={confirmDelete}
             />
         </>

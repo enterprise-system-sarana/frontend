@@ -52,10 +52,10 @@ import { useSupplier } from "@/hooks/purchases/useSupplier";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useProduct } from "@/hooks/product/useProduct";
 import { useBank } from "@/hooks/finance/useBank";
+import { useProductSerial } from "@/hooks/product/useProductSerial";
 
 import FormSupplier from "@/pages/purchases/supplier/SupplierForm";
 import FormBank from "@/pages/finance/bank/BankForm";
-import PaymentForm from "@/pages/sales/payment/PaymentForm";
 import ExcelSerialModal from "./ExcelSerialModal";
 
 import { ROUTERS } from "@/constants/Route";
@@ -63,6 +63,12 @@ import { ROUTERS } from "@/constants/Route";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { SupplierResponse } from "@/types/purchases/Supplier";
 import type { ProductResponse } from "@/types/product/Product";
+import { PaymentForm } from "@/pages/sales/payment/PaymentForm";
+import { usePayment } from "@/hooks/sales/usePayment";
+import type { PaymentRequest } from "@/types/sales/Payment";
+import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { ImageCell } from "@/components/file/ImageCell";
 
 /* -------------------------------------------------------------------------- */
 /* Helpers                                                                    */
@@ -75,53 +81,6 @@ function formatCurrency(value: number) {
   }).format(value || 0);
 }
 
-export type ImportanceLevel = "LOW" | "NORMAL" | "HIGH" | "URGENT";
-
-export const IMPORTANCE_CONFIG: Record<
-  ImportanceLevel,
-  {
-    label: string;
-    description: string;
-    badgeClass: string;
-    dotClass: string;
-    buttonActiveClass: string;
-    iconColor: string;
-  }
-> = {
-  LOW: {
-    label: "Low",
-    description: "Low priority / Routine non-urgent stock intake",
-    badgeClass: "bg-slate-500/15 text-slate-700 dark:text-slate-300 border-slate-500/25",
-    dotClass: "bg-slate-400",
-    buttonActiveClass: "bg-slate-700 text-white dark:bg-slate-200 dark:text-slate-900 border-slate-700 shadow-xs",
-    iconColor: "text-slate-500",
-  },
-  NORMAL: {
-    label: "Normal",
-    description: "Standard regular stock replenishment",
-    badgeClass: "bg-blue-500/15 text-blue-700 dark:text-blue-300 border-blue-500/25",
-    dotClass: "bg-blue-500",
-    buttonActiveClass: "bg-blue-600 text-white border-blue-600 shadow-xs",
-    iconColor: "text-blue-500",
-  },
-  HIGH: {
-    label: "High",
-    description: "High priority order / Inventory running low",
-    badgeClass: "bg-amber-500/15 text-amber-700 dark:text-amber-300 border-amber-500/25",
-    dotClass: "bg-amber-500",
-    buttonActiveClass: "bg-amber-600 text-white border-amber-600 shadow-xs",
-    iconColor: "text-amber-500",
-  },
-  URGENT: {
-    label: "Urgent",
-    description: "Critical / Out of stock emergency purchase",
-    badgeClass: "bg-rose-500/15 text-rose-700 dark:text-rose-300 border-rose-500/25 animate-pulse",
-    dotClass: "bg-rose-500",
-    buttonActiveClass: "bg-rose-600 text-white border-rose-600 shadow-xs",
-    iconColor: "text-rose-500",
-  },
-};
-
 function emptyItem() {
   return {
     productId: 0,
@@ -132,6 +91,35 @@ function emptyItem() {
     subtotal: 0,
     serialNumbers: [] as string[],
   };
+}
+
+export function extractSerialString(s: any): string {
+  if (s == null) return "";
+  if (typeof s === "string") return s.trim();
+  if (typeof s === "number") return String(s);
+  if (typeof s === "object") {
+    const val =
+      s.barcode ??
+      s.serialNumber ??
+      s.serial ??
+      s.serialNo ??
+      s.code ??
+      s.imei ??
+      s.value ??
+      s.serial_number ??
+      (s.id ? `SN-${s.id}` : "");
+    return val != null ? String(val).trim() : "";
+  }
+  return "";
+}
+
+export function isProductSerialized(product: any): boolean {
+  if (!product) return true;
+  if (product.hasSerial === false || product.hasSerial === "false" || product.hasSerial === 0) return false;
+  if (product.hasSerialNumber === false || product.hasSerialNumber === "false" || product.hasSerialNumber === 0) return false;
+  if (product.isSerialized === false || product.isSerialized === "false" || product.isSerialized === 0) return false;
+  if (product.serialized === false || product.serialized === "false" || product.serialized === 0) return false;
+  return true;
 }
 
 function getTodayDate() {
@@ -155,6 +143,7 @@ function initials(name?: string) {
 /* -------------------------------------------------------------------------- */
 
 export default function PurchaseForm() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const [searchParams] = useSearchParams();
   const isEditing = Boolean(id);
@@ -180,8 +169,31 @@ export default function PurchaseForm() {
 
   const { data: existingPurchase, isLoading: isPurchaseLoading } =
     usePurchase.GetPurchaseById(Number(id), {
-      enabled: isEditing,
+      enabled: isEditing && !isNaN(Number(id)) && Number(id) > 0,
     });
+
+  const { data: allSerialsRes } = useProductSerial.useGetAllProductSerial(
+    { size: 1000 } as any,
+    { enabled: isEditing },
+  );
+
+  const fallbackSerialsByProduct = useMemo(() => {
+    const list: any[] =
+      allSerialsRes?.payload?.data ??
+      allSerialsRes?.data ??
+      allSerialsRes?.payload ??
+      [];
+    const map: Record<number, string[]> = {};
+    for (const item of list) {
+      const pId = Number(item.productId ?? item.product?.id);
+      const barcode = extractSerialString(item);
+      if (pId > 0 && barcode) {
+        if (!map[pId]) map[pId] = [];
+        map[pId].push(barcode);
+      }
+    }
+    return map;
+  }, [allSerialsRes]);
 
   const purchaseDetail =
     existingPurchase?.payload?.data ??
@@ -194,6 +206,7 @@ export default function PurchaseForm() {
   const queryClient = useQueryClient();
   const createPurchase = usePurchase.Create();
   const updatePurchase = usePurchase.Update();
+  const createPayment = usePayment.createPayment();
   const isPending = createPurchase.isPending || updatePurchase.isPending;
 
   /* -------------------------------- State -------------------------------- */
@@ -204,7 +217,6 @@ export default function PurchaseForm() {
   const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
   const [bankFormOpen, setBankFormOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
-  const [importance, setImportance] = useState<ImportanceLevel>("NORMAL");
 
   const searchBoxRef = useRef<HTMLDivElement>(null);
 
@@ -232,29 +244,64 @@ export default function PurchaseForm() {
     },
 
     onSubmit: async ({ value }) => {
-      const missingSerials = value.items.some((item: any) => {
-        const serials = (item.serialNumbers ?? [])
-          .map((serial: string) => serial.trim())
-          .filter(Boolean);
+      // Consolidate duplicate products by productId
+      const consolidatedMap = new Map<number, any>();
+      for (const item of value.items || []) {
+        const pId = Number(item.productId);
+        if (pId <= 0) continue;
+        const prod = productList.find((p: any) => p.id === pId);
+        const reqSerial = isProductSerialized(prod);
+        const serials = reqSerial
+          ? (item.serialNumbers ?? [])
+            .map((serial: any) => extractSerialString(serial))
+            .filter(Boolean)
+          : [];
         const quantity = Math.max(0, Number(item.quantity) || 0);
-        return serials.length !== quantity ||
-          new Set(serials.map((serial: string) => serial.toLowerCase())).size !== serials.length;
+        const costPrice = Number(item.cost ?? item.costPrice ?? 0);
+        const price = Number(item.price) || 0;
+
+        if (consolidatedMap.has(pId)) {
+          const exist = consolidatedMap.get(pId);
+          exist.quantity += quantity;
+          if (reqSerial) {
+            exist.serialNumbers.push(...serials);
+          }
+          exist.subtotal = exist.costPrice * exist.quantity;
+        } else {
+          consolidatedMap.set(pId, {
+            productId: pId,
+            productName: item.productName,
+            quantity,
+            costPrice,
+            price,
+            serialNumbers: reqSerial ? [...serials] : [],
+          });
+        }
+      }
+
+      const items = Array.from(consolidatedMap.values());
+      if (items.length === 0) {
+        setSerialError("Please add at least one product before saving purchase.");
+        return;
+      }
+
+      const missingSerials = items.some((item: any) => {
+        const prod = productList.find((p: any) => p.id === item.productId);
+        if (!isProductSerialized(prod)) {
+          return false;
+        }
+        return (
+          item.serialNumbers.length !== item.quantity ||
+          new Set(item.serialNumbers.map((s: string) => s.toLowerCase())).size !== item.serialNumbers.length
+        );
       });
 
       if (missingSerials) {
-        setSerialError("Each product needs one unique serial number for every unit.");
+        setSerialError("Each serialized product needs one unique serial number for every unit.");
         return;
       }
 
       setSerialError("");
-
-      const items = value.items.map((item: any) => ({
-        productId: Number(item.productId),
-        quantity: Number(item.quantity),
-        costPrice: Number(item.cost),
-        price: Number(item.price) || 0,
-        serialNumbers: (item.serialNumbers ?? []).filter(Boolean),
-      }));
 
       const total = items.reduce(
         (sum: number, item: any) => sum + item.costPrice * item.quantity,
@@ -272,15 +319,9 @@ export default function PurchaseForm() {
             ? "PARTIAL"
             : "PENDING";
 
-      const rawUserNote = (value.note || "")
-        .replace(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]\s*/gi, "")
-        .trim();
-      const finalNote = `[Importance: ${importance}]${rawUserNote ? " " + rawUserNote : ""}`;
 
       const payload = {
         ...value,
-        note: finalNote,
-        importance,
         supplierId: Number(value.supplierId),
         storeId: Number(value.storeId),
         bankId: Number(value.bankId),
@@ -298,7 +339,9 @@ export default function PurchaseForm() {
         await createPurchase.mutateAsync(payload);
       }
 
+      await queryClient.invalidateQueries({ queryKey: usePurchase.keys.all });
       await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+      await queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all });
       navigate(ROUTERS.PURCHASE);
     },
   });
@@ -314,6 +357,136 @@ export default function PurchaseForm() {
     );
     return Math.max(subtotal - (Number(formValues.discount) || 0), 0);
   }, [formValues.items, formValues.discount]);
+
+  const handlePurchaseAndPayment = async (paymentReq: PaymentRequest) => {
+    const rawItems = (formValues.items || []).filter(
+      (item: any) => Number(item.productId) > 0 && Number(item.quantity) > 0
+    );
+    if (rawItems.length === 0) {
+      toast.error("Please add at least one product before completing purchase.");
+      return false;
+    }
+
+    // Consolidate duplicate products by productId
+    const consolidatedMap = new Map<number, any>();
+    for (const item of rawItems) {
+      const pId = Number(item.productId);
+      if (pId <= 0) continue;
+      const prod = productList.find((p: any) => p.id === pId);
+      const reqSerial = isProductSerialized(prod);
+      const serials = reqSerial
+        ? (item.serialNumbers ?? [])
+          .map((serial: any) => extractSerialString(serial))
+          .filter(Boolean)
+        : [];
+      const quantity = Math.max(0, Number(item.quantity) || 0);
+      const costPrice = Number(item.cost ?? item.costPrice ?? 0);
+      const price = Number(item.price) || 0;
+
+      if (consolidatedMap.has(pId)) {
+        const exist = consolidatedMap.get(pId);
+        exist.quantity += quantity;
+        if (reqSerial) {
+          exist.serialNumbers.push(...serials);
+        }
+        exist.subtotal = exist.costPrice * exist.quantity;
+      } else {
+        consolidatedMap.set(pId, {
+          productId: pId,
+          productName: item.productName,
+          quantity,
+          costPrice,
+          price,
+          serialNumbers: reqSerial ? [...serials] : [],
+        });
+      }
+    }
+
+    const items = Array.from(consolidatedMap.values());
+    const missingSerials = items.some((item: any) => {
+      const prod = productList.find((p: any) => p.id === item.productId);
+      if (!isProductSerialized(prod)) {
+        return false;
+      }
+      return (
+        item.serialNumbers.length !== item.quantity ||
+        new Set(item.serialNumbers.map((s: string) => s.toLowerCase())).size !== item.serialNumbers.length
+      );
+    });
+
+    if (missingSerials) {
+      setSerialError("Each serialized product needs one unique serial number for every unit.");
+      toast.error("Each serialized product needs one unique serial number for every unit.");
+      return false;
+    }
+    setSerialError("");
+
+    const total = items.reduce(
+      (sum: number, item: any) => sum + item.costPrice * item.quantity,
+      0
+    );
+    const discount = Number(formValues.discount) || 0;
+    const grandTotal = Math.max(total - discount, 0);
+    const paidAmount = Number(paymentReq.totalAmount) || 0;
+    const paymentStatus =
+      paidAmount >= grandTotal && grandTotal > 0
+        ? "PAID"
+        : paidAmount > 0
+          ? "PARTIAL"
+          : "PENDING";
+
+    const payload = {
+      ...formValues,
+      supplierId: Number(formValues.supplierId),
+      storeId: Number(formValues.storeId),
+      bankId: Number(formValues.bankId),
+      discount,
+      paidAmount,
+      paymentStatus,
+      total,
+      grandTotal,
+      items,
+    };
+
+    try {
+      let savedPurchaseId = isEditing && id ? Number(id) : 0;
+      if (isEditing && id) {
+        await updatePurchase.mutateAsync({ id: Number(id), request: payload });
+      } else {
+        const res: any = await createPurchase.mutateAsync(payload);
+        savedPurchaseId = Number(
+          res?.payload?.id ??
+          res?.payload?.data?.id ??
+          res?.data?.id ??
+          res?.id ??
+          0
+        );
+      }
+
+      if (savedPurchaseId > 0 && paidAmount > 0) {
+        const finalPaymentReq: PaymentRequest = {
+          ...paymentReq,
+          purchaseId: savedPurchaseId,
+          saleId: null,
+          totalAmount: paidAmount,
+        };
+        await createPayment.mutateAsync(finalPaymentReq);
+      }
+
+      await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+      await queryClient.invalidateQueries({ queryKey: usePurchase.keys.all });
+      navigate(ROUTERS.PURCHASE);
+      return true;
+    } catch (error: any) {
+      const errorMsg =
+        error?.response?.data?.message ||
+        (typeof error?.response?.data === "string" ? error.response.data : null) ||
+        error?.message ||
+        "Failed to process purchase payment.";
+      toast.error(errorMsg);
+      return false;
+    }
+  };
 
   /* ------------------------- Calculate totals ---------------------------- */
 
@@ -367,26 +540,134 @@ export default function PurchaseForm() {
       purchase.purchaseDetails ??
       [];
 
-    const rawNote = purchase.note ?? "";
-    let initialImportance: ImportanceLevel = "NORMAL";
-    let cleanNote = rawNote;
+    const purchaseSerialsList: any[] =
+      purchase.productSerials ??
+      purchase.serialNumbers ??
+      purchase.serials ??
+      [];
 
-    const match = rawNote.match(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]/i);
-    if (match) {
-      initialImportance = match[1].toUpperCase() as ImportanceLevel;
-      cleanNote = rawNote.replace(/\[Importance:\s*(LOW|NORMAL|HIGH|URGENT)\]\s*/gi, "").trim();
-    } else if ((purchase as any).importance) {
-      const imp = String((purchase as any).importance).toUpperCase();
-      if (imp === "LOW" || imp === "NORMAL" || imp === "HIGH" || imp === "URGENT") {
-        initialImportance = imp as ImportanceLevel;
+    const groupedItemsMap = new Map<
+      string | number,
+      {
+        productId: number;
+        productName: string;
+        quantity: number;
+        cost: number;
+        price: number;
+        subtotal: number;
+        extractedSerials: string[];
+      }
+    >();
+
+    for (const item of rawItems) {
+      const productId =
+        item.productId ??
+        item.product?.id ??
+        item.product_id ??
+        0;
+      const quantity = Math.max(0, Number(item.quantity) || 1);
+      const cost = Number(item.costPrice ?? item.cost ?? item.product?.costPrice ?? 0);
+      const price = Number(item.price ?? item.product?.salePrice ?? 0);
+      const subtotal = (cost * quantity) || Number(item.subtotal ?? 0);
+      const productName =
+        item.productName ??
+        item.product?.name ??
+        item.product_name ??
+        item.name ??
+        "";
+
+      let itemSerialsRaw =
+        item.serialNumbers ??
+        item.productSerials ??
+        item.serials ??
+        item.barcodes ??
+        item.serialNumberList ??
+        item.productSerialResponses ??
+        item.serial_numbers;
+
+      const itemSerials: string[] = (Array.isArray(itemSerialsRaw) ? itemSerialsRaw : [])
+        .map(extractSerialString)
+        .filter((s) => s.length > 0);
+
+      const groupKey = productId > 0 ? `prod_${productId}` : (productName ? `name_${productName}` : `row_${Math.random()}`);
+
+      if (groupedItemsMap.has(groupKey)) {
+        const existing = groupedItemsMap.get(groupKey)!;
+        existing.quantity += quantity;
+        existing.subtotal += subtotal;
+        existing.extractedSerials.push(...itemSerials);
+        if (!existing.productName && productName) {
+          existing.productName = productName;
+        }
+      } else {
+        groupedItemsMap.set(groupKey, {
+          productId,
+          productName,
+          quantity,
+          cost,
+          price,
+          subtotal,
+          extractedSerials: [...itemSerials],
+        });
       }
     }
-    setImportance(initialImportance);
+
+    const mappedItems = groupedItemsMap.size
+      ? Array.from(groupedItemsMap.values()).map((grouped) => {
+        let serials = [...grouped.extractedSerials];
+
+        if (serials.length === 0 && purchaseSerialsList.length > 0) {
+          const matched = purchaseSerialsList
+            .filter((ps: any) => (ps.productId ?? ps.product?.id) === grouped.productId)
+            .map(extractSerialString)
+            .filter(Boolean);
+          if (matched.length > 0) {
+            serials = matched;
+          }
+        }
+
+        if (serials.length === 0 && fallbackSerialsByProduct[grouped.productId]?.length) {
+          serials = fallbackSerialsByProduct[grouped.productId]
+            .map(extractSerialString)
+            .filter(Boolean);
+        }
+
+        // Deduplicate serial strings
+        const uniqueSerials: string[] = [];
+        const seen = new Set<string>();
+        for (const s of serials) {
+          const lower = s.toLowerCase();
+          if (!seen.has(lower)) {
+            seen.add(lower);
+            uniqueSerials.push(s);
+          }
+        }
+
+        const prod = productList.find((p: any) => p.id === grouped.productId);
+        const reqSerial = isProductSerialized(prod);
+        let serialNumbers: string[] = [];
+        if (reqSerial) {
+          serialNumbers = uniqueSerials.slice(0, grouped.quantity);
+          while (serialNumbers.length < grouped.quantity) {
+            serialNumbers.push("");
+          }
+        }
+
+        return {
+          productId: grouped.productId,
+          productName: grouped.productName,
+          quantity: grouped.quantity,
+          cost: grouped.cost,
+          price: grouped.price,
+          subtotal: grouped.subtotal || grouped.cost * grouped.quantity,
+          serialNumbers,
+        };
+      })
+      : [emptyItem()];
 
     form.reset({
       referenceNo: purchase.referenceNo ?? "",
       purchaseDate: formattedDate,
-      note: cleanNote,
       supplierId,
       storeId,
       bankId,
@@ -396,34 +677,22 @@ export default function PurchaseForm() {
       paidAmount: purchase.paidAmount ?? 0,
       paymentStatus: purchase.paymentStatus ?? "PENDING",
       status: purchase.status ?? Status.ACTIVE,
-      items: rawItems.length
-        ? rawItems.map((item: any) => ({
-          productId:
-            item.productId ??
-            item.product?.id ??
-            item.product_id ??
-            0,
-          productName:
-            item.productName ??
-            item.product?.name ??
-            item.product_name ??
-            item.name ??
-            "",
-          quantity: item.quantity ?? 1,
-          cost: item.costPrice ?? item.cost ?? item.product?.costPrice ?? 0,
-          price: item.price ?? item.product?.salePrice ?? 0,
-          subtotal:
-            (item.costPrice ?? item.cost ?? item.product?.costPrice ?? 0) *
-            (item.quantity ?? 1),
-          serialNumbers: (item.serialNumbers ?? []).map((serial: any) =>
-            typeof serial === "string"
-              ? serial
-              : serial?.barcode ?? serial?.serialNumber ?? "",
-          ),
-        }))
-        : [emptyItem()],
+      items: mappedItems,
     });
-  }, [purchaseDetail]);
+
+    form.setFieldValue("referenceNo", purchase.referenceNo ?? "");
+    form.setFieldValue("purchaseDate", formattedDate);
+    form.setFieldValue("supplierId", supplierId);
+    form.setFieldValue("storeId", storeId);
+    form.setFieldValue("bankId", bankId);
+    form.setFieldValue("discount", purchase.discount ?? 0);
+    form.setFieldValue("total", purchase.total ?? 0);
+    form.setFieldValue("grandTotal", purchase.grandTotal ?? 0);
+    form.setFieldValue("paidAmount", purchase.paidAmount ?? 0);
+    form.setFieldValue("paymentStatus", purchase.paymentStatus ?? "PENDING");
+    form.setFieldValue("status", purchase.status ?? Status.ACTIVE);
+    form.setFieldValue("items", mappedItems);
+  }, [purchaseDetail, fallbackSerialsByProduct]);
 
   /* -------------------------- Auto-Add Product --------------------------- */
 
@@ -432,6 +701,7 @@ export default function PurchaseForm() {
       const product = productList.find((p) => String(p.id) === initialProductId);
       if (product) {
         const cost = Number(product.costPrice ?? 0);
+        const hasSerial = isProductSerialized(product);
         form.setFieldValue("items", [
           {
             ...emptyItem(),
@@ -440,6 +710,7 @@ export default function PurchaseForm() {
             cost,
             price: Number(product.salePrice ?? 0),
             subtotal: cost,
+            serialNumbers: hasSerial ? [""] : [],
           },
         ]);
         handledInitialProduct.current = true;
@@ -464,18 +735,63 @@ export default function PurchaseForm() {
 
   const addProduct = (product: ProductResponse) => {
     const cost = Number(product.costPrice ?? 0);
+    const hasSerial = isProductSerialized(product);
+    const currentItems = Array.isArray(formValues.items) ? [...formValues.items] : [];
 
-    form.setFieldValue("items", [
-      ...formValues.items,
-      {
-        ...emptyItem(),
-        productId: product.id,
-        productName: product.name,
-        cost,
-        price: Number(product.salePrice ?? 0),
-        subtotal: cost,
-      },
-    ]);
+    const existingIndex = currentItems.findIndex(
+      (item: any) => Number(item.productId) === product.id,
+    );
+
+    if (existingIndex >= 0) {
+      const existing = currentItems[existingIndex];
+      const newQty = (Number(existing.quantity) || 0) + 1;
+      const existingSerials = hasSerial
+        ? (Array.isArray(existing.serialNumbers) ? [...existing.serialNumbers] : []).map(extractSerialString)
+        : [];
+      if (hasSerial) {
+        existingSerials.push("");
+      }
+      const itemCost = Number(existing.cost ?? cost);
+
+      currentItems[existingIndex] = {
+        ...existing,
+        quantity: newQty,
+        cost: itemCost,
+        subtotal: itemCost * newQty,
+        serialNumbers: existingSerials,
+      };
+
+      form.setFieldValue("items", currentItems);
+      toast.success(`Increased quantity for ${product.name} to ${newQty}`);
+    } else if (
+      currentItems.length === 1 &&
+      (!currentItems[0].productId || Number(currentItems[0].productId) === 0)
+    ) {
+      form.setFieldValue("items", [
+        {
+          ...emptyItem(),
+          productId: product.id,
+          productName: product.name,
+          cost,
+          price: Number(product.salePrice ?? 0),
+          subtotal: cost,
+          serialNumbers: hasSerial ? [""] : [],
+        },
+      ]);
+    } else {
+      form.setFieldValue("items", [
+        ...currentItems,
+        {
+          ...emptyItem(),
+          productId: product.id,
+          productName: product.name,
+          cost,
+          price: Number(product.salePrice ?? 0),
+          subtotal: cost,
+          serialNumbers: hasSerial ? [""] : [],
+        },
+      ]);
+    }
 
     setProductSearch("");
     setIsSearchOpen(false);
@@ -510,129 +826,109 @@ export default function PurchaseForm() {
   }
 
   return (
-    <div className="w-full bg-muted/30 pb-16">
+    <div className="w-full min-h-screen bg-slate-50/50 dark:bg-background pb-16">
       {/* ------------------------------------------------------------------ */}
-      {/* Header                                                            */}
+      {/* Sticky Top Header Bar                                             */}
       {/* ------------------------------------------------------------------ */}
+      <div className="sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-card/95 backdrop-blur px-4 py-2.5 shadow-2xs">
+        <div className="flex flex-wrap items-center justify-between gap-3 max-w-[1600px] mx-auto">
+          {/* Left: Title & Reference */}
+          <div className="flex items-center gap-3">
+            <Button
+              type="button"
+              variant="outline"
+              size="icon"
+              onClick={() => navigate(-1)}
+              className="size-7 rounded-[3px] border-[#cdd5df] text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              title="Return to purchases list"
+            >
+              <ArrowLeft className="size-3.5" />
+            </Button>
 
-      <div className="border-b bg-background/95 backdrop-blur supports-\[backdrop-filter]:bg-background/80">
-        <div className="w-full px-4 py-3">
-          {/* Breadcrumb */}
-          {/* <div className="mb-3 flex items-center gap-1.5 text-xs text-muted-foreground">
-            <Package className="size-3.5" />
-            <span className="font-medium text-primary">Purchasing & Inventory</span>
-            {/* <span className="mx-1">›</span> */}
-          {/* <span>{isEditing ? "Edit Purchase" : "Stock Receiving"}</span> */}
+            <div className="flex items-center gap-2">
+              <h1 className="font-heading text-sm font-bold tracking-tight text-[#081d33] dark:text-slate-100 sm:text-base">
+                {isEditing ? t("purchase.edit") : t("purchase.create")}
+              </h1>
 
+              {/* <form.Subscribe selector={(state) => state.values.referenceNo}>
+                {(refNo) => (
+                  <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                    {refNo || "PO-DRAFT"}
+                  </span>
+                )}
+              </form.Subscribe> */}
 
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <Button
-                type="button"
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate(-1)}
-                className="shrink-0 rounded-full"
+              {/* <span
+                className={`inline-flex items-center gap-1 rounded-[2px] px-1.5 py-0.5 text-[10px] font-bold ${isEditing
+                  ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300"
+                  : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
+                  }`}
               >
-                <ArrowLeft className="size-5" />
-              </Button>
-
-              <div className="flex items-center gap-3">
-                <form.Subscribe selector={(state) => state.values.referenceNo}>
-                  {(refNo) => (
-                    <h1 className="text-xl font-bold tracking-tight sm:text-2xl">
-                      {refNo || (isEditing ? "Edit Purchase" : "New Purchase")}
-                    </h1>
-                  )}
-                </form.Subscribe>
-
-                <div className="flex items-center gap-2">
-                  <span
-                    className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-xs font-semibold ${isEditing
-                      ? "bg-blue-500/15 text-blue-600 border border-blue-500/25"
-                      : "bg-amber-500/15 text-amber-600 border border-amber-500/25"
-                      }`}
-                  >
-                    <span
-                      className={`size-1.5 rounded-full ${isEditing ? "bg-blue-500" : "bg-amber-500"
-                        }`}
-                    />
-                    {isEditing ? "Editing" : "Draft Intake"}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Header Live Total Purchase & Importance Badges */}
-            <div className="flex items-center gap-2 sm:gap-3">
-              <div className="flex items-center gap-2 rounded-xl border border-emerald-500/25 bg-emerald-500/10 px-3 py-1.5 shadow-2xs">
-                <DollarSign className="size-4 text-emerald-600 dark:text-emerald-400" />
-                <div className="flex flex-col">
-                  <span className="text-[10px] font-semibold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-300/80 leading-none">
-                    Total Purchase
-                  </span>
-                  <span className="text-sm font-bold text-emerald-700 dark:text-emerald-300 leading-tight">
-                    {formatCurrency(topGrandTotal)}
-                  </span>
-                </div>
-              </div>
-
-              <div className="hidden sm:flex items-center">
                 <span
-                  className={`inline-flex items-center gap-1.5 rounded-xl border px-3 py-1.5 text-xs font-semibold ${IMPORTANCE_CONFIG[importance].badgeClass}`}
-                  title={IMPORTANCE_CONFIG[importance].description}
-                >
-                  <span className={`size-1.5 rounded-full ${IMPORTANCE_CONFIG[importance].dotClass}`} />
-                  <span className="font-bold">{IMPORTANCE_CONFIG[importance].label}</span> Priority
+                  className={`size-1.5 rounded-full ${isEditing ? "bg-blue-500" : "bg-emerald-500"}`}
+                />
+                {isEditing ? t("purchase.editing_mode") : t("purchase.new_intake")}
+              </span> */}
+            </div>
+          </div>
+
+          {/* Center/Right: Live Metrics & Action Buttons */}
+          <div className="flex items-center gap-2.5 ml-auto">
+            {/* Live Total KPI badge */}
+            <div className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/30 px-3 py-1.5 text-emerald-800 dark:text-emerald-300">
+              <DollarSign className="size-4 text-emerald-600 dark:text-emerald-400" />
+              <div className="flex items-baseline gap-1">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-400/80">
+                  {t("common.total")}:
+                </span>
+                <span className="font-mono text-sm font-black text-emerald-700 dark:text-emerald-300">
+                  {formatCurrency(topGrandTotal)}
                 </span>
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                className="hidden rounded-lg text-muted-foreground sm:inline-flex"
-                onClick={() => navigate(-1)}
-              >
-                Discard
-              </Button>
+            <Button
+              type="button"
+              variant="outline"
+              className="h-9 rounded-md border-slate-300 dark:border-slate-700 text-xs font-semibold px-3 text-slate-600 hover:text-slate-900 cursor-pointer"
+              onClick={() => navigate(-1)}
+            >
+              {t("purchase.discard")}
+            </Button>
 
-              <Button
-                type="submit"
-                form="purchase-form"
-                variant="outline"
-                disabled={isPending}
-                className="hidden rounded-lg sm:inline-flex"
-              >
-                Save Draft
-              </Button>
+            <Button
+              type="submit"
+              form="purchase-form"
+              variant="outline"
+              disabled={isPending}
+              className="h-9 rounded-md border-slate-300 dark:border-slate-700 text-xs font-semibold px-3 text-slate-700 hover:bg-slate-50 cursor-pointer"
+            >
+              {t("purchase.save_draft")}
+            </Button>
 
-              <Button
-                type="submit"
-                form="purchase-form"
-                disabled={isPending}
-                className="rounded-lg bg-emerald-600 text-white hover:bg-emerald-700"
-              >
-                {isPending ? (
-                  "Saving..."
-                ) : (
-                  <>
-                    <Check className="mr-1.5 size-4" />
-                    {isEditing ? "Update Purchase" : "Receive & Finalize Stock"}
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button
+              type="submit"
+              form="purchase-form"
+              disabled={isPending}
+              className="h-9 rounded-md bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer"
+            >
+              {isPending ? (
+                t("common.saving")
+              ) : (
+                <>
+                  <Check className="mr-1.5 size-3.5" />
+                  {isEditing ? t("purchase.update_purchase") : t("purchase.receive_stock")}
+                </>
+              )}
+            </Button>
           </div>
         </div>
       </div>
 
       {/* ------------------------------------------------------------------ */}
-      {/* Main                                                               */}
+      {/* Main Content Layout                                                */}
       {/* ------------------------------------------------------------------ */}
-
-      <div className="w-full p-4">
+      <div className="w-full max-w-[1600px] mx-auto p-4 sm:p-5">
         <form
           id="purchase-form"
           onSubmit={(event) => {
@@ -641,42 +937,33 @@ export default function PurchaseForm() {
             form.handleSubmit();
           }}
         >
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="grid grid-cols-1 gap-5 xl:grid-cols-[minmax(0,1fr)_340px]">
             {/* ========================================================== */}
-            {/* LEFT                                                         */}
+            {/* LEFT COLUMN: Purchase Details & Products Intake            */}
             {/* ========================================================== */}
-
-            <div className="min-w-0 space-y-6">
+            <div className="min-w-0 space-y-4">
               {/* -------------------------------------------------------- */}
-              {/* Purchase Information                                     */}
+              {/* Card 1: Purchase Information                             */}
               {/* -------------------------------------------------------- */}
-
-              <section className="rounded-2xl border bg-card shadow-sm">
-                <div className="border-b px-5 py-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
-                        <Package className="size-4" />
-                      </div>
-                      <div>
-                        <h2 className="font-semibold">Purchase Information</h2>
-                        {/* <p className="text-xs text-muted-foreground">
-                          Origin details, supplier credentials, and intake location.
-                        </p> */}
-                      </div>
-                    </div>
-                    <span className="hidden text-xs font-medium text-muted-foreground sm:block">
-                      Step 1 of 3
-                    </span>
+              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-card shadow-2xs overflow-hidden">
+                <div className="border-b border-slate-100 dark:border-slate-800 px-4 py-2 flex items-center justify-between bg-slate-50/70 dark:bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <Package className="size-3.5 text-emerald-600" />
+                    <h2 className="font-heading font-bold text-xs uppercase tracking-wider text-[#081d33] dark:text-slate-100">
+                      {t("purchase.purchase_info")}
+                    </h2>
                   </div>
+                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                    {t("purchase.general_details")}
+                  </span>
                 </div>
 
-                <div className="p-5">
-                  <FieldGroup className="grid grid-cols-1 gap-5 md:grid-cols-2 lg:grid-cols-3">
+                <div className="p-3.5">
+                  <FieldGroup className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-4">
                     <FormTextField
                       form={form}
                       name="referenceNo"
-                      label="Reference number"
+                      label={t("purchase.reference")}
                       placeholder="e.g. PO-2026-001"
                       type="text"
                     />
@@ -684,7 +971,7 @@ export default function PurchaseForm() {
                     <FormTextField
                       form={form}
                       name="purchaseDate"
-                      label="Purchase date"
+                      label={t("purchase.date")}
                       type="date"
                       required
                     />
@@ -692,8 +979,8 @@ export default function PurchaseForm() {
                     <FormSelectField
                       form={form}
                       name="supplierId"
-                      label="Supplier"
-                      placeholder="Select supplier"
+                      label={t("purchase.supplier")}
+                      placeholder={t("purchase.select_supplier")}
                       options={supplierList.map((supplier: SupplierResponse) => ({
                         value: String(supplier.id),
                         label: supplier.name,
@@ -705,8 +992,8 @@ export default function PurchaseForm() {
                     <FormSelectField
                       form={form}
                       name="storeId"
-                      label="Store"
-                      placeholder="Select store"
+                      label={t("purchase.store")}
+                      placeholder={t("purchase.select_store")}
                       options={storeList.map((store: StoreResponse) => ({
                         value: String(store.id),
                         label: store.name,
@@ -715,12 +1002,12 @@ export default function PurchaseForm() {
                       onAdd={() => window.open(ROUTERS.STORE_CREATE, "_blank")}
                     />
 
-                    <div className="md:col-span-2">
+                    <div className="sm:col-span-2 lg:col-span-4">
                       <FormTextField
                         form={form}
                         name="note"
-                        label="Note"
-                        placeholder="Add a note for this purchase..."
+                        label={t("purchase.note")}
+                        placeholder="Add purchase notes, delivery tracking, or supplier terms..."
                         type="text"
                       />
                     </div>
@@ -729,56 +1016,27 @@ export default function PurchaseForm() {
               </section>
 
               {/* -------------------------------------------------------- */}
-              {/* Products                                                   */}
+              {/* Card 2: Products & Inventory Intake                      */}
               {/* -------------------------------------------------------- */}
-
-              <section className="rounded-2xl border bg-card shadow-sm">
-                <div className="border-b px-5 py-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex size-9 items-center justify-center rounded-xl bg-emerald-500/10 text-emerald-600">
-                        <Package className="size-4" />
-                      </div>
-                      <div>
-                        <h2 className="font-semibold">Products & Inventory Intake</h2>
-                        {/* <p className="text-xs text-muted-foreground">
-                          Verify item costs, physical counts, and register serialized equipment.
-                        </p> */}
-                      </div>
-                    </div>
-
-                    <div className="flex items-center gap-3">
-                      <form.Subscribe selector={(state) => state.values.items.length}>
-                        {(count) => {
-                          const totalUnits = formValues.items.reduce(
-                            (sum: number, item: any) => sum + (Number(item.quantity) || 0),
-                            0,
-                          );
-                          return (
-                            <div className="rounded-full bg-muted px-3 py-1 text-xs font-medium text-muted-foreground">
-                              {count} {count === 1 ? "Item" : "Items"}
-                              <span className="ml-1 text-muted-foreground/60">
-                                ({totalUnits}  Total)
-                              </span>
-                            </div>
-                          );
-                        }}
-                      </form.Subscribe>
-                      <span className="hidden text-xs font-medium text-muted-foreground sm:block">
-                        Step 2 of 3
-                      </span>
-                    </div>
+              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-card shadow-2xs overflow-hidden">
+                <div className="border-b border-slate-100 dark:border-slate-800 px-4 py-2 flex items-center justify-between bg-slate-50/70 dark:bg-muted/30">
+                  <div className="flex items-center gap-2">
+                    <ScanLine className="size-3.5 text-emerald-600" />
+                    <h2 className="font-heading font-bold text-xs uppercase tracking-wider text-[#081d33] dark:text-slate-100">
+                      {t("purchase.products_intake")}
+                    </h2>
                   </div>
+
                 </div>
 
                 <form.Field name="items" mode="array">
                   {(itemsField) => (
                     <>
-                      {/* Product search */}
-                      <div className="border-b bg-muted/20 p-4">
-                        <div ref={searchBoxRef} className="relative flex items-center gap-3">
+                      {/* Product search bar */}
+                      <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-muted/10 p-3">
+                        <div ref={searchBoxRef} className="relative flex items-center gap-2.5">
                           <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
+                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
 
                             <Input
                               value={productSearch}
@@ -796,14 +1054,14 @@ export default function PurchaseForm() {
                                   setIsSearchOpen(false);
                                 }
                               }}
-                              placeholder="Search product, code, model, or brand..."
-                              className="h-11 rounded-xl border bg-background pl-9"
+                              placeholder={t("purchase.search_product")}
+                              className="h-10 rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-background pl-9 text-sm font-normal shadow-2xs hover:border-slate-400 focus-visible:border-primary"
                             />
 
                             {isSearchOpen && productSearch.trim() && (
-                              <div className="absolute left-0 right-0 top-[calc(100%+6px)] z-20 max-h-72 overflow-y-auto rounded-xl border bg-popover p-1.5 shadow-lg">
+                              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-72 overflow-y-auto rounded-md border border-slate-300 dark:border-slate-700 bg-popover p-1 shadow-lg">
                                 {filteredProducts.length === 0 ? (
-                                  <div className="px-3 py-4 text-center text-sm text-muted-foreground">
+                                  <div className="px-3 py-3 text-center text-xs text-muted-foreground">
                                     No products match "{productSearch}"
                                   </div>
                                 ) : (
@@ -812,24 +1070,36 @@ export default function PurchaseForm() {
                                       key={product.id}
                                       type="button"
                                       onClick={() => addProduct(product)}
-                                      className="flex w-full items-center gap-3 rounded-lg px-2.5 py-2 text-left transition-colors hover:bg-accent"
+                                      className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-left transition-colors hover:bg-accent/80 cursor-pointer"
                                     >
-                                      <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-primary/10 text-[11px] font-semibold text-primary">
-                                        {initials(product.name)}
-                                      </div>
+                                      {product.imageUrl ? (
+                                        <ImageCell
+                                          fileName={product.imageUrl}
+                                          name={product.name}
+                                          bucketName="product"
+                                          preview={false}
+                                          showBorder={false}
+                                          fit="cover"
+                                          className="size-9 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 object-cover"
+                                        />
+                                      ) : (
+                                        <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary border border-primary/20">
+                                          {initials(product.name)}
+                                        </div>
+                                      )}
 
                                       <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-medium">
+                                        <p className="truncate text-xs font-semibold text-foreground">
                                           {product.name}
                                         </p>
-                                        <p className="truncate text-xs text-muted-foreground">
+                                        <p className="truncate text-[10px] text-muted-foreground">
                                           {[product.brandName, product.code]
                                             .filter(Boolean)
                                             .join(" · ")}
                                         </p>
                                       </div>
 
-                                      <span className="shrink-0 text-xs font-medium text-muted-foreground">
+                                      <span className="shrink-0 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
                                         {formatCurrency(Number(product.costPrice ?? 0))}
                                       </span>
                                     </button>
@@ -842,54 +1112,57 @@ export default function PurchaseForm() {
                           <Button
                             type="button"
                             variant="outline"
-                            className="h-11 shrink-0 rounded-xl px-4"
+                            className="h-10 shrink-0 rounded-md border-slate-300 dark:border-slate-700 px-3.5 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-muted cursor-pointer shadow-2xs"
                             onClick={() => itemsField.pushValue(emptyItem())}
                           >
-                            <Plus className="mr-2 size-4" />
-                            Add another product
+                            <Plus className="mr-1.5 size-4" />
+                            {t("purchase.add_item")}
                           </Button>
                         </div>
                       </div>
 
                       {/* Serial error */}
                       {serialError && (
-                        <div className="mx-4 mt-4 flex items-start gap-2 rounded-xl border border-destructive/30 bg-destructive/5 px-3 py-2.5 text-sm text-destructive">
-                          <X className="mt-0.5 size-4 shrink-0" />
+                        <div className="m-3 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 px-3 py-2 text-xs text-destructive">
+                          <X className="mt-0.5 size-3.5 shrink-0" />
                           <span>{serialError}</span>
                         </div>
                       )}
 
-                      {/* Items */}
+                      {/* Items Table */}
                       <div>
                         {itemsField.state.value.length === 0 ? (
-                          <div className="px-5 py-16 text-center">
-                            <div className="mx-auto mb-3 flex size-12 items-center justify-center rounded-2xl bg-muted">
-                              <Package className="size-5 text-muted-foreground" />
+                          <div className="px-4 py-12 text-center">
+                            <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-muted">
+                              <Package className="size-5 text-slate-400" />
                             </div>
-                            <p className="font-medium">No products added yet</p>
-                            <p className="mt-1 text-sm text-muted-foreground">
-                              Search for a product above to start this purchase.
+                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                              {t("purchase.no_products_intake")}
+                            </p>
+                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              {t("purchase.no_products_intake_desc")}
                             </p>
                           </div>
                         ) : (
                           <>
-                            {/* Single table header for products */}
-                            <div className="hidden md:grid md:grid-cols-12 gap-3 border-b bg-muted/40 px-5 py-3 text-xs font-semibold text-muted-foreground">
-                              <div className="md:col-span-5">Product</div>
-                              <div className="md:col-span-2">Qty</div>
-                              <div className="md:col-span-2">Purchase Price($)</div>
-                              <div className="md:col-span-2">Subtotal</div>
-                              <div className="md:col-span-1 text-center">Action</div>
+                            {/* Table Header */}
+                            <div className="hidden md:grid md:grid-cols-12 gap-2.5 sm:gap-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-muted/40 px-4 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider font-heading">
+                              <div className="md:col-span-5">{t("purchase.product_details")}</div>
+                              <div className="md:col-span-2 text-center">{t("purchase.qty_serials")}</div>
+                              <div className="md:col-span-2 text-right">{t("purchase.unit_cost")}</div>
+                              <div className="md:col-span-2 text-right">{t("common.subtotal")} ($)</div>
+                              <div className="md:col-span-1 text-center">{t("common.action")}</div>
                             </div>
 
-                            <div className="divide-y">
+                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
                               {itemsField.state.value.map((item: any, index: number) => (
                                 <PurchaseItemRow
-                                  key={item?.productId ? `item-${item.productId}-${index}` : `item-${index}`}
+                                  key={`purchase-item-${index}-${item?.productId || 0}`}
                                   form={form}
                                   index={index}
                                   products={productList}
                                   onRemove={() => itemsField.removeValue(index)}
+                                  t={t}
                                 />
                               ))}
                             </div>
@@ -903,33 +1176,30 @@ export default function PurchaseForm() {
             </div>
 
             {/* ========================================================== */}
-            {/* RIGHT / SUMMARY                                             */}
+            {/* RIGHT COLUMN: Sticky Purchase & Payment Summary            */}
             {/* ========================================================== */}
-
-            <aside className="xl:sticky xl:top-6 xl:self-start">
-              <div className="overflow-hidden rounded-2xl border bg-card shadow-sm">
+            <aside className="xl:sticky xl:top-14 xl:self-start">
+              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-card shadow-2xs overflow-hidden">
                 {/* Header */}
-                <div className="border-b px-5 py-4">
-                  <div className="flex items-center gap-2.5">
-                    <div className="flex size-8 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-600">
-                      <Wallet className="size-4" />
-                    </div>
-                    <div>
-                      <h2 className="font-semibold leading-tight">Purchase Summary</h2>
-                      {/* <p className="text-xs text-muted-foreground">
-                        Review before completing the purchase.
-                      </p> */}
-                    </div>
+                <div className="border-b border-slate-100 dark:border-slate-800 px-3.5 py-2 flex items-center justify-between bg-slate-50/70 dark:bg-muted/30">
+                  <div className="flex items-center gap-1.5">
+                    <Wallet className="size-3.5 text-emerald-600" />
+                    <h2 className="font-heading font-bold text-xs uppercase tracking-wider text-[#081d33] dark:text-slate-100">
+                      {t("purchase.summary")}
+                    </h2>
                   </div>
+                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded-[2px]">
+                    {t("purchase.finalize")}
+                  </span>
                 </div>
 
-                {/* Payment Fields */}
-                <div className="space-y-4 border-b p-5">
+                {/* Form fields */}
+                <div className="p-3.5 space-y-2.5 border-b border-slate-100 dark:border-slate-800">
                   <FormSelectField
                     form={form}
                     name="bankId"
-                    label="Bank"
-                    placeholder="Select bank"
+                    label={t("purchase.payment_bank")}
+                    placeholder={t("purchase.select_bank")}
                     options={bankList.map((bank: any) => ({
                       value: String(bank.id),
                       label: bank.name,
@@ -938,58 +1208,26 @@ export default function PurchaseForm() {
                     onAdd={() => setBankFormOpen(true)}
                   />
 
-                  <FormTextField
-                    form={form}
-                    name="discount"
-                    label="Discount"
-                    placeholder="0.00"
-                    type="number"
-                  />
-
-                  <div className="">
+                  <div className="grid grid-cols-2 gap-2">
                     <FormTextField
                       form={form}
-                      name="paidAmount"
-                      label="Paid amount"
+                      name="discount"
+                      label={`${t("common.discount")} ($)`}
                       placeholder="0.00"
                       type="number"
                     />
 
-                    <form.Subscribe
-                      selector={(state) => [
-                        state.values.items,
-                        state.values.discount,
-                        state.values.paidAmount,
-                      ]}
-                    >
-                      {([items, discount, paidAmount]) => {
-                        const subtotal = (items || []).reduce(
-                          (sum: number, item: any) =>
-                            sum + (Number(item.cost) || 0) * (Number(item.quantity) || 0),
-                          0,
-                        );
-                        const discountAmount = Number(discount) || 0;
-                        const grandTotal = Math.max(subtotal - discountAmount, 0);
-                        const paid = Number(paidAmount) || 0;
-                        const returnBack = Math.max(paid - grandTotal, 0);
-
-                        return (
-                          <div>
-                            <label className="text-sm font-medium">Return</label>
-                            <Input
-                              readOnly
-                              disabled
-                              value={formatCurrency(returnBack)}
-                              className="mt-2 h-10 rounded-xl bg-muted/50 font-semibold text-emerald-600 dark:text-emerald-400 cursor-not-allowed"
-                            />
-                          </div>
-                        );
-                      }}
-                    </form.Subscribe>
+                    <FormTextField
+                      form={form}
+                      name="paidAmount"
+                      label={`${t("purchase.paid_amount")} ($)`}
+                      placeholder="0.00"
+                      type="number"
+                    />
                   </div>
                 </div>
 
-                {/* Totals & Payment Breakdown */}
+                {/* Totals & Breakdown */}
                 <form.Subscribe
                   selector={(state) => [
                     state.values.items,
@@ -1011,57 +1249,66 @@ export default function PurchaseForm() {
                     const returnBack = Math.max(paid - grandTotal, 0);
 
                     return (
-                      <div className="space-y-3 p-5">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Subtotal</span>
-                          <span className="font-medium">{formatCurrency(subtotal)}</span>
+                      <div className="p-3.5 space-y-2 bg-slate-50/50 dark:bg-muted/10">
+                        <div className="flex justify-between text-xs">
+                          <span className="text-muted-foreground font-medium">{t("common.subtotal")}</span>
+                          <span className="font-mono font-semibold">{formatCurrency(subtotal)}</span>
                         </div>
 
                         {discountAmount > 0 && (
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Discount</span>
-                            <span className="font-medium text-destructive">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground font-medium">{t("common.discount")}</span>
+                            <span className="font-mono font-semibold text-destructive">
                               -{formatCurrency(discountAmount)}
                             </span>
                           </div>
                         )}
 
-                        <div className="mt-2 rounded-xl bg-muted/40 p-3.5">
-                          <div className="flex items-baseline justify-between">
-                            <span className="text-sm font-semibold">Grand total</span>
-                            <span className="text-2xl font-bold tracking-tight text-primary">
+                        {/* Grand Total Box */}
+                        <div className="rounded-[3px] border border-emerald-500/25 bg-emerald-50/80 dark:bg-emerald-950/30 p-2.5 my-1">
+                          <div className="flex items-center justify-between">
+                            <span className="font-heading text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                              {t("sale.grand_total", "Grand Total")}
+                            </span>
+                            <span className="text-lg font-mono font-black text-emerald-700 dark:text-emerald-300">
                               {formatCurrency(grandTotal)}
                             </span>
                           </div>
                         </div>
 
-                        <div className="border-t pt-3 space-y-2.5">
-                          <div className="flex justify-between text-sm">
-                            <span className="text-muted-foreground">Paid amount</span>
-                            <span className="font-semibold">{formatCurrency(paid)}</span>
+                        <div className="border-t border-slate-200/80 dark:border-slate-800 pt-2 space-y-1.5">
+                          <div className="flex justify-between text-xs">
+                            <span className="text-muted-foreground font-medium">{t("purchase.paid_amount")}</span>
+                            <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                              {formatCurrency(paid)}
+                            </span>
                           </div>
 
                           {returnBack > 0 ? (
-                            <div className="flex justify-between text-sm">
-                              <span className="font-medium text-emerald-600 dark:text-emerald-400">
-                                Return back
+                            <div className="flex justify-between text-xs items-center bg-emerald-100/70 dark:bg-emerald-950/40 px-2 py-0.5 rounded-[2px]">
+                              <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-[11px]">
+                                {t("pos.change", "Return Back")}
                               </span>
-                              <span className="font-bold text-emerald-600 dark:text-emerald-400">
+                              <span className="font-mono font-bold text-emerald-800 dark:text-emerald-300">
                                 {formatCurrency(returnBack)}
                               </span>
                             </div>
                           ) : balance > 0 ? (
-                            <div className="flex justify-between text-sm">
-                              <span className="font-medium text-destructive">Balance due</span>
-                              <span className="font-bold text-destructive">
+                            <div className="flex justify-between text-xs items-center bg-rose-50 dark:bg-rose-950/30 px-2 py-0.5 rounded-[2px]">
+                              <span className="font-semibold text-rose-700 dark:text-rose-300 text-[11px]">
+                                {t("purchase.due_amount")}
+                              </span>
+                              <span className="font-mono font-bold text-rose-700 dark:text-rose-300">
                                 {formatCurrency(balance)}
                               </span>
                             </div>
                           ) : (
-                            <div className="flex justify-between text-sm">
-                              <span className="text-muted-foreground">Balance due</span>
-                              <span className="font-medium text-emerald-600">
-                                {formatCurrency(0)}
+                            <div className="flex justify-between text-xs items-center bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-[2px]">
+                              <span className="font-medium text-emerald-700 dark:text-emerald-400 text-[11px]">
+                                {t("purchase.due_amount")}
+                              </span>
+                              <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                                $0.00
                               </span>
                             </div>
                           )}
@@ -1070,36 +1317,33 @@ export default function PurchaseForm() {
                     );
                   }}
                 </form.Subscribe>
+
                 <PaymentForm
                   open={isPaymentModalOpen}
                   setOpen={setIsPaymentModalOpen}
                   payment={null}
                   mode="purchase"
                   purchaseId={isEditing && id ? Number(id) : undefined}
-                  amount={Math.max(
-                    (formValues.items || []).reduce(
-                      (sum: number, item: any) =>
-                        sum + (Number(item.cost) || 0) * (Number(item.quantity) || 0),
-                      0,
-                    ) - (Number(formValues.discount) || 0),
-                    0,
-                  )}
-
+                  orderRef={formValues.referenceNo}
+                  amount={topGrandTotal}
+                  banks={bankList}
+                  onPaymentSubmit={handlePurchaseAndPayment}
                 />
+
                 {/* Actions */}
-                <div className="border-t p-4">
+                <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5 bg-white dark:bg-card">
                   <Button
-                    type="button"
-                    disabled={isPending}
-                    onClick={() => setIsPaymentModalOpen(true)}
-                    className="h-11 w-full rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-medium"
+                    type="submit"
+                    form="purchase-form"
+                    disabled={isPending || createPayment.isPending}
+                    className="h-[30px] w-full rounded-[2px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
                   >
-                    {isPending ? (
-                      "Saving..."
+                    {isPending || createPayment.isPending ? (
+                      t("common.saving")
                     ) : (
                       <>
-                        <Check className="mr-2 size-4" />
-                        {isEditing ? "Update purchase" : "Complete purchase"}
+                        <Check className="mr-1.5 size-3.5" />
+                        {isEditing ? t("purchase.update_purchase") : t("purchase.receive_stock")}
                       </>
                     )}
                   </Button>
@@ -1107,10 +1351,30 @@ export default function PurchaseForm() {
                   <Button
                     type="button"
                     variant="outline"
-                    className="mt-2 h-11 w-full rounded-xl"
+                    disabled={isPending || createPayment.isPending}
+                    onClick={() => {
+                      const validItems = (formValues.items || []).filter(
+                        (item: any) => Number(item.productId) > 0 && Number(item.quantity) > 0
+                      );
+                      if (validItems.length === 0) {
+                        toast.error("Please add at least one product before proceeding.");
+                        return;
+                      }
+                      setIsPaymentModalOpen(true);
+                    }}
+                    className="h-[28px] w-full rounded-[2px] border-[#cdd5df] text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 cursor-pointer"
+                  >
+                    <Wallet className="mr-1.5 size-3 text-blue-600" />
+                    {t("common.payment")}
+                  </Button>
+
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    className="h-[26px] w-full text-[11px] font-medium text-slate-500 hover:text-slate-800"
                     onClick={() => navigate(-1)}
                   >
-                    Cancel
+                    {t("common.cancel")}
                   </Button>
                 </div>
               </div>
@@ -1119,11 +1383,9 @@ export default function PurchaseForm() {
         </form>
       </div>
 
-
       {/* ------------------------------------------------------------------ */}
       {/* Dialogs                                                           */}
       {/* ------------------------------------------------------------------ */}
-
       <FormSupplier
         open={isSupplierDialogOpen}
         setOpen={setIsSupplierDialogOpen}
@@ -1137,12 +1399,12 @@ export default function PurchaseForm() {
       />
 
       <FormBank open={bankFormOpen} setOpen={setBankFormOpen} bank={null} />
-    </div >
+    </div>
   );
 }
 
 /* ========================================================================= */
-/* Purchase Item Row                                                        */
+/* Purchase Item Row Component                                               */
 /* ========================================================================= */
 
 function PurchaseItemRow({
@@ -1155,7 +1417,10 @@ function PurchaseItemRow({
   index: number;
   products: ProductResponse[];
   onRemove: () => void;
+  t?: any;
 }) {
+  const { t: langT } = useLanguage();
+  const t = langT;
   const productId = useFormStore(
     form.store,
     (state: any) => state.values.items[index]?.productId,
@@ -1207,6 +1472,7 @@ function PurchaseItemRow({
   };
 
   const selectedProduct = products.find((product) => product.id === Number(productId));
+  const hasSerial = selectedProduct ? isProductSerialized(selectedProduct) : true;
 
   useEffect(() => {
     if (selectedProduct && !productName) {
@@ -1214,11 +1480,17 @@ function PurchaseItemRow({
     }
   }, [selectedProduct, productName, index, form]);
 
-  const normalizedSerialNumbers = Array.isArray(serialNumbers)
-    ? serialNumbers.map((serial) =>
-      typeof serial === "string" ? serial : serial == null ? "" : String(serial),
-    )
-    : [];
+  const normalizedSerialNumbers = useMemo(() => {
+    const raw = Array.isArray(serialNumbers)
+      ? serialNumbers.map(extractSerialString)
+      : [];
+    const expected = Math.max(0, Number(quantity) || 0);
+    const result = raw.slice(0, expected);
+    while (result.length < expected) {
+      result.push("");
+    }
+    return result;
+  }, [serialNumbers, quantity]);
 
   const expectedSerialCount = Math.max(0, Number(quantity) || 0);
 
@@ -1234,7 +1506,7 @@ function PurchaseItemRow({
   const hasDuplicateSerials = uniqueSerialCount < enteredSerialCount;
 
   const serialsComplete =
-    expectedSerialCount > 0 && enteredSerialCount === expectedSerialCount && !hasDuplicateSerials;
+    !hasSerial || (expectedSerialCount > 0 && enteredSerialCount === expectedSerialCount && !hasDuplicateSerials);
 
   /* --------------------------- Add serial ------------------------------- */
 
@@ -1276,20 +1548,29 @@ function PurchaseItemRow({
   /* -------------------------- Serial length ------------------------------ */
 
   useEffect(() => {
+    if (!hasSerial) {
+      form.setFieldValue(`items[${index}].serialNumbers`, []);
+      return;
+    }
     const qty = Math.max(0, Number(quantity) || 0);
 
-    form.setFieldValue(`items[${index}].serialNumbers`, (old: string[] = []) => {
-      const next = old.slice(0, qty);
+    form.setFieldValue(`items[${index}].serialNumbers`, (old: any = []) => {
+      const arr = Array.isArray(old)
+        ? old.map(extractSerialString)
+        : [];
+      if (arr.length === qty) return arr;
+      const next = arr.slice(0, qty);
       while (next.length < qty) next.push("");
       return next;
     });
-  }, [quantity]);
+  }, [quantity, index, hasSerial]);
 
   return (
-    <div className="px-5 py-3.5 transition-colors hover:bg-muted/10">
+    <div className="px-3.5 py-3 transition-colors hover:bg-slate-50/70 dark:hover:bg-muted/10">
       <div className="grid grid-cols-12 gap-3 items-center">
+        {/* Product selection */}
         <div className="col-span-12 md:col-span-5">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground md:hidden">
+          <span className="mb-0.5 block text-xs font-bold text-muted-foreground md:hidden uppercase">
             Product
           </span>
           <form.Field name={`items[${index}].productId`}>
@@ -1311,20 +1592,78 @@ function PurchaseItemRow({
                   value={currentValStr}
                   onValueChange={(value) => {
                     const numVal = Number(value);
-                    if (numVal !== Number(currentVal)) {
+                    if (!numVal) return;
+
+                    const allItems: any[] = form.getFieldValue("items") || [];
+                    const duplicateIndex = allItems.findIndex(
+                      (item: any, i: number) => i !== index && Number(item.productId) === numVal,
+                    );
+
+                    if (duplicateIndex >= 0) {
+                      const targetRow = allItems[duplicateIndex];
+                      const sourceQty = Math.max(0, Number(quantity) || 0);
+                      const targetQty = Math.max(0, Number(targetRow.quantity) || 0);
+                      const newTotalQty = targetQty + sourceQty;
+                      const sourceSerials = (Array.isArray(serialNumbers) ? serialNumbers : [])
+                        .map(extractSerialString)
+                        .filter(Boolean);
+                      const targetSerials = (Array.isArray(targetRow.serialNumbers) ? targetRow.serialNumbers : [])
+                        .map(extractSerialString)
+                        .filter(Boolean);
+
+                      const prod = products.find((p) => p.id === numVal);
+                      const isSerialized = isProductSerialized(prod);
+                      let combinedSerials: string[] = [];
+                      if (isSerialized) {
+                        combinedSerials = [...targetSerials, ...sourceSerials].slice(0, newTotalQty);
+                        while (combinedSerials.length < newTotalQty) {
+                          combinedSerials.push("");
+                        }
+                      }
+
+                      const itemCost = Number(targetRow.cost || prod?.costPrice || 0);
+
+                      const nextItems = allItems
+                        .map((item: any, i: number) => {
+                          if (i === duplicateIndex) {
+                            return {
+                              ...item,
+                              quantity: newTotalQty,
+                              cost: itemCost,
+                              subtotal: itemCost * newTotalQty,
+                              serialNumbers: combinedSerials,
+                            };
+                          }
+                          return item;
+                        })
+                        .filter((_: any, i: number) => i !== index);
+
+                      form.setFieldValue("items", nextItems.length ? nextItems : [emptyItem()]);
+                      toast.info(`Combined with existing row for ${prod?.name || "product"}.`);
+                      return;
+                    }
+
+                    const prod = products.find((p) => p.id === numVal);
+                    const isSerialized = isProductSerialized(prod);
+
+                    if (Number(currentVal) > 0 && numVal !== Number(currentVal)) {
                       form.setFieldValue(
                         `items[${index}].serialNumbers`,
-                        Array.from({ length: Math.max(0, Number(quantity) || 0) }, () => ""),
+                        isSerialized
+                          ? Array.from({ length: Math.max(0, Number(quantity) || 0) }, () => "")
+                          : [],
                       );
                     }
                     field.handleChange(numVal);
-                    const prod = products.find((p) => p.id === numVal);
                     if (prod) {
                       const itemCost = Number(prod.costPrice ?? 0);
                       form.setFieldValue(`items[${index}].productName`, prod.name);
                       form.setFieldValue(`items[${index}].cost`, itemCost);
                       form.setFieldValue(`items[${index}].price`, Number(prod.salePrice ?? 0));
                       form.setFieldValue(`items[${index}].subtotal`, itemCost * (Number(quantity) || 0));
+                      if (!isSerialized) {
+                        form.setFieldValue(`items[${index}].serialNumbers`, []);
+                      }
                     }
                     setSerialDialogError("");
                     setScanValue("");
@@ -1332,11 +1671,28 @@ function PurchaseItemRow({
                 >
                   <SelectTrigger
                     aria-label={`Choose product for row ${index + 1}`}
-                    className="h-10 w-full cursor-pointer rounded-xl bg-background text-left hover:border-primary/50 focus:ring-primary/20"
+                    className="h-9 w-full cursor-pointer rounded-[2px] border-[#cdd5df] text-sm bg-white dark:bg-background"
                   >
-                    <SelectValue placeholder="Select product">
-                      {displayName || undefined}
-                    </SelectValue>
+                    <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
+                      {selectedProduct?.imageUrl ? (
+                        <ImageCell
+                          fileName={selectedProduct.imageUrl}
+                          name={selectedProduct.name}
+                          bucketName="product"
+                          preview={false}
+                          showBorder={false}
+                          fit="cover"
+                          className="size-6 shrink-0 rounded object-cover border border-slate-200 dark:border-slate-700"
+                        />
+                      ) : selectedProduct ? (
+                        <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[9px] font-bold text-primary">
+                          {initials(selectedProduct.name)}
+                        </div>
+                      ) : null}
+                      <SelectValue placeholder="Select product">
+                        {displayName || undefined}
+                      </SelectValue>
+                    </div>
                   </SelectTrigger>
                   <SelectContent className="max-h-72">
                     {Boolean(currentValStr) && !existsInProducts && (
@@ -1345,8 +1701,27 @@ function PurchaseItemRow({
                       </SelectItem>
                     )}
                     {products.map((product) => (
-                      <SelectItem key={product.id} value={String(product.id)}>
-                        {product.name} {product.code ? `(${product.code})` : ""}
+                      <SelectItem key={product.id} value={String(product.id)} textValue={product.name}>
+                        <div className="flex items-center gap-2">
+                          {product.imageUrl ? (
+                            <ImageCell
+                              fileName={product.imageUrl}
+                              name={product.name}
+                              bucketName="product"
+                              preview={false}
+                              showBorder={false}
+                              fit="cover"
+                              className="size-6 shrink-0 rounded object-cover border border-slate-200 dark:border-slate-700"
+                            />
+                          ) : (
+                            <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[9px] font-bold text-primary">
+                              {initials(product.name)}
+                            </div>
+                          )}
+                          <span>
+                            {product.name} {product.code ? `(${product.code})` : ""}
+                          </span>
+                        </div>
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -1356,29 +1731,84 @@ function PurchaseItemRow({
           </form.Field>
         </div>
 
-        <div className="col-span-4 md:col-span-2">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground md:hidden">
-            Qty
+        {/* Qty & Serials button or direct Qty input */}
+        <div className="col-span-5 md:col-span-2">
+          <span className="mb-0.5 block text-xs  text-muted-foreground md:hidden uppercase">
+            {hasSerial ? (t("purchase.qty_serials") || "Qty & Serials") : (t("purchase.quantity") || "Quantity")}
           </span>
-          <button
-            type="button"
-            disabled={!Number(productId)}
-            onClick={() => {
-              setSerialDialogError("");
-              setIsSerialDialogOpen(true);
-            }}
-            title={Number(productId) ? "Set quantity and scan serial numbers" : "Select a product first"}
-            aria-label={`Set quantity and scan serial numbers for ${productName || "this product"}`}
-            className="flex h-10 w-full items-center justify-center gap-2 rounded-xl border bg-background font-medium transition-colors hover:border-primary hover:bg-primary/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/30 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            <span>{quantity ?? 0}</span>
-            <ScanLine className="size-3.5 text-primary" />
-          </button>
+          {hasSerial ? (
+            <button
+              type="button"
+              disabled={!Number(productId)}
+              onClick={() => {
+                setSerialDialogError("");
+                setIsSerialDialogOpen(true);
+              }}
+              title={Number(productId) ? "Click to set quantity & scan serial numbers" : "Select a product first"}
+              aria-label={`Set quantity and scan serial numbers for ${productName || "this product"}`}
+              className={`flex h-9 w-full items-center justify-between px-2.5 rounded-[2px] border text-sm font-semibold transition-all cursor-pointer ${serialsComplete
+                ? "border-emerald-300 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+                : enteredSerialCount > 0
+                  ? "border-amber-300 bg-amber-50/70 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
+                  : "border-[#cdd5df] bg-white hover:border-slate-400 text-slate-800 dark:bg-background dark:text-foreground"
+                } disabled:cursor-not-allowed disabled:opacity-50`}
+            >
+              <span className="font-mono font-bold">{quantity ?? 0}</span>
+              <span className="flex items-center gap-1 text-xs">
+                <ScanLine className="size-3.5 text-slate-500" />
+                <span>{enteredSerialCount}/{expectedSerialCount}</span>
+              </span>
+            </button>
+          ) : (
+            <form.Field name={`items[${index}].quantity`}>
+              {(field: any) => (
+                <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-[2px] overflow-hidden h-9 bg-white dark:bg-background shadow-2xs">
+                  <button
+                    type="button"
+                    disabled={!Number(productId) || (Number(field.state.value) || 0) <= 1}
+                    className="size-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer border-r border-slate-200 dark:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      const cur = Math.max(1, (Number(field.state.value) || 1) - 1);
+                      field.handleChange(cur);
+                      form.setFieldValue(`items[${index}].subtotal`, cost * cur);
+                    }}
+                  >
+                    -
+                  </button>
+                  <Input
+                    type="number"
+                    min={1}
+                    disabled={!Number(productId)}
+                    value={field.state.value ?? 1}
+                    onChange={(e) => {
+                      const val = Math.max(1, parseInt(e.target.value, 10) || 1);
+                      field.handleChange(val);
+                      form.setFieldValue(`items[${index}].subtotal`, cost * val);
+                    }}
+                    className="h-full border-0 text-center font-mono text-sm font-bold bg-transparent shadow-none focus-visible:ring-0 p-0"
+                  />
+                  <button
+                    type="button"
+                    disabled={!Number(productId)}
+                    className="size-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer border-l border-slate-200 dark:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    onClick={() => {
+                      const cur = (Number(field.state.value) || 1) + 1;
+                      field.handleChange(cur);
+                      form.setFieldValue(`items[${index}].subtotal`, cost * cur);
+                    }}
+                  >
+                    +
+                  </button>
+                </div>
+              )}
+            </form.Field>
+          )}
         </div>
 
-        <div className="col-span-4 md:col-span-2">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground md:hidden">
-            Purchase Price($)
+        {/* Unit Cost ($) */}
+        <div className="col-span-3 md:col-span-2">
+          <span className="mb-0.5 block text-xs font-bold text-muted-foreground md:hidden uppercase">
+            Unit Cost ($)
           </span>
           <form.Field name={`items[${index}].cost`}>
             {(field: any) => (
@@ -1391,28 +1821,27 @@ function PurchaseItemRow({
                   field.handleChange(e.target.value === "" ? 0 : Number(e.target.value))
                 }
                 placeholder="0.00"
-                className="h-10 rounded-xl bg-background text-right font-medium"
+                className="h-9 rounded-[2px] border-[#cdd5df] text-right font-mono text-sm font-semibold"
               />
             )}
           </form.Field>
         </div>
 
+        {/* Subtotal ($) */}
         <div className="col-span-3 md:col-span-2">
-          <span className="mb-1 block text-xs font-medium text-muted-foreground md:hidden">
-            Subtotal
+          <span className="mb-0.5 block text-xs font-bold text-muted-foreground md:hidden uppercase">
+            Subtotal ($)
           </span>
           <form.Field name={`items[${index}].subtotal`}>
             {(field: any) => (
-              <Input
-                type="number"
-                disabled
-                value={field.state.value ?? 0}
-                className="h-10 rounded-xl bg-muted/40 text-right font-semibold text-foreground cursor-not-allowed"
-              />
+              <div className="h-9 flex items-center justify-end px-2.5 rounded-[2px] bg-slate-50 dark:bg-muted/40 border border-[#cdd5df]/70 font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">
+                {formatCurrency(Number(field.state.value) || 0)}
+              </div>
             )}
           </form.Field>
         </div>
 
+        {/* Action: Trash */}
         <div className="col-span-1 md:col-span-1 flex items-center justify-center">
           <Button
             type="button"
@@ -1420,132 +1849,91 @@ function PurchaseItemRow({
             size="icon"
             onClick={onRemove}
             title="Remove product"
-            className="size-9 rounded-full text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+            className="size-8 rounded-[2px] text-slate-400 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
           >
             <Trash2 className="size-4" />
           </Button>
         </div>
       </div>
 
-      {/* Product metadata */}
-      {/* 
-      {selectedProduct && (
-        <div className="mt-4 flex flex-wrap gap-x-5 gap-y-2 rounded-xl bg-muted/30 px-3 py-2.5 text-xs">
-          {selectedProduct.brandName && (
-            <div>
-              <span className="text-muted-foreground">Brand</span>{" "}
-              <span className="font-medium">{selectedProduct.brandName}</span>
-            </div>
-          )}
-
-          {selectedProduct.categoryName && (
-            <div>
-              <span className="text-muted-foreground">Category</span>{" "}
-              <span className="font-medium">{selectedProduct.categoryName}</span>
-            </div>
-          )}
-
-          {selectedProduct.reorderLevel !== undefined && (
-            <div>
-              <span className="text-muted-foreground">Reorder level</span>{" "}
-              <span className="font-medium">{selectedProduct.reorderLevel}</span>
-            </div>
-          )}
-        </div>
-      )} */}
-
-      {/* Serial section */}
-
-      {(Number(productId) > 0 || Boolean(productName)) && (
-        <div className="mt-4 border-t pt-4">
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-sm font-semibold">Serial numbers</h3>
-
-                <span
-                  className={`rounded-full border px-2 py-0.5 text-[11px] font-semibold ${serialsComplete
-                    ? "border-emerald-200 bg-emerald-50 text-emerald-700"
-                    : "border-amber-200 bg-amber-50 text-amber-700"
-                    }`}
-                >
-                  {enteredSerialCount}/{expectedSerialCount}
-                </span>
-              </div>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                Click the quantity above to set the count and scan one serial per unit.
-              </p>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-lg border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-medium"
-                onClick={() => setIsExcelModalOpen(true)}
-              >
-                <FileSpreadsheet className="mr-2 size-4 text-emerald-600 dark:text-emerald-400" />
-                Import Excel
-              </Button>
-
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className="rounded-lg"
-                onClick={() => {
-                  setSerialDialogError("");
-                  setIsSerialDialogOpen(true);
-                }}
-              >
-                <ScanLine className="mr-2 size-4" />
-                Scan serials
-              </Button>
-            </div>
+      {/* Serial numbers preview ribbon */}
+      {hasSerial && enteredSerialCount > 0 && (
+        <div className="mt-1.5 flex items-center gap-1.5 pl-0.5 text-xs">
+          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Serials:</span>
+          <div className="flex flex-wrap gap-1 items-center max-h-12 overflow-hidden">
+            {normalizedSerialNumbers.filter((s: string) => s.trim()).slice(0, 6).map((sn: string, i: number) => (
+              <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                {sn}
+              </span>
+            ))}
+            {enteredSerialCount > 6 && (
+              <span className="text-[10px] text-muted-foreground font-mono font-semibold">
+                +{enteredSerialCount - 6} more
+              </span>
+            )}
           </div>
-
-          {enteredSerialCount > 0 && (
-            <p className="mt-3 truncate rounded-lg bg-muted/40 px-3 py-2 font-mono text-xs text-muted-foreground">
-              {normalizedSerialNumbers.filter((serial: string) => serial.trim()).join("  ·  ")}
-            </p>
-          )}
+          <button
+            type="button"
+            onClick={() => setIsSerialDialogOpen(true)}
+            className="ml-auto text-[10px] text-primary hover:underline font-semibold cursor-pointer"
+          >
+            Edit Serials
+          </button>
         </div>
       )}
 
-      {/* Serial dialog */}
+      {/* Serial required badge */}
+      {hasSerial && Number(productId) > 0 && enteredSerialCount === 0 && (
+        <div className="mt-1 flex items-center gap-1.5 pl-0.5 text-xs">
+          <button
+            type="button"
+            onClick={() => {
+              setSerialDialogError("");
+              setIsSerialDialogOpen(true);
+            }}
+            className="inline-flex items-center gap-1 rounded-[2px] bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer"
+          >
+            <Package className="size-3 text-amber-500" />
+            {t("purchase.serial_required", "Serial number is required")}
+          </button>
+        </div>
+      )}
 
+      {/* Serial Dialog */}
       <Dialog open={isSerialDialogOpen} onOpenChange={setIsSerialDialogOpen}>
-        <DialogContent className="sm:max-w-xl">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-xl p-4">
+          <DialogHeader className="space-y-1">
             <div className="flex items-center justify-between">
-              <DialogTitle>Quantity & serial numbers</DialogTitle>
+              <DialogTitle className="font-heading text-sm font-bold text-[#081d33] dark:text-slate-100">
+                {t("purchase.qty_serials")}
+              </DialogTitle>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-8 gap-1.5 border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/30 font-medium"
+                className="h-7 gap-1 border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 text-xs font-semibold rounded-[2px]"
                 onClick={() => {
                   setIsSerialDialogOpen(false);
                   setIsExcelModalOpen(true);
                 }}
               >
-                <FileSpreadsheet className="size-3.5 text-emerald-600 dark:text-emerald-400" />
-                Import Excel
+                <FileSpreadsheet className="size-3 text-emerald-600 dark:text-emerald-400" />
+                {t("purchase.import_excel")}
               </Button>
             </div>
-            <DialogDescription>
-              {productName || selectedProduct?.name || "Selected product"} · Set the quantity, then scan or enter one serial number for each unit.
+            <DialogDescription className="text-xs text-muted-foreground">
+              {productName || selectedProduct?.name || "Selected product"} · Set quantity and scan or enter one serial per unit.
             </DialogDescription>
           </DialogHeader>
 
           <form.Field name={`items[${index}].quantity`}>
             {(field: any) => (
-              <div className="flex items-center justify-between gap-4 rounded-xl border bg-muted/20 p-3">
+              <div className="flex items-center justify-between gap-3 rounded-[3px] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-muted/20 p-2.5">
                 <div>
-                  <label htmlFor={`purchase-quantity-${index}`} className="text-sm font-semibold">Quantity</label>
-                  <p className="text-xs text-muted-foreground">One serial number is required per unit.</p>
+                  <label htmlFor={`purchase-quantity-${index}`} className="text-xs font-bold text-slate-800 dark:text-slate-200 font-heading">
+                    {t("purchase.intake_quantity")}
+                  </label>
+                  <p className="text-[11px] text-muted-foreground">{t("purchase.serial_per_unit", "One serial number is required per unit.")}</p>
                 </div>
                 <Input
                   id={`purchase-quantity-${index}`}
@@ -1563,15 +1951,15 @@ function PurchaseItemRow({
                     setSerialDialogError("");
                     field.handleChange(next);
                   }}
-                  className="h-10 w-24 rounded-lg bg-background text-center font-semibold"
+                  className="h-[29px] w-20 rounded-[2px] bg-white dark:bg-background text-center font-mono text-xs font-bold border-[#cdd5df]"
                 />
               </div>
             )}
           </form.Field>
 
-          <div className="rounded-xl bg-muted/30 p-3">
+          <div className="rounded-[3px] bg-slate-50 dark:bg-muted/20 border border-slate-200 dark:border-slate-800 p-2.5">
             <div className="flex items-center gap-2">
-              <ScanLine className="size-5 text-primary" />
+              <ScanLine className="size-4 text-primary shrink-0" />
 
               <Input
                 autoFocus
@@ -1583,31 +1971,31 @@ function PurchaseItemRow({
                     addSerialNumber();
                   }
                 }}
-                placeholder="Scan barcode / IMEI..."
-                className="h-11 rounded-lg bg-background font-mono"
+                placeholder={t("purchase.scan_placeholder")}
+                className="h-[29px] rounded-[2px] bg-white dark:bg-background font-mono text-xs border-[#cdd5df]"
               />
-              <Button type="button" onClick={addSerialNumber} className="h-11 shrink-0 rounded-lg">
-                Add
+              <Button type="button" onClick={addSerialNumber} className="h-[29px] shrink-0 rounded-[2px] px-3 text-xs font-bold">
+                {t("common.add")}
               </Button>
             </div>
 
             {serialDialogError && (
-              <p className="mt-2 text-xs text-destructive">{serialDialogError}</p>
+              <p className="mt-1.5 text-xs text-destructive font-medium">{serialDialogError}</p>
             )}
           </div>
 
           <div>
-            <div className="mb-2 flex items-center justify-between">
-              <span className="text-sm font-medium">Serial numbers</span>
-              <span className="text-xs text-muted-foreground">
+            <div className="mb-1.5 flex items-center justify-between">
+              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-heading">{t("purchase.serials_registry")}</span>
+              <span className={`text-[11px] font-mono font-bold ${serialsComplete ? "text-emerald-600" : "text-amber-600"}`}>
                 {enteredSerialCount}/{expectedSerialCount}
               </span>
             </div>
 
-            <div className="max-h-60 space-y-2 overflow-y-auto">
+            <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
               {normalizedSerialNumbers.map((serial: string, serialIndex: number) => (
                 <div key={serialIndex} className="flex items-center gap-2">
-                  <div className="flex size-8 shrink-0 items-center justify-center rounded-lg bg-muted text-[10px] font-bold">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-[2px] bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400">
                     {serialIndex + 1}
                   </div>
 
@@ -1621,7 +2009,7 @@ function PurchaseItemRow({
                     }
                     aria-label={`Serial number ${serialIndex + 1}`}
                     placeholder={`Serial #${serialIndex + 1}`}
-                    className="rounded-lg font-mono text-xs"
+                    className="h-[27px] rounded-[2px] font-mono text-[11px] border-[#cdd5df]"
                   />
 
                   {serial && (
@@ -1629,7 +2017,7 @@ function PurchaseItemRow({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="rounded-full"
+                      className="size-6 text-slate-400 hover:text-destructive"
                       onClick={() =>
                         form.setFieldValue(
                           `items[${index}].serialNumbers[${serialIndex}]`,
@@ -1637,31 +2025,36 @@ function PurchaseItemRow({
                         )
                       }
                     >
-                      <Trash2 className="size-4 text-destructive" />
+                      <Trash2 className="size-3.5" />
                     </Button>
                   )}
                 </div>
               ))}
             </div>
             {hasDuplicateSerials && (
-              <p className="mt-2 text-xs text-destructive">Serial numbers must be unique for this product.</p>
+              <p className="mt-1.5 text-xs text-destructive font-medium">Serial numbers must be unique for this product.</p>
             )}
           </div>
 
-          <DialogFooter>
+          <DialogFooter className="gap-1.5 pt-2">
             <Button
               type="button"
               variant="outline"
+              className="h-8 rounded-[2px] text-xs font-semibold border-[#cdd5df]"
               onClick={() => {
                 setScanValue("");
                 setSerialDialogError("");
               }}
             >
-              Clear scan input
+              {t("purchase.clear_scan")}
             </Button>
 
-            <Button type="button" onClick={() => setIsSerialDialogOpen(false)}>
-              Done
+            <Button
+              type="button"
+              className="h-8 rounded-[2px] text-xs font-bold bg-primary"
+              onClick={() => setIsSerialDialogOpen(false)}
+            >
+              {t("purchase.done")}
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -1676,4 +2069,4 @@ function PurchaseItemRow({
       />
     </div>
   );
-}
+};

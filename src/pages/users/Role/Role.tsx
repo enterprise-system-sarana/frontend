@@ -24,9 +24,11 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { KeyRound, ShieldCheck, UsersRound } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 
 const RolePage = () => {
+  const { t } = useLanguage();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.ROLES.CREATE);
   const canRead = Can(PERMISSION.ROLES.READ);
@@ -51,16 +53,16 @@ const RolePage = () => {
   const { mutate: deleteRoleMutate } = useRole.DeleteRole();
 
   // Filter Groups for Filter +
-  const filterGroups: FilterGroup[] = [
+  const filterGroups: FilterGroup[] = useMemo(() => [
     {
       key: "status",
-      label: "Status",
+      label: t("common.status"),
       options: [
-        { label: "Active", value: Status.ACTIVE },
-        { label: "Inactive", value: Status.INACTIVE },
+        { label: t("common.active"), value: Status.ACTIVE },
+        { label: t("common.inactive"), value: Status.INACTIVE },
       ],
     },
-  ];
+  ], [t]);
 
   const handleColumnToggle = (columnId: string) => {
     setColumnVisibility((prev) => ({
@@ -135,13 +137,18 @@ const RolePage = () => {
     navigate(`${ROUTERS.ROLE_PERMISSIONS}?roleId=${r.id}`);
   };
 
-  const columns = RoleColumns({
-    onEdit: handleEdit,
-    onDelete: handleDelete,
-    onViewPermissions: handleViewPermissions,
-    canEdit: canUpdate,
-    canDelete,
-  });
+  const columns = useMemo(
+    () =>
+      RoleColumns({
+        onEdit: handleEdit,
+        onDelete: handleDelete,
+        onViewPermissions: handleViewPermissions,
+        canEdit: canUpdate,
+        canDelete,
+        t,
+      }),
+    [handleEdit, handleDelete, handleViewPermissions, canUpdate, canDelete, t]
+  );
 
   const pageRoles: RoleResponse[] = data?.payload?.data || [];
   const totalRoles = data?.payload?.pagination?.totalElements ?? pageRoles.length;
@@ -172,10 +179,10 @@ const RolePage = () => {
       <div className="role-page space-y-5">
         {/* Top Header */}
         <PageHeader
-          title="Roles"
-          description="Create roles and manage what each role can access."
+          title={t("role.title", "Roles")}
+          description={t("role.set_details", "Create roles and manage what each role can access.")}
           titleIcon={<span className="role-page-title-icon"><ShieldCheck className="h-5 w-5" /></span>}
-          featureName="Role"
+          featureName={t("nav.role", "Role")}
           onCreate={canCreate ? () => {
             setRole(null);
             setOpen(true);
@@ -184,20 +191,20 @@ const RolePage = () => {
         />
 
         <div className="role-overview-grid">
-          <div className="role-overview-card"><span className="role-overview-icon blue"><UsersRound size={20} /></span><span><small>Total roles</small><strong>{totalRoles}</strong></span></div>
-          <div className="role-overview-card"><span className="role-overview-icon green"><ShieldCheck size={20} /></span><span><small>Active on this page</small><strong>{activeRoles}</strong></span></div>
-          <div className="role-overview-card"><span className="role-overview-icon orange"><KeyRound size={20} /></span><span><small>Assigned permissions on this page</small><strong>{permissionCount}</strong></span></div>
+          <div className="role-overview-card"><span className="role-overview-icon blue"><UsersRound size={20} /></span><span><small>{t("common.all", "Total")} {t("role.title", "roles")}</small><strong>{totalRoles}</strong></span></div>
+          <div className="role-overview-card"><span className="role-overview-icon green"><ShieldCheck size={20} /></span><span><small>{t("common.active", "Active")}</small><strong>{activeRoles}</strong></span></div>
+          <div className="role-overview-card"><span className="role-overview-icon orange"><KeyRound size={20} /></span><span><small>{t("role.permissions", "Assigned permissions")}</small><strong>{permissionCount}</strong></span></div>
         </div>
 
         {/* Main Card with Toolbar & Table */}
         <div className="role-table-card rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
-          <div className="role-table-heading"><div><h2>Role directory</h2><p>Search roles, review access, and manage permissions.</p></div><span>{totalRoles} total</span></div>
+          <div className="role-table-heading"><div><h2>{t("role.title", "Role directory")}</h2><p>{t("role.choose_role", "Search roles, review access, and manage permissions.")}</p></div><span>{totalRoles} {t("common.total", "total")}</span></div>
           {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
           <div className="p-4 border-b border-border/60">
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search roles..."
+              searchPlaceholder={t("role.search_placeholder", "Search roles...")}
               filterGroups={filterGroups}
               filterValues={filterValues}
               onFilterChange={handleFilterChange}
@@ -239,7 +246,7 @@ const RolePage = () => {
       <ConfirmDelete
         isOpen={openConfirmDelete}
         setIsOpen={setOpenConfirmDelete}
-        entityName={"Role"}
+        entityName={t("nav.role", "Role")}
         confirmDelete={confirmDelete}
       />
     </>

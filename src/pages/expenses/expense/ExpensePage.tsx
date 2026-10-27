@@ -15,8 +15,10 @@ import { useExpenseType } from "@/hooks/expense/useExpenseType";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const ExpensePage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.EXPENSE.CREATE);
     const canRead = Can(PERMISSION.EXPENSE.READ);
@@ -48,10 +50,10 @@ const ExpensePage = () => {
         const groups: FilterGroup[] = [
             {
                 key: "status",
-                label: "Status",
+                label: t("common.status"),
                 options: [
-                    { label: "Active", value: Status.ACTIVE },
-                    { label: "Inactive", value: Status.INACTIVE },
+                    { label: t("common.active"), value: Status.ACTIVE },
+                    { label: t("common.inactive"), value: Status.INACTIVE },
                 ],
             },
         ];
@@ -60,7 +62,7 @@ const ExpensePage = () => {
         if (expenseTypes.length > 0) {
             groups.push({
                 key: "expenseTypeId",
-                label: "Expense Type",
+                label: t("nav.expense_type"),
                 options: expenseTypes.map((et: any) => ({
                     label: et.name,
                     value: String(et.id),
@@ -69,7 +71,7 @@ const ExpensePage = () => {
         }
 
         return groups;
-    }, [expenseTypeData]);
+    }, [expenseTypeData, t]);
 
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
@@ -151,8 +153,9 @@ const ExpensePage = () => {
             ExpenseColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                t,
             }),
-        []
+        [t]
     );
 
     const handleExportCsv = () => {
@@ -174,8 +177,8 @@ const ExpensePage = () => {
             <div className="space-y-4">
                 {/* Top Header */}
                 <PageHeader
-                    title="Expenses"
-                    featureName="Expense"
+                    title={t("nav.expenses")}
+                    featureName={t("nav.expense")}
                     onCreate={canCreate ? () => {
                         setExpense(null);
                         setOpen(true);
@@ -190,7 +193,7 @@ const ExpensePage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search expenses by reference, type, store, or note..."
+                            searchPlaceholder={t("common.search")}
                             filterGroups={filterGroups}
                             filterValues={filterValues}
                             onFilterChange={handleFilterChange}
@@ -230,7 +233,7 @@ const ExpensePage = () => {
             <ConfirmDelete
                 isOpen={openConfirmDelete}
                 setIsOpen={setOpenConfirmDelete}
-                entityName={"Expense"}
+                entityName={t("nav.expense")}
                 confirmDelete={confirmDelete}
             />
         </>

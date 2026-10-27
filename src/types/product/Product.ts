@@ -35,6 +35,7 @@ export interface ProductResponse extends BaseResponse {
   qty?: number;
   availableSerials?: number;
   serials?: ProductSerialItem[];
+  hasSerial?: boolean;
   serialized?: boolean;
   isSerialized?: boolean;
   serializable?: boolean;
@@ -51,6 +52,7 @@ export const ProductSchema = z.object({
   salePrice: validateNumber("Sale Price"),
   status: validateString("Status"),
   reorderLevel: validateNumber("Reorder Level"),
+  hasSerial: z.boolean().default(true),
   modelId: validateNumber("Model"),
   variantValueIds: z.array(z.number()),
 });

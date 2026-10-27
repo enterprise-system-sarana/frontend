@@ -7,7 +7,9 @@ export interface PurchaseItemResponse extends BaseResponse {
   productId: number;
   productName: string;
   quantity: number;
-  costPrice: number;
+  costPrice?: number;
+  cost?: number;
+  price?: number;
   subtotal: number;
   serialNumbers?: ProductSerialResponse[];
 }
@@ -30,25 +32,6 @@ export type PurchaseItem = {
   productName: string;
 };
 
-//  Long id,
-//         String referenceNo,
-//         Long supplierId,
-//         String supplierName ,
-//         Long storeId,
-//         String storeName,
-//         Long bankId ,
-//         String bankName,
-//         LocalDate purchaseDate,
-//         BigDecimal total,
-//         BigDecimal discount,
-//         BigDecimal grandTotal,
-//         BigDecimal paidAmount,
-//         BigDecimal dueAmount,
-//         String paymentStatus,
-
-//         String status,
-//         String note,
-//         List<PurchaseItemResponse> items
 export interface PurchaseResponse extends BaseResponse {
   referenceNo: string;
   purchaseDate: string;

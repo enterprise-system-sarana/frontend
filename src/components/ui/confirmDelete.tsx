@@ -9,6 +9,7 @@ import {
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface Props {
     isOpen: boolean;
@@ -23,6 +24,8 @@ const ConfirmDelete = ({
     entityName,
     confirmDelete,
 }: Props) => {
+    const { t } = useLanguage();
+
     return (
         <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
             <AlertDialogContent>
@@ -33,22 +36,24 @@ const ConfirmDelete = ({
                         </div>
                         <div>
                             <AlertDialogTitle className="text-base font-bold font-heading">
-                                Delete {entityName || "Item"}
+                                {t("common.delete")} {entityName || t("common.item")}
                             </AlertDialogTitle>
                             <AlertDialogDescription className="text-xs text-muted-foreground">
-                                Are you sure you want to delete this {entityName ? entityName.toLowerCase() : "item"}? This action cannot be undone.
+                                {t("common.confirm_delete_desc")}
                             </AlertDialogDescription>
                         </div>
                     </div>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-xl font-medium">Cancel</AlertDialogCancel>
+                    <AlertDialogCancel className="rounded-xl font-medium">
+                        {t("common.cancel")}
+                    </AlertDialogCancel>
                     <AlertDialogAction
                         variant="destructive"
                         className="rounded-xl font-medium shadow-sm shadow-destructive/20"
                         onClick={() => confirmDelete()}
                     >
-                        Delete
+                        {t("common.delete")}
                     </AlertDialogAction>
                 </AlertDialogFooter>
             </AlertDialogContent>

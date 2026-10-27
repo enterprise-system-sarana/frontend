@@ -33,6 +33,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Columns3 } from "lucide-react";
 import { getColumnHeaderLabel } from "@/utils/export";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export {
   exportTableToCsv,
@@ -58,6 +59,12 @@ interface DataTableProps<TData, TValue> {
     onPageChange: (page: number) => void;
     onPageSizeChange?: (size: number) => void;
   };
+  currentPage?: number;
+  pageSize?: number;
+  totalElements?: number;
+  totalPages?: number;
+  onPageChange?: (page: number) => void;
+  onPageSizeChange?: (size: number) => void;
 }
 
 export function DataTable<TData, TValue>({
@@ -67,72 +74,108 @@ export function DataTable<TData, TValue>({
   onColumnVisibilityChange,
   showColumnVisibility = false,
   pagination,
+  currentPage: propCurrentPage,
+  pageSize: propPageSize,
+  totalElements: propTotalElements,
+  totalPages: propTotalPages,
+  onPageChange: propOnPageChange,
+  onPageSizeChange: propOnPageSizeChange,
 }: DataTableProps<TData, TValue>) {
+  const { t } = useLanguage();
+
+  // Support both nested pagination object and flat props
+  const resolvedPagination = pagination ?? (
+    propCurrentPage !== undefined || propPageSize !== undefined || propOnPageChange !== undefined
+      ? {
+          currentPage: propCurrentPage ?? 1,
+          pageSize: propPageSize ?? 10,
+          totalElements: propTotalElements ?? data.length,
+          totalPages: propTotalPages ?? Math.max(1, Math.ceil((propTotalElements ?? data.length) / (propPageSize ?? 10))),
+          onPageChange: propOnPageChange ?? (() => {}),
+          onPageSizeChange: propOnPageSizeChange,
+        }
+      : undefined
+  );
+
+  const isManualPagination = Boolean(
+    resolvedPagination &&
+      (resolvedPagination.totalElements > data.length ||
+        (resolvedPagination.currentPage ?? 1) > 1)
+  );
+
   const table = useReactTable({
     data,
     columns,
+    manualPagination: isManualPagination,
+    pageCount: isManualPagination ? resolvedPagination?.totalPages : undefined,
     state: {
       columnVisibility,
-      pagination: pagination
+      ...(resolvedPagination
         ? {
-            pageIndex: Math.max(0, (pagination.currentPage ?? 1) - 1),
-            pageSize: pagination.pageSize ?? 10,
+            pagination: {
+              pageIndex: isManualPagination
+                ? 0
+                : Math.max(0, (resolvedPagination.currentPage ?? 1) - 1),
+              pageSize: resolvedPagination.pageSize ?? 10,
+            },
           }
-        : undefined,
+        : {}),
     },
     onColumnVisibilityChange,
-    onPaginationChange: pagination
+    onPaginationChange: resolvedPagination
       ? (updater) => {
           const next =
             typeof updater === "function"
               ? updater({
-                  pageIndex: Math.max(0, (pagination.currentPage ?? 1) - 1),
-                  pageSize: pagination.pageSize ?? 10,
+                  pageIndex: Math.max(0, (resolvedPagination.currentPage ?? 1) - 1),
+                  pageSize: resolvedPagination.pageSize ?? 10,
                 })
               : updater;
 
-          if (pagination.onPageChange) {
-            pagination.onPageChange(next.pageIndex + 1);
+          if (resolvedPagination.onPageChange) {
+            resolvedPagination.onPageChange(next.pageIndex + 1);
           }
           if (
-            pagination.onPageSizeChange &&
-            next.pageSize !== pagination.pageSize
+            resolvedPagination.onPageSizeChange &&
+            next.pageSize !== resolvedPagination.pageSize
           ) {
-            pagination.onPageSizeChange(next.pageSize);
+            resolvedPagination.onPageSizeChange(next.pageSize);
           }
         }
       : undefined,
     getCoreRowModel: getCoreRowModel(),
-    getPaginationRowModel: pagination ? getPaginationRowModel() : undefined,
+    getPaginationRowModel: getPaginationRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
 
-  const currentPage = pagination
-    ? pagination.currentPage
-    : table.getState().pagination.pageIndex + 1;
+  const currentPage = resolvedPagination
+    ? resolvedPagination.currentPage
+    : (table.getState().pagination?.pageIndex ?? 0) + 1;
 
-  const pageSize = pagination
-    ? pagination.pageSize
-    : table.getState().pagination.pageSize;
+  const pageSize = resolvedPagination
+    ? resolvedPagination.pageSize
+    : (table.getState().pagination?.pageSize ?? 10);
 
-  const totalElements = pagination
-    ? pagination.totalElements
+  const totalElements = resolvedPagination
+    ? resolvedPagination.totalElements
     : table.getFilteredRowModel().rows.length;
 
-  const totalPages = pagination ? pagination.totalPages : table.getPageCount();
+  const totalPages = resolvedPagination
+    ? resolvedPagination.totalPages
+    : (table.getPageCount() || 1);
 
   const handlePageChange = (page: number) => {
-    if (pagination) {
-      pagination.onPageChange(page);
+    if (resolvedPagination) {
+      resolvedPagination.onPageChange(page);
     } else {
       table.setPageIndex(page - 1);
     }
   };
 
   const handlePageSizeChange = (size: number) => {
-    if (pagination?.onPageSizeChange) {
-      pagination.onPageSizeChange(size);
+    if (resolvedPagination?.onPageSizeChange) {
+      resolvedPagination.onPageSizeChange(size);
     } else {
       table.setPageSize(size);
     }
@@ -147,7 +190,7 @@ export function DataTable<TData, TValue>({
             <DropdownMenuTrigger asChild>
               <Button variant="outline" size="sm" className="gap-2 text-xs">
                 <Columns3 className="h-4 w-4" />
-                Columns
+                {t("common.columns")}
               </Button>
             </DropdownMenuTrigger>
 
@@ -244,7 +287,7 @@ export function DataTable<TData, TValue>({
                     </svg>
 
                     <span className="text-sm font-medium">
-                      No results found
+                      {t("common.no_results")}
                     </span>
                   </div>
                 </TableCell>

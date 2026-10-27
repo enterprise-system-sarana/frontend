@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { Status } from "../enum/status";
-import type { BaseResponse } from "../pagination";
+import type { BaseResponse, PageFilter } from "../pagination";
 
 export interface CurrencyResponse extends BaseResponse {
     code: string;
@@ -19,5 +19,12 @@ export const CurrencySchema = z.object({
     symbol: z.string().optional().nullable(),
     status: z.enum([Status.ACTIVE, Status.INACTIVE]).default(Status.ACTIVE),
 });
+
+
+export interface CurrencyFilter extends PageFilter {
+    code?: string;
+    name?: string;
+}
+
 
 export type CurrencyRequest = z.infer<typeof CurrencySchema>;

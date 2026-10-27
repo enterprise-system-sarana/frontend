@@ -21,6 +21,7 @@ import {
   type ExpenseTypeResponse,
 } from "@/types/expense/expense.type";
 import { useExpenseType } from "@/hooks/expense/useExpenseType";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type ExpenseTypeFormProps = {
   open: boolean;
@@ -33,6 +34,7 @@ const FormExpenseType = ({
   setOpen,
   expenseType,
 }: ExpenseTypeFormProps) => {
+  const { t } = useLanguage();
   const { mutate: createExpenseTypeMutate, isPending: isCreating } =
     useExpenseType.useCreateExpenseType();
   const { mutate: updateExpenseTypeMutate, isPending: isUpdating } =
@@ -71,12 +73,18 @@ const FormExpenseType = ({
     form.reset();
   }, [expenseType, open, form]);
 
+  const statusOptions = [
+    { value: Status.ACTIVE, label: t("common.active") },
+    { value: Status.INACTIVE, label: t("common.inactive") },
+    { value: Status.DELETE, label: t("common.deleted") },
+  ];
+
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="md:max-w-[450px]">
         <DialogHeader>
           <DialogTitle>
-            {expenseType ? "Edit" : "Create"} expense type
+            {expenseType ? t("common.edit") : t("common.create")} {t("nav.expense_type")}
           </DialogTitle>
         </DialogHeader>
         <form
@@ -88,10 +96,9 @@ const FormExpenseType = ({
         >
           <FieldGroup>
             <FormTextField
-              //   className="col-span-2"
               form={form}
               name="code"
-              label="Code"
+              label={t("common.code")}
               required={true}
               placeholder="Code"
               type="text"
@@ -99,7 +106,7 @@ const FormExpenseType = ({
             <FormTextField
               form={form}
               name="name"
-              label="Name"
+              label={t("common.name")}
               required={true}
               placeholder="Name"
               type="text"
@@ -108,24 +115,24 @@ const FormExpenseType = ({
             <FormTextareaField
               form={form}
               name="description"
-              label="Description"
-              placeholder=" description..."
+              label={t("common.description")}
+              placeholder="description..."
             />
             <FormRadioGroupField
               form={form}
               name="status"
-              label="Status"
+              label={t("common.status")}
               required={true}
-              options={StatusOptions}
+              options={statusOptions}
             />
           </FieldGroup>
         </form>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline">{t("common.cancel")}</Button>
           </DialogClose>
           <Button type="submit" form="expenseType-form" disabled={isPending}>
-            {isPending ? "Saving..." : expenseType ? "Update" : "Create"}
+            {isPending ? t("common.saving") : expenseType ? t("common.save") : t("common.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -15,8 +15,10 @@ import { PageHeader } from "@/components/ui/page-header";
 import { Status } from "@/types/enum/status";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { ROUTERS } from "@/constants/Route";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const StorePage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.STORE.CREATE);
@@ -36,16 +38,19 @@ export const StorePage = () => {
   const { mutate: deleteStoreMutate } = useStore.useDeleteStore();
 
   // Filter Groups for Filter +
-  const filterGroups: FilterGroup[] = [
-    {
-      key: "status",
-      label: "Status",
-      options: [
-        { label: "Active", value: Status.ACTIVE },
-        { label: "Inactive", value: Status.INACTIVE },
-      ],
-    },
-  ];
+  const filterGroups: FilterGroup[] = useMemo(
+    () => [
+      {
+        key: "status",
+        label: t("common.status"),
+        options: [
+          { label: t("common.active"), value: Status.ACTIVE },
+          { label: t("common.inactive"), value: Status.INACTIVE },
+        ],
+      },
+    ],
+    [t]
+  );
 
   const handleColumnToggle = (columnId: string) => {
     setColumnVisibility((prev) => ({
@@ -115,8 +120,9 @@ export const StorePage = () => {
         onDelete: handleDelete,
         canEdit: canUpdate,
         canDelete: canDelete,
+        t,
       }),
-    [canUpdate, canDelete]
+    [canUpdate, canDelete, t]
   );
 
   const handleExportCsv = () => {
@@ -140,8 +146,8 @@ export const StorePage = () => {
       <div className="space-y-4">
         {/* Top Header */}
         <PageHeader
-          title="Stores"
-          featureName="Store"
+          title={t("inventory.stores")}
+          featureName={t("inventory.store")}
           onCreate={
             canCreate
               ? () => {
@@ -159,7 +165,7 @@ export const StorePage = () => {
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search stores..."
+              searchPlaceholder={t("common.search")}
               filterGroups={filterGroups}
               filterValues={filterValues}
               onFilterChange={handleFilterChange}
@@ -197,7 +203,7 @@ export const StorePage = () => {
       <ConfirmDelete
         isOpen={openConfirmDelete}
         setIsOpen={setOpenConfirmDelete}
-        entityName={"Store"}
+        entityName={t("inventory.store")}
         confirmDelete={confirmDelete}
       />
     </>

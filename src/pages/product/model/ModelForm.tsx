@@ -20,14 +20,17 @@ import type { BrandResponse } from "@/types/product/Brand";
 import type { CategoryResponse } from "@/types/product/Category";
 import FormBrand from "@/pages/product/brand/BrandForm";
 import FormCategory from "@/pages/product/category/CategoryForm";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type FormModelProps = {
     open: boolean;
     setOpen: (open: boolean) => void;
     model: ModelResponse | null;
+    onCreated?: (model: ModelResponse) => void;
 };
 
-const ModelForm = ({ open, setOpen, model }: FormModelProps) => {
+const ModelForm = ({ open, setOpen, model, onCreated }: FormModelProps) => {
+    const { t } = useLanguage();
     const { mutate: createModel, isPending: isCreating } = useModel.CreateModel();
     const { mutate: updateModel, isPending: isUpdating } = useModel.UpdateModel();
 
@@ -62,9 +65,13 @@ const ModelForm = ({ open, setOpen, model }: FormModelProps) => {
         },
         onSubmit: async ({ value }) => {
             const payload = value as ModelRequest;
-            const handleSuccess = () => {
+            const handleSuccess = (res?: any) => {
                 setOpen(false);
                 form.reset();
+                if (!model && onCreated) {
+                    const newModel = res?.payload?.data || res?.payload || res?.data || res;
+                    if (newModel) onCreated(newModel);
+                }
             };
             if (model) {
                 updateModel(
@@ -86,7 +93,9 @@ const ModelForm = ({ open, setOpen, model }: FormModelProps) => {
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="md:max-w-[450px]">
                     <DialogHeader>
-                        <DialogTitle>{model ? "Edit" : "Create"} Model</DialogTitle>
+                        <DialogTitle>
+                            {model ? t("common.edit") : t("common.create")} {t("product.model")}
+                        </DialogTitle>
                     </DialogHeader>
                     <form
                         id="model-form"
@@ -99,16 +108,16 @@ const ModelForm = ({ open, setOpen, model }: FormModelProps) => {
                             <FormTextField
                                 form={form}
                                 name="name"
-                                label="Name"
+                                label={t("common.name")}
                                 required={true}
-                                placeholder="Name"
+                                placeholder={t("common.name")}
                                 type="text"
                             />
 
                             <FormSelectField
                                 form={form}
                                 name="brandId"
-                                label="Brand"
+                                label={t("common.brand")}
                                 required={true}
                                 options={brandOptions}
                                 onAdd={() => setBrandFormOpen(true)}
@@ -116,32 +125,23 @@ const ModelForm = ({ open, setOpen, model }: FormModelProps) => {
                             <FormSelectField
                                 form={form}
                                 name="categoryId"
-                                label="Category"
+                                label={t("common.category")}
                                 required={true}
                                 options={categoryOptions}
                                 onAdd={() => setCategoryFormOpen(true)}
-                            />
-
-
-                            <FormRadioGroupField
-                                form={form}
-                                name="status"
-                                label="Status"
-                                required={true}
-                                options={StatusOptions}
                             />
                         </FieldGroup>
                     </form>
                     <DialogFooter>
                         <DialogClose asChild>
-                            <Button variant="outline">Cancel</Button>
+                            <Button variant="outline">{t("common.cancel")}</Button>
                         </DialogClose>
                         <Button
                             type="submit"
                             form="model-form"
                             disabled={isPending}
                         >
-                            {isPending ? "Saving..." : (model ? "Update" : "Create")}
+                            {isPending ? t("common.saving") : (model ? t("common.edit") : t("common.create"))}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

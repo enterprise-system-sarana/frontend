@@ -4,55 +4,58 @@ import { TableActions } from "@/components/ui/table-actions";
 import { SortableHeader } from "@/utils/sort-table-header";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/utils/formatDate";
+import type { TranslationKey } from "@/i18n/locales/en";
 
 interface BankColumnsProps {
     onEdit: (bank: BankResponse) => void;
     onDelete: (id: number) => void;
+    t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const BankColumns = ({
     onEdit,
     onDelete,
+    t,
 }: BankColumnsProps): ColumnDef<BankResponse>[] => [
 
         {
             accessorKey: "name",
-            header: ({ column }) => <SortableHeader column={column} title="Bank Name" />,
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank Name"} />,
             cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
         },
         {
             accessorKey: "accountName",
-            header: "Account Name",
+            header: t ? t("finance.account_name") : "Account Name",
             cell: ({ row }) => <span className="font-medium text-[#566a7f]">{row.original.accountName}</span>,
         },
         {
             accessorKey: "accountNumber",
-            header: "Account Number",
+            header: t ? t("finance.account_number") : "Account Number",
             cell: ({ row }) => <span className="font-mono text-xs text-[#697a8d]">{row.original.accountNumber || "-"}</span>,
         },
         {
             accessorKey: "openingBalance",
-            header: "Opening Balance",
+            header: t ? t("finance.opening_balance") : "Opening Balance",
             cell: ({ row }) => <span className="text-muted-foreground text-xs">${row.original.openingBalance || "0.00"}</span>,
         },
         {
             accessorKey: "currentBalance",
-            header: "Current Balance",
+            header: t ? t("finance.current_balance") : "Current Balance",
             cell: ({ row }) => <span className="font-semibold text-emerald-600 dark:text-emerald-400">${row.original.currentBalance || "0.00"}</span>,
         },
         {
             accessorKey: "createdAt",
-            header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />,
             cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
         },
         {
             accessorKey: "status",
-            header: "Status",
+            header: t ? t("common.status") : "Status",
             cell: ({ row }) => <StatusBadge status={row.original.status} />,
         },
         {
             accessorKey: "Action",
-            header: "Action",
+            header: t ? t("common.action") : "Action",
             enableHiding: false,
             cell: ({ row }) => {
                 return (

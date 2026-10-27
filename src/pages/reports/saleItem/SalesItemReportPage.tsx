@@ -15,6 +15,7 @@ import { useProduct } from "@/hooks/product/useProduct";
 import { SalePaymentStatus, SaleStatus } from "@/types/sales/Sale";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
+import { useLanguage } from "@/i18n/LanguageContext";
 import {
   SalesItemReportColumns,
   type SaleItemRow,
@@ -30,6 +31,7 @@ const formatCurrency = (value: number | string | undefined) => {
 };
 
 const SalesItemReportPage = () => {
+  const { t } = useLanguage();
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.REPORT.READ);
 
@@ -184,7 +186,7 @@ const SalesItemReportPage = () => {
     () => [
       {
         key: "storeId",
-        label: "Store",
+        label: t("store.name", "Store"),
         options: stores.map((store: any) => ({
           label: store.name,
           value: String(store.id),
@@ -192,7 +194,7 @@ const SalesItemReportPage = () => {
       },
       {
         key: "productId",
-        label: "Product",
+        label: t("product.name", "Product"),
         options: products.map((product: any) => ({
           label: product.name,
           value: String(product.id),
@@ -200,7 +202,7 @@ const SalesItemReportPage = () => {
       },
       {
         key: "saleStatus",
-        label: "Sale Status",
+        label: t("sale.status", "Sale Status"),
         options: Object.values(SaleStatus).map((status) => ({
           label: status,
           value: status,
@@ -208,14 +210,14 @@ const SalesItemReportPage = () => {
       },
       {
         key: "paymentStatus",
-        label: "Payment Status",
+        label: t("sale.payment_status", "Payment Status"),
         options: Object.values(SalePaymentStatus).map((status) => ({
           label: status,
           value: status,
         })),
       },
     ],
-    [stores, products],
+    [stores, products, t],
   );
 
   const searchFilteredRows = useSearch(rows, search, [
@@ -237,7 +239,7 @@ const SalesItemReportPage = () => {
     });
   }, [searchFilteredRows, storeId, productId, saleStatus, paymentStatus]);
 
-  const columns = SalesItemReportColumns();
+  const columns = useMemo(() => SalesItemReportColumns({ t }), [t]);
 
   const handleSearchFilterChange = (key: string, value: string) => {
     setFilterValues((prev) => ({ ...prev, [key]: value }));
@@ -271,7 +273,7 @@ const SalesItemReportPage = () => {
   // KPI card definitions with icon, accent color, and formatted values
   const kpiCards = [
     {
-      label: "Total Sales",
+      label: t("report.total_sales", "Total Sales"),
       value: formatCurrency(summary.totalSalesAmount),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -283,7 +285,7 @@ const SalesItemReportPage = () => {
       border: "border-[#696cff]/20",
     },
     {
-      label: "Total Discount",
+      label: t("sale.total_discount", "Total Discount"),
       value: formatCurrency(summary.totalDiscount),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -295,7 +297,7 @@ const SalesItemReportPage = () => {
       border: "border-[#ff3e1d]/20",
     },
     {
-      label: "Paid Amount",
+      label: t("sale.paid_amount", "Paid Amount"),
       value: formatCurrency(summary.totalPaidAmount),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -307,7 +309,7 @@ const SalesItemReportPage = () => {
       border: "border-[#71dd37]/20",
     },
     {
-      label: "Transactions",
+      label: t("report.transactions", "Transactions"),
       value: Number(summary.totalTransactions).toLocaleString(),
       icon: (
         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -323,8 +325,8 @@ const SalesItemReportPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Sales Item Reports"
-      // description="Detailed breakdown of each sold item by transaction"
+        title={t("report.sales_items", "Sales Item Reports")}
+        description={t("report.sales_items_desc", "Detailed breakdown of each sold item by transaction")}
       />
 
       {/* KPI Summary Cards */}
@@ -352,7 +354,7 @@ const SalesItemReportPage = () => {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search sale items, product, barcode..."
+            searchPlaceholder={t("report.search_sale_item_placeholder", "Search sale items, product, barcode...")}
             startDate={startDate}
             endDate={endDate}
             onStartDateChange={(value) => { setPage(1); setStartDate(value); }}

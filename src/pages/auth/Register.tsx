@@ -54,12 +54,12 @@ export default function RegisterPage() {
     setSuccess(null);
 
     if (formData.password !== formData.confirmPassword) {
-      setError("Passwords do not match.");
+      setError(t("profile.passwords_not_match", "Passwords do not match."));
       return;
     }
 
     if (formData.password.length < 6) {
-      setError("Password must be at least 6 characters.");
+      setError(t("auth.change.err_min_8", "Password must be at least 6 characters."));
       return;
     }
 
@@ -67,7 +67,7 @@ export default function RegisterPage() {
 
     try {
       await AuthService.register(formData);
-      setSuccess("Account created successfully! Redirecting to sign in...");
+      setSuccess(t("auth.register.success_redirect", "Account created successfully! Redirecting to sign in..."));
       setTimeout(() => {
         navigate(ROUTERS.LOGIN);
       }, 1500);
@@ -76,7 +76,7 @@ export default function RegisterPage() {
       setError(
         err?.response?.data?.message ||
           err?.message ||
-          "Failed to register. Please check your information and try again."
+          t("auth.register.err_failed", "Failed to register. Please check your information and try again.")
       );
     } finally {
       setIsLoading(false);
@@ -122,7 +122,7 @@ export default function RegisterPage() {
                   <Input
                     name="firstName"
                     type="text"
-                    placeholder="First name"
+                    placeholder={t("auth.register.first_name")}
                     required
                     value={formData.firstName}
                     onChange={handleChange}
@@ -141,7 +141,7 @@ export default function RegisterPage() {
                   <Input
                     name="lastName"
                     type="text"
-                    placeholder="Last name"
+                    placeholder={t("auth.register.last_name")}
                     required
                     value={formData.lastName}
                     onChange={handleChange}
@@ -163,7 +163,7 @@ export default function RegisterPage() {
                   <Input
                     name="username"
                     type="text"
-                    placeholder="Username"
+                    placeholder={t("auth.register.username")}
                     required
                     value={formData.username}
                     onChange={handleChange}
@@ -182,7 +182,7 @@ export default function RegisterPage() {
                   <Input
                     name="phone"
                     type="tel"
-                    placeholder="Phone number"
+                    placeholder={t("auth.register.phone")}
                     value={formData.phone}
                     onChange={handleChange}
                     disabled={isLoading}

@@ -14,6 +14,7 @@ import { useStore } from "@/hooks/inventory/useStore";
 import { useProduct } from "@/hooks/product/useProduct";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { ProductSerialReportColumns } from "./ProductSerialReportColumn";
 
 const formatCurrency = (value: number | string | undefined) => {
@@ -26,6 +27,7 @@ const formatCurrency = (value: number | string | undefined) => {
 };
 
 const ProductSerialReportPage = () => {
+  const { t } = useLanguage();
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.REPORT.READ);
 
@@ -76,17 +78,17 @@ const ProductSerialReportPage = () => {
     () => [
       {
         key: "storeId",
-        label: "Store",
+        label: t("store.name", "Store"),
         options: stores.map((store: any) => ({ label: store.name, value: String(store.id) })),
       },
       {
         key: "productId",
-        label: "Product",
+        label: t("product.name", "Product"),
         options: products.map((product: any) => ({ label: product.name, value: String(product.id) })),
       },
       {
         key: "status",
-        label: "Status",
+        label: t("common.status", "Status"),
         options: [
           { label: "AVAILABLE", value: "AVAILABLE" },
           { label: "SOLD", value: "SOLD" },
@@ -95,7 +97,7 @@ const ProductSerialReportPage = () => {
         ],
       },
     ],
-    [stores, products],
+    [stores, products, t],
   );
 
   const searchFilteredRows = useSearch(rows, search, [
@@ -120,7 +122,7 @@ const ProductSerialReportPage = () => {
     (serialData as any)?.payload?.pagination?.totalElements ??
     rows.length;
 
-  const columns = ProductSerialReportColumns();
+  const columns = useMemo(() => ProductSerialReportColumns({ t }), [t]);
 
   const handleSearchFilterChange = (key: string, value: string) => {
     setFilterValues((prev) => ({ ...prev, [key]: value }));
@@ -168,27 +170,27 @@ const ProductSerialReportPage = () => {
   return (
     <div className="space-y-6">
       <PageHeader
-        title="Product Serial Reports"
-        description="Inventory-level product serial and quantity tracking report"
+        title={t("report.product_serials", "Product Serial Reports")}
+        description={t("report.product_serials_desc", "Inventory-level product serial and quantity tracking report")}
       />
 
       {/* Summary KPI Cards */}
       <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
         {[
           {
-            label: "Total Quantity",
+            label: t("report.total_quantity", "Total Quantity"),
             value: Number(summary.totalQty).toLocaleString(),
           },
           {
-            label: "Total Inventory Value",
+            label: t("report.total_inventory_value", "Total Inventory Value"),
             value: formatCurrency(summary.totalValue),
           },
           {
-            label: "Available Items",
+            label: t("report.available_items", "Available Items"),
             value: Number(summary.availableCount).toLocaleString(),
           },
           {
-            label: "Total Records",
+            label: t("report.total_records", "Total Records"),
             value: Number(summary.totalRecords).toLocaleString(),
           },
         ].map((card) => (
@@ -204,7 +206,7 @@ const ProductSerialReportPage = () => {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search serials, barcode, product, store..."
+            searchPlaceholder={t("report.search_serial_placeholder", "Search serials, barcode, product, store...")}
             startDate={startDate}
             endDate={endDate}
             onStartDateChange={(value) => { setPage(1); setStartDate(value); }}

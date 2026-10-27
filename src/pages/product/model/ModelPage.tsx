@@ -18,8 +18,10 @@ import ModelForm from "./ModelForm";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 const ModelPage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.MODEL.CREATE);
     const canRead = Can(PERMISSION.MODEL.READ);
@@ -59,10 +61,10 @@ const ModelPage = () => {
         const groups: FilterGroup[] = [
             {
                 key: "status",
-                label: "Status",
+                label: t("common.status"),
                 options: [
-                    { label: "Active", value: Status.ACTIVE },
-                    { label: "Inactive", value: Status.INACTIVE },
+                    { label: t("common.active"), value: Status.ACTIVE },
+                    { label: t("common.inactive"), value: Status.INACTIVE },
                 ],
             },
         ];
@@ -70,7 +72,7 @@ const ModelPage = () => {
         if (brandData?.payload?.data && brandData.payload.data.length > 0) {
             groups.push({
                 key: "brandId",
-                label: "Brand",
+                label: t("common.brand"),
                 options: brandData.payload.data.map((b: BrandResponse) => ({
                     label: b.name,
                     value: String(b.id),
@@ -81,7 +83,7 @@ const ModelPage = () => {
         if (categoryData?.payload?.data && categoryData.payload.data.length > 0) {
             groups.push({
                 key: "categoryId",
-                label: "Category",
+                label: t("common.category"),
                 options: categoryData.payload.data.map((c: CategoryResponse) => ({
                     label: c.name,
                     value: String(c.id),
@@ -90,7 +92,7 @@ const ModelPage = () => {
         }
 
         return groups;
-    }, [brandData, categoryData]);
+    }, [brandData, categoryData, t]);
 
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
@@ -175,8 +177,9 @@ const ModelPage = () => {
             ModelColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                t,
             }),
-        []
+        [t]
     );
 
     // Export handlers
@@ -199,8 +202,8 @@ const ModelPage = () => {
             <div className="space-y-4">
                 {/* Top Header */}
                 <PageHeader
-                    title="Models"
-                    featureName="Model"
+                    title={t("nav.model")}
+                    featureName={t("product.model")}
                     onCreate={canCreate ? () => {
                         setModel(null);
                         setOpen(true);
@@ -215,7 +218,7 @@ const ModelPage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search models..."
+                            searchPlaceholder={t("common.search")}
                             filterGroups={filterGroups}
                             filterValues={filterValues}
                             onFilterChange={handleFilterChange}

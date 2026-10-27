@@ -17,6 +17,7 @@ import { ROUTERS } from "@/constants/Route";
 import type { SaleResponse, SaleReturnRequest } from "@/types/sales/Sale";
 import type { CustomerResponse } from "@/types/sales/Customer";
 import type { StoreResponse } from "@/types/inventory/Store";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { SaleColumns } from "./SaleCulumn";
 import { SaleDetailModal } from "./SaleDetailModal";
 import ReturnSaleModal from "./components/ReturnSaleModal";
@@ -25,6 +26,7 @@ const statusTotal = (rows: SaleResponse[], total: number | undefined, expectedSt
   Math.max(rows.every((sale) => sale.status?.toUpperCase() === expectedStatus) ? (total ?? rows.length) : 0, fallback);
 
 const SaleReturnPage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.SALE.READ);
@@ -86,14 +88,14 @@ const SaleReturnPage = () => {
   }, [completed.data, partial.data, returned.data, unfiltered.data, status]);
 
   const filterGroups = useMemo(() => [
-    { key: "customerId", label: "Customer", options: customers.map((item) => ({ label: item.name, value: String(item.id) })) },
-    { key: "storeId", label: "Store", options: stores.map((item) => ({ label: item.name, value: String(item.id) })) },
-    { key: "status", label: "Status", options: [
+    { key: "customerId", label: t("customer.name", "Customer"), options: customers.map((item) => ({ label: item.name, value: String(item.id) })) },
+    { key: "storeId", label: t("store.name", "Store"), options: stores.map((item) => ({ label: item.name, value: String(item.id) })) },
+    { key: "status", label: t("common.status", "Status"), options: [
       { label: "Completed", value: "COMPLETED" },
-      { label: "Partial Returned", value: "PARTIAL_RETURNED" },
-      { label: "Returned", value: "RETURNED" },
+      { label: t("sale.partial_returned", "Partial Returned"), value: "PARTIAL_RETURNED" },
+      { label: t("sale.returned", "Returned"), value: "RETURNED" },
     ] },
-  ], [customers, stores]);
+  ], [customers, stores, t]);
 
   const handleFilterChange = (key: string, value: string) => {
     if (key === "customerId") setCustomerId(value);
@@ -123,15 +125,27 @@ const SaleReturnPage = () => {
     });
   };
 
+  const columns = useMemo(
+    () =>
+      SaleColumns({
+        onView: setSelectedSale,
+        onReturn: canUpdate ? (id) => setReturningSale(sales.find((sale) => sale.id === id) ?? null) : undefined,
+        canEdit: false,
+        canDelete: false,
+        t,
+      }),
+    [canUpdate, sales, t]
+  );
+
   if (!canRead) return <AccessDenied resource="sales returns" showBackButton />;
 
   return (
     <div className="sale-return-list space-y-4">
       <PageHeader
-        title="Sales Return"
-        description="Returned sales are shown by default. Use Status to view completed or partially returned sales."
+        title={t("sale.return_title", "Sales Return")}
+        description={t("sale.return_desc", "Returned sales are shown by default. Use Status to view completed or partially returned sales.")}
         hideButton
-        actions={<Button variant="outline" onClick={() => navigate(ROUTERS.SALE)} className="gap-2"><ArrowLeft className="h-4 w-4" />Back to Sales</Button>}
+        actions={<Button variant="outline" onClick={() => navigate(ROUTERS.SALE)} className="gap-2"><ArrowLeft className="h-4 w-4" />{t("sale.back_to_sales", "Back to Sales")}</Button>}
       />
 
       <div className="sale-return-card rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
@@ -139,7 +153,7 @@ const SaleReturnPage = () => {
           <PageFilter
             search={search}
             onSearchChange={(value) => { setSearch(value); setPage(1); }}
-            searchPlaceholder="Search reference..."
+            searchPlaceholder={t("sale.search_reference", "Search reference...")}
             filterGroups={filterGroups}
             filterValues={{ customerId, storeId, status }}
             onFilterChange={handleFilterChange}
@@ -149,12 +163,7 @@ const SaleReturnPage = () => {
 
         <QueryBoundary isLoading={returned.isLoading && unfiltered.isLoading} isError={returned.isError && unfiltered.isError} fullScreen={false}>
           <DataTable
-            columns={SaleColumns({
-              onView: setSelectedSale,
-              onReturn: canUpdate ? (id) => setReturningSale(sales.find((sale) => sale.id === id) ?? null) : undefined,
-              canEdit: false,
-              canDelete: false,
-            })}
+            columns={columns}
             data={sales}
             pagination={{
               currentPage: page,

@@ -19,17 +19,13 @@ import { ROUTERS } from "@/constants/Route";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { SupplierResponse } from "@/types/purchases/Supplier";
 import { PurchaseDetailModal } from "./PurchaseDetail";
-import { DollarSign, AlertCircle, Package, Wallet } from "lucide-react";
-import { IMPORTANCE_CONFIG, type ImportanceLevel } from "./PurchaseForm";
+import { useLanguage } from "@/i18n/LanguageContext";
+import { PaymentForm } from "@/pages/sales/payment/PaymentForm";
+import { useQueryClient } from "@tanstack/react-query";
 
-function formatCurrency(value: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(value || 0);
-}
 
 const PurchasePage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.PURCHASE.CREATE);
@@ -178,8 +174,8 @@ const PurchasePage = () => {
     () => [
       {
         key: "supplierId",
-        placeholder: "Filter by Supplier",
-        allLabel: "All",
+        placeholder: t("purchase.supplier"),
+        allLabel: t("common.all"),
         options: suppliers.map((sup: SupplierResponse) => ({
           label: sup.name,
           value: String(sup.id),
@@ -187,8 +183,8 @@ const PurchasePage = () => {
       },
       {
         key: "storeId",
-        placeholder: "Filter by Store",
-        allLabel: "All",
+        placeholder: t("purchase.store"),
+        allLabel: t("common.all"),
         options: stores.map((store: StoreResponse) => ({
           label: store.name,
           value: String(store.id),
@@ -196,16 +192,16 @@ const PurchasePage = () => {
       },
       {
         key: "status",
-        placeholder: "Filter by Status",
-        allLabel: "All",
+        placeholder: t("common.status"),
+        allLabel: t("common.all_status"),
         options: [
-          { label: "COMPLETED", value: "COMPLETED" },
-          { label: "CANCELLED", value: "CANCELLED" },
-          { label: "PENDING", value: "PENDING" },
+          { label: t("common.completed"), value: "COMPLETED" },
+          { label: t("common.cancelled"), value: "CANCELLED" },
+          { label: t("common.pending"), value: "PENDING" },
         ],
       },
     ],
-    [suppliers, stores],
+    [suppliers, stores, t],
   );
 
   const dropdownValues = useMemo(
@@ -282,8 +278,8 @@ const PurchasePage = () => {
       <div className="space-y-4">
         {/* Top Header */}
         <PageHeader
-          title="Purchases"
-          buttonLabel="Add Purchase"
+          title={t("purchase.title")}
+          buttonLabel={t("purchase.create")}
           onCreate={
             canCreate ? () => navigate(ROUTERS.PURCHASE_CREATE) : undefined
           }
@@ -299,10 +295,10 @@ const PurchasePage = () => {
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search reference..."
+              searchPlaceholder={t("common.search")}
               filterGroups={dropdowns.map((dropdown) => ({
                 key: dropdown.key,
-                label: dropdown.placeholder.replace("Filter by ", ""),
+                label: dropdown.placeholder,
                 options: dropdown.options,
               }))}
               filterValues={dropdownValues}
@@ -322,6 +318,7 @@ const PurchasePage = () => {
                   // onComplete: handleComplete,
                   canEdit: canUpdate,
                   canDelete: canDelete,
+                  t,
                 })}
                 data={filteredPurchases}
                 pagination={{
@@ -341,7 +338,7 @@ const PurchasePage = () => {
       <ConfirmDelete
         isOpen={openConfirmDelete}
         setIsOpen={setOpenConfirmDelete}
-        entityName={"Purchase"}
+        entityName={t("purchase.title")}
         confirmDelete={confirmDelete}
       />
 

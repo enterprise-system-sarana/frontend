@@ -29,14 +29,21 @@ import {
   PurchaseForm,
   SalePage,
   SaleReturnPage,
+  CashRegisterPage,
   SaleForm,
   SaleInvoicePage,
+  // SalePaymentPage,
   PaymentPage,
   ReportPage,
   SalesItemReportPage,
   ExpenseReportPage,
   ProductSerialReportPage,
   ProfitLossReportPage,
+  PurchaseReportPage,
+  PurchaseItemReportPage,
+  SalePaymentReportPage,
+  PurchasePaymentReportPage,
+  StockReportPage,
   NotFoundPage,
   QuotePage,
   QuoteForm,
@@ -74,6 +81,14 @@ const router = createBrowserRouter([
     path: ROUTERS.SALE_INVOICE,
     element: <SaleInvoicePage />,
   },
+  // {
+  //   path: ROUTERS.SALE_COMPLETE,
+  //   element: (
+  //     <PermissionRoute permission={PERMISSION.SALE.READ}>
+  //       <SalePaymentPage />
+  //     </PermissionRoute>
+  //   ),
+  // },
 
   {
     element: <PrivateRoute />,
@@ -206,6 +221,7 @@ const router = createBrowserRouter([
           // sales
           { path: ROUTERS.SALE, element: <SalePage /> },
           { path: ROUTERS.SALE_RETURN, element: <SaleReturnPage /> },
+          { path: ROUTERS.CASH_REGISTER, element: <CashRegisterPage /> },
           // { path: ROUTERS.SALE_DETAIL, element: <SaleDetail /> },
           {
             path: ROUTERS.SALE_EDIT,
@@ -217,6 +233,14 @@ const router = createBrowserRouter([
           },
 
           { path: ROUTERS.PAYMENT, element: <PaymentPage /> },
+          // {
+          //   path: ROUTERS.SALE_COMPLETE,
+          //   element: (
+          //     <PermissionRoute permission={PERMISSION.SALE.READ}>
+          //       <SalePaymentPage />
+          //     </PermissionRoute>
+          //   ),
+          // },
           {
             path: ROUTERS.CUSTOMER,
             element: <CustomerPage />,
@@ -286,6 +310,10 @@ const router = createBrowserRouter([
             element: <ReportPage key="daily-sales" mode="daily" />,
           },
           {
+            path: ROUTERS.REPORT_WEEKLY_SALES,
+            element: <ReportPage key="weekly-sales" mode="weekly" />,
+          },
+          {
             path: ROUTERS.REPORT_MONTHLY_SALES,
             element: <ReportPage key="monthly-sales" mode="monthly" />,
           },
@@ -306,8 +334,40 @@ const router = createBrowserRouter([
             element: <ProductSerialReportPage />,
           },
           {
+            path: ROUTERS.REPORT_STOCK,
+            element: <StockReportPage />,
+          },
+          {
             path: ROUTERS.REPORT_PROFIT_LOSS,
             element: <ProfitLossReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_DAILY_PURCHASES,
+            element: <PurchaseReportPage key="daily-purchases" mode="daily" />,
+          },
+          {
+            path: ROUTERS.REPORT_WEEKLY_PURCHASES,
+            element: <PurchaseReportPage key="weekly-purchases" mode="weekly" />,
+          },
+          {
+            path: ROUTERS.REPORT_MONTHLY_PURCHASES,
+            element: <PurchaseReportPage key="monthly-purchases" mode="monthly" />,
+          },
+          {
+            path: ROUTERS.REPORT_PURCHASES,
+            element: <PurchaseReportPage key="purchases-report" />,
+          },
+          {
+            path: ROUTERS.REPORT_PURCHASE_ITEMS,
+            element: <PurchaseItemReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_SALE_PAYMENTS,
+            element: <SalePaymentReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_PURCHASE_PAYMENTS,
+            element: <PurchasePaymentReportPage />,
           },
           {
             path: ROUTERS.FILE_UPLOAD,

@@ -27,12 +27,16 @@ export interface ProductSerialReportRow {
   createdAt?: string;
 }
 
-export const ProductSerialReportColumns =
-  (): ColumnDef<ProductSerialReportRow>[] => [
+export const ProductSerialReportColumns = (
+  props?: { t?: (key: any, fallback?: string) => string }
+): ColumnDef<ProductSerialReportRow>[] => {
+  const t = props?.t ?? ((_k: any, fallback?: string) => fallback ?? "");
+
+  return [
     {
       accessorKey: "productName",
       header: ({ column }) => (
-        <SortableHeader column={column} title="Product" />
+        <SortableHeader column={column} title={t("product.name", "Product")} />
       ),
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
@@ -43,7 +47,7 @@ export const ProductSerialReportColumns =
     {
       accessorKey: "barcode",
       header: ({ column }) => (
-        <SortableHeader column={column} title="Barcode" />
+        <SortableHeader column={column} title={t("product.barcode", "Barcode")} />
       ),
       cell: ({ row }) => (
         <span className="font-mono text-xs text-[#696cff]">
@@ -53,7 +57,9 @@ export const ProductSerialReportColumns =
     },
     {
       accessorKey: "storeName",
-      header: ({ column }) => <SortableHeader column={column} title="Store" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title={t("store.name", "Store")} />
+      ),
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {row.original.storeName || "-"}
@@ -62,12 +68,14 @@ export const ProductSerialReportColumns =
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t("common.status", "Status"),
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
       accessorKey: "price",
-      header: ({ column }) => <SortableHeader column={column} title="Price" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title={t("product.price", "Price")} />
+      ),
       cell: ({ row }) => (
         <span className="text-[#71dd37] font-medium">
           {formatCurrency(row.original.price)}
@@ -76,7 +84,9 @@ export const ProductSerialReportColumns =
     },
     {
       accessorKey: "cost",
-      header: ({ column }) => <SortableHeader column={column} title="Cost" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title={t("product.cost", "Cost")} />
+      ),
       cell: ({ row }) => (
         <span className="text-[#ff3e1d] font-medium">
           {formatCurrency(row.original.cost)}
@@ -85,7 +95,9 @@ export const ProductSerialReportColumns =
     },
     {
       accessorKey: "quantity",
-      header: ({ column }) => <SortableHeader column={column} title="Qty" />,
+      header: ({ column }) => (
+        <SortableHeader column={column} title={t("product.quantity", "Qty")} />
+      ),
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {row.original.quantity ?? 0}
@@ -95,7 +107,7 @@ export const ProductSerialReportColumns =
     {
       accessorKey: "alertQuantity",
       header: ({ column }) => (
-        <SortableHeader column={column} title="Alert Qty" />
+        <SortableHeader column={column} title={t("report.alert_qty", "Alert Qty")} />
       ),
       cell: ({ row }) => {
         const qty = row.original.quantity ?? 0;
@@ -117,7 +129,7 @@ export const ProductSerialReportColumns =
     {
       accessorKey: "createdAt",
       header: ({ column }) => (
-        <SortableHeader column={column} title="Created At" />
+        <SortableHeader column={column} title={t("common.created_at", "Created At")} />
       ),
       cell: ({ row }) => {
         const raw = row.original.createdAt;
@@ -136,3 +148,4 @@ export const ProductSerialReportColumns =
       },
     },
   ];
+};

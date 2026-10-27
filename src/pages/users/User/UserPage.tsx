@@ -173,7 +173,7 @@ const UserPage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search users by name, email..."
+                            searchPlaceholder={t("user.search_placeholder", "Search users by name, email...")}
                             filterGroups={filterGroups}
                             filterValues={filterValues}
                             onFilterChange={handleFilterChange}
@@ -217,7 +217,7 @@ const UserPage = () => {
             <ConfirmDelete
                 isOpen={openConfirmDelete}
                 setIsOpen={setOpenConfirmDelete}
-                entityName="User"
+                entityName={t("nav.user", "User")}
                 confirmDelete={confirmDelete}
             />
         </>

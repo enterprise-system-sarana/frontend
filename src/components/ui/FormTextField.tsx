@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Switch } from "@/components/ui/switch";
 type FormTextFieldProps = {
   form: any;
   name: string;
@@ -22,6 +23,8 @@ type FormTextFieldProps = {
   autoComplete?: string;
   disabled?: boolean;
   required?: boolean;
+  className?: string;
+  step?: string | number;
 };
 
 const FormTextField = ({
@@ -33,6 +36,8 @@ const FormTextField = ({
   autoComplete,
   disabled = false,
   required = false,
+  className,
+  step = "any",
 }: FormTextFieldProps) => {
   return (
     <form.Field
@@ -50,26 +55,24 @@ const FormTextField = ({
             </FieldLabel>
 
             {type === "number" ? (
-              <div className="flex h-11 w-full min-w-0 overflow-hidden rounded-md border border-border/70 bg-background transition-all focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15 aria-invalid:border-destructive">
-
-                <Input
-                  id={field.name}
-                  name={field.name}
-                  type="number"
-                  autoComplete={autoComplete}
-                  value={field.state.value ?? ""}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => {
-                    const value = e.target.value;
-                    field.handleChange(value === "" ? "" : Number(value));
-                  }} aria-invalid={isInvalid}
-                  placeholder={placeholder}
-                  disabled={disabled}
-                  required={required}
-                  className="h-full rounded-none border-0 bg-transparent px-2  font-semibold shadow-none hover:border-0 focus-visible:border-0 focus-visible:ring-0"
-                />
-
-              </div>
+              <Input
+                id={field.name}
+                name={field.name}
+                type="number"
+                step={step}
+                autoComplete={autoComplete}
+                value={field.state.value ?? ""}
+                onBlur={field.handleBlur}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  field.handleChange(value === "" ? "" : Number(value));
+                }}
+                aria-invalid={isInvalid}
+                placeholder={placeholder}
+                disabled={disabled}
+                required={required}
+                className={className}
+              />
             ) : (
               <Input
                 id={field.name}
@@ -83,6 +86,7 @@ const FormTextField = ({
                 placeholder={placeholder}
                 disabled={disabled}
                 required={required}
+                className={className}
               />
             )}
 
@@ -292,10 +296,10 @@ export const FormSelectField = ({
                 <button
                   type="button"
                   onClick={onAdd}
-                  className="inline-flex items-center justify-center h-5 w-5 rounded-md bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
+                  className="inline-flex items-center justify-center size-4 rounded-[2px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   title={`Add new ${label}`}
                 >
-                  <span className="text-xs font-bold leading-none">+</span>
+                  <span className="text-[10px] font-bold leading-none">+</span>
                 </button>
               )}
             </FieldLabel>
@@ -462,6 +466,102 @@ export const FormRadioGroupField = ({
             </div>
 
             {isInvalid && <FieldError errors={field.state.meta.errors} />}
+          </Field>
+        );
+      }}
+    />
+  );
+};
+
+type FormSwitchFieldProps = {
+  form: any;
+  name: string;
+  label: string;
+  topLabel?: string;
+  description?: string;
+  activeDescription?: string;
+  inactiveDescription?: string;
+  activeLabel?: string;
+  inactiveLabel?: string;
+  disabled?: boolean;
+  className?: string;
+  alignWithInput?: boolean;
+};
+
+export const FormSwitchField = ({
+  form,
+  name,
+  label,
+  topLabel,
+  description,
+  activeDescription,
+  inactiveDescription,
+  activeLabel,
+  inactiveLabel,
+  disabled = false,
+  className,
+  alignWithInput = true,
+}: FormSwitchFieldProps) => {
+  return (
+    <form.Field
+      name={name}
+      children={(field: any) => {
+        const isChecked = field.state.value !== false;
+        const currentDesc = isChecked
+          ? (activeDescription ?? description)
+          : (inactiveDescription ?? description);
+
+        return (
+          <Field className={cn(alignWithInput && "justify-end")}>
+            {topLabel ? (
+              <FieldLabel htmlFor={name}>{topLabel}</FieldLabel>
+            ) : alignWithInput ? (
+              <span className="hidden sm:block text-sm font-medium opacity-0 select-none pointer-events-none leading-snug">
+                &nbsp;
+              </span>
+            ) : null}
+
+            <div
+              onClick={() => {
+                if (!disabled) field.handleChange(!isChecked);
+              }}
+              className={cn(
+                "flex h-11 w-full items-center justify-between rounded-md border border-border/70 bg-background px-3.5 py-2 transition-all hover:bg-muted/20 cursor-pointer select-none",
+                disabled && "opacity-50 cursor-not-allowed",
+                className
+              )}
+            >
+              <div className="flex items-center gap-2">
+                <span className="text-sm font-medium text-foreground">
+                  {label}
+                </span>
+                {(activeLabel || inactiveLabel) && (
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors",
+                      isChecked
+                        ? "bg-primary/15 text-primary border border-primary/25"
+                        : "bg-muted text-muted-foreground border border-border"
+                    )}
+                  >
+                    {isChecked ? activeLabel : inactiveLabel}
+                  </span>
+                )}
+              </div>
+
+              <div onClick={(e) => e.stopPropagation()}>
+                <Switch
+                  id={name}
+                  checked={isChecked}
+                  disabled={disabled}
+                  onCheckedChange={(checked) => field.handleChange(checked)}
+                />
+              </div>
+            </div>
+
+            {currentDesc && (
+              <p className="text-xs text-muted-foreground">{currentDesc}</p>
+            )}
           </Field>
         );
       }}

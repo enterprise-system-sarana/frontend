@@ -21,8 +21,10 @@ import { useNavigate } from "react-router-dom";
 import { PageHeader } from "@/components/ui/page-header";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { ROUTERS } from "@/constants/Route";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const QuotePage = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.QUOTE?.CREATE || PERMISSION.SALE?.CREATE);
@@ -56,7 +58,7 @@ export const QuotePage = () => {
     () => [
       {
         key: "status",
-        label: "Status",
+        label: t("common.status", "Status"),
         options: [
           { label: "Pending", value: "PENDING" },
           { label: "Approved", value: "APPROVED" },
@@ -67,14 +69,14 @@ export const QuotePage = () => {
       },
       {
         key: "customerId",
-        label: "Customer",
+        label: t("customer.name", "Customer"),
         options: customers.map((c: any) => ({
           label: c.name,
           value: String(c.id),
         })),
       },
     ],
-    [customers]
+    [customers, t]
   );
 
   const handleColumnToggle = (columnId: string) => {
@@ -155,8 +157,9 @@ export const QuotePage = () => {
         onDelete: handleDelete,
         canEdit: canUpdate,
         canDelete: canDelete,
+        t,
       }),
-    [canUpdate, canDelete]
+    [canUpdate, canDelete, t]
   );
 
   const handleExportCsv = () => {
@@ -180,9 +183,9 @@ export const QuotePage = () => {
       <div className="space-y-4">
         {/* Top Header */}
         <PageHeader
-          title="Quotes"
-          featureName="Quote"
-          buttonLabel="Add Quote"
+          title={t("quote.title", "Quotes")}
+          featureName={t("quote.title", "Quote")}
+          buttonLabel={t("quote.create", "Add Quote")}
           onCreate={
             canCreate
               ? () => navigate(ROUTERS.QUOTE_CREATE || "/quote/create")
@@ -198,7 +201,7 @@ export const QuotePage = () => {
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search reference or quote no..."
+              searchPlaceholder={t("quote.search_placeholder", "Search reference or quote no...")}
               filterGroups={filterGroups}
               filterValues={filterValues}
               onFilterChange={handleFilterChange}
@@ -238,7 +241,7 @@ export const QuotePage = () => {
       <ConfirmDelete
         isOpen={openConfirmDelete}
         setIsOpen={setOpenConfirmDelete}
-        entityName={"Quote"}
+        entityName={t("quote.title", "Quote")}
         confirmDelete={confirmDelete}
       />
     </>

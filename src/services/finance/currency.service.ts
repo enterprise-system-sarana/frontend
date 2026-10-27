@@ -1,8 +1,8 @@
-import type { CurrencyRequest } from "@/types/finance/Currency";
+import type { CurrencyFilter, CurrencyRequest } from "@/types/finance/Currency";
 import api from "../lib/axios";
 
 export const currencyService = {
-    findAll(filter: any) {
+    findAll(filter: CurrencyFilter) {
         return api.get("/currency", { params: filter }).then((res) => res.data);
     },
 

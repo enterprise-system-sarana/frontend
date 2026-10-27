@@ -137,11 +137,11 @@ const DashboardLayout = () => {
                 <DropdownMenuContent align="end" className="w-80 sm:w-88 p-1.5 shadow-lg border-border/70">
                   <div className="flex items-center justify-between px-2.5 py-1.5">
                     <DropdownMenuLabel className="p-0 font-semibold text-xs tracking-tight text-foreground">
-                      Stock alerts ({stockAlerts.length})
+                      {t("inventory.low_stock")} ({stockAlerts.length})
                     </DropdownMenuLabel>
                     {stockAlerts.length > 0 && (
                       <span className="inline-flex items-center justify-center rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
-                        {stockAlerts.length} low stock
+                        {stockAlerts.length} {t("inventory.low_stock")}
                       </span>
                     )}
                   </div>
@@ -181,7 +181,7 @@ const DashboardLayout = () => {
                                   }`}
                               >
                                 <AlertTriangle className="h-3 w-3 shrink-0" />
-                                {quantity} left
+                                {quantity} {t("inventory.available")}
                               </span>
                             </div>
                           </DropdownMenuItem>
@@ -190,7 +190,7 @@ const DashboardLayout = () => {
                     </div>
                   ) : (
                     <DropdownMenuItem disabled className="justify-center py-4 text-xs text-muted-foreground">
-                      {isStocksError ? "Stock alerts unavailable" : "No stock alerts"}
+                      {isStocksError ? t("common.failed") : t("common.no_results")}
                     </DropdownMenuItem>
                   )}
                   {stockAlerts.length > 8 && (
@@ -200,7 +200,7 @@ const DashboardLayout = () => {
                         className="cursor-pointer justify-center text-xs text-muted-foreground hover:text-foreground font-medium py-1.5"
                         onClick={() => navigate(ROUTERS.STOCK)}
                       >
-                        View all alerts ({stockAlerts.length})
+                        {t("common.view")} {t("common.all")} ({stockAlerts.length})
                       </DropdownMenuItem>
                     </>
                   )}
@@ -225,7 +225,7 @@ const DashboardLayout = () => {
                         <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
                       </AvatarFallback>
                     </Avatar>
-                    <span className="reference-user-copy"><strong className="reference-user-name">{activeUser.name}</strong><small>My account</small></span>
+                    <span className="reference-user-copy"><strong className="reference-user-name">{activeUser.name}</strong></span>
                     <ChevronDown className="reference-user-chevron" />
                   </button>
                 </DropdownMenuTrigger>
@@ -237,10 +237,13 @@ const DashboardLayout = () => {
                   <DropdownMenuLabel className="font-normal p-2.5">
                     <div className="flex items-center gap-2.5">
                       <Avatar className="size-9 rounded-full ring-1 ring-border/60 shrink-0">
-                        <AvatarImage src={userAvatarSrc} alt={activeUser.name} className="object-cover" />
-                        <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
-                          <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
-                        </AvatarFallback>
+                        <ImageCell
+                          fileName={activeUser?.avatar}
+                          name={activeUser.name}
+                          bucketName="user"
+                          className="size-full rounded-full"
+                          fallbackSrc="/default-user-avatar.png"
+                        />
                       </Avatar>
                       <div className="flex flex-col space-y-0.5 min-w-0">
                         <p className="text-sm font-semibold leading-none text-foreground truncate">
@@ -268,13 +271,13 @@ const DashboardLayout = () => {
                       <KeyRound className="mr-2 h-4 w-4" />
                       <span>{t("user.change_password")}</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem
+                    {/* <DropdownMenuItem
                       className="cursor-pointer text-muted-foreground focus:text-primary focus:bg-primary/10 rounded-lg"
                       onClick={() => navigate("/settings")}
                     >
                       <CreditCard className="mr-2 h-4 w-4" />
                       <span>{t("user.billing")}</span>
-                    </DropdownMenuItem>
+                    </DropdownMenuItem> */}
                   </DropdownMenuGroup>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
@@ -295,7 +298,8 @@ const DashboardLayout = () => {
             location.pathname.includes("/sale/edit") ||
             location.pathname.includes("/purchase/create") ||
             location.pathname.includes("/purchase/edit") ||
-            location.pathname === ROUTERS.PURCHASE_PAYMENT ||
+            location.pathname.includes("/product/create") ||
+            location.pathname.includes("/product/edit") ||
             location.pathname === ROUTERS.HOME;
           return (
             <div className={`flex-1 overflow-auto bg-[#edf2f8] dark:bg-background ${isNoPaddingPage ? "p-0" : "p-4 sm:p-6"}`}>

@@ -28,6 +28,7 @@ export const ROUTERS = {
   SALE_DETAIL: "/sale/detail/:id",
   SALE_INVOICE: "/sale/invoice/:id",
   SALE_COMPLETE: "/sale/complete/:id",
+  CASH_REGISTER: "/cash-register",
   PAYMENT: "/payment",
   SALES: "/sales",
   BANK: "/bank",
@@ -39,11 +40,20 @@ export const ROUTERS = {
   REPORT: "/report",
   REPORT_SALES: "/report/sales",
   REPORT_DAILY_SALES: "/report/daily-sales",
+  REPORT_WEEKLY_SALES: "/report/weekly-sales",
   REPORT_MONTHLY_SALES: "/report/monthly-sales",
   REPORT_SALES_ITEMS: "/report/sales-items",
+  REPORT_PURCHASES: "/report/purchases",
+  REPORT_DAILY_PURCHASES: "/report/daily-purchases",
+  REPORT_WEEKLY_PURCHASES: "/report/weekly-purchases",
+  REPORT_MONTHLY_PURCHASES: "/report/monthly-purchases",
+  REPORT_PURCHASE_ITEMS: "/report/purchase-items",
+  REPORT_SALE_PAYMENTS: "/report/sale-payments",
+  REPORT_PURCHASE_PAYMENTS: "/report/purchase-payments",
   REPORT_EXPENSES: "/report/expenses",
   REPORT_PROFIT_LOSS: "/report/profit-loss",
   REPORT_PRODUCT_SERIALS: "/report/product-serials",
+  REPORT_STOCK: "/report/stock",
   CHANGE_PASSWORD: "/change-password",
   LOGIN: "/login",
   REGISTER: "/register",
@@ -54,13 +64,12 @@ export const ROUTERS = {
   CUSTOMERS: "/customers",
   PROFILE: "/profile",
 
-    EXPENSE_TYPE: "/expense-type",
-    EXPENSE: "/expense",
-    QUOTE: "/quote",
-    QUOTE_CREATE: "/quote/create",
-    QUOTE_EDIT: "/quote/edit/:id",
-}
-
+  EXPENSE_TYPE: "/expense-type",
+  EXPENSE: "/expense",
+  QUOTE: "/quote",
+  QUOTE_CREATE: "/quote/create",
+  QUOTE_EDIT: "/quote/edit/:id",
+};
 
 export const AUTHENTICATION = {
   REFRESH_TOKEN: "refreshToken",

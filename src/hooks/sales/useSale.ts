@@ -4,6 +4,7 @@ import type { SaleFilter, SaleRequest } from "@/types/sales/Sale";
 import { salesService } from "@/services/sales/sales.service";
 import { useProduct } from "../product/useProduct";
 import { useProductSerial } from "../product/useProductSerial";
+import { useCashRegister } from "./useCashRegister";
 
 export const useSale = {
   keys: {
@@ -37,7 +38,11 @@ export const useSale = {
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
-        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
+        additionalQueryKeys: [
+          useProduct.keys.all,
+          useProductSerial.keys.all,
+          useCashRegister.keys.all,
+        ],
       }),
     });
   },
@@ -67,6 +72,22 @@ export const useSale = {
     });
   },
 
+  CloseSale: () => {
+    const queryClient = useQueryClient();
+    return useMutation({
+      mutationFn: salesService.closeSale,
+      ...mutationHandler({
+        queryClient,
+        queryKey: useSale.keys.all,
+        additionalQueryKeys: [
+          useProduct.keys.all,
+          useProductSerial.keys.all,
+          useCashRegister.keys.all,
+        ],
+      }),
+    });
+  },
+
   Cancel: () => {
     const queryClient = useQueryClient();
     return useMutation({
@@ -91,7 +112,11 @@ export const useSale = {
       ...mutationHandler({
         queryClient,
         queryKey: useSale.keys.all,
-        additionalQueryKeys: [useProduct.keys.all, useProductSerial.keys.all],
+        additionalQueryKeys: [
+          useProduct.keys.all,
+          useProductSerial.keys.all,
+          useCashRegister.keys.all,
+        ],
       }),
     });
   },

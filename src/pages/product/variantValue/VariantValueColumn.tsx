@@ -5,41 +5,44 @@ import { SortableHeader } from "@/utils/sort-table-header";
 import type { VariantValueResponse } from "@/types/product/VariantValue";
 import { formatDate } from "@/utils/formatDate";
 
+import type { TranslationKey } from "@/i18n/locales/en";
+
 interface VariantValueColumnsProps {
     onEdit: (variantValue: VariantValueResponse) => void;
     onDelete: (id: number) => void;
+    t?: (key: TranslationKey, fallback?: string) => string;
 }
 
-export const VariantValueColumns = ({ onEdit, onDelete }: VariantValueColumnsProps): ColumnDef<VariantValueResponse>[] => [
+export const VariantValueColumns = ({ onEdit, onDelete, t }: VariantValueColumnsProps): ColumnDef<VariantValueResponse>[] => [
 
     {
         accessorKey: "name",
-        header: ({ column }) => <SortableHeader column={column} title="Name" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
     },
     {
         accessorKey: "code",
-        header: ({ column }) => <SortableHeader column={column} title="Code" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.code") : "Code"} />,
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.code}</span>,
     },
     {
         accessorKey: "variantTypeName",
-        header: ({ column }) => <SortableHeader column={column} title="Variant Type" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("variant.type") : "Variant Type"} />,
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.variantTypeName}</span>,
     },
     {
         accessorKey: "createdAt",
-        header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : "Created Date"} />,
         cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: t ? t("common.status") : "Status",
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
         accessorKey: "Action",
-        header: "Action",
+        header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
             return (

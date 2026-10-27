@@ -75,13 +75,13 @@ export const UserColumns = ({
         {
             id: "email",
             accessorKey: "email",
-            header: ({ column }) => <SortableHeader column={column} title={"Email"} />,
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("common.email") : "Email"} />,
             cell: ({ row }) => <span className="text-xs text-[#566a7f]">{row.original.email || "-"}</span>,
         },
         {
             id: "phone",
             accessorKey: "phone",
-            header: ({ column }) => <SortableHeader column={column} title={"Phone"} />,
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("common.phone") : "Phone"} />,
             cell: ({ row }) => <span className="text-xs text-[#566a7f]">{row.original.phone || "-"}</span>,
         },
         {

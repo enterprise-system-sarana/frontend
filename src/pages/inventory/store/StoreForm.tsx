@@ -12,12 +12,14 @@ import { FileUpload } from "@/pages/FileUpload";
 import { StoreSchema } from "@/types/inventory/Store";
 import type { StoreRequest } from "@/types/inventory/Store";
 import { useStore } from "@/hooks/inventory/useStore";
-import { Status, StatusOptions } from "@/types/enum/status";
+import { Status } from "@/types/enum/status";
 import { ROUTERS } from "@/constants/Route";
 import { ArrowLeft, Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function StoreForm() {
+  const { t } = useLanguage();
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id);
   const navigate = useNavigate();
@@ -138,12 +140,12 @@ export default function StoreForm() {
             size="icon"
             onClick={() => navigate(ROUTERS.STORE)}
             className="h-9 w-9 rounded-xl border-border/60 hover:bg-muted/60"
-            title="Back to Stores"
+            title={t("common.back")}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <h2 className="text-lg font-semibold tracking-tight">
-            {isEditing ? "Edit Store" : "Create New Store"}
+            {isEditing ? t("common.edit") : t("common.create")} {t("inventory.store")}
           </h2>
         </div>
       </div>
@@ -166,7 +168,7 @@ export default function StoreForm() {
                 <FormTextField
                   form={form}
                   name="code"
-                  label="Store Code"
+                  label={t("common.code")}
                   placeholder="e.g. STR-001"
                   type="text"
                   autoComplete="off"
@@ -175,7 +177,7 @@ export default function StoreForm() {
                 <FormTextField
                   form={form}
                   name="name"
-                  label="Store Name"
+                  label={t("common.name")}
                   placeholder="e.g. Main Branch Store"
                   type="text"
                   autoComplete="off"
@@ -185,7 +187,7 @@ export default function StoreForm() {
               <FormTextField
                 form={form}
                 name="email"
-                label="Email"
+                label={t("common.email")}
                 placeholder="e.g. store@example.com"
                 type="email"
                 autoComplete="off"
@@ -194,7 +196,7 @@ export default function StoreForm() {
               <FormTextField
                 form={form}
                 name="phone"
-                label="Phone"
+                label={t("common.phone")}
                 placeholder="e.g. +855 12 345 678"
                 type="text"
                 autoComplete="off"
@@ -223,7 +225,7 @@ export default function StoreForm() {
               <FormTextField
                 form={form}
                 name="city"
-                label="City"
+                label={t("common.city")}
                 placeholder="e.g. Phnom Penh"
                 type="text"
                 autoComplete="off"
@@ -247,7 +249,7 @@ export default function StoreForm() {
               <FormTextField
                 form={form}
                 name="country"
-                label="Country"
+                label={t("common.country")}
                 placeholder="e.g. Cambodia"
                 type="text"
                 autoComplete="off"
@@ -325,7 +327,7 @@ export default function StoreForm() {
               onClick={() => navigate(ROUTERS.STORE)}
               disabled={isPending}
             >
-              Cancel
+              {t("common.cancel")}
             </Button>
             <Button
               type="submit"
@@ -335,12 +337,12 @@ export default function StoreForm() {
               {isPending ? (
                 <span className="flex items-center gap-1.5">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Saving...
+                  {t("common.saving")}
                 </span>
               ) : isEditing ? (
-                "Update Store"
+                t("common.save")
               ) : (
-                "Create Store"
+                `${t("common.create")} ${t("inventory.store")}`
               )}
             </Button>
           </div>

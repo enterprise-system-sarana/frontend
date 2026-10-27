@@ -13,6 +13,7 @@ export { default as PurchasePage } from "@/pages/purchases/purchase/PurchasePage
 export { default as PurchaseForm } from "@/pages/purchases/purchase/PurchaseForm";
 export { PurchaseDetailModal } from "@/pages/purchases/purchase/PurchaseDetail";
 export { default as PurchaseInvoice } from "@/pages/purchases/purchase/PurchaseInvoice";
+export { PurchasePaymentPage } from "@/pages/purchases/purchase/PurchasePayment";
 
 export { default as QuotePage } from "@/pages/sales/quotes/QuotePage";
 export { default as QuoteForm } from "@/pages/sales/quotes/QuoteForm";
@@ -57,9 +58,11 @@ export { default as SalePage } from "@/pages/sales/sale/SalePage";
 export { default as SaleReturnPage } from "@/pages/sales/sale/SaleReturnPage";
 export { default as SaleForm } from "@/pages/sales/sale/SaleForm";
 export { default as SaleInvoicePage } from "@/pages/sales/sale/SaleInvoicePage";
+// export { default as SalePaymentPage } from "@/pages/sales/sale/SalePayment";
 export { default as PaymentPage } from "@/pages/sales/payment/PaymentPage";
 // export { default as SaleDetail } from "@/pages/sales/sale/SaleDetail";
 export { default as SaleDetailModal } from "@/pages/sales/sale/SaleDetailModal";
+export { default as CashRegisterPage } from "@/pages/sales/cash-register/CashRegisterPage";
 
 // Expenses
 export { default as ExpensePage } from "@/pages/expenses/expense/ExpensePage";
@@ -69,6 +72,11 @@ export { default as SalesItemReportPage } from "@/pages/reports/saleItem/SalesIt
 export { default as ExpenseReportPage } from "@/pages/reports/expense/ExpenseReportPage";
 export { default as ProductSerialReportPage } from "@/pages/reports/productSerial/ProductSerialReportPage";
 export { default as ProfitLossReportPage } from "@/pages/reports/finance/ProfitLossReportPage";
+export { default as PurchaseReportPage } from "@/pages/reports/purchase/PurchaseReportPage";
+export { default as PurchaseItemReportPage } from "@/pages/reports/purchase/PurchaseItemReportPage";
+export { default as SalePaymentReportPage } from "@/pages/reports/payment/SalePaymentReportPage";
+export { default as PurchasePaymentReportPage } from "@/pages/reports/payment/PurchasePaymentReportPage";
+export { default as StockReportPage } from "@/pages/reports/stock/StockReportPage";
 
 // File Upload Testing
 export { default as FileUploadPage, FileUpload } from "@/pages/FileUpload";

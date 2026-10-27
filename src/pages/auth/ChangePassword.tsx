@@ -42,17 +42,17 @@ export default function ChangePasswordPage() {
 
     switch (score) {
       case 1:
-        return { score: 1, label: "Weak", color: "bg-red-500", text: "text-red-500" };
+        return { score: 1, label: t("profile.strength_weak", "Weak"), color: "bg-red-500", text: "text-red-500" };
       case 2:
-        return { score: 2, label: "Fair", color: "bg-amber-500", text: "text-amber-500" };
+        return { score: 2, label: t("profile.strength_fair", "Fair"), color: "bg-amber-500", text: "text-amber-500" };
       case 3:
-        return { score: 3, label: "Good", color: "bg-blue-500", text: "text-blue-500" };
+        return { score: 3, label: t("profile.strength_good", "Good"), color: "bg-blue-500", text: "text-blue-500" };
       case 4:
-        return { score: 4, label: "Strong", color: "bg-emerald-500", text: "text-emerald-500" };
+        return { score: 4, label: t("profile.strength_strong", "Strong"), color: "bg-emerald-500", text: "text-emerald-500" };
       default:
-        return { score: 0, label: "Too Short", color: "bg-red-400", text: "text-red-400" };
+        return { score: 0, label: t("profile.strength_too_short", "Too Short"), color: "bg-red-400", text: "text-red-400" };
     }
-  }, [newPassword]);
+  }, [newPassword, t]);
 
   // Validation rules
   const hasMinLength = newPassword.length >= 8;
@@ -74,22 +74,22 @@ export default function ChangePasswordPage() {
     setSuccess(null);
 
     if (!currentPassword) {
-      setError("Please enter your current password.");
+      setError(t("auth.change.err_current_required", "Please enter your current password."));
       return;
     }
 
     if (newPassword.length < 8) {
-      setError("New password must be at least 8 characters.");
+      setError(t("auth.change.err_min_8", "New password must be at least 8 characters."));
       return;
     }
 
     if (newPassword !== confirmNewPassword) {
-      setError("New passwords do not match.");
+      setError(t("auth.change.err_mismatch", "New passwords do not match."));
       return;
     }
 
     if (currentPassword === newPassword) {
-      setError("Your new password must be different from your current password.");
+      setError(t("auth.change.err_same", "Your new password must be different from your current password."));
       return;
     }
 
@@ -97,7 +97,7 @@ export default function ChangePasswordPage() {
     try {
       const payload: ChangePasswordRequest = { currentPassword, newPassword };
       await AuthService.changePassword(payload);
-      setSuccess("Your password has been changed successfully.");
+      setSuccess(t("auth.change.success_msg", "Your password has been changed successfully."));
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
@@ -106,7 +106,7 @@ export default function ChangePasswordPage() {
       setError(
         err?.response?.data?.message ||
           err?.message ||
-          "Failed to change password. Please verify your current password."
+          t("auth.change.failed_msg", "Failed to change password. Please verify your current password.")
       );
     } finally {
       setIsLoading(false);
@@ -136,13 +136,13 @@ export default function ChangePasswordPage() {
           <div className="flex items-center gap-2">
             <KeyRound className="size-4 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Security Credentials
+              {t("auth.change.security_credentials")}
             </span>
           </div>
 
           <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-primary/10 text-primary">
             <Lock className="size-3" />
-            End-to-End Encrypted
+            {t("auth.change.encrypted")}
           </span>
         </div>
 
@@ -160,7 +160,7 @@ export default function ChangePasswordPage() {
               <Input
                 id="currentPassword"
                 type={showCurrent ? "text" : "password"}
-                placeholder="Enter current password"
+                placeholder={t("auth.change.placeholder_current")}
                 required
                 value={currentPassword}
                 onChange={(e) => setCurrentPassword(e.target.value)}
@@ -192,7 +192,7 @@ export default function ChangePasswordPage() {
               <Input
                 id="newPassword"
                 type={showNew ? "text" : "password"}
-                placeholder="Enter new password (min. 8 characters)"
+                placeholder={t("auth.change.placeholder_new")}
                 required
                 value={newPassword}
                 onChange={(e) => setNewPassword(e.target.value)}
@@ -214,7 +214,7 @@ export default function ChangePasswordPage() {
             {newPassword && (
               <div className="pt-2 space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground text-[11px]">Strength</span>
+                  <span className="text-muted-foreground text-[11px]">{t("profile.strength")}</span>
                   <span className={`text-[11px] font-semibold ${strength.text}`}>
                     {strength.label}
                   </span>
@@ -258,7 +258,7 @@ export default function ChangePasswordPage() {
               <Input
                 id="confirmNewPassword"
                 type={showConfirm ? "text" : "password"}
-                placeholder="Re-enter your new password"
+                placeholder={t("auth.change.placeholder_confirm")}
                 required
                 value={confirmNewPassword}
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
@@ -281,7 +281,7 @@ export default function ChangePasswordPage() {
           <div className="rounded-xl bg-muted/40 p-3.5 text-xs space-y-2 border border-border/40">
             <div className="flex items-center gap-1.5 text-muted-foreground font-medium mb-1">
               <Info className="size-3.5 text-primary" />
-              <span>Password requirements:</span>
+              <span>{t("auth.change.requirements")}</span>
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
@@ -292,7 +292,7 @@ export default function ChangePasswordPage() {
                   <X className="size-3.5 text-muted-foreground shrink-0" />
                 )}
                 <span className={hasMinLength ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>
-                  8+ characters
+                  {t("auth.change.min_chars")}
                 </span>
               </div>
 
@@ -303,7 +303,7 @@ export default function ChangePasswordPage() {
                   <X className="size-3.5 text-muted-foreground shrink-0" />
                 )}
                 <span className={hasNumberOrSymbol ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>
-                  Number or symbol
+                  {t("auth.change.num_symbol")}
                 </span>
               </div>
 
@@ -314,7 +314,7 @@ export default function ChangePasswordPage() {
                   <X className="size-3.5 text-muted-foreground shrink-0" />
                 )}
                 <span className={passwordsMatch ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>
-                  Passwords match
+                  {t("auth.change.passwords_match")}
                 </span>
               </div>
             </div>
@@ -345,7 +345,7 @@ export default function ChangePasswordPage() {
               disabled={isLoading || (!currentPassword && !newPassword && !confirmNewPassword)}
               className="h-10 px-4 rounded-xl text-xs font-semibold cursor-pointer"
             >
-              Reset
+              {t("common.reset_form", "Reset")}
             </Button>
 
             <Button

@@ -152,7 +152,7 @@ export default function PrintBillModal({
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 mr-7">
             <Button
               type="button"
               size="sm"
@@ -282,7 +282,15 @@ export default function PrintBillModal({
                       {fmt(item.price)}
                     </td>
                     <td className="py-1.5 text-right tabular-nums font-semibold text-slate-900 dark:text-white">
-                      {fmt(item.subtotal)}
+                      {fmt(
+                        Number(item.subtotal) > 0
+                          ? item.subtotal
+                          : Math.max(
+                              Number(item.price || 0) * Number(item.quantity || 1) -
+                                Number(item.itemDiscount || 0),
+                              0
+                            )
+                      )}
                     </td>
                   </tr>
                 ))}

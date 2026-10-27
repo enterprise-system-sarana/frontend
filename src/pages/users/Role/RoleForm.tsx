@@ -70,7 +70,7 @@ const FormRole = ({ open, setOpen, role }: FormRoleProps) => {
                     <div className="role-form-icon"><ShieldCheck className="h-5 w-5" /></div>
                     <div>
                         <DialogTitle>{role ? t("common.edit") : t("common.add")} {t("nav.role")}</DialogTitle>
-                        <p>Set the role details. You can assign permissions after saving.</p>
+                        <p>{t("role.set_details", "Set the role details. You can assign permissions after saving.")}</p>
                     </div>
                 </DialogHeader>
                 <form

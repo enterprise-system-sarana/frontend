@@ -17,6 +17,7 @@ import { useVariantValue } from "@/hooks/product/useVariantValue";
 import { useVariantType } from "@/hooks/product/useVariantType";
 import type { VariantTypeResponse } from "@/types/product/VariantType";
 import VariantTypeForm from "../variantType/VariantTypeForm";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type FormVariantValueProps = {
     open: boolean;
@@ -25,6 +26,7 @@ type FormVariantValueProps = {
 };
 
 const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps) => {
+    const { t } = useLanguage();
     const [varaintTypeFormOpen, setvaraintTypeFormOpen] = useState(false);
 
     const { mutate: createVariantValueMutate, isPending: isCreating } = useVariantValue.useCreateVariantValue();
@@ -78,7 +80,7 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="md:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle>{variantValue ? "Edit" : "Create"} Variant Value</DialogTitle>
+                    <DialogTitle>{variantValue ? t("variant.edit_value", "Edit Variant Value") : t("variant.create_value", "Create Variant Value")}</DialogTitle>
                 </DialogHeader>
                 <form
                     id="variant-value-form"
@@ -91,17 +93,17 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
                         <FormTextField
                             form={form}
                             name="code"
-                            label="Code"
+                            label={t("common.code")}
                             required={true}
-                            placeholder="code"
+                            placeholder={t("common.code")}
                             type="text"
                         />
                         <FormTextField
                             form={form}
                             name="name"
-                            label="Name"
+                            label={t("common.name")}
                             required={true}
-                            placeholder="Code"
+                            placeholder={t("common.name")}
                             type="text"
                         />
 
@@ -110,9 +112,9 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
                         <FormSelectField
                             form={form}
                             name="variantTypeId"
-                            label="Variant Type"
+                            label={t("variant.type")}
                             required={true}
-                            placeholder="Select Variant Type"
+                            placeholder={t("common.select")}
                             options={variantTypeOptions}
                             onAdd={() => setvaraintTypeFormOpen(true)}
                         />
@@ -124,25 +126,18 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
                         />
 
                         {/* end of variant form */}
-                        <FormRadioGroupField
-                            form={form}
-                            name="status"
-                            label="Status"
-                            required={true}
-                            options={StatusOptions}
-                        />
                     </FieldGroup>
                 </form>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="outline">{t("common.cancel")}</Button>
                     </DialogClose>
                     <Button
                         type="submit"
                         form="variant-value-form"
                         disabled={isPending}
                     >
-                        {isPending ? "Saving..." : variantValue ? "Update" : "Create"}
+                        {isPending ? t("common.saving") : variantValue ? t("common.save") : t("common.create")}
                     </Button>
                 </DialogFooter>
             </DialogContent>

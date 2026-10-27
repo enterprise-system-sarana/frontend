@@ -21,6 +21,7 @@ import FormTextField, {
 } from "@/components/ui/FormTextField";
 import FileUpload from "@/pages/FileUpload";
 import { useCategory } from "@/hooks/product/useCategory";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type FormCategoryProps = {
   open: boolean;
@@ -29,6 +30,7 @@ type FormCategoryProps = {
 };
 
 const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
+  const { t } = useLanguage();
   const { mutate: createCategoryMutate, isPending: isCreating } =
     useCategory.useCreateCategory();
   const { mutate: updateCategoryMutate, isPending: isUpdating } =
@@ -71,10 +73,12 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogContent className="md:max-w-[450px]">
         <DialogHeader>
-          <DialogTitle>{category ? "Edit" : "Create"} brand</DialogTitle>
+          <DialogTitle>
+            {category ? t("common.edit") : t("common.create")} {t("common.category")}
+          </DialogTitle>
         </DialogHeader>
         <form
-          id="brand-form"
+          id="category-form"
           onSubmit={(e) => {
             e.preventDefault();
             form.handleSubmit();
@@ -84,23 +88,23 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
             <FormTextField
               form={form}
               name="code"
-              label="Code"
+              label={t("common.code")}
               required={true}
-              placeholder="Code"
+              placeholder={t("common.code")}
               type="text"
             />
 
             <FormTextField
               form={form}
               name="name"
-              label="Name"
+              label={t("common.name")}
               required={true}
-              placeholder="Name"
+              placeholder={t("common.name")}
               type="text"
             />
 
             <FileUpload
-              label="Category Image"
+              label={`${t("common.category")} Logo`}
               value={form.state.values.imageUrl || category?.imageUrl}
               onUploaded={(fileName) => {
                 form.setFieldValue("imageUrl", fileName);
@@ -110,21 +114,14 @@ const FormCategory = ({ open, setOpen, category }: FormCategoryProps) => {
               }}
               defaultBucket="category"
             />
-            <FormRadioGroupField
-              form={form}
-              name="status"
-              label="Status"
-              required={true}
-              options={StatusOptions}
-            />
           </FieldGroup>
         </form>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant="outline">Cancel</Button>
+            <Button variant="outline">{t("common.cancel")}</Button>
           </DialogClose>
-          <Button type="submit" form="brand-form" disabled={isPending}>
-            {isPending ? "Saving..." : category ? "Update" : "Create"}
+          <Button type="submit" form="category-form" disabled={isPending}>
+            {isPending ? t("common.saving") : category ? t("common.edit") : t("common.create")}
           </Button>
         </DialogFooter>
       </DialogContent>

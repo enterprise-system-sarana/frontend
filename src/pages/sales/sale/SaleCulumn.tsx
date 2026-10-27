@@ -10,6 +10,7 @@ import {
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TableActions } from "@/components/ui/table-actions";
 import { formatDate } from "@/utils/formatDate";
+import type { TranslationKey } from "@/i18n/locales/en";
 
 interface SaleColumnProps {
   onView?: (sale: SaleResponse) => void;
@@ -21,6 +22,7 @@ interface SaleColumnProps {
   onPayment?: (sale: SaleResponse) => void;
   canEdit: boolean;
   canDelete: boolean;
+  t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 const formatCurrency = (value: number) => `$${(value || 0).toFixed(2)}`;
@@ -36,6 +38,7 @@ export const SaleColumns = ({
   onPayment,
   canEdit,
   canDelete,
+  t,
 }: SaleColumnProps): ColumnDef<SaleResponse>[] => [
     // {
     //   accessorKey: "id",
@@ -48,7 +51,7 @@ export const SaleColumns = ({
     // },
     {
       accessorKey: "customer",
-      header: ({ column }) => <SortableHeader column={column} title="Customer" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("sale.customer") : "Customer"} />,
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {safeText(row.original.customerName)}
@@ -57,7 +60,7 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "reference",
-      header: ({ column }) => <SortableHeader column={column} title="Reference" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("common.reference") : "Reference"} />,
       cell: ({ row }) => (
         <span
           onClick={() => onView?.(row.original)}
@@ -68,18 +71,18 @@ export const SaleColumns = ({
         </span>
       ),
     },
-    {
-      accessorKey: "no",
-      header: ({ column }) => <SortableHeader column={column} title="No" />,
-      cell: ({ row }) => (
-        <span className="font-mono text-xs text-[#696cff]">
-          {row.index + 1}
-        </span>
-      ),
-    },
+    // {
+    //   accessorKey: "no",
+    //   header: ({ column }) => <SortableHeader column={column} title={t ? t("common.id") : "No"} />,
+    //   cell: ({ row }) => (
+    //     <span className="font-mono text-xs text-[#696cff]">
+    //       {row.index + 1}
+    //     </span>
+    //   ),
+    // },
     {
       accessorKey: "store",
-      header: ({ column }) => <SortableHeader column={column} title="Store" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store") : "Store"} />,
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {safeText(row.original.storeName)}
@@ -88,7 +91,7 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "createdAt",
-      header: ({ column }) => <SortableHeader column={column} title="Date" />,
+      header: ({ column }) => <SortableHeader column={column} title={t ? t("common.date") : "Date"} />,
       cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
     },
 
@@ -103,7 +106,7 @@ export const SaleColumns = ({
     // },
     {
       accessorKey: "grandTotal",
-      header: "Total",
+      header: t ? t("common.total") : "Total",
       cell: ({ row }) => (
         <span className="font-semibold text-[#566a7f]">
           {formatCurrency(row.original.grandTotal)}
@@ -112,7 +115,7 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "paidAmount",
-      header: "Paid",
+      header: t ? t("common.paid") : "Paid",
       cell: ({ row }) => (
         <span className="text-[#71dd37] font-medium">
           {formatCurrency(row.original.paidAmount)}
@@ -121,7 +124,7 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "dueAmount",
-      header: "Due",
+      header: t ? t("common.due") : "Due",
       cell: ({ row }) => (
         <span className="text-[#ff3e1d] font-medium">
           {formatCurrency(row.original.dueAmount)}
@@ -130,10 +133,11 @@ export const SaleColumns = ({
     },
     {
       accessorKey: "paymentStatus",
-      header: "Payment",
+      header: t ? t("common.payment") : "Payment",
       cell: ({ row }) => {
         const status = row.original.paymentStatus?.toUpperCase();
         const isPaid = status === "PAID";
+        const label = status === "PAID" && t ? t("common.paid") : status === "PARTIAL" && t ? t("common.partial") : status === "PENDING" && t ? t("common.pending") : row.original.paymentStatus;
         return (
           <Badge
             variant="outline"
@@ -143,19 +147,19 @@ export const SaleColumns = ({
                 : "bg-[#ffab00]/10 text-[#ffab00] border-[#ffab00]/20"
             }
           >
-            {row.original.paymentStatus}
+            {label}
           </Badge>
         );
       },
     },
     {
       accessorKey: "status",
-      header: "Status",
+      header: t ? t("common.status") : "Status",
       cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
       accessorKey: "Action",
-      header: "Action",
+      header: t ? t("common.action") : "Action",
       enableHiding: false,
       cell: ({ row }) => {
         const currentStatus = row.original.status?.toUpperCase();
@@ -185,7 +189,7 @@ export const SaleColumns = ({
               <Button
                 variant="ghost"
                 size="icon"
-                title="Payment"
+                title={t ? t("common.payment") : "Payment"}
                 className="h-8 w-8 text-[#696cff] hover:bg-[#696cff]/10 rounded-lg"
                 onClick={() => onPayment(row.original)}
               >
@@ -196,7 +200,7 @@ export const SaleColumns = ({
               <Button
                 variant="ghost"
                 size="icon"
-                title="Return Sale"
+                title={t ? t("sale.return") : "Return Sale"}
                 className="h-8 w-8 text-amber-500 hover:bg-amber-500/10 rounded-lg"
                 onClick={() => onReturn(row.original.id)}
               >

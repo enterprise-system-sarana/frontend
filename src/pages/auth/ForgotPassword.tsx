@@ -187,11 +187,11 @@ export default function ForgotPasswordPage() {
               </div>
 
               <h2 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
-                Check Your Inbox
+                {t("auth.forgot.check_inbox", "Check Your Inbox")}
               </h2>
 
               <p className="mt-2.5 text-xs sm:text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-                We sent password reset instructions to:
+                {t("auth.forgot.sent_instructions", "We sent password reset instructions to:")}
               </p>
 
               <div className="mt-3 inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-full truncate">
@@ -200,7 +200,7 @@ export default function ForgotPasswordPage() {
               </div>
 
               <p className="mt-4 text-xs text-slate-400 dark:text-slate-500">
-                Did not receive the email? Check your spam folder or request a new link below.
+                {t("auth.forgot.not_received_desc", "Did not receive the email? Check your spam folder or request a new link below.")}
               </p>
 
               {error && (
@@ -220,8 +220,8 @@ export default function ForgotPasswordPage() {
                 >
                   <RefreshCw className={`size-3.5 ${isLoading ? "animate-spin" : ""}`} />
                   {resendCooldown > 0
-                    ? `Resend available in ${resendCooldown}s`
-                    : "Resend Email"}
+                    ? `${t("auth.forgot.resend_cooldown", "Resend available in")} ${resendCooldown}s`
+                    : t("auth.forgot.resend", "Resend Email")}
                 </Button>
 
                 <Link
@@ -239,7 +239,7 @@ export default function ForgotPasswordPage() {
         {/* Security badge at bottom */}
         <div className="mt-6 flex items-center justify-center gap-2 text-xs text-slate-400 dark:text-slate-500">
           <ShieldCheck className="size-4" />
-          <span>Encrypted with 256-bit SSL Security</span>
+          <span>{t("auth.security_encrypted", "Encrypted with 256-bit SSL Security")}</span>
         </div>
       </div>
     </main>

@@ -5,24 +5,28 @@ import { SortableHeader } from "@/utils/sort-table-header";
 import type { VariantTypeResponse } from "@/types/product/VariantType";
 import { formatDate } from "@/utils/formatDate";
 
+import type { TranslationKey } from "@/i18n/locales/en";
+
 interface VariantTypeColumnsProps {
     onEdit: (variantType: VariantTypeResponse) => void;
     onDelete: (id: number) => void;
+    t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const VariantTypeColumns = ({
     onEdit,
     onDelete,
+    t,
 }: VariantTypeColumnsProps): ColumnDef<VariantTypeResponse>[] => [
 
     {
         accessorKey: "name",
-        header: ({ column }) => <SortableHeader column={column} title="Name" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
     },
     {
         accessorKey: "code",
-        header: ({ column }) => <SortableHeader column={column} title="Code" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.code") : "Code"} />,
         cell: ({ row }) => (
             <span className="font-mono text-xs font-medium text-[#566a7f]">
                 {row.original.code || "-"}
@@ -31,11 +35,11 @@ export const VariantTypeColumns = ({
     },
     {
         accessorKey: "values",
-        header: "Values",
+        header: t ? t("variant.values") : "Values",
         cell: ({ row }) => {
             const values = row.original.values || [];
             if (values.length === 0) {
-                return <span className="text-muted-foreground text-xs italic">No values</span>;
+                return <span className="text-muted-foreground text-xs italic">{t ? t("variant.no_values") : "No values"}</span>;
             }
             const displayValues = values.slice(0, 4);
             const remaining = values.length - displayValues.length;
@@ -60,17 +64,17 @@ export const VariantTypeColumns = ({
     },
     {
         accessorKey: "createdAt",
-        header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : "Created Date"} />,
         cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: t ? t("common.status") : "Status",
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
         accessorKey: "Action",
-        header: "Action",
+        header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
             return (

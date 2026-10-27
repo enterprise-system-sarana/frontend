@@ -7,6 +7,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { Eye, MoreHorizontal, PencilIcon, Trash2 } from "lucide-react";
 import type { TranslationKey } from "@/i18n/locales/en";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 interface TableActionsProps {
   onView?: () => void;
@@ -19,8 +20,10 @@ export function TableActions({
   onView,
   onEdit,
   onDelete,
-  t,
+  t: propT,
 }: TableActionsProps) {
+  const { t: contextT } = useLanguage();
+  const t = propT || contextT;
   if (!onView && !onEdit && !onDelete) return null;
 
   return (

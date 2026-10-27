@@ -16,6 +16,7 @@ import { StatusOptions, Status } from "@/types/enum/status";
 import FormTextField, { FormRadioGroupField } from "@/components/ui/FormTextField";
 import FileUpload from "@/pages/FileUpload";
 import { useBrand } from "@/hooks/product/useBrand";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type FormBrandProps = {
     open: boolean;
@@ -24,6 +25,7 @@ type FormBrandProps = {
 };
 
 const FormBrand = ({ open, setOpen, brand }: FormBrandProps) => {
+    const { t } = useLanguage();
     const { mutate: createBrandMutate, isPending: isCreating } = useBrand.useCreateBrand();
     const { mutate: updateBrandMutate, isPending: isUpdating } = useBrand.useUpdateBrand();
 
@@ -63,7 +65,9 @@ const FormBrand = ({ open, setOpen, brand }: FormBrandProps) => {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="md:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle>{brand ? "Edit" : "Create"} brand</DialogTitle>
+                    <DialogTitle>
+                        {brand ? t("common.edit") : t("common.create")} {t("common.brand")}
+                    </DialogTitle>
                 </DialogHeader>
                 <form
                     id="brand-form"
@@ -76,14 +80,14 @@ const FormBrand = ({ open, setOpen, brand }: FormBrandProps) => {
                         <FormTextField
                             form={form}
                             name="name"
-                            label="Name"
+                            label={t("common.name")}
                             required={true}
-                            placeholder="Name"
+                            placeholder={t("common.name")}
                             type="text"
                         />
 
                         <FileUpload
-                            label="Brand Logo"
+                            label={`${t("common.brand")} Logo`}
                             value={form.state.values.imageUrl || brand?.imageUrl}
                             onUploaded={(fileName) => {
                                 form.setFieldValue("imageUrl", fileName);
@@ -93,25 +97,18 @@ const FormBrand = ({ open, setOpen, brand }: FormBrandProps) => {
                             }}
                             defaultBucket="brand"
                         />
-                        <FormRadioGroupField
-                            form={form}
-                            name="status"
-                            label="Status"
-                            required={true}
-                            options={StatusOptions}
-                        />
                     </FieldGroup>
                 </form>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="outline">{t("common.cancel")}</Button>
                     </DialogClose>
                     <Button
                         type="submit"
                         form="brand-form"
                         disabled={isPending}
                     >
-                        {isPending ? "Saving..." : (brand ? "Update" : "Create")}
+                        {isPending ? t("common.saving") : (brand ? t("common.edit") : t("common.create"))}
                     </Button>
                 </DialogFooter>
             </DialogContent>

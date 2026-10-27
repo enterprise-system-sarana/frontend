@@ -20,8 +20,10 @@ import { Status } from "@/types/enum/status";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const CustomerPage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.CUSTOMER.CREATE);
     const canRead = Can(PERMISSION.CUSTOMER.READ);
@@ -45,16 +47,19 @@ export const CustomerPage = () => {
     const { mutate: deleteCustomerMutate } = useCustomer.useDeleteCustomer();
 
     // Filter Groups for Filter +
-    const filterGroups: FilterGroup[] = [
-        {
-            key: "status",
-            label: "Status",
-            options: [
-                { label: "Active", value: Status.ACTIVE },
-                { label: "Inactive", value: Status.INACTIVE },
-            ],
-        },
-    ];
+    const filterGroups: FilterGroup[] = useMemo(
+        () => [
+            {
+                key: "status",
+                label: t("common.status"),
+                options: [
+                    { label: t("common.active"), value: Status.ACTIVE },
+                    { label: t("common.inactive"), value: Status.INACTIVE },
+                ],
+            },
+        ],
+        [t]
+    );
 
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
@@ -130,10 +135,9 @@ export const CustomerPage = () => {
             CustomerColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
-                // canEdit: canUpdate,
-                // canDelete: canDelete,
+                t,
             }),
-        []
+        [t]
     );
 
     const handleExportCsv = () => {
@@ -155,8 +159,8 @@ export const CustomerPage = () => {
             <div className="space-y-4">
                 {/* Top Header */}
                 <PageHeader
-                    title="Customers"
-                    featureName="Customer"
+                    title={t("nav.customers")}
+                    featureName={t("nav.customer")}
                     onCreate={canCreate ? () => {
                         setCustomer(null);
                         setOpen(true);
@@ -171,7 +175,7 @@ export const CustomerPage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search customers..."
+                            searchPlaceholder={t("common.search")}
                             filterGroups={filterGroups}
                             filterValues={filterValues}
                             onFilterChange={handleFilterChange}

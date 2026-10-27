@@ -5,12 +5,14 @@ import { TableActions } from "@/components/ui/table-actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import ImageCell from "@/components/file/ImageCell";
 import { formatDate } from "@/utils/formatDate";
+import type { TranslationKey } from "@/i18n/locales/en";
 
 export interface StoreColumnProps {
   onEdit: (store: StoreResponse) => void;
   onDelete: (id: number) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const StoreColumns = ({
@@ -18,10 +20,11 @@ export const StoreColumns = ({
   onDelete,
   canEdit = true,
   canDelete = true,
+  t,
 }: StoreColumnProps): ColumnDef<StoreResponse>[] => [
   {
     accessorKey: "name",
-    header: ({ column }) => <SortableHeader column={column} title="Store" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store") : "Store"} />,
     cell: ({ row }) => (
       <div className="flex items-center gap-3 py-0.5">
         <ImageCell
@@ -44,7 +47,7 @@ export const StoreColumns = ({
   {
     id: "contact",
     accessorKey: "email",
-    header: "Contact",
+    header: t ? t("common.contact") : "Contact",
     cell: ({ row }) => (
       <div className="flex flex-col text-xs space-y-0.5">
         <span className="text-foreground font-medium truncate">
@@ -59,7 +62,7 @@ export const StoreColumns = ({
   {
     id: "location",
     accessorKey: "city",
-    header: "Location",
+    header: t ? t("common.location") : "Location",
     cell: ({ row }) => {
       const address = [row.original.address1, row.original.address2]
         .filter(Boolean)
@@ -91,7 +94,7 @@ export const StoreColumns = ({
   },
   {
     accessorKey: "currencyCode",
-    header: ({ column }) => <SortableHeader column={column} title="Currency" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.currency") : "Currency"} />,
     cell: ({ row }) => (
       <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-muted text-foreground font-medium">
         {row.original.currencyCode || "-"}
@@ -101,7 +104,7 @@ export const StoreColumns = ({
   {
     accessorKey: "createdAt",
     header: ({ column }) => (
-      <SortableHeader column={column} title="Created Date" />
+      <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />
     ),
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
@@ -111,12 +114,12 @@ export const StoreColumns = ({
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t ? t("common.status") : "Status",
     cell: ({ row }) => <StatusBadge status={row.original.status || "ACTIVE"} />,
   },
   {
     accessorKey: "Action",
-    header: "Action",
+    header: t ? t("common.action") : "Action",
     enableHiding: false,
     cell: ({ row }) => {
       if (!canEdit && !canDelete) {

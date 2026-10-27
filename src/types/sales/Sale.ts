@@ -37,6 +37,8 @@ export type SaleItem = {
 
 export interface SaleResponse extends BaseResponse {
   reference: string;
+  no?: string;
+  date?: string;
   saleDate?: string;
   noted: string | null;
   customerId: number | null;
@@ -50,6 +52,9 @@ export interface SaleResponse extends BaseResponse {
   grandTotal: number;
   paidAmount: number;
   dueAmount: number;
+  returnAmount?: number;
+  cashRegisterId?: number | null;
+  cashRegisterNo?: string | null;
   paymentStatus: string;
   status: string;
   items: SaleItemResponse[];

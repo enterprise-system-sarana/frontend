@@ -286,8 +286,8 @@ const FormUser = ({
                 <DialogHeader>
                     <DialogTitle className="text-lg">
                         {isEdit
-                            ? "Edit User"
-                            : "Create User"}
+                            ? t("user.edit")
+                            : t("user.create")}
                     </DialogTitle>
 
                 </DialogHeader>
@@ -314,7 +314,7 @@ const FormUser = ({
                                 <FormTextField
                                     form={form}
                                     name="firstName"
-                                    label="First Name"
+                                    label={t("user.first_name")}
                                     placeholder=""
                                     type="text"
                                     required
@@ -324,7 +324,7 @@ const FormUser = ({
                                 <FormTextField
                                     form={form}
                                     name="lastName"
-                                    label="Last Name"
+                                    label={t("user.last_name")}
                                     placeholder=""
                                     type="text"
                                     required
@@ -336,7 +336,7 @@ const FormUser = ({
                                 <FormTextField
                                     form={form}
                                     name="phone"
-                                    label="Phone"
+                                    label={t("user.phone")}
                                     placeholder=""
                                     type="tel"
                                     required
@@ -346,7 +346,7 @@ const FormUser = ({
                                 <FormTextField
                                     form={form}
                                     name="email"
-                                    label="Email"
+                                    label={t("user.email")}
                                     placeholder=""
                                     type="email"
                                     required
@@ -362,12 +362,12 @@ const FormUser = ({
                             name="password"
                             label={
                                 isEdit
-                                    ? "New Password"
-                                    : "Password"
+                                    ? t("user.new_password")
+                                    : t("user.password")
                             }
                             placeholder={
                                 isEdit
-                                    ? "Leave blank to keep current password"
+                                    ? t("user.leave_blank_password")
                                     : ""
                             }
                             type="password"
@@ -383,7 +383,7 @@ const FormUser = ({
                                 <form.Subscribe selector={(state) => [state.values.profileImage]}>
                                     {([profileImage]) => (
                                         <FileUpload
-                                            label={"Profile Image"}
+                                            label={t("user.profile_image")}
                                             value={profileImage || ""}
                                             onUploaded={(fileName) => {
                                                 form.setFieldValue("profileImage", fileName);
@@ -409,7 +409,7 @@ const FormUser = ({
 
                         {isLoadingRoles ? (
                             <div className="text-sm text-muted-foreground">
-                                Loading roles...
+                                {t("user.loading_roles")}
                             </div>
                         ) : roleOptions.length > 0 ? (
                             <form.Subscribe
@@ -425,14 +425,14 @@ const FormUser = ({
                                         <div className="space-y-3">
                                             <div className="flex items-center justify-between">
                                                 <label className="text-xs font-semibold">
-                                                    Roles{" "}
+                                                    {t("user.roles")}{" "}
                                                     <span className="text-destructive">
                                                         *
                                                     </span>
                                                 </label>
 
                                                 <span className="text-xs text-muted-foreground">
-                                                    {selected.length} selected
+                                                    {selected.length} {t("user.selected")}
                                                 </span>
                                             </div>
 
@@ -502,7 +502,7 @@ const FormUser = ({
                             </form.Subscribe>
                         ) : (
                             <div className="border border-dashed p-4 text-sm text-muted-foreground">
-                                No roles available.
+                                {t("user.no_roles")}
                             </div>
                         )}
                     </section>
@@ -515,8 +515,8 @@ const FormUser = ({
                                 <FormSelectField
                                     form={form}
                                     name="storeId"
-                                    label="Store / Branch"
-                                    placeholder="Select a store"
+                                    label={t("user.store_branch")}
+                                    placeholder={t("user.select_store")}
                                     options={storeOptions}
                                 />
                             )}

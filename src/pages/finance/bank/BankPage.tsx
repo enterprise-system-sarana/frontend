@@ -20,8 +20,10 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import FormBank from "./BankForm";
 import { BankColumns } from "./BankColumn";
 import { Status } from "@/types/enum/status";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const BankPage = () => {
+    const { t } = useLanguage();
     const { Can } = usePermission();
     const canCreate = Can(PERMISSION.BANK.CREATE);
     const canRead = Can(PERMISSION.BANK.READ);
@@ -45,16 +47,19 @@ export const BankPage = () => {
     const { mutate: deleteBankMutate } = useBank.useDeleteBank();
 
     // Filter Groups for Filter +
-    const filterGroups: FilterGroup[] = [
-        {
-            key: "status",
-            label: "Status",
-            options: [
-                { label: "Active", value: Status.ACTIVE },
-                { label: "Inactive", value: Status.INACTIVE },
-            ],
-        },
-    ];
+    const filterGroups: FilterGroup[] = useMemo(
+        () => [
+            {
+                key: "status",
+                label: t("common.status"),
+                options: [
+                    { label: t("common.active"), value: Status.ACTIVE },
+                    { label: t("common.inactive"), value: Status.INACTIVE },
+                ],
+            },
+        ],
+        [t]
+    );
 
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
@@ -132,8 +137,9 @@ export const BankPage = () => {
                 onDelete: handleDelete,
                 canEdit: canUpdate,
                 canDelete: canDelete,
+                t,
             }),
-        []
+        [canUpdate, canDelete, t]
     );
 
     const handleExportCsv = () => {
@@ -157,8 +163,8 @@ export const BankPage = () => {
             <div className="space-y-4">
                 {/* Top Header */}
                 <PageHeader
-                    title="Banks"
-                    featureName="Bank"
+                    title={t("finance.banks")}
+                    featureName={t("finance.bank")}
                     onCreate={
                         canCreate
                             ? () => {
@@ -177,7 +183,7 @@ export const BankPage = () => {
                         <PageFilter
                             search={search}
                             onSearchChange={setSearch}
-                            searchPlaceholder="Search banks..."
+                            searchPlaceholder={t("common.search")}
                             filterGroups={filterGroups}
                             filterValues={filterValues}
                             onFilterChange={handleFilterChange}
@@ -219,7 +225,7 @@ export const BankPage = () => {
             <ConfirmDelete
                 isOpen={openConfirmDelete}
                 setIsOpen={setOpenConfirmDelete}
-                entityName="Bank"
+                entityName={t("finance.bank")}
                 confirmDelete={confirmDelete}
             />
         </>

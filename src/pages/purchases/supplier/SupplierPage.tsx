@@ -14,8 +14,10 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { Status } from "@/types/enum/status";
 import { AccessDenied } from "@/components/ui/access-denied";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const SupplierPage = () => {
+  const { t } = useLanguage();
   const { Can } = usePermission();
   const canCreate = Can(PERMISSION.SUPPLIER.CREATE);
   const canRead = Can(PERMISSION.SUPPLIER.READ);
@@ -35,16 +37,19 @@ export const SupplierPage = () => {
   const { mutate: deleteSupplierMutate } = useSupplier.useDeleteSupplier();
 
   // Filter Groups for Filter +
-  const filterGroups: FilterGroup[] = [
-    {
-      key: "status",
-      label: "Status",
-      options: [
-        { label: "Active", value: Status.ACTIVE },
-        { label: "Inactive", value: Status.INACTIVE },
-      ],
-    },
-  ];
+  const filterGroups: FilterGroup[] = useMemo(
+    () => [
+      {
+        key: "status",
+        label: t("common.status"),
+        options: [
+          { label: t("common.active"), value: Status.ACTIVE },
+          { label: t("common.inactive"), value: Status.INACTIVE },
+        ],
+      },
+    ],
+    [t]
+  );
 
   const handleColumnToggle = (columnId: string) => {
     setColumnVisibility((prev) => ({
@@ -115,8 +120,9 @@ export const SupplierPage = () => {
         onDelete: handleDelete,
         canEdit: canUpdate,
         canDelete: canDelete,
+        t,
       }),
-    [canUpdate, canDelete]
+    [canUpdate, canDelete, t]
   );
 
   const handleExportCsv = () => {
@@ -140,8 +146,8 @@ export const SupplierPage = () => {
       <div className="space-y-4">
         {/* Top Header */}
         <PageHeader
-          title="Suppliers"
-          featureName="Supplier"
+          title={t("nav.suppliers")}
+          featureName={t("nav.supplier")}
           onCreate={
             canCreate
               ? () => {
@@ -160,7 +166,7 @@ export const SupplierPage = () => {
             <PageFilter
               search={search}
               onSearchChange={setSearch}
-              searchPlaceholder="Search suppliers..."
+              searchPlaceholder={t("common.search")}
               filterGroups={filterGroups}
               filterValues={filterValues}
               onFilterChange={handleFilterChange}
@@ -200,7 +206,7 @@ export const SupplierPage = () => {
       <ConfirmDelete
         isOpen={openConfirmDelete}
         setIsOpen={setOpenConfirmDelete}
-        entityName={"Supplier"}
+        entityName={t("nav.supplier")}
         confirmDelete={confirmDelete}
       />
     </>

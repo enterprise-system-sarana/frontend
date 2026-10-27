@@ -5,41 +5,44 @@ import { SortableHeader } from "@/utils/sort-table-header";
 import type { ExpenseTypeResponse } from "@/types/expense/expense.type";
 import { formatDate } from "@/utils/formatDate";
 
+import type { TranslationKey } from "@/i18n/locales/en";
+
 interface ExpenseTypeColumnsProps {
     onEdit: (expenseType: ExpenseTypeResponse) => void;
     onDelete: (id: number) => void;
+    t?: (key: TranslationKey, fallback?: string) => string;
 }
 
-export const ExpenseTypeColumns = ({ onEdit, onDelete }: ExpenseTypeColumnsProps): ColumnDef<ExpenseTypeResponse>[] => [
+export const ExpenseTypeColumns = ({ onEdit, onDelete, t }: ExpenseTypeColumnsProps): ColumnDef<ExpenseTypeResponse>[] => [
 
     {
         accessorKey: "code",
-        header: ({ column }) => <SortableHeader column={column} title="Code" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.code") : "Code"} />,
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.code}</span>
     },
     {
         accessorKey: "name",
-        header: ({ column }) => <SortableHeader column={column} title="Name" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>
     },
     {
         accessorKey: "description",
-        header: ({ column }) => <SortableHeader column={column} title="Description" />,
+        header: ({ column }) => <SortableHeader column={column} title={t ? t("common.description") : "Description"} />,
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.description}</span>
     },
     {
         accessorKey: "createdAt",
-        header: "Created Date",
+        header: t ? t("common.created_date") : "Created Date",
         cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
     },
     {
         accessorKey: "status",
-        header: "Status",
+        header: t ? t("common.status") : "Status",
         cell: ({ row }) => <StatusBadge status={row.original.status} />,
     },
     {
         accessorKey: "Action",
-        header: "Action",
+        header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
             return (

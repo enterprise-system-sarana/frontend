@@ -4,12 +4,14 @@ import type { ColumnDef } from "@tanstack/react-table";
 import { TableActions } from "@/components/ui/table-actions";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { formatDate } from "@/utils/formatDate";
+import type { TranslationKey } from "@/i18n/locales/en";
 
 export interface SupplierColumnProps {
   onEdit: (supplier: SupplierResponse) => void;
   onDelete: (id: number) => void;
   canEdit?: boolean;
   canDelete?: boolean;
+  t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const SupplierColumns = ({
@@ -17,10 +19,11 @@ export const SupplierColumns = ({
   onDelete,
   canEdit = true,
   canDelete = true,
+  t,
 }: SupplierColumnProps): ColumnDef<SupplierResponse>[] => [
   {
     accessorKey: "name",
-    header: ({ column }) => <SortableHeader column={column} title="Supplier" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("nav.supplier") : "Supplier"} />,
     cell: ({ row }) => (
       <div className="flex flex-col min-w-0 py-0.5">
         <span className="font-semibold text-foreground text-sm truncate">
@@ -35,7 +38,7 @@ export const SupplierColumns = ({
   {
     id: "contact",
     accessorKey: "email",
-    header: "Contact",
+    header: t ? t("common.contact") : "Contact",
     cell: ({ row }) => (
       <div className="flex flex-col text-xs space-y-0.5">
         <span className="text-foreground font-medium truncate">
@@ -50,7 +53,7 @@ export const SupplierColumns = ({
   {
     id: "location",
     accessorKey: "address",
-    header: "Location",
+    header: t ? t("common.location") : "Location",
     cell: ({ row }) => {
       const region = [row.original.city, row.original.country]
         .filter(Boolean)
@@ -75,7 +78,7 @@ export const SupplierColumns = ({
   },
   {
     accessorKey: "note",
-    header: ({ column }) => <SortableHeader column={column} title="Note" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("common.notes") : "Note"} />,
     cell: ({ row }) => (
       <span
         className="truncate max-w-xs text-muted-foreground text-xs block"
@@ -87,7 +90,7 @@ export const SupplierColumns = ({
   },
   {
     accessorKey: "createdAt",
-    header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
+    header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />,
     cell: ({ row }) => (
       <span className="text-xs text-muted-foreground">
         {formatDate(row.original.createdAt)}
@@ -96,12 +99,12 @@ export const SupplierColumns = ({
   },
   {
     accessorKey: "status",
-    header: "Status",
+    header: t ? t("common.status") : "Status",
     cell: ({ row }) => <StatusBadge status={row.original.status || "ACTIVE"} />,
   },
   {
     accessorKey: "Action",
-    header: "Action",
+    header: t ? t("common.action") : "Action",
     enableHiding: false,
     cell: ({ row }) => {
       if (!canEdit && !canDelete) {
@@ -109,9 +112,10 @@ export const SupplierColumns = ({
       }
       return (
         <TableActions
-              onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
-            />
+          onEdit={() => onEdit(row.original)}
+          onDelete={() => onDelete(row.original.id)}
+          t={t}
+        />
       );
     },
   },

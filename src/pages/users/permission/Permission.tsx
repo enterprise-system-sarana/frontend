@@ -17,8 +17,10 @@ import { ROUTERS } from "@/constants/Route";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { PageHeader } from "@/components/ui/page-header";
 import { useRole } from '@/hooks/users/useRole';
+import { useLanguage } from "@/i18n/LanguageContext";
 
 export const PermissionPage = () => {
+    const { t } = useLanguage();
     const navigate = useNavigate();
     const [searchParams, setSearchParams] = useSearchParams();
     const roleIdParam = searchParams.get("roleId") || searchParams.get("role") || "";
@@ -149,11 +151,11 @@ export const PermissionPage = () => {
         <div className="role-permissions-page space-y-5">
             {/* Header section */}
             <PageHeader
-                title="Role Permissions"
+                title={t("nav.role_permissions", "Role Permissions")}
                 titleIcon={<span className="role-page-title-icon"><LockKeyhole className="h-5 w-5" /></span>}
                 description={selectedRole
                     ? `Manage access for ${selectedRole.name} (${selectedRole.code}).`
-                    : "Choose a role to review and assign access by module."}
+                    : t("role.choose_role", "Choose a role to review and assign access by module.")}
                 hideButton
                 actions={
                     <Button
@@ -163,27 +165,27 @@ export const PermissionPage = () => {
                         className="gap-1.5 cursor-pointer"
                     >
                         <ArrowLeft className="h-4 w-4" />
-                        Back to Roles
+                        {t("role.back_to_roles", "Back to Roles")}
                     </Button>
                 }
             />
 
             <div className="role-overview-grid">
-                <div className="role-overview-card"><span className="role-overview-icon blue"><ShieldCheck size={20} /></span><span><small>Selected role</small><strong className="role-overview-name">{selectedRole?.name || "No role selected"}</strong></span></div>
-                <div className="role-overview-card"><span className="role-overview-icon green"><KeyRound size={20} /></span><span><small>Enabled permissions</small><strong>{checkedCount} <em>/ {permissions.length}</em></strong></span></div>
-                <div className="role-overview-card"><span className="role-overview-icon orange"><Layers3 size={20} /></span><span><small>Modules</small><strong>{moduleCount}</strong></span></div>
+                <div className="role-overview-card"><span className="role-overview-icon blue"><ShieldCheck size={20} /></span><span><small>{t("role.selected_role", "Selected role")}</small><strong className="role-overview-name">{selectedRole?.name || t("role.no_role_selected", "No role selected")}</strong></span></div>
+                <div className="role-overview-card"><span className="role-overview-icon green"><KeyRound size={20} /></span><span><small>{t("role.enabled_permissions", "Enabled permissions")}</small><strong>{checkedCount} <em>/ {permissions.length}</em></strong></span></div>
+                <div className="role-overview-card"><span className="role-overview-icon orange"><Layers3 size={20} /></span><span><small>{t("role.modules", "Modules")}</small><strong>{moduleCount}</strong></span></div>
             </div>
 
             <div className="role-permissions-card">
-              <div className="role-permissions-card-heading"><div><h2>Access by module</h2><p>Choose a role, then select the actions it can perform.</p></div><span>{moduleCount} modules</span></div>
+              <div className="role-permissions-card-heading"><div><h2>{t("role.access_by_module", "Access by module")}</h2><p>{t("role.select_actions_desc", "Choose a role, then select the actions it can perform.")}</p></div><span>{moduleCount} {t("role.modules", "modules")}</span></div>
               {/* Selection and Filter toolbar */}
               <div className="role-permissions-toolbar flex flex-col sm:flex-row gap-4">
                 {/* Role Selector */}
                 <div className="flex flex-col gap-1.5 w-full sm:w-[260px]">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Select Role</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("role.selected_role", "Select Role")}</span>
                     <Select value={selectedRoleId} onValueChange={handleRoleChange}>
                         <SelectTrigger className="w-full h-9 border-border/80 bg-background text-sm">
-                            <SelectValue placeholder="Select Role..." />
+                            <SelectValue placeholder={t("role.choose_role", "Select Role...")} />
                         </SelectTrigger>
                         <SelectContent>
                             {roles.map((role: any) => (
@@ -197,13 +199,13 @@ export const PermissionPage = () => {
 
                 {/* Module Search Filter */}
                 <div className="flex flex-col gap-1.5 flex-1">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Filter Modules</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">{t("role.filter_modules", "Filter Modules")}</span>
                     <div className="relative flex-1">
                         <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground pointer-events-none" />
                         <Input
                             type="text"
                             className="pl-9 pr-8 h-9 border-border/80 rounded-lg focus-visible:ring-primary/20 bg-background"
-                            placeholder="Search modules or permissions..."
+                            placeholder={t("role.search_modules_placeholder", "Search modules or permissions...")}
                             value={searchTerm}
                             onChange={(e) => setSearchTerm(e.target.value)}
                         />
@@ -228,12 +230,12 @@ export const PermissionPage = () => {
                         <table className="w-full border-collapse text-left text-sm">
                             <thead className="border-b border-border/50">
                                 <tr>
-                                    <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase min-w-[200px]">Module Name</th>
+                                    <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase min-w-[200px]">{t("role.module_name", "Module Name")}</th>
                                     <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">READ</th>
                                     <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">CREATE</th>
                                     <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">UPDATE</th>
                                     <th className="px-4 py-3.5 font-semibold text-xs tracking-wider uppercase text-center w-[100px]">DELETE</th>
-                                    <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase">Other Permissions</th>
+                                    <th className="px-6 py-3.5 font-semibold text-xs tracking-wider uppercase">{t("role.other_permissions", "Other Permissions")}</th>
                                 </tr>
                             </thead>
                             <tbody className="divide-y divide-border/60">
@@ -342,13 +344,13 @@ export const PermissionPage = () => {
                                                         ))}
                                                     </div>
                                                 ) : (
-                                                    <span className="text-muted-foreground/40 text-xs italic">No other actions</span>
+                                                    <span className="text-muted-foreground/40 text-xs italic">{t("role.no_other_actions", "No other actions")}</span>
                                                 )}
                                             </td>
                                         </tr>
                                     );
                                 })}
-                                {Object.keys(filteredGroups).length === 0 && <tr><td colSpan={6} className="px-6 py-10 text-center text-sm text-muted-foreground">No modules match your search.</td></tr>}
+                                {Object.keys(filteredGroups).length === 0 && <tr><td colSpan={6} className="px-6 py-10 text-center text-sm text-muted-foreground">{t("role.no_matching_modules", "No modules match your search.")}</td></tr>}
                             </tbody>
                         </table>
                     </div>
@@ -357,7 +359,7 @@ export const PermissionPage = () => {
 
             {/* Bottom Actions footer */}
             <div className="role-permissions-footer flex items-center justify-between gap-4">
-                <p>{selectedRole ? `Changes to ${selectedRole.name} take effect after saving.` : "Select a role to save permissions."}</p>
+                <p>{selectedRole ? t("role.changes_take_effect", `Changes to ${selectedRole.name} take effect after saving.`) : t("role.choose_role", "Select a role to save permissions.")}</p>
                 <Button
                     onClick={handleSave}
                     disabled={!canUpdate || !selectedRoleId || updatePermissionsMutation.isPending}
@@ -365,7 +367,7 @@ export const PermissionPage = () => {
                     className="h-10 px-6 gap-1.5 font-semibold bg-primary text-primary-foreground hover:bg-primary/95 shadow-sm transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
                     <Save className="h-4 w-4" />
-                    {updatePermissionsMutation.isPending ? "Saving..." : "Save permissions"}
+                    {updatePermissionsMutation.isPending ? t("common.saving", "Saving...") : t("role.save_permissions", "Save permissions")}
                 </Button>
             </div>
             </div>

@@ -93,28 +93,50 @@ export const PurchaseDetailModal = ({
     for (const item of items) {
       const key = item.productId || item.productName;
       const itemSerials: string[] = [];
-      if (Array.isArray(item.serialNumbers)) {
-        for (const s of item.serialNumbers) {
+      const rawSerials =
+        item.serialNumbers ??
+        (item as any).productSerials ??
+        (item as any).serials ??
+        (item as any).barcodes ??
+        (item as any).serialNumberList ??
+        [];
+      if (Array.isArray(rawSerials)) {
+        for (const s of rawSerials) {
           const val =
             typeof s === "string"
               ? s
-              : s?.barcode || (s as any)?.serialNumber || (s?.id ? `SN-${s.id}` : "");
+              : s?.barcode ||
+                s?.serialNumber ||
+                (s as any)?.serial ||
+                (s as any)?.serialNo ||
+                (s as any)?.code ||
+                (s as any)?.imei ||
+                (s as any)?.value ||
+                (s?.id ? `SN-${s.id}` : "");
           if (val) itemSerials.push(val);
         }
       }
 
+      const qty = Number(item.quantity || 0);
+      const sub = Number(item.subtotal || 0);
+      const rawCost = Number(item.cost ?? item.costPrice ?? 0);
+      const cost = rawCost > 0 ? rawCost : (qty > 0 && sub > 0 ? sub / qty : 0);
+
       if (map.has(key)) {
         const existing = map.get(key)!;
-        existing.quantity += Number(item.quantity || 0);
-        existing.subtotal += Number(item.subtotal || 0);
+        existing.quantity += qty;
+        existing.subtotal += sub;
         existing.serials.push(...itemSerials);
+        if (!existing.costPrice && cost > 0) {
+          existing.costPrice = cost;
+        }
       } else {
         map.set(key, {
           productId: item.productId,
           productName: item.productName,
-          costPrice: item.costPrice,
-          quantity: Number(item.quantity || 0),
-          subtotal: Number(item.subtotal || 0),
+          costPrice: cost,
+          quantity: qty,
+          subtotal: sub,
           serials: itemSerials,
         });
       }

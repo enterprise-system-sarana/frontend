@@ -107,13 +107,13 @@ export function PageFilter({
     !!endDate;
 
   return (
-    <div className="flex flex-wrap items-center justify-between gap-3 w-full">
+    <div className="flex flex-wrap items-center justify-between gap-2 w-full">
       {/* Left toolbar section: Search + Date Range + Direct Filter Buttons + Reset */}
-      <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[280px]">
+      <div className="flex flex-wrap items-center gap-1 flex-1 min-w-[200px]">
         {/* Search Input Box */}
         {showSearch && (
-          <div className="relative flex items-center min-w-[220px] max-w-xs w-full sm:w-auto">
-            <Search className="absolute left-3 h-4 w-4 text-muted-foreground pointer-events-none" />
+          <div className="relative flex items-center min-w-[160px] max-w-[200px] w-full sm:w-auto">
+            <Search className="absolute left-2 h-3 w-3 text-muted-foreground pointer-events-none" />
             <input
               type="text"
               value={search}
@@ -125,8 +125,8 @@ export function PageFilter({
               }}
               placeholder={effectivePlaceholder}
               className={cn(
-                "h-9 w-full rounded-lg border border-border/80 bg-background pl-9 text-xs text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all shadow-xs",
-                search ? "pr-8" : "pr-3",
+                "h-7 w-full rounded-md border border-border/80 bg-background pl-7 text-[10px] text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring focus:border-ring transition-all shadow-xs",
+                search ? "pr-6" : "pr-2",
               )}
             />
             {search && (
@@ -136,10 +136,10 @@ export function PageFilter({
                   onSearchChange?.("");
                   onSearchSubmit?.();
                 }}
-                className="absolute right-2.5 flex h-4 w-4 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
+                className="absolute right-1.5 flex h-3 w-3 items-center justify-center rounded-full text-muted-foreground hover:text-foreground hover:bg-muted/80 transition-colors cursor-pointer"
                 title="Clear search"
               >
-                <X className="h-3.5 w-3.5" />
+                <X className="h-3 w-3" />
               </button>
             )}
           </div>
@@ -147,13 +147,13 @@ export function PageFilter({
 
         {/* Date Range Inputs */}
         {(onStartDateChange || onEndDateChange) && (
-          <div className="flex items-center gap-1.5 rounded-lg border border-border/80 bg-background px-2.5 h-9 shadow-xs text-xs">
-            <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <div className="flex items-center gap-1 rounded-md border border-border/80 bg-background px-1.5 h-7 shadow-xs text-[10px]">
+            <Calendar className="h-3 w-3 text-muted-foreground shrink-0" />
             <input
               type="date"
               value={startDate || ""}
               onChange={(e) => onStartDateChange?.(e.target.value)}
-              className="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+              className="bg-transparent text-[10px] text-foreground focus:outline-none cursor-pointer"
               title="Start Date"
             />
             <span className="text-muted-foreground">→</span>
@@ -161,7 +161,7 @@ export function PageFilter({
               type="date"
               value={endDate || ""}
               onChange={(e) => onEndDateChange?.(e.target.value)}
-              className="bg-transparent text-xs text-foreground focus:outline-none cursor-pointer"
+              className="bg-transparent text-[10px] text-foreground focus:outline-none cursor-pointer"
               title="End Date"
             />
             {(startDate || endDate) && (
@@ -194,41 +194,41 @@ export function PageFilter({
                 <button
                   type="button"
                   className={cn(
-                    "h-9 px-3.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center gap-1.5 shadow-2xs transition-all cursor-pointer",
+                    "h-7 px-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-[10px] font-medium text-slate-800 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-800/80 flex items-center gap-0.5 shadow-2xs transition-all cursor-pointer",
                     isSelected &&
                       "border-teal-500 bg-teal-50/60 dark:bg-teal-950/40 text-teal-700 dark:text-teal-300 font-semibold ring-1 ring-teal-500/20",
                   )}
                 >
-                  <span className="truncate max-w-[130px]">
+                  <span className="truncate max-w-[100px]">
                     {isSelected
                       ? `${group.label}: ${selectedOption?.label || currentValue}`
                       : group.label}
                   </span>
                   <ChevronDown
                     className={cn(
-                      "size-3.5 text-slate-600 dark:text-slate-400 transition-transform",
+                      "size-2.5 text-slate-600 dark:text-slate-400 transition-transform",
                       isSelected && "text-teal-600 dark:text-teal-400",
                     )}
                   />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="min-w-[160px] max-h-64 overflow-y-auto">
-                <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                  Select {group.label}
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground font-normal">
+                  {t("common.select")} {group.label}
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
                   value={currentValue}
                   onValueChange={(val) => onFilterChange?.(group.key, val)}
                 >
-                  <DropdownMenuRadioItem value="" className="text-xs cursor-pointer font-medium">
-                    All {group.label}
+                  <DropdownMenuRadioItem value="" className="text-[10px] cursor-pointer font-medium">
+                    {t("common.all")} {group.label}
                   </DropdownMenuRadioItem>
                   {group.options.map((opt) => (
                     <DropdownMenuRadioItem
                       key={opt.value}
                       value={opt.value}
-                      className="text-xs cursor-pointer"
+                      className="text-[10px] cursor-pointer"
                     >
                       {opt.label}
                     </DropdownMenuRadioItem>
@@ -247,18 +247,18 @@ export function PageFilter({
             type="button"
             onClick={handleResetAll}
             className={cn(
-              "h-9 w-9 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer",
+              "h-7 w-7 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:border-slate-400 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all shadow-2xs cursor-pointer",
               hasActiveFilters && "text-slate-900 dark:text-white bg-slate-100 dark:bg-slate-800 border-slate-400",
             )}
             title={t("common.reset")}
           >
-            <RotateCcw className="size-3.5" />
+            <RotateCcw className="size-2.5" />
           </Button>
         )}
       </div>
 
       {/* Right toolbar section: Columns + Export Actions */}
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1">
         {/* Columns Visibility Dropdown */}
         {columns && columns.length > 0 && onColumnToggle && (
           <DropdownMenu>
@@ -266,14 +266,14 @@ export function PageFilter({
               <Button
                 variant="outline"
                 type="button"
-                className="h-9 px-3 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground hover:bg-muted/80 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
+                className="h-7 px-2 rounded-md border-border/80 bg-background text-[10px] font-medium text-foreground hover:bg-muted/80 flex items-center gap-0.5 shadow-xs transition-all cursor-pointer"
               >
                 <span>{t("common.columns")}</span>
-                <ChevronDown className="h-3 w-3 text-muted-foreground opacity-60" />
+                <ChevronDown className="h-2.5 w-2.5 text-muted-foreground opacity-60" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-48">
-              <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
+              <DropdownMenuLabel className="text-[10px] text-muted-foreground font-normal">
                 {t("common.columns")}
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
@@ -282,7 +282,7 @@ export function PageFilter({
                   key={col.id}
                   checked={col.visible}
                   onCheckedChange={() => onColumnToggle(col.id)}
-                  className="text-xs cursor-pointer"
+                  className="text-[10px] cursor-pointer"
                 >
                   {col.label}
                 </DropdownMenuCheckboxItem>
@@ -298,11 +298,11 @@ export function PageFilter({
             size="sm"
             type="button"
             onClick={onPrintPdf}
-            className="h-9 px-3 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground hover:bg-muted/80 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-            title="Print PDF"
+            className="h-7 px-2 rounded-md border-border/80 bg-background text-[10px] font-medium text-foreground hover:bg-muted/80 flex items-center gap-0.5 shadow-xs transition-all cursor-pointer"
+            title={t("common.print")}
           >
-            <Printer className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="hidden sm:inline">Print</span>
+            <Printer className="h-2.5 w-2.5 text-muted-foreground" />
+            <span className="hidden sm:inline">{t("common.print")}</span>
           </Button>
         )}
 
@@ -313,10 +313,10 @@ export function PageFilter({
             size="sm"
             type="button"
             onClick={onDownloadPdf}
-            className="h-9 px-3 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground hover:bg-muted/80 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-            title="Download PDF"
+            className="h-7 px-2 rounded-md border-border/80 bg-background text-[10px] font-medium text-foreground hover:bg-muted/80 flex items-center gap-0.5 shadow-xs transition-all cursor-pointer"
+            title={t("common.download_pdf")}
           >
-            <Download className="h-3.5 w-3.5 text-muted-foreground" />
+            <Download className="h-2.5 w-2.5 text-muted-foreground" />
             <span className="hidden sm:inline">PDF</span>
           </Button>
         )}
@@ -328,11 +328,11 @@ export function PageFilter({
             size="sm"
             type="button"
             onClick={onDownloadCsv}
-            className="h-9 px-3 rounded-lg border-border/80 bg-background text-xs font-medium text-foreground hover:bg-muted/80 flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-            title="Export Excel / CSV"
+            className="h-7 px-2 rounded-md border-border/80 bg-background text-[10px] font-medium text-foreground hover:bg-muted/80 flex items-center gap-0.5 shadow-xs transition-all cursor-pointer"
+            title={t("common.export_csv")}
           >
-            <FileSpreadsheet className="h-3.5 w-3.5 text-muted-foreground" />
-            <span className="hidden sm:inline">Excel</span>
+            <FileSpreadsheet className="h-2.5 w-2.5 text-muted-foreground" />
+            <span className="hidden sm:inline">CSV</span>
           </Button>
         )}
       </div>

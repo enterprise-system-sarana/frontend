@@ -33,6 +33,7 @@ import { AlertCircle, ArrowLeft, Loader2, Package, Plus, Trash2 } from "lucide-r
 import { cn } from "@/lib/utils";
 import { ROUTERS } from "@/constants/Route";
 import { toast } from "sonner";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type EditableQuoteItem = QuoteItem & { uid: string };
 
@@ -71,6 +72,7 @@ const summarizeZodErrors = (error: any): string[] => {
 };
 
 export const QuoteForm = () => {
+  const { t } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id && !isNaN(Number(id)));
@@ -130,7 +132,7 @@ export const QuoteForm = () => {
 
       if (items.length === 0) {
         setItemsTouched(true);
-        setFormErrors(["At least one product item is required."]);
+        setFormErrors([t("quote.at_least_one_item", "At least one product item is required before saving.")]);
         return;
       }
 
@@ -182,7 +184,7 @@ export const QuoteForm = () => {
       };
 
       const handleSuccess = () => {
-        toast.success(isEditing ? "Quote updated successfully" : "Quote created successfully");
+        toast.success(isEditing ? t("quote.updated_success", "Quote updated successfully") : t("quote.created_success", "Quote created successfully"));
         navigate(ROUTERS.QUOTE || "/quote");
       };
 
@@ -369,18 +371,18 @@ export const QuoteForm = () => {
             size="icon"
             onClick={() => navigate(ROUTERS.QUOTE || "/quote")}
             className="h-9 w-9 rounded-xl border-border/60 hover:bg-muted/60"
-            title="Back"
+            title={t("error.go_back", "Back")}
           >
             <ArrowLeft className="h-4 w-4" />
           </Button>
           <div>
             <h1 className="text-2xl font-bold tracking-tight">
-              {isEditing ? "Edit Quote" : "Create New Quote"}
+              {isEditing ? t("quote.edit_title", "Edit Quote") : t("quote.create_title", "Create New Quote")}
             </h1>
             <p className="text-sm text-muted-foreground">
               {isEditing
-                ? "Update quote details and item pricing"
-                : "Fill out customer quotation details and product items"}
+                ? t("quote.edit_desc", "Update quote details and item pricing")
+                : t("quote.create_desc", "Fill out customer quotation details and product items")}
             </p>
           </div>
         </div>
@@ -412,13 +414,13 @@ export const QuoteForm = () => {
         {/* Section 1: Quote Details */}
         <section className="p-6 mb-8 border shadow-sm bg-card rounded-xl">
           <h3 className="mb-4 text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-            Quote Information
+            {t("quote.info", "Quote Information")}
           </h3>
           <FieldGroup className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2 md:grid-cols-3">
             <FormTextField
               form={form}
               name="reference"
-              label="Reference"
+              label={t("common.reference", "Reference")}
               placeholder="e.g. REF-QUO-001"
               type="text"
               required
@@ -426,7 +428,7 @@ export const QuoteForm = () => {
             <FormTextField
               form={form}
               name="no"
-              label="Quote No"
+              label={t("quote.quote_no", "Quote No")}
               placeholder="e.g. QUO-0001"
               type="text"
               required
@@ -434,7 +436,7 @@ export const QuoteForm = () => {
             <FormTextField
               form={form}
               name="date"
-              label="Date"
+              label={t("common.date", "Date")}
               placeholder="Select date"
               type="date"
               required
@@ -442,8 +444,8 @@ export const QuoteForm = () => {
             <FormSelectField
               form={form}
               name="customerId"
-              label="Customer"
-              placeholder="Select customer"
+              label={t("customer.name", "Customer")}
+              placeholder={t("quote.select_customer", "Select customer")}
               options={customers.map((c: any) => ({
                 value: String(c.id),
                 label: `${c.name} ${c.phone ? `(${c.phone})` : ""}`,
@@ -453,7 +455,7 @@ export const QuoteForm = () => {
             <FormSelectField
               form={form}
               name="status"
-              label="Quote Status"
+              label={t("quote.quote_status", "Quote Status")}
               placeholder="Select status"
               options={[
                 { value: "PENDING", label: "Pending" },
@@ -467,7 +469,7 @@ export const QuoteForm = () => {
             <FormSelectField
               form={form}
               name="paymentStatus"
-              label="Payment Status"
+              label={t("sale.payment_status", "Payment Status")}
               placeholder="Select payment status"
               options={[
                 { value: "PENDING", label: "Pending" },
@@ -480,8 +482,8 @@ export const QuoteForm = () => {
               <FormTextareaField
                 form={form}
                 name="noted"
-                label="Note"
-                placeholder="Enter quotation notes or terms (optional)"
+                label={t("common.note", "Note")}
+                placeholder={t("quote.note_placeholder", "Enter quotation notes or terms (optional)")}
               />
             </div>
           </FieldGroup>
@@ -492,10 +494,10 @@ export const QuoteForm = () => {
           <div className="flex items-center justify-between mb-4">
             <div>
               <h3 className="text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-                Quote Items
+                {t("quote.items_title", "Quote Items")}
               </h3>
               <p className="text-xs text-muted-foreground">
-                Select products and specify quantity, unit price, and item discounts.
+                {t("quote.items_desc", "Select products and specify quantity, unit price, and item discounts.")}
               </p>
             </div>
             <Button
@@ -506,7 +508,7 @@ export const QuoteForm = () => {
               className="border-primary/40 text-primary hover:bg-primary/10"
             >
               <Plus className="h-4 w-4 mr-1.5" />
-              Add Item
+              {t("quote.add_item", "Add Item")}
             </Button>
           </div>
 
@@ -520,11 +522,11 @@ export const QuoteForm = () => {
               <Table>
                 <TableHeader>
                   <TableRow className="bg-muted/50 hover:bg-muted/50">
-                    <TableHead className="min-w-50">Product</TableHead>
-                    <TableHead className="w-28">Qty</TableHead>
-                    <TableHead className="w-32">Unit Price ($)</TableHead>
-                    <TableHead className="w-32">Item Discount ($)</TableHead>
-                    <TableHead className="w-32 text-right">Subtotal</TableHead>
+                    <TableHead className="min-w-50">{t("product.name", "Product")}</TableHead>
+                    <TableHead className="w-28">{t("product.quantity", "Qty")}</TableHead>
+                    <TableHead className="w-32">{t("report.unit_price", "Unit Price")} ($)</TableHead>
+                    <TableHead className="w-32">{t("quote.discount", "Item Discount")} ($)</TableHead>
+                    <TableHead className="w-32 text-right">{t("quote.subtotal", "Subtotal")}</TableHead>
                     <TableHead className="w-12 text-center" />
                   </TableRow>
                 </TableHeader>
@@ -554,7 +556,7 @@ export const QuoteForm = () => {
                                   "border-destructive ring-1 ring-destructive"
                               )}
                             >
-                              <SelectValue placeholder="Select product" />
+                              <SelectValue placeholder={t("quote.select_product", "Select product")} />
                             </SelectTrigger>
                             <SelectContent>
                               {products.map((p: any) => {
@@ -638,7 +640,7 @@ export const QuoteForm = () => {
                             variant="ghost"
                             className="text-destructive hover:text-destructive hover:bg-destructive/10"
                             onClick={() => removeItem(item.uid)}
-                            title="Remove item"
+                            title={t("quote.remove_item", "Remove item")}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -660,10 +662,10 @@ export const QuoteForm = () => {
             >
               <Package className="w-8 h-8 text-muted-foreground" />
               <p className="text-sm font-medium text-foreground">
-                No items added yet
+                {t("quote.no_items", "No items added yet")}
               </p>
               <p className="text-xs text-muted-foreground">
-                Click the button below to add your first product to this quote.
+                {t("quote.add_first_item", "Click the button below to add your first product to this quote.")}
               </p>
               <Button
                 type="button"
@@ -673,7 +675,7 @@ export const QuoteForm = () => {
                 className="mt-2"
               >
                 <Plus className="h-4 w-4 mr-1.5" />
-                Add Item
+                {t("quote.add_item", "Add Item")}
               </Button>
             </div>
           )}
@@ -681,7 +683,7 @@ export const QuoteForm = () => {
           {showItemsError && (
             <p className="flex items-center gap-1.5 mt-2 text-sm text-destructive">
               <AlertCircle className="w-3.5 h-3.5" />
-              At least one product item is required before saving.
+              {t("quote.at_least_one_item", "At least one product item is required before saving.")}
             </p>
           )}
         </section>
@@ -689,27 +691,27 @@ export const QuoteForm = () => {
         {/* Section 3: Financial Summary & Adjustments */}
         <section className="p-6 mb-8 border shadow-sm bg-card rounded-xl">
           <h3 className="mb-4 text-sm font-semibold tracking-wide uppercase text-muted-foreground">
-            Summary & Financials
+            {t("quote.financials", "Summary & Financials")}
           </h3>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
             <FormTextField
               form={form}
               name="discount"
-              label="Overall Quote Discount ($)"
+              label={t("quote.overall_discount", "Overall Quote Discount ($)")}
               placeholder="0.00"
               type="number"
             />
             <FormTextField
               form={form}
               name="paidAmount"
-              label="Paid Amount ($)"
+              label={`${t("quote.paid_amount", "Paid Amount")} ($)`}
               placeholder="0.00"
               type="number"
             />
             <FormTextField
               form={form}
               name="returnAmount"
-              label="Return Amount ($)"
+              label={`${t("quote.return_amount", "Return Amount")} ($)`}
               placeholder="0.00"
               type="number"
             />
@@ -719,7 +721,7 @@ export const QuoteForm = () => {
             <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
               <div>
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
-                  Items Subtotal
+                  {t("quote.items_subtotal", "Items Subtotal")}
                 </span>
                 <div className="text-base font-semibold text-foreground sm:mt-1">
                   {formatCurrency(itemsTotal)}
@@ -727,7 +729,7 @@ export const QuoteForm = () => {
               </div>
               <div>
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
-                  Total Discounts
+                  {t("quote.total_discounts", "Total Discounts")}
                 </span>
                 <div className="text-base font-semibold text-[#ffab00] sm:mt-1">
                   {formatCurrency(itemsDiscount + Number(currentQuoteDiscount || 0))}
@@ -735,7 +737,7 @@ export const QuoteForm = () => {
               </div>
               <div>
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
-                  Paid Amount
+                  {t("quote.paid_amount", "Paid Amount")}
                 </span>
                 <div className="text-base font-semibold text-[#71dd37] sm:mt-1">
                   {formatCurrency(Number(currentPaidAmount) || 0)}
@@ -743,7 +745,7 @@ export const QuoteForm = () => {
               </div>
               <div>
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
-                  Grand Total
+                  {t("common.grand_total", "Grand Total")}
                 </span>
                 <div className="text-lg font-bold text-[#696cff] sm:mt-1">
                   {formatCurrency(grandTotal)}
@@ -761,7 +763,7 @@ export const QuoteForm = () => {
             onClick={() => navigate(ROUTERS.QUOTE || "/quote")}
             disabled={isPending}
           >
-            Cancel
+            {t("common.cancel", "Cancel")}
           </Button>
           <Button
             type="submit"
@@ -772,12 +774,12 @@ export const QuoteForm = () => {
             {isPending ? (
               <span className="flex items-center gap-1.5">
                 <Loader2 className="w-4 h-4 animate-spin" />
-                Saving...
+                {t("common.loading", "Saving...")}
               </span>
             ) : isEditing ? (
-              "Update Quote"
+              t("quote.edit_title", "Update Quote")
             ) : (
-              "Create Quote"
+              t("quote.create", "Create Quote")
             )}
           </Button>
         </div>

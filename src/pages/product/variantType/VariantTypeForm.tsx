@@ -15,6 +15,7 @@ import { StatusOptions, Status } from "@/types/enum/status";
 import FormTextField, { FormRadioGroupField } from "@/components/ui/FormTextField";
 import { VariantTypeSchema, type VariantTypeRequest, type VariantTypeResponse } from "@/types/product/VariantType";
 import { useVariantType } from "@/hooks/product/useVariantType";
+import { useLanguage } from "@/i18n/LanguageContext";
 
 type FormVariantTypeProps = {
     open: boolean;
@@ -23,6 +24,7 @@ type FormVariantTypeProps = {
 };
 
 const VariantTypeForm = ({ open, setOpen, variantType }: FormVariantTypeProps) => {
+    const { t } = useLanguage();
     const { mutate: createVariantTypeMutate, isPending: isCreating } = useVariantType.useCreateVariantType();
     const { mutate: updateVariantTypeMutate, isPending: isUpdating } = useVariantType.useUpdateVariantType();
 
@@ -62,7 +64,7 @@ const VariantTypeForm = ({ open, setOpen, variantType }: FormVariantTypeProps) =
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="md:max-w-[450px]">
                 <DialogHeader>
-                    <DialogTitle>{variantType ? "Edit" : "Create"} Variant Type</DialogTitle>
+                    <DialogTitle>{variantType ? t("variant.edit_type", "Edit Variant Type") : t("variant.create_type", "Create Variant Type")}</DialogTitle>
                 </DialogHeader>
                 <form
                     id="variant-type-form"
@@ -75,39 +77,31 @@ const VariantTypeForm = ({ open, setOpen, variantType }: FormVariantTypeProps) =
                         <FormTextField
                             form={form}
                             name="code"
-                            label="Code"
+                            label={t("common.code")}
                             required={true}
-                            placeholder="Code"
+                            placeholder={t("common.code")}
                             type="text"
                         />
                         <FormTextField
                             form={form}
                             name="name"
-                            label="Name"
+                            label={t("common.name")}
                             required={true}
-                            placeholder="Name"
+                            placeholder={t("common.name")}
                             type="text"
-                        />
-
-                        <FormRadioGroupField
-                            form={form}
-                            name="status"
-                            label="Status"
-                            required={true}
-                            options={StatusOptions}
                         />
                     </FieldGroup>
                 </form>
                 <DialogFooter>
                     <DialogClose asChild>
-                        <Button variant="outline">Cancel</Button>
+                        <Button variant="outline">{t("common.cancel")}</Button>
                     </DialogClose>
                     <Button
                         type="submit"
                         form="variant-type-form"
                         disabled={isPending}
                     >
-                        {isPending ? "Saving..." : (variantType ? "Update" : "Create")}
+                        {isPending ? t("common.saving") : variantType ? t("common.save") : t("common.create")}
                     </Button>
                 </DialogFooter>
             </DialogContent>
