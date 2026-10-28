@@ -38,10 +38,7 @@ import { generateUUID } from "@/utils/uuid";
 
 type EditableQuoteItem = QuoteItem & { uid: string };
 
-const genUid = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+const genUid = () => generateUUID();
 
 const emptyItem = (): EditableQuoteItem => ({
   uid: genUid(),

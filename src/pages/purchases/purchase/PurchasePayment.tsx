@@ -616,7 +616,7 @@ export const PurchasePaymentPage = () => {
               <Button
                 type="button"
                 size="sm"
-                className="rounded-none bg-[#04912E] text-white hover:bg-[#037a26]"
+                className="rounded-none bg-[#0062EA] text-white hover:bg-[#0054CC]"
                 onClick={() => setIsDetailOpen(false)}
               >
                 <X className="mr-1.5 size-4" />

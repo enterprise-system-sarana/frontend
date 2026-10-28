@@ -20,6 +20,7 @@
 
    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas,
       monospace;
+      
 
    /* =====================================================
        CORE COLORS
@@ -123,9 +124,9 @@
        PRIMARY
        ===================================================== */
 
-   --primary: #04912E;
-   --primary-hover: #0AA63A;
-   --primary-light: #E8F5EC;
+   --primary: #0062EA;
+   --primary-hover: #0054CC;
+   --primary-light: #EBF3FE;
    --primary-foreground: #FFFFFF;
 
    /* =====================================================
@@ -170,8 +171,8 @@
        ACCENT
        ===================================================== */
 
-   --accent: #E8F5EC;
-   --accent-foreground: #04912E;
+   --accent: #EBF3FE;
+   --accent-foreground: #0062EA;
 
    /* =====================================================
        STATUS
@@ -190,7 +191,7 @@
 
    --border: #C9D3CF;
    --input: #C9D3CF;
-   --ring: #04912E;
+   --ring: #0062EA;
 
    /* =====================================================
        TEXT
@@ -211,7 +212,7 @@
        CHARTS
        ===================================================== */
 
-   --chart-1: #04912E;
+   --chart-1: #0062EA;
    --chart-2: #68836C;
    --chart-3: #DE6713;
    --chart-4: #F3C03C;
@@ -251,9 +252,9 @@
        PRIMARY
        ===================================================== */
 
-   --primary: #0AA63A;
-   --primary-hover: #12B944;
-   --primary-light: #123A22;
+   --primary: #2B7FFF;
+   --primary-hover: #4893FF;
+   --primary-light: #0C284D;
    --primary-foreground: #FFFFFF;
 
    /* =====================================================
@@ -298,8 +299,8 @@
        ACCENT
        ===================================================== */
 
-   --accent: #123A22;
-   --accent-foreground: #0AA63A;
+   --accent: #0C284D;
+   --accent-foreground: #2B7FFF;
 
    /* =====================================================
        STATUS
@@ -318,7 +319,7 @@
 
    --border: #34423A;
    --input: #34423A;
-   --ring: #0AA63A;
+   --ring: #2B7FFF;
 
    /* =====================================================
        TEXT
@@ -339,7 +340,7 @@
        CHARTS
        ===================================================== */
 
-   --chart-1: #0AA63A;
+   --chart-1: #2B7FFF;
    --chart-2: #7F9983;
    --chart-3: #DE6713;
    --chart-4: #F3C03C;
@@ -352,14 +353,14 @@
    --sidebar: #151A17;
    --sidebar-foreground: #F4F5F4;
 
-   --sidebar-primary: #0AA63A;
+   --sidebar-primary: #2B7FFF;
    --sidebar-primary-foreground: #FFFFFF;
 
    --sidebar-accent: #26352D;
-   --sidebar-accent-foreground: #0AA63A;
+   --sidebar-accent-foreground: #2B7FFF;
 
    --sidebar-border: #26352D;
-   --sidebar-ring: #0AA63A;
+   --sidebar-ring: #2B7FFF;
 }
 
 
@@ -410,7 +411,7 @@
    }
 
    ::selection {
-      background: #04912E;
+      background: #0062EA;
       color: #FFFFFF;
    }
 
@@ -429,7 +430,7 @@
    }
 
    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(4, 145, 46, 0.7);
+      background: rgba(0, 98, 234, 0.7);
    }
 
    ::-webkit-scrollbar-track {
