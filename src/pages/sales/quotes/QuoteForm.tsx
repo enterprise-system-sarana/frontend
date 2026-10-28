@@ -34,6 +34,7 @@ import { cn } from "@/lib/utils";
 import { ROUTERS } from "@/constants/Route";
 import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { generateUUID } from "@/utils/uuid";
 
 type EditableQuoteItem = QuoteItem & { uid: string };
 

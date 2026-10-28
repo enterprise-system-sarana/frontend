@@ -18,6 +18,7 @@ import { useBank } from "@/hooks/finance/useBank";
 import { usePayment } from "@/hooks/sales/usePayment";
 import type { PaymentRequest } from "@/types/sales/Payment";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { generateUUID } from "@/utils/uuid";
 
 // ==========================================
 // FALLBACK AND EXTRACTION HELPERS
@@ -201,7 +202,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const [note, setNote] = useState("");
   const [lines, setLines] = useState<PaymentLine[]>([
     {
-      id: crypto.randomUUID(),
+      id: generateUUID(),
       currencyId: defaultCurrency ? defaultCurrency.id : 1,
       paymentMethod: "CASH",
       amount:
@@ -301,7 +302,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
     setLines((prev) => [
       ...prev,
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         currencyId: targetCurrencyId,
         paymentMethod: "CASH",
         amount: suggestedAmount,
@@ -330,7 +331,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
           return [
             {
-              id: prev[0]?.id || crypto.randomUUID(),
+              id: prev[0]?.id || generateUUID(),
               currencyId: defaultCurrency.id,
               paymentMethod: prev[0]?.paymentMethod || "CASH",
               amount: initAmount,
@@ -417,7 +418,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
     setLines([
       {
-        id: crypto.randomUUID(),
+        id: generateUUID(),
         currencyId: curr.id,
         paymentMethod: "CASH",
         amount: exactAmount,
