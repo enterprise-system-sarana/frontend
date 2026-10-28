@@ -8,7 +8,7 @@ RUN npm ci
 
 COPY . .
 
-ARG VITE_API_URL=/api/v1
+ARG VITE_API_URL=http://169.58.63.127:3333/api/v1
 ARG VITE_ACCESS_TOKEN_KEY=access_token
 ARG VITE_REFRESH_TOKEN_KEY=refresh_token
 ARG VITE_USER_KEY=auth_user
