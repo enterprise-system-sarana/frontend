@@ -72,6 +72,23 @@ export const ProductColumns = ({
       },
     },
     {
+      accessorKey: "modelName",
+      header: ({ column }) => (
+        <SortableHeader
+          column={column}
+          title={"Model"}
+        />
+      ),
+      cell: ({ row }) => {
+        const product = row.original;
+        return (
+          <span className="text-sm font-medium text-foreground">
+            {product.modelName}
+          </span>
+        );
+      },
+    },
+    {
       accessorKey: "categoryName",
       header: ({ column }) => (
         <SortableHeader
