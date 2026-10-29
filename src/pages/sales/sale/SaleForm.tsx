@@ -669,7 +669,7 @@ export default function SaleForm() {
       reference: sale.reference ?? generateRef(),
       noted: sale.noted ?? "",
       saleDate: sale.saleDate ?? new Date().toISOString().split("T")[0],
-      customerId: sale.customerId ?? sale.customer?.id ?? 0,
+      customerId: sale.customerId ?? sale.customer?.id  ?? 0,
       storeId: sale.storeId ?? sale.store?.id ?? 1,
       bankId: sale.bankId ?? sale.bank?.id ?? 1,
       discount: sale.discount ?? 0,
