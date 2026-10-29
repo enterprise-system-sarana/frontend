@@ -1,5 +1,4 @@
-# Stage 1: Build React Project
-FROM node:22-alpine AS build
+FROM node:22-alpine
 
 WORKDIR /app
 
@@ -19,16 +18,8 @@ ENV VITE_API_URL=$VITE_API_URL \
     VITE_USER_KEY=$VITE_USER_KEY
 
 RUN npm run build
+RUN npm install -g serve
 
-# Stage 2: Serve using Nginx
-FROM nginx:alpine AS runtime
+EXPOSE 8080
 
-# Copy custom Nginx configuration
-COPY nginx.conf /etc/nginx/conf.d/default.conf
-
-# Copy build artifacts to Nginx web root
-COPY --from=build /app/dist /usr/share/nginx/html
-
-EXPOSE 80
-
-CMD ["nginx", "-g", "daemon off;"]
+CMD ["serve", "-s", "dist", "-l", "8080"]

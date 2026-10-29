@@ -9,9 +9,9 @@ services:
         VITE_REFRESH_TOKEN_KEY: ${VITE_REFRESH_TOKEN_KEY:-refresh_token}
         VITE_USER_KEY: ${VITE_USER_KEY:-auth_user}
     container_name: 360-phone-shop-frontend
-    restart: unless-stopped
+    restart: always
     ports:
-      - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_PORT:-8080}:80"
     networks:
       - 360-phone-shop-service
 
