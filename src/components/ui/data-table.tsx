@@ -31,9 +31,20 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 import { Button } from "@/components/ui/button";
-import { Columns3 } from "lucide-react";
+import { Columns3, Inbox } from "lucide-react";
 import { getColumnHeaderLabel } from "@/utils/export";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { cn } from "@/lib/utils";
+
+declare module "@tanstack/react-table" {
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  interface ColumnMeta<TData, TValue> {
+    /** Horizontal alignment of the header and cells, e.g. "right" for money. */
+    align?: "left" | "center" | "right";
+  }
+}
+
+const alignClass = { left: "", center: "text-center", right: "text-right" } as const;
 
 export {
   exportTableToCsv,
@@ -185,10 +196,10 @@ export function DataTable<TData, TValue>({
     <div>
       {/* Optional Standalone Column Toggle Toolbar */}
       {showColumnVisibility && (
-        <div className="flex items-center justify-end border-b border-border/60 px-4 py-3">
+        <div className="flex items-center justify-end border-b border-border px-5 py-3">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2 text-xs">
+              <Button variant="outline" size="sm" className="gap-2">
                 <Columns3 className="h-4 w-4" />
                 {t("common.columns")}
               </Button>
@@ -233,6 +244,7 @@ export function DataTable<TData, TValue>({
                 {headerGroup.headers.map((header) => (
                   <TableHead
                     key={header.id}
+                    className={cn(alignClass[header.column.columnDef.meta?.align ?? "left"])}
                   >
                     {header.isPlaceholder
                       ? null
@@ -256,6 +268,7 @@ export function DataTable<TData, TValue>({
                   {row.getVisibleCells().map((cell) => (
                     <TableCell
                       key={cell.id}
+                      className={cn(alignClass[cell.column.columnDef.meta?.align ?? "left"])}
                     >
                       {flexRender(
                         cell.column.columnDef.cell,
@@ -269,26 +282,20 @@ export function DataTable<TData, TValue>({
               <TableRow className="hover:bg-transparent">
                 <TableCell
                   colSpan={table.getVisibleLeafColumns().length}
-                  className="h-32 text-center text-muted-foreground"
+                  className="h-56 text-center text-muted-foreground"
                 >
-                  <div className="flex flex-col items-center gap-2">
-                    <svg
-                      className="h-10 w-10 text-muted-foreground/40"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth={1.5}
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-2.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
-                      />
-                    </svg>
-
-                    <span className="text-sm font-medium">
-                      {t("common.no_results")}
-                    </span>
+                  <div className="flex flex-col items-center gap-3 py-6">
+                    <div className="flex size-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+                      <Inbox className="size-6" strokeWidth={1.5} />
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-sm font-semibold text-foreground">
+                        {t("common.no_results")}
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {t("common.no_results_hint", "Try adjusting your search or filters.")}
+                      </p>
+                    </div>
                   </div>
                 </TableCell>
               </TableRow>
@@ -298,7 +305,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="border-t border-border/60">
+      <div className="border-t border-border">
         <CustomPagination
           currentPage={currentPage}
           pageSize={pageSize}

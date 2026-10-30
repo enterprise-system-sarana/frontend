@@ -3,13 +3,12 @@ import { Link, useNavigate } from "react-router-dom";
 import {
   Bar,
   BarChart,
-  CartesianGrid,
   Cell,
-  Legend,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
+  type TooltipContentProps,
 } from "recharts";
 import {
   AlertTriangle,
@@ -18,10 +17,7 @@ import {
   ArrowUpRight,
   Banknote,
   Boxes,
-  Calendar,
   CalendarCheck,
-  CalendarDays,
-  CalendarRange,
   ChartColumn,
   CheckCircle2,
   Clock,
@@ -30,7 +26,6 @@ import {
   ExternalLink,
   Eye,
   FolderOpen,
-  LayoutList,
   Package,
   Plus,
   Receipt,
@@ -57,6 +52,8 @@ import { useStock } from "@/hooks/inventory/useStock";
 import { useExpense } from "@/hooks/expense/useExpense";
 import type { StockResponse } from "@/types/inventory/Stock";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { useAuth } from "@/store/useAuth";
+import { KpiCard } from "@/components/ui/kpi-card";
 
 type SalesReportMode = "daily" | "weekly" | "monthly" | "3months" | "6months" | "all";
 type DataRow = Record<string, any>;
@@ -117,8 +114,90 @@ const formatCurrency = (value: number | string | undefined) => {
   }).format(numeric);
 };
 
+const formatAxisCurrency = (value: number) =>
+  new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(value);
+
+/** Series shown in the Total Sale chart — colour-blind checked theme colours for light and dark. */
+const CHART_SERIES = [
+  { key: "Sales", labelKey: "dashboard.total_sales", fallback: "Sales", color: "var(--chart-sales)" },
+  { key: "Cost", labelKey: "dashboard.total_cost", fallback: "Cost", color: "var(--chart-cost)" },
+  { key: "Profit", labelKey: "dashboard.total_profit", fallback: "Profit", color: "var(--chart-profit)" },
+  { key: "Expense", labelKey: "dashboard.total_expense", fallback: "Expense", color: "var(--chart-expense)" },
+] as const;
+
+const chartTick = { fill: "var(--muted-foreground)", fontSize: 12 };
+
+function ChartTooltip({ active, payload, label }: TooltipContentProps) {
+  if (!active || !payload?.length) return null;
+  return (
+    <div className="min-w-[200px] rounded-xl border border-border bg-card px-3.5 py-3 shadow-popover">
+      <p className="mb-2 text-[13px] leading-5 font-semibold text-foreground">{label}</p>
+      <div className="space-y-1.5">
+        {payload.map((item) => {
+          const row = item.payload as DataRow | undefined;
+          return (
+            <div key={String(item.dataKey)} className="flex items-center gap-2 text-[13px] leading-5">
+              <span className="size-2 shrink-0 rounded-full" style={{ backgroundColor: row?.fill ?? item.color }} />
+              <span className="text-muted-foreground">{row?.detail ?? item.name}</span>
+              <span className="ml-auto pl-4 font-semibold tabular-nums text-foreground">
+                {formatCurrency(Number(item.value))}
+              </span>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/** One period's four totals as columns on a track, with the exact amount above each. */
+function PeriodBars({ rows }: { rows: { name: string; amount: number; fill: string; detail: string }[] }) {
+  const max = Math.max(0, ...rows.map((row) => row.amount));
+  return (
+    <div className="grid h-full grid-cols-4 gap-3 sm:gap-5">
+      {rows.map((row) => {
+        const height = max > 0 ? Math.max(0, (row.amount / max) * 100) : 0;
+        return (
+          <div key={row.name} className="flex min-w-0 flex-col items-center gap-2">
+            <p className="max-w-full truncate text-[15px] leading-5 font-semibold tabular-nums text-foreground">
+              {formatCurrency(row.amount)}
+            </p>
+            <div className="flex w-full max-w-[88px] flex-1 items-end overflow-hidden rounded-xl bg-muted">
+              <div
+                className="w-full rounded-xl transition-[height] duration-500 ease-out"
+                style={{ height: `${height}%`, minHeight: row.amount > 0 ? 8 : 0, backgroundColor: row.fill }}
+              />
+            </div>
+            <div className="w-full min-w-0 text-center">
+              <p className="truncate text-sm leading-5 font-medium text-foreground" title={row.name}>
+                {row.name}
+              </p>
+              {/* Fixed two-line height so every column's baseline stays level */}
+              <p className="line-clamp-2 h-10 text-[13px] leading-5 text-muted-foreground" title={row.detail}>
+                {row.detail}
+              </p>
+            </div>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 export const HomePage = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const { user } = useAuth();
+  const hour = new Date().getHours();
+  const greeting = hour < 12
+    ? t("dashboard.good_morning", "Good morning")
+    : hour < 18
+      ? t("dashboard.good_afternoon", "Good afternoon")
+      : t("dashboard.good_evening", "Good evening");
   const navigate = useNavigate();
   const { Can } = usePermission();
   const canRead = Can(PERMISSION.REPORT.READ);
@@ -128,6 +207,8 @@ export const HomePage = () => {
   }
 
   const [activeTab, setActiveTab] = useState<SalesReportMode>("daily");
+  const [hoveredBar, setHoveredBar] = useState<number | null>(null);
+  const [hiddenSeries, setHiddenSeries] = useState<string[]>([]);
   const [isTodaySaleOpen, setIsTodaySaleOpen] = useState(false);
   const [stockFilter, setStockFilter] = useState<"all" | "low" | "out">("all");
   const [stockSearch, setStockSearch] = useState("");
@@ -519,15 +600,31 @@ export const HomePage = () => {
   }, [sales, expenses, productCosts]);
 
   // Current period direct comparison data
-  const periodComparisonData = useMemo(
-    () => [
-      { name: "Sales", amount: totalSales, fill: "#3b82f6", detail: `${totalTransactions} txns` },
-      { name: "Cost", amount: totalCost, fill: "#f59e0b", detail: `${costRatio}% of sales` },
-      { name: "Profit", amount: totalProfit, fill: "#10b981", detail: `${profitMargin}% margin` },
-      { name: "Expense", amount: totalExpense, fill: "#f43f5e", detail: `${expenseRatio}% of sales` },
-    ],
-    [totalSales, totalCost, totalProfit, totalExpense, totalTransactions, costRatio, profitMargin, expenseRatio]
-  );
+  const periodComparisonData = useMemo(() => {
+    const ofTotal = t("dashboard.of_sales", "of total sales");
+    const amounts = { Sales: totalSales, Cost: totalCost, Profit: totalProfit, Expense: totalExpense };
+    const details = {
+      Sales: `${totalTransactions} ${t("dashboard.transactions", "transactions")}`,
+      Cost: `${costRatio}% ${ofTotal}`,
+      Profit: `${profitMargin}% ${t("dashboard.profit_margin", "profit margin")}`,
+      Expense: `${expenseRatio}% ${ofTotal}`,
+    };
+    return CHART_SERIES.map((series) => ({
+      name: t(series.labelKey, series.fallback),
+      amount: amounts[series.key],
+      fill: series.color,
+      detail: details[series.key],
+    }));
+  }, [t, totalSales, totalCost, totalProfit, totalExpense, totalTransactions, costRatio, profitMargin, expenseRatio]);
+
+  const trendChartData: DataRow[] =
+    activeTab === "weekly" ? weeklyChartData : activeTab === "monthly" ? monthlyWeeksChartData : monthlyChartData;
+  const hasTrendData = trendChartData.some((row) => CHART_SERIES.some((series) => Number(row[series.key]) > 0));
+  const toggleSeries = (key: string) =>
+    setHiddenSeries((current) => (current.includes(key) ? current.filter((item) => item !== key) : [...current, key]));
+  const barOpacity = (index: number) => (hoveredBar === null || hoveredBar === index ? 1 : 0.35);
+  const handleChartHover = ({ activeTooltipIndex }: { activeTooltipIndex?: number | string | null }) =>
+    setHoveredBar(activeTooltipIndex === undefined || activeTooltipIndex === null ? null : Number(activeTooltipIndex));
 
   const chartSubtitle = useMemo(() => {
     if (activeTab === "daily") return `Today's performance metrics (${localDate(new Date())})`;
@@ -595,69 +692,17 @@ export const HomePage = () => {
   }, [stockByProduct, stockFilter, stockSearch]);
 
   const tabs = [
-    { label: t("dashboard.today", "Today"), route: ROUTERS.REPORT_DAILY_SALES, value: "daily" as const, icon: Calendar },
-    { label: t("dashboard.this_week", "Weekly"), route: ROUTERS.REPORT_WEEKLY_SALES, value: "weekly" as const, icon: CalendarRange },
-    { label: t("dashboard.this_month", "Monthly"), route: ROUTERS.REPORT_MONTHLY_SALES, value: "monthly" as const, icon: CalendarDays },
-    { label: t("dashboard.three_months", "3 Months"), route: ROUTERS.REPORT_SALES, value: "3months" as const, icon: CalendarCheck },
-    { label: t("dashboard.six_months", "6 Months"), route: ROUTERS.REPORT_SALES, value: "6months" as const, icon: CalendarCheck },
-    { label: t("dashboard.all_time", "All Sales"), route: ROUTERS.REPORT_SALES, value: "all" as const, icon: LayoutList },
+    { label: t("dashboard.today", "Today"), route: ROUTERS.REPORT_DAILY_SALES, value: "daily" as const },
+    { label: t("dashboard.this_week", "Weekly"), route: ROUTERS.REPORT_WEEKLY_SALES, value: "weekly" as const },
+    { label: t("dashboard.this_month", "Monthly"), route: ROUTERS.REPORT_MONTHLY_SALES, value: "monthly" as const },
+    { label: t("dashboard.three_months", "3 Months"), route: ROUTERS.REPORT_SALES, value: "3months" as const },
+    { label: t("dashboard.six_months", "6 Months"), route: ROUTERS.REPORT_SALES, value: "6months" as const },
+    { label: t("dashboard.all_time", "All Sales"), route: ROUTERS.REPORT_SALES, value: "all" as const },
   ];
 
-  const kpiCards = [
-    {
-      label: t("dashboard.total_sales", "Total Sales"),
-      value: formatCurrency(totalSales),
-      // badge: `${totalTransactions} ${t("pos.summary_items", "sales")}`,
-      badgeColor: "bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800",
-      // detail: t("sale.title", "Gross revenue generated"),
-      icon: DollarSign,
-      iconBg: "bg-blue-500/10 text-blue-600 dark:bg-blue-500/20 dark:text-blue-400",
-      accent: "border-l-blue-500",
-      cardBorder: "hover:border-blue-500/40",
-      indicatorColor: "bg-blue-500",
-      // ratio: "100%",
-    },
-    {
-      label: t("dashboard.total_cost", "Total Cost"),
-      value: formatCurrency(totalCost),
-      // badge: `${costRatio}% of sales`,
-      badgeColor: "bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800",
-      // detail: t("dashboard.cost_of_goods", "Cost of goods sold"),
-      icon: Package,
-      iconBg: "bg-amber-500/10 text-amber-600 dark:bg-amber-500/20 dark:text-amber-400",
-      accent: "border-l-amber-500",
-      cardBorder: "hover:border-amber-500/40",
-      indicatorColor: "bg-amber-500",
-      // ratio: `${costRatio}%`,
-    },
-    {
-      label: t("dashboard.total_profit", "Total Profit"),
-      value: formatCurrency(totalProfit),
-      // badge: `${profitMargin}% margin`,
-      badgeColor: "bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800",
-      // detail: t("dashboard.gross_profit", "Gross profit (Sales - Cost)"),
-      icon: TrendingUp,
-      iconBg: "bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400",
-      accent: "border-l-emerald-500",
-      cardBorder: "hover:border-emerald-500/40",
-      indicatorColor: "bg-emerald-500",
-      // trend: totalProfit >= 0 ? ("up" as const) : ("down" as const),
-      // ratio: `${profitMargin}%`,
-    },
-    {
-      label: t("dashboard.total_expense", "Total Expense"),
-      value: formatCurrency(totalExpense),
-      // badge: `${expenseRatio}% of sales`,
-      badgeColor: "bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-200 dark:border-rose-800",
-      // detail: t("dashboard.operating_expenses", "Operating & store expenses"),
-      icon: Wallet,
-      iconBg: "bg-rose-500/10 text-rose-600 dark:bg-rose-500/20 dark:text-rose-400",
-      accent: "border-l-rose-500",
-      cardBorder: "hover:border-rose-500/40",
-      indicatorColor: "bg-rose-500",
-      // ratio: `${expenseRatio}%`,
-    },
-  ];
+  const isKpiLoading = saleReportLoading || expenseReportLoading;
+  const kpiValue = (value: number) => (isKpiLoading ? "..." : formatCurrency(value));
+  const ofSales = t("dashboard.of_sales", "of total sales");
 
   const links = [
     { label: t("pos.today_sale", "Today's Sale"), icon: CalendarCheck, onClick: () => setIsTodaySaleOpen(true) },
@@ -672,63 +717,57 @@ export const HomePage = () => {
   ];
 
   return (
-    <main className="space-y-6 reference-dashboard">
-      {/* 4 KPI Cards: High-Contrast, Clean & Readable */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {kpiCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.label}
-              className={`relative rounded-xl border border-border/60 border-l-4 ${card.accent} ${card.cardBorder} bg-card p-4 transition-all duration-200 hover:shadow-md hover:-translate-y-0.5 group`}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-1.5 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className={`size-2 rounded-full ${card.indicatorColor}`} />
-                    <p className="text-xs font-semibold tracking-wider text-muted-foreground uppercase truncate">
-                      {card.label}
-                    </p>
-                  </div>
-
-                  <div className="flex items-baseline gap-2 flex-wrap">
-                    <h3 className="text-2xl font-extrabold tracking-tight text-foreground">
-                      {saleReportLoading || expenseReportLoading ? "..." : card.value}
-                    </h3>
-                    {card.trend && (
-                      <span
-                        className={`inline-flex items-center text-[11px] font-bold ${card.trend === "up" ? "text-emerald-600" : "text-rose-600"
-                          }`}
-                      >
-                        {card.trend === "up" ? (
-                          <ArrowUpRight className="size-3.5" />
-                        ) : (
-                          <ArrowDownRight className="size-3.5" />
-                        )}
-                      </span>
-                    )}
-                  </div>
-                </div>
-
-                <div
-                  className={`rounded-xl p-2.5 ${card.iconBg} transition-transform duration-200 group-hover:scale-110 shrink-0`}
-                >
-                  <Icon className="size-4" />
-                </div>
-              </div>
-
-              {/* Bottom Details & Proportion Pill */}
-              <div className="mt-3 pt-2.5 border-t border-border/40 flex items-center justify-between text-[11px]">
-                <span className="text-muted-foreground truncate">{card.detail}</span>
-                <span
-                  className={`inline-flex items-center px-1.5 py-0.5 rounded-md font-semibold text-[10px] border ${card.badgeColor} shrink-0`}
-                >
-                  {card.badge}
-                </span>
-              </div>
-            </div>
-          );
-        })}
+    <main className="space-y-4 reference-dashboard">
+      {/* Page header — Figma "Good morning, Sophea" */}
+      <div className="flex flex-col gap-1.5 pb-1">
+        <h1 className="reference-dashboard-title">
+          {greeting}, <span>{user?.firstName || user?.username || ""}</span>
+        </h1>
+        <p className="text-sm leading-[22px] text-muted-foreground">
+          {t("dashboard.subtitle", "Sales, stock, purchases and expenses across your shop at a glance.")}
+        </p>
+      </div>
+      {/* KPI row — Figma "KPI" cards */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          featured
+          icon={DollarSign}
+          title={t("dashboard.total_sales", "Total Sales")}
+          value={kpiValue(totalSales)}
+          caption={`${totalTransactions} ${t("dashboard.transactions", "transactions")}`}
+          splits={[
+            { label: t("dashboard.total_cost", "Cost"), value: totalCost, color: "#fbbf24" },
+            { label: t("dashboard.total_profit", "Profit"), value: Math.max(0, totalProfit), color: "#4ade80" },
+            { label: t("dashboard.total_expense", "Expense"), value: totalExpense, color: "#fb7185" },
+          ]}
+        />
+        <KpiCard
+          tone="amber"
+          icon={Package}
+          title={t("dashboard.total_cost", "Total Cost")}
+          subtitle={t("dashboard.cost_of_goods", "Cost of goods sold")}
+          value={kpiValue(totalCost)}
+          caption={ofSales}
+          percent={Number(costRatio)}
+        />
+        <KpiCard
+          tone="green"
+          icon={TrendingUp}
+          title={t("dashboard.total_profit", "Total Profit")}
+          subtitle={t("dashboard.gross_profit", "Gross profit (Sales - Cost)")}
+          value={kpiValue(totalProfit)}
+          caption={t("dashboard.profit_margin", "profit margin")}
+          percent={Number(profitMargin)}
+        />
+        <KpiCard
+          tone="red"
+          icon={Wallet}
+          title={t("dashboard.total_expense", "Total Expense")}
+          subtitle={t("dashboard.operating_expenses", "Operating & store expenses")}
+          value={kpiValue(totalExpense)}
+          caption={ofSales}
+          percent={Number(expenseRatio)}
+        />
       </div>
 
       {/* Visual Revenue Breakdown & Net Income Summary (At a Glance) */}
@@ -758,11 +797,11 @@ export const HomePage = () => {
       {/* Middle Section: 4 KPIs in 1 Graph & Stock Overview */}
       <div className="grid gap-6 lg:grid-cols-12">
         {/* 4 KPIs in 1 Graph (Sales, Cost, Profit, Expense) */}
-        <div className="lg:col-span-7 rounded-xl border border-border/60 bg-card p-5 shadow-xs space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-2 border-b border-border/40">
+        <div className="lg:col-span-6 rounded-2xl border border-border bg-card p-5 shadow-card space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
             <div>
-              <h3 className="text-base font-semibold text-foreground tracking-tight">
-              Total Sale 
+              <h3 className="whitespace-nowrap text-base leading-6 font-semibold text-foreground">
+                {t("dashboard.total_sales", "Total Sales")}
               </h3>
               {/* <p className="text-xs text-muted-foreground">
                 {chartSubtitle}
@@ -770,24 +809,23 @@ export const HomePage = () => {
             </div>
 
             {/* Tab Navigation directly in chart header */}
-            <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/40 p-1 w-fit shadow-xs">
+            <div className="flex w-fit flex-wrap items-center gap-0.5 rounded-lg bg-muted p-1">
               {tabs.map((tab) => {
-                const TabIcon = tab.icon;
                 const isActive = activeTab === tab.value;
                 return (
                   <button
                     key={tab.value}
                     type="button"
+                    aria-pressed={isActive}
                     onClick={() => setActiveTab(tab.value)}
                     className={`
-                      inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1 text-xs font-semibold transition-all duration-200
+                      inline-flex h-8 items-center rounded-md px-3 text-[14px] font-medium transition-colors duration-150 cursor-pointer
                       ${isActive
-                        ? "bg-background text-foreground shadow-sm border border-border/80"
-                        : "text-muted-foreground hover:text-foreground hover:bg-background/40"
+                        ? "bg-card text-primary shadow-2xs"
+                        : "text-muted-foreground hover:text-foreground"
                       }
                     `}
                   >
-                    <TabIcon className="size-3.5" />
                     {tab.label}
                   </button>
                 );
@@ -795,151 +833,97 @@ export const HomePage = () => {
             </div>
           </div>
 
-          <div className="h-[280px] w-full pt-1">
-            <ResponsiveContainer width="100%" height="100%">
-              {activeTab === "daily" ? (
+          {activeTab === "daily" ? (
+            <p className="text-[13px] leading-6 text-muted-foreground">
+              {now.toLocaleDateString(language === "km" ? "km-KH" : "en-US", { dateStyle: "long" })}
+            </p>
+          ) : (
+            /* Legend — click a series to hide or show it */
+            <div className="-ml-2 flex flex-wrap items-center gap-x-1 gap-y-1">
+              {CHART_SERIES.map((series) => {
+                const isHidden = hiddenSeries.includes(series.key);
+                return (
+                  <button
+                    key={series.key}
+                    type="button"
+                    aria-pressed={!isHidden}
+                    onClick={() => toggleSeries(series.key)}
+                    className={`flex h-6 cursor-pointer items-center gap-2 rounded-md px-2 text-[13px] leading-5 transition-colors hover:bg-muted ${isHidden ? "text-text-disabled" : "text-muted-foreground"}`}
+                  >
+                    <span
+                      className="size-2.5 rounded-[3px] border"
+                      style={{ backgroundColor: isHidden ? "transparent" : series.color, borderColor: isHidden ? "var(--border-strong)" : series.color }}
+                    />
+                    {t(series.labelKey, series.fallback)}
+                  </button>
+                );
+              })}
+            </div>
+          )}
+
+          <div className="relative h-[280px] w-full">
+            {activeTab === "daily" ? (
+              <PeriodBars rows={periodComparisonData} />
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart
-                  data={periodComparisonData}
-                  margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
-                >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#888888"
-                    opacity={0.15}
-                  />
-                  <XAxis
-                    dataKey="name"
-                    tickLine={false}
-                    axisLine={{ stroke: "#888888", opacity: 0.2 }}
-                    tick={{ fill: "#888888", fontSize: 11 }}
-                  />
-                  <YAxis
-                    tickLine={false}
-                    axisLine={false}
-                    tick={{ fill: "#888888", fontSize: 10 }}
-                    tickFormatter={(val) =>
-                      `$${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`
-                    }
-                  />
-                  <Tooltip
-                    formatter={(value: any, _: any, item: any) => [
-                      `${formatCurrency(Number(value))} (${item?.payload?.detail || ""})`,
-                      item?.payload?.name,
-                    ]}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      borderColor: "hsl(var(--border))",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      fontSize: "12px",
-                    }}
-                  />
-                  <Bar dataKey="amount" radius={[4, 4, 0, 0]} maxBarSize={48}>
-                    {periodComparisonData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              ) : (
-                <BarChart
-                  data={
-                    activeTab === "weekly"
-                      ? weeklyChartData
-                      : activeTab === "monthly"
-                        ? monthlyWeeksChartData
-                        : monthlyChartData
-                  }
-                  margin={{ top: 10, right: 10, left: -15, bottom: 0 }}
+                  data={trendChartData}
+                  margin={{ top: 8, right: 4, left: 0, bottom: 0 }}
                   barGap={2}
+                  barCategoryGap="24%"
+                  onMouseMove={handleChartHover}
+                  onMouseLeave={() => setHoveredBar(null)}
                 >
-                  <CartesianGrid
-                    strokeDasharray="3 3"
-                    vertical={false}
-                    stroke="#888888"
-                    opacity={0.15}
-                  />
                   <XAxis
-                    dataKey={
-                      activeTab === "weekly"
-                        ? "label"
-                        : activeTab === "monthly"
-                          ? "label"
-                          : "month"
-                    }
-                    tickLine={false}
-                    axisLine={{ stroke: "#888888", opacity: 0.2 }}
-                    tick={{ fill: "#888888", fontSize: 11 }}
-                  />
-                  <YAxis
+                    dataKey={activeTab === "weekly" || activeTab === "monthly" ? "label" : "month"}
                     tickLine={false}
                     axisLine={false}
-                    tick={{ fill: "#888888", fontSize: 10 }}
-                    tickFormatter={(val) =>
-                      `$${val >= 1000 ? `${(val / 1000).toFixed(0)}k` : val}`
-                    }
+                    tickMargin={10}
+                    tick={chartTick}
                   />
-                  <Tooltip
-                    formatter={(value: any, name: any) => [
-                      formatCurrency(Number(value)),
-                      name,
-                    ]}
-                    contentStyle={{
-                      backgroundColor: "hsl(var(--card))",
-                      borderColor: "hsl(var(--border))",
-                      borderRadius: "8px",
-                      boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-                      fontSize: "12px",
-                    }}
+                  <YAxis
+                    width={52}
+                    tickLine={false}
+                    axisLine={false}
+                    tickMargin={6}
+                    tickCount={5}
+                    tick={chartTick}
+                    tickFormatter={formatAxisCurrency}
                   />
-                  <Legend
-                    wrapperStyle={{ paddingTop: "10px", fontSize: "11px" }}
-                  />
-                  <Bar
-                    dataKey="Sales"
-                    name={t("dashboard.total_sales", "Sales")}
-                    fill="#3b82f6"
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={activeTab === "monthly" ? 22 : 18}
-                  />
-                  <Bar
-                    dataKey="Cost"
-                    name={t("dashboard.total_cost", "Cost")}
-                    fill="#f59e0b"
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={activeTab === "monthly" ? 22 : 18}
-                  />
-                  <Bar
-                    dataKey="Profit"
-                    name={t("dashboard.total_profit", "Profit")}
-                    fill="#10b981"
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={activeTab === "monthly" ? 22 : 18}
-                  />
-                  <Bar
-                    dataKey="Expense"
-                    name={t("dashboard.total_expense", "Expense")}
-                    fill="#f43f5e"
-                    radius={[3, 3, 0, 0]}
-                    maxBarSize={activeTab === "monthly" ? 22 : 18}
-                  />
+                  <Tooltip content={ChartTooltip} cursor={false} />
+                  {CHART_SERIES.filter((series) => !hiddenSeries.includes(series.key)).map((series) => (
+                    <Bar
+                      key={series.key}
+                      dataKey={series.key}
+                      name={t(series.labelKey, series.fallback)}
+                      fill={series.color}
+                      radius={6}
+                      background={{ fill: "var(--muted)", radius: 6 }}
+                      maxBarSize={18}
+                      animationDuration={500}
+                    >
+                      {trendChartData.map((_, index) => (
+                        <Cell key={index} fillOpacity={barOpacity(index)} />
+                      ))}
+                    </Bar>
+                  ))}
                 </BarChart>
-              )}
-            </ResponsiveContainer>
-            {/* {activeTab === "daily" && totalSales === 0 && totalExpense === 0 && (
-              <p className="text-center text-[11px] text-muted-foreground pt-1">
-                {t("common.no_results", "No transactions recorded for today yet.")}
+              </ResponsiveContainer>
+            )}
+            {activeTab !== "daily" && !hasTrendData && (
+              <p className="pointer-events-none absolute inset-0 flex items-center justify-center pb-8 text-sm text-muted-foreground">
+                {t("dashboard.no_sales_period", "No sales in this period")}
               </p>
-            )} */}
+            )}
           </div>
         </div>
 
         {/* Stock & Inventory Overview: Easy to Look & Search */}
-        <div className="lg:col-span-5 rounded-xl border border-border/60 bg-card p-5 shadow-xs space-y-3.5 flex flex-col justify-between">
+        <div className="lg:col-span-6 rounded-2xl border border-border bg-card p-5 shadow-card space-y-3.5 flex flex-col justify-between">
           <div>
-            <div className="flex items-center justify-between pb-3 border-b border-border/40">
+            <div className="flex items-center justify-between">
               <div>
-                <h2 className="text-base font-semibold text-foreground tracking-tight">
+                <h2 className="text-base leading-6 font-semibold text-foreground">
                   {t("dashboard.inventory_status", "Inventory & Stock")}
                 </h2>
                 <p className="text-xs text-muted-foreground">
@@ -966,7 +950,7 @@ export const HomePage = () => {
                   : "border-border/50 bg-muted/20 hover:bg-muted/40"
                   }`}
               >
-                <span className="text-[10px] uppercase font-bold text-muted-foreground block">
+                <span className="text-[12px] font-medium text-muted-foreground block">
                   {t("common.all", "Total Items")}
                 </span>
                 <span className="text-lg font-black text-foreground">
@@ -978,15 +962,15 @@ export const HomePage = () => {
                 type="button"
                 onClick={() => setStockFilter(stockFilter === "low" ? "all" : "low")}
                 className={`rounded-lg border p-2 text-center transition-all ${stockFilter === "low"
-                  ? "border-amber-500 bg-amber-500/10 shadow-xs ring-1 ring-amber-500/30"
+                  ? "border-warning/30 bg-warning/10 shadow-xs ring-1 ring-warning/30"
                   : "border-border/50 bg-muted/20 hover:bg-muted/40"
                   }`}
               >
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase font-bold text-amber-600 dark:text-amber-400">
+                <div className="flex items-center justify-center gap-1 text-[12px] font-medium text-warning-text">
                   <AlertTriangle className="size-3" />
                   <span>{t("pos.low_stock", "Low")}</span>
                 </div>
-                <span className="text-lg font-black text-amber-600 dark:text-amber-400">
+                <span className="text-lg font-black text-warning-text">
                   {lowStockCount}
                 </span>
               </button>
@@ -995,15 +979,15 @@ export const HomePage = () => {
                 type="button"
                 onClick={() => setStockFilter(stockFilter === "out" ? "all" : "out")}
                 className={`rounded-lg border p-2 text-center transition-all ${stockFilter === "out"
-                  ? "border-rose-500 bg-rose-500/10 shadow-xs ring-1 ring-rose-500/30"
+                  ? "border-destructive/30 bg-destructive/10 shadow-xs ring-1 ring-destructive/30"
                   : "border-border/50 bg-muted/20 hover:bg-muted/40"
                   }`}
               >
-                <div className="flex items-center justify-center gap-1 text-[10px] uppercase font-bold text-rose-600 dark:text-rose-400">
+                <div className="flex items-center justify-center gap-1 text-[12px] font-medium text-destructive">
                   <XCircle className="size-3" />
                   <span>{t("pos.out_of_stock", "Out")}</span>
                 </div>
-                <span className="text-lg font-black text-rose-600 dark:text-rose-400">
+                <span className="text-lg font-black text-destructive">
                   {outOfStockCount}
                 </span>
               </button>
@@ -1011,13 +995,13 @@ export const HomePage = () => {
 
             {/* Quick Search */}
             <div className="relative mb-2">
-              <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
               <input
                 type="text"
                 placeholder={t("pos.search_placeholder", "Search product stock...")}
                 value={stockSearch}
                 onChange={(e) => setStockSearch(e.target.value)}
-                className="w-full pl-8 pr-3 py-1 text-xs rounded-lg border border-border/60 bg-background placeholder:text-muted-foreground outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary"
+                className="h-10 w-full pl-9 pr-3 text-sm rounded-lg border border-border bg-card shadow-2xs placeholder:text-text-disabled outline-none focus:ring-3 focus:ring-primary/15 focus:border-primary"
               />
             </div>
 
@@ -1038,7 +1022,7 @@ export const HomePage = () => {
                   return (
                     <div
                       key={product.id}
-                      className="flex items-center justify-between p-2 rounded-lg bg-muted/20 hover:bg-muted/40 transition-colors text-xs border border-border/30"
+                      className="flex items-center justify-between px-1 py-2.5 border-b border-border-subtle last:border-b-0 hover:bg-accent/60 transition-colors text-[14px]"
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <Package className="size-3.5 text-muted-foreground shrink-0" />
@@ -1051,11 +1035,11 @@ export const HomePage = () => {
                           {product.quantity.toLocaleString()}
                         </span>
                         <span
-                          className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${isOut
-                            ? "bg-rose-500/10 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900"
+                          className={`px-1.5 py-0.5 rounded text-[11px] font-bold ${isOut
+                            ? "bg-destructive/10 text-destructive border border-destructive/20"
                             : isLow
-                              ? "bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-200 dark:border-amber-900"
-                              : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900"
+                              ? "bg-warning/10 text-warning-text border border-warning/20"
+                              : "bg-success/10 text-success border border-success/20"
                             }`}
                         >
                           {isOut ? t("pos.out_of_stock", "Out") : isLow ? t("pos.low_stock", "Low") : t("pos.in_stock", "In stock")}
@@ -1069,14 +1053,14 @@ export const HomePage = () => {
           </div>
 
           {/* Footer of Stock card */}
-          <div className="pt-2 border-t border-border/40 flex items-center justify-between text-xs text-muted-foreground">
+          <div className="pt-3 border-t border-border flex items-center justify-between text-xs text-muted-foreground">
             <span>
               {t("common.total", "Total Units")}:{" "}
               <strong className="text-foreground">
                 {totalStockQuantity.toLocaleString()}
               </strong>
             </span>
-            <span className="flex items-center gap-1 text-[11px] text-emerald-600 dark:text-emerald-400 font-semibold">
+            <span className="flex items-center gap-1 text-[12px] text-success font-semibold">
               <CheckCircle2 className="size-3" />
               {inStockCount} {t("pos.in_stock", "active in stock")}
             </span>

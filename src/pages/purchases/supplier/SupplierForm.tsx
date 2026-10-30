@@ -275,7 +275,7 @@ const FormSupplier = ({
             type="submit"
             form="supplier-form"
             disabled={isPending}
-            className="rounded-xl shadow-md shadow-primary/20"
+           
           >
             {isPending
               ? t("common.saving")

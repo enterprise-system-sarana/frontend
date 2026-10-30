@@ -157,7 +157,7 @@ export default function SaleInvoiceModal({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         showCloseButton={false}
-        className="max-w-2xl gap-0 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl"
+        className="sm:max-w-2xl gap-0 overflow-hidden rounded-2xl border-border/60 p-0 shadow-2xl"
       >
         <DialogHeader className="sr-only">
           <DialogTitle>Invoice {invoice.reference}</DialogTitle>
@@ -166,7 +166,7 @@ export default function SaleInvoiceModal({
         {/* Modal Toolbar */}
         <div className="flex items-center justify-between border-b border-border/60 bg-muted/30 px-5 py-3">
           <div className="flex items-center gap-2">
-            <CheckCircle2 className="size-5 text-emerald-500" />
+            <CheckCircle2 className="size-5 text-success" />
             <span className="text-sm font-bold text-foreground">
               Payment Successful
             </span>
@@ -201,7 +201,7 @@ export default function SaleInvoiceModal({
             <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-5">
               {/* Store Info & Logo */}
               <div className="flex items-start gap-3.5">
-                <div className="size-14 shrink-0 rounded-xl bg-white border border-border/80 p-1 flex items-center justify-center shadow-xs overflow-hidden">
+                <div className="size-14 shrink-0 rounded-xl bg-card border border-border/80 p-1 flex items-center justify-center shadow-xs overflow-hidden">
                   <img
                     src={logoUrl}
                     alt={store?.name ?? "Store Logo"}
@@ -241,11 +241,11 @@ export default function SaleInvoiceModal({
 
               {/* Invoice Badge */}
               <div className="sm:text-right shrink-0">
-                <div className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-3 py-1 text-xs font-bold text-emerald-600 dark:text-emerald-400 border border-emerald-500/20 mb-2">
-                  <span className="size-1.5 rounded-full bg-emerald-500 inline-block" />
+                <div className="inline-flex items-center gap-1.5 rounded-full bg-success/10 px-3 py-1 text-xs font-bold text-success border border-success/20 mb-2">
+                  <span className="size-1.5 rounded-full bg-success inline-block" />
                   {isPaid ? "PAID" : invoice.paymentStatus}
                 </div>
-                <p className="text-xl font-extrabold text-foreground font-mono">
+                <p className="text-xl font-extrabold text-foreground tabular-nums">
                   #{invoice.reference}
                 </p>
                 <p className="text-xs text-muted-foreground mt-0.5">
@@ -367,7 +367,7 @@ export default function SaleInvoiceModal({
                 {invoice.discount > 0 && (
                   <div className="flex justify-between px-4 py-2.5 border-b border-border/40">
                     <span className="text-muted-foreground">Discount</span>
-                    <span className="tabular-nums font-medium text-rose-500">-{fmt(invoice.discount)}</span>
+                    <span className="tabular-nums font-medium text-destructive">-{fmt(invoice.discount)}</span>
                   </div>
                 )}
                 <div className="flex justify-between px-4 py-3 bg-primary/5 border-b border-border/40">
@@ -376,11 +376,11 @@ export default function SaleInvoiceModal({
                 </div>
                 <div className="flex justify-between px-4 py-2.5 border-b border-border/40">
                   <span className="text-muted-foreground">Paid</span>
-                  <span className="tabular-nums font-semibold text-emerald-600 dark:text-emerald-400">{fmt(invoice.paidAmount)}</span>
+                  <span className="tabular-nums font-semibold text-success">{fmt(invoice.paidAmount)}</span>
                 </div>
                 <div className="flex justify-between px-4 py-2.5">
                   <span className="text-muted-foreground">Balance Due</span>
-                  <span className={`tabular-nums font-semibold ${invoice.dueAmount > 0 ? "text-rose-500" : "text-muted-foreground"}`}>
+                  <span className={`tabular-nums font-semibold ${invoice.dueAmount > 0 ? "text-destructive" : "text-muted-foreground"}`}>
                     {fmt(invoice.dueAmount)}
                   </span>
                 </div>
@@ -388,9 +388,9 @@ export default function SaleInvoiceModal({
             </div>
 
             {/* 14-Day Warranty Policy Banner */}
-            <div className="rounded-xl border border-emerald-500/25 bg-emerald-500/10 p-3.5 flex items-center justify-between gap-3">
+            <div className="rounded-xl border border-success/25 bg-success/10 p-3.5 flex items-center justify-between gap-3">
               <div className="flex items-center gap-2.5">
-                <div className="size-8 rounded-lg bg-emerald-500/20 text-emerald-700 dark:text-emerald-300 flex items-center justify-center shrink-0">
+                <div className="size-8 rounded-lg bg-success/20 text-success flex items-center justify-center shrink-0">
                   <ShieldCheck className="size-4" />
                 </div>
                 <div>
@@ -400,7 +400,7 @@ export default function SaleInvoiceModal({
                   </p>
                 </div>
               </div>
-              <span className="shrink-0 rounded-full bg-emerald-600 text-white px-2.5 py-0.5 text-[10px] font-bold tracking-wide">
+              <span className="shrink-0 rounded-full bg-success text-white dark:text-background px-2.5 py-0.5 text-[10px] font-bold tracking-wide">
                 14 DAYS
               </span>
             </div>

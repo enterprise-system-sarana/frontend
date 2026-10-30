@@ -46,13 +46,13 @@ export const StockItemReportColumns = (
                 {item.hasSerial && (
                   <span
                     title={t("product.serialized", "Serialized")}
-                    className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[10px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
+                    className="inline-flex items-center gap-0.5 px-1 py-0.2 rounded text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20 shrink-0"
                   >
                     <Smartphone className="size-2.5" /> SN
                   </span>
                 )}
               </div>
-              <span className="text-[11px] font-mono text-muted-foreground truncate">
+              <span className="text-[12px] tabular-nums text-muted-foreground truncate">
                 {item.productCode || "-"}
               </span>
             </div>
@@ -83,7 +83,7 @@ export const StockItemReportColumns = (
           <div className="flex flex-col text-xs leading-tight">
             <span className="font-medium text-foreground">{categoryName || "-"}</span>
             {brandOrModel && (
-              <span className="text-[11px] text-muted-foreground">{brandOrModel}</span>
+              <span className="text-[12px] text-muted-foreground">{brandOrModel}</span>
             )}
           </div>
         );
@@ -107,13 +107,13 @@ export const StockItemReportColumns = (
               className={`font-bold text-sm ${isOut
                 ? "text-destructive"
                 : isLow
-                  ? "text-amber-600 dark:text-amber-400"
+                  ? "text-warning-text"
                   : "text-foreground"
                 }`}
             >
               {qty.toLocaleString()}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[11px] text-muted-foreground">
               Min: {reorder}
             </span>
           </div>
@@ -150,11 +150,11 @@ export const StockItemReportColumns = (
         const saleVal = Number(item.totalSaleValue ?? (Number(item.currentQuantity ?? 0) * Number(item.salePrice ?? 0)));
 
         return (
-          <div className="flex flex-col text-xs font-mono">
+          <div className="flex flex-col text-xs tabular-nums">
             <span className="font-semibold text-foreground">
               {formatCurrency(costVal)}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[11px] text-muted-foreground">
               Retail: {formatCurrency(saleVal)}
             </span>
           </div>
@@ -173,10 +173,10 @@ export const StockItemReportColumns = (
 
         return (
           <div className="flex flex-col text-xs">
-            <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+            <span className="font-semibold text-success">
               {formatCurrency(profit)}
             </span>
-            {/* <span className="text-[10px] font-medium text-muted-foreground">
+            {/* <span className="text-[11px] font-medium text-muted-foreground">
               {margin.toFixed(1)}%
             </span> */}
           </div>
@@ -218,7 +218,7 @@ export const StockMovementColumns = (
         <SortableHeader column={column} title={t("common.id", "Tx ID")} />
       ),
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-semibold text-muted-foreground">
+        <span className="tabular-nums text-xs font-semibold text-muted-foreground">
           #{row.original.transactionId || "-"}
         </span>
       ),
@@ -258,7 +258,7 @@ export const StockMovementColumns = (
               <span className="font-semibold text-xs text-foreground truncate max-w-[150px]">
                 {item.productName || "-"}
               </span>
-              <span className="text-[10px] font-mono text-muted-foreground truncate">
+              <span className="text-[11px] tabular-nums text-muted-foreground truncate">
                 {item.productCode || "-"}
               </span>
             </div>
@@ -289,11 +289,11 @@ export const StockMovementColumns = (
 
         return (
           <span
-            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold border ${isIn
-              ? "bg-emerald-50 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
+            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-semibold border ${isIn
+              ? "bg-success/10 text-success border-success/20"
               : isOut
-                ? "bg-sky-50 text-sky-700 border-sky-200 dark:bg-sky-950/40 dark:text-sky-400 dark:border-sky-800"
-                : "bg-purple-50 text-purple-700 border-purple-200 dark:bg-purple-950/40 dark:text-purple-400 dark:border-purple-800"
+                ? "bg-primary-light text-primary border-primary/20"
+                : "bg-primary-light text-primary border-primary/20"
               }`}
           >
             {isIn && <ArrowDownLeft className="size-3" />}
@@ -314,9 +314,9 @@ export const StockMovementColumns = (
         const isPositive = qty > 0;
         return (
           <span
-            className={`font-mono text-sm font-bold ${isPositive
-              ? "text-emerald-600 dark:text-emerald-400"
-              : "text-rose-600 dark:text-rose-400"
+            className={`tabular-nums text-sm font-bold ${isPositive
+              ? "text-success"
+              : "text-destructive"
               }`}
           >
             {isPositive ? `+${qty.toLocaleString()}` : qty.toLocaleString()}
@@ -330,7 +330,7 @@ export const StockMovementColumns = (
         <SortableHeader column={column} title={t("common.reference", "Reference")} />
       ),
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="tabular-nums text-xs text-muted-foreground">
           {row.original.referenceId ? `#${row.original.referenceId}` : "-"}
         </span>
       ),

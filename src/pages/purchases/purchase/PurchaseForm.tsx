@@ -483,7 +483,8 @@ export default function PurchaseForm() {
         (typeof error?.response?.data === "string" ? error.response.data : null) ||
         error?.message ||
         "Failed to process purchase payment.";
-      toast.error(errorMsg);
+      // API failures already toast through mutationHandler.
+      if (!error?.isAxiosError) toast.error(errorMsg);
       return false;
     }
   };
@@ -826,11 +827,11 @@ export default function PurchaseForm() {
   }
 
   return (
-    <div className="w-full min-h-screen bg-slate-50/50 dark:bg-background pb-16">
+    <div className="w-full min-h-screen bg-muted/50 dark:bg-background pb-16">
       {/* ------------------------------------------------------------------ */}
       {/* Sticky Top Header Bar                                             */}
       {/* ------------------------------------------------------------------ */}
-      <div className="sticky top-0 z-20 border-b border-slate-200/80 dark:border-slate-800 bg-white/95 dark:bg-card/95 backdrop-blur px-4 py-2.5 shadow-2xs">
+      <div className="sticky top-0 z-20 border-b border-border bg-white/95 dark:bg-card/95 backdrop-blur px-4 py-2.5 shadow-2xs">
         <div className="flex flex-wrap items-center justify-between gap-3 max-w-[1600px] mx-auto">
           {/* Left: Title & Reference */}
           <div className="flex items-center gap-3">
@@ -839,33 +840,33 @@ export default function PurchaseForm() {
               variant="outline"
               size="icon"
               onClick={() => navigate(-1)}
-              className="size-7 rounded-[3px] border-[#cdd5df] text-slate-600 hover:text-slate-900 hover:bg-slate-100"
+              className="size-7 rounded-lg border-border text-text-secondary hover:text-foreground hover:bg-muted"
               title="Return to purchases list"
             >
               <ArrowLeft className="size-3.5" />
             </Button>
 
             <div className="flex items-center gap-2">
-              <h1 className="font-heading text-sm font-bold tracking-tight text-[#081d33] dark:text-slate-100 sm:text-base">
+              <h1 className="font-heading text-sm font-bold tracking-tight text-foreground sm:text-base">
                 {isEditing ? t("purchase.edit") : t("purchase.create")}
               </h1>
 
               {/* <form.Subscribe selector={(state) => state.values.referenceNo}>
                 {(refNo) => (
-                  <span className="font-mono text-[11px] font-bold px-2 py-0.5 rounded-[2px] bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 text-slate-700 dark:text-slate-300">
+                  <span className="tabular-nums text-[12px] font-bold px-2 py-0.5 rounded-lg bg-muted border border-border text-text-secondary">
                     {refNo || "PO-DRAFT"}
                   </span>
                 )}
               </form.Subscribe> */}
 
               {/* <span
-                className={`inline-flex items-center gap-1 rounded-[2px] px-1.5 py-0.5 text-[10px] font-bold ${isEditing
-                  ? "bg-blue-50 text-blue-700 border border-blue-200 dark:bg-blue-950/40 dark:text-blue-300"
-                  : "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-300"
+                className={`inline-flex items-center gap-1 rounded-lg px-1.5 py-0.5 text-[11px] font-bold ${isEditing
+                  ? "bg-primary-light text-primary border border-primary/20"
+                  : "bg-primary-light/60 text-primary border border-primary/20"
                   }`}
               >
                 <span
-                  className={`size-1.5 rounded-full ${isEditing ? "bg-blue-500" : "bg-emerald-500"}`}
+                  className={`size-1.5 rounded-full ${isEditing ? "bg-primary" : "bg-primary"}`}
                 />
                 {isEditing ? t("purchase.editing_mode") : t("purchase.new_intake")}
               </span> */}
@@ -875,13 +876,13 @@ export default function PurchaseForm() {
           {/* Center/Right: Live Metrics & Action Buttons */}
           <div className="flex items-center gap-2.5 ml-auto">
             {/* Live Total KPI badge */}
-            <div className="flex items-center gap-1.5 rounded-md border border-emerald-300 bg-emerald-50/80 dark:bg-emerald-950/30 px-3 py-1.5 text-emerald-800 dark:text-emerald-300">
-              <DollarSign className="size-4 text-emerald-600 dark:text-emerald-400" />
+            <div className="flex items-center gap-1.5 rounded-md border border-primary/20 bg-primary-light/60 px-3 py-1.5 text-primary">
+              <DollarSign className="size-4 text-primary" />
               <div className="flex items-baseline gap-1">
-                <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-700/80 dark:text-emerald-400/80">
+                <span className="text-[13px] font-medium text-primary">
                   {t("common.total")}:
                 </span>
-                <span className="font-mono text-sm font-black text-emerald-700 dark:text-emerald-300">
+                <span className="tabular-nums text-sm font-bold text-primary">
                   {formatCurrency(topGrandTotal)}
                 </span>
               </div>
@@ -890,7 +891,7 @@ export default function PurchaseForm() {
             <Button
               type="button"
               variant="outline"
-              className="h-9 rounded-md border-slate-300 dark:border-slate-700 text-xs font-semibold px-3 text-slate-600 hover:text-slate-900 cursor-pointer"
+              className="h-9 rounded-md border-border-strong text-xs font-semibold px-3 text-text-secondary hover:text-foreground cursor-pointer"
               onClick={() => navigate(-1)}
             >
               {t("purchase.discard")}
@@ -901,7 +902,7 @@ export default function PurchaseForm() {
               form="purchase-form"
               variant="outline"
               disabled={isPending}
-              className="h-9 rounded-md border-slate-300 dark:border-slate-700 text-xs font-semibold px-3 text-slate-700 hover:bg-slate-50 cursor-pointer"
+              className="h-9 rounded-md border-border-strong text-xs font-semibold px-3 text-text-secondary hover:bg-muted/50 cursor-pointer"
             >
               {t("purchase.save_draft")}
             </Button>
@@ -910,7 +911,7 @@ export default function PurchaseForm() {
               type="submit"
               form="purchase-form"
               disabled={isPending}
-              className="h-9 rounded-md bg-emerald-600 px-4 text-xs font-bold text-white hover:bg-emerald-700 shadow-sm transition-all cursor-pointer"
+              className="h-9 rounded-md bg-primary px-4 text-xs font-bold text-primary-foreground hover:bg-primary-hover shadow-sm transition-all cursor-pointer"
             >
               {isPending ? (
                 t("common.saving")
@@ -945,15 +946,15 @@ export default function PurchaseForm() {
               {/* -------------------------------------------------------- */}
               {/* Card 1: Purchase Information                             */}
               {/* -------------------------------------------------------- */}
-              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-card shadow-2xs overflow-hidden">
-                <div className="border-b border-slate-100 dark:border-slate-800 px-4 py-2 flex items-center justify-between bg-slate-50/70 dark:bg-muted/30">
+              <section className="rounded-lg border border-border bg-card dark:bg-card shadow-2xs overflow-hidden">
+                <div className="border-b border-border px-4 py-2 flex items-center justify-between bg-muted/70 dark:bg-muted/30">
                   <div className="flex items-center gap-2">
-                    <Package className="size-3.5 text-emerald-600" />
-                    <h2 className="font-heading font-bold text-xs uppercase tracking-wider text-[#081d33] dark:text-slate-100">
+                    <Package className="size-4 text-primary" />
+                    <h2 className="font-heading text-sm font-semibold text-foreground">
                       {t("purchase.purchase_info")}
                     </h2>
                   </div>
-                  <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                  <span className="text-xs text-muted-foreground">
                     {t("purchase.general_details")}
                   </span>
                 </div>
@@ -1018,11 +1019,11 @@ export default function PurchaseForm() {
               {/* -------------------------------------------------------- */}
               {/* Card 2: Products & Inventory Intake                      */}
               {/* -------------------------------------------------------- */}
-              <section className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-card shadow-2xs overflow-hidden">
-                <div className="border-b border-slate-100 dark:border-slate-800 px-4 py-2 flex items-center justify-between bg-slate-50/70 dark:bg-muted/30">
+              <section className="rounded-lg border border-border bg-card dark:bg-card shadow-2xs overflow-hidden">
+                <div className="border-b border-border px-4 py-2 flex items-center justify-between bg-muted/70 dark:bg-muted/30">
                   <div className="flex items-center gap-2">
-                    <ScanLine className="size-3.5 text-emerald-600" />
-                    <h2 className="font-heading font-bold text-xs uppercase tracking-wider text-[#081d33] dark:text-slate-100">
+                    <ScanLine className="size-4 text-primary" />
+                    <h2 className="font-heading text-sm font-semibold text-foreground">
                       {t("purchase.products_intake")}
                     </h2>
                   </div>
@@ -1033,10 +1034,10 @@ export default function PurchaseForm() {
                   {(itemsField) => (
                     <>
                       {/* Product search bar */}
-                      <div className="border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-muted/10 p-3">
+                      <div className="border-b border-border bg-muted/50 dark:bg-muted/10 p-3">
                         <div ref={searchBoxRef} className="relative flex items-center gap-2.5">
                           <div className="relative flex-1">
-                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-slate-400" />
+                            <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
                             <Input
                               value={productSearch}
@@ -1055,11 +1056,11 @@ export default function PurchaseForm() {
                                 }
                               }}
                               placeholder={t("purchase.search_product")}
-                              className="h-10 rounded-md border-slate-300 dark:border-slate-700 bg-white dark:bg-background pl-9 text-sm font-normal shadow-2xs hover:border-slate-400 focus-visible:border-primary"
+                              className="h-10 rounded-md border-border-strong bg-card dark:bg-background pl-9 text-sm font-normal shadow-2xs hover:border-border-strong focus-visible:border-primary"
                             />
 
                             {isSearchOpen && productSearch.trim() && (
-                              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-72 overflow-y-auto rounded-md border border-slate-300 dark:border-slate-700 bg-popover p-1 shadow-lg">
+                              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-30 max-h-72 overflow-y-auto rounded-md border border-border-strong bg-popover p-1 shadow-lg">
                                 {filteredProducts.length === 0 ? (
                                   <div className="px-3 py-3 text-center text-xs text-muted-foreground">
                                     No products match "{productSearch}"
@@ -1080,10 +1081,10 @@ export default function PurchaseForm() {
                                           preview={false}
                                           showBorder={false}
                                           fit="cover"
-                                          className="size-9 shrink-0 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 object-cover"
+                                          className="size-9 shrink-0 rounded-md border border-border bg-card object-cover"
                                         />
                                       ) : (
-                                        <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[11px] font-bold text-primary border border-primary/20">
+                                        <div className="flex size-9 shrink-0 items-center justify-center rounded-md bg-primary/10 text-[12px] font-bold text-primary border border-primary/20">
                                           {initials(product.name)}
                                         </div>
                                       )}
@@ -1092,14 +1093,14 @@ export default function PurchaseForm() {
                                         <p className="truncate text-xs font-semibold text-foreground">
                                           {product.name}
                                         </p>
-                                        <p className="truncate text-[10px] text-muted-foreground">
+                                        <p className="truncate text-[11px] text-muted-foreground">
                                           {[product.brandName, product.code]
                                             .filter(Boolean)
                                             .join(" · ")}
                                         </p>
                                       </div>
 
-                                      <span className="shrink-0 text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
+                                      <span className="shrink-0 text-xs tabular-nums font-bold text-primary">
                                         {formatCurrency(Number(product.costPrice ?? 0))}
                                       </span>
                                     </button>
@@ -1112,7 +1113,7 @@ export default function PurchaseForm() {
                           <Button
                             type="button"
                             variant="outline"
-                            className="h-10 shrink-0 rounded-md border-slate-300 dark:border-slate-700 px-3.5 text-xs font-semibold hover:bg-slate-100 dark:hover:bg-muted cursor-pointer shadow-2xs"
+                            className="h-10 shrink-0 rounded-md border-border-strong px-3.5 text-xs font-semibold hover:bg-muted dark:hover:bg-muted cursor-pointer shadow-2xs"
                             onClick={() => itemsField.pushValue(emptyItem())}
                           >
                             <Plus className="mr-1.5 size-4" />
@@ -1133,20 +1134,20 @@ export default function PurchaseForm() {
                       <div>
                         {itemsField.state.value.length === 0 ? (
                           <div className="px-4 py-12 text-center">
-                            <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-slate-100 dark:bg-muted">
-                              <Package className="size-5 text-slate-400" />
+                            <div className="mx-auto mb-2 flex size-10 items-center justify-center rounded-xl bg-muted dark:bg-muted">
+                              <Package className="size-5 text-muted-foreground" />
                             </div>
-                            <p className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                            <p className="text-xs font-semibold text-text-secondary">
                               {t("purchase.no_products_intake")}
                             </p>
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            <p className="mt-0.5 text-[12px] text-muted-foreground">
                               {t("purchase.no_products_intake_desc")}
                             </p>
                           </div>
                         ) : (
                           <>
                             {/* Table Header */}
-                            <div className="hidden md:grid md:grid-cols-12 gap-2.5 sm:gap-3 border-b border-slate-200 dark:border-slate-800 bg-slate-100/90 dark:bg-muted/40 px-4 py-3 text-sm font-bold text-slate-600 dark:text-slate-300 uppercase tracking-wider font-heading">
+                            <div className="hidden md:grid md:grid-cols-12 items-center gap-2.5 sm:gap-3 border-b border-border bg-muted/60 px-4 py-3 text-[12px] leading-4 font-semibold uppercase tracking-[0.09em] text-muted-foreground">
                               <div className="md:col-span-5">{t("purchase.product_details")}</div>
                               <div className="md:col-span-2 text-center">{t("purchase.qty_serials")}</div>
                               <div className="md:col-span-2 text-right">{t("purchase.unit_cost")}</div>
@@ -1154,7 +1155,7 @@ export default function PurchaseForm() {
                               <div className="md:col-span-1 text-center">{t("common.action")}</div>
                             </div>
 
-                            <div className="divide-y divide-slate-100 dark:divide-slate-800">
+                            <div className="divide-y divide-border">
                               {itemsField.state.value.map((item: any, index: number) => (
                                 <PurchaseItemRow
                                   key={`purchase-item-${index}-${item?.productId || 0}`}
@@ -1179,22 +1180,22 @@ export default function PurchaseForm() {
             {/* RIGHT COLUMN: Sticky Purchase & Payment Summary            */}
             {/* ========================================================== */}
             <aside className="xl:sticky xl:top-14 xl:self-start">
-              <div className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-card shadow-2xs overflow-hidden">
+              <div className="rounded-lg border border-border bg-card dark:bg-card shadow-2xs overflow-hidden">
                 {/* Header */}
-                <div className="border-b border-slate-100 dark:border-slate-800 px-3.5 py-2 flex items-center justify-between bg-slate-50/70 dark:bg-muted/30">
+                <div className="border-b border-border px-3.5 py-2 flex items-center justify-between bg-muted/70 dark:bg-muted/30">
                   <div className="flex items-center gap-1.5">
-                    <Wallet className="size-3.5 text-emerald-600" />
-                    <h2 className="font-heading font-bold text-xs uppercase tracking-wider text-[#081d33] dark:text-slate-100">
+                    <Wallet className="size-4 text-primary" />
+                    <h2 className="font-heading text-sm font-semibold text-foreground">
                       {t("purchase.summary")}
                     </h2>
                   </div>
-                  <span className="text-[10px] font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-1.5 py-0.5 rounded-[2px]">
+                  <span className="text-[11px] font-semibold text-primary bg-primary-light/60 px-1.5 py-0.5 rounded-lg">
                     {t("purchase.finalize")}
                   </span>
                 </div>
 
                 {/* Form fields */}
-                <div className="p-3.5 space-y-2.5 border-b border-slate-100 dark:border-slate-800">
+                <div className="p-3.5 space-y-2.5 border-b border-border">
                   <FormSelectField
                     form={form}
                     name="bankId"
@@ -1249,65 +1250,65 @@ export default function PurchaseForm() {
                     const returnBack = Math.max(paid - grandTotal, 0);
 
                     return (
-                      <div className="p-3.5 space-y-2 bg-slate-50/50 dark:bg-muted/10">
+                      <div className="p-3.5 space-y-2 bg-muted/50 dark:bg-muted/10">
                         <div className="flex justify-between text-xs">
                           <span className="text-muted-foreground font-medium">{t("common.subtotal")}</span>
-                          <span className="font-mono font-semibold">{formatCurrency(subtotal)}</span>
+                          <span className="tabular-nums font-semibold">{formatCurrency(subtotal)}</span>
                         </div>
 
                         {discountAmount > 0 && (
                           <div className="flex justify-between text-xs">
                             <span className="text-muted-foreground font-medium">{t("common.discount")}</span>
-                            <span className="font-mono font-semibold text-destructive">
+                            <span className="tabular-nums font-semibold text-destructive">
                               -{formatCurrency(discountAmount)}
                             </span>
                           </div>
                         )}
 
                         {/* Grand Total Box */}
-                        <div className="rounded-[3px] border border-emerald-500/25 bg-emerald-50/80 dark:bg-emerald-950/30 p-2.5 my-1">
+                        <div className="rounded-lg border border-primary/25 bg-primary-light/60 p-2.5 my-1">
                           <div className="flex items-center justify-between">
-                            <span className="font-heading text-xs font-bold text-emerald-900 dark:text-emerald-200">
+                            <span className="font-heading text-xs font-bold text-primary">
                               {t("sale.grand_total", "Grand Total")}
                             </span>
-                            <span className="text-lg font-mono font-black text-emerald-700 dark:text-emerald-300">
+                            <span className="text-lg tabular-nums font-black text-primary">
                               {formatCurrency(grandTotal)}
                             </span>
                           </div>
                         </div>
 
-                        <div className="border-t border-slate-200/80 dark:border-slate-800 pt-2 space-y-1.5">
+                        <div className="border-t border-border pt-2 space-y-1.5">
                           <div className="flex justify-between text-xs">
                             <span className="text-muted-foreground font-medium">{t("purchase.paid_amount")}</span>
-                            <span className="font-mono font-semibold text-slate-800 dark:text-slate-200">
+                            <span className="tabular-nums font-semibold text-foreground">
                               {formatCurrency(paid)}
                             </span>
                           </div>
 
                           {returnBack > 0 ? (
-                            <div className="flex justify-between text-xs items-center bg-emerald-100/70 dark:bg-emerald-950/40 px-2 py-0.5 rounded-[2px]">
-                              <span className="font-semibold text-emerald-800 dark:text-emerald-300 text-[11px]">
+                            <div className="flex justify-between text-xs items-center bg-primary-light/60 px-2 py-0.5 rounded-lg">
+                              <span className="font-semibold text-primary text-[12px]">
                                 {t("pos.change", "Return Back")}
                               </span>
-                              <span className="font-mono font-bold text-emerald-800 dark:text-emerald-300">
+                              <span className="tabular-nums font-bold text-primary">
                                 {formatCurrency(returnBack)}
                               </span>
                             </div>
                           ) : balance > 0 ? (
-                            <div className="flex justify-between text-xs items-center bg-rose-50 dark:bg-rose-950/30 px-2 py-0.5 rounded-[2px]">
-                              <span className="font-semibold text-rose-700 dark:text-rose-300 text-[11px]">
+                            <div className="flex justify-between text-xs items-center bg-destructive/10 px-2 py-0.5 rounded-lg">
+                              <span className="font-semibold text-destructive text-[12px]">
                                 {t("purchase.due_amount")}
                               </span>
-                              <span className="font-mono font-bold text-rose-700 dark:text-rose-300">
+                              <span className="tabular-nums font-bold text-destructive">
                                 {formatCurrency(balance)}
                               </span>
                             </div>
                           ) : (
-                            <div className="flex justify-between text-xs items-center bg-emerald-50 dark:bg-emerald-950/20 px-2 py-0.5 rounded-[2px]">
-                              <span className="font-medium text-emerald-700 dark:text-emerald-400 text-[11px]">
+                            <div className="flex justify-between text-xs items-center bg-primary-light/60 px-2 py-0.5 rounded-lg">
+                              <span className="font-medium text-primary text-[12px]">
                                 {t("purchase.due_amount")}
                               </span>
-                              <span className="font-mono font-semibold text-emerald-700 dark:text-emerald-400">
+                              <span className="tabular-nums font-semibold text-primary">
                                 $0.00
                               </span>
                             </div>
@@ -1331,12 +1332,12 @@ export default function PurchaseForm() {
                 />
 
                 {/* Actions */}
-                <div className="p-3 border-t border-slate-100 dark:border-slate-800 space-y-1.5 bg-white dark:bg-card">
+                <div className="p-3 border-t border-border space-y-1.5 bg-card dark:bg-card">
                   <Button
                     type="submit"
                     form="purchase-form"
                     disabled={isPending || createPayment.isPending}
-                    className="h-[30px] w-full rounded-[2px] bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+                    className="h-9 w-full rounded-lg bg-primary hover:bg-primary-hover text-primary-foreground font-bold text-xs shadow-xs transition-all cursor-pointer"
                   >
                     {isPending || createPayment.isPending ? (
                       t("common.saving")
@@ -1362,16 +1363,16 @@ export default function PurchaseForm() {
                       }
                       setIsPaymentModalOpen(true);
                     }}
-                    className="h-[28px] w-full rounded-[2px] border-[#cdd5df] text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-50 cursor-pointer"
+                    className="h-9 w-full rounded-lg border-border text-[12px] font-semibold text-text-secondary hover:bg-muted/50 cursor-pointer"
                   >
-                    <Wallet className="mr-1.5 size-3 text-blue-600" />
+                    <Wallet className="mr-1.5 size-3 text-primary" />
                     {t("common.payment")}
                   </Button>
 
                   <Button
                     type="button"
                     variant="ghost"
-                    className="h-[26px] w-full text-[11px] font-medium text-slate-500 hover:text-slate-800"
+                    className="h-[26px] w-full text-[12px] font-medium text-muted-foreground hover:text-foreground"
                     onClick={() => navigate(-1)}
                   >
                     {t("common.cancel")}
@@ -1566,7 +1567,7 @@ function PurchaseItemRow({
   }, [quantity, index, hasSerial]);
 
   return (
-    <div className="px-3.5 py-3 transition-colors hover:bg-slate-50/70 dark:hover:bg-muted/10">
+    <div className="px-3.5 py-3 transition-colors hover:bg-muted/70 dark:hover:bg-muted/10">
       <div className="grid grid-cols-12 gap-3 items-center">
         {/* Product selection */}
         <div className="col-span-12 md:col-span-5">
@@ -1671,7 +1672,7 @@ function PurchaseItemRow({
                 >
                   <SelectTrigger
                     aria-label={`Choose product for row ${index + 1}`}
-                    className="h-9 w-full cursor-pointer rounded-[2px] border-[#cdd5df] text-sm bg-white dark:bg-background"
+                    className="h-9 w-full cursor-pointer rounded-lg border-border text-sm bg-card dark:bg-background"
                   >
                     <div className="flex items-center gap-2 min-w-0 flex-1 truncate">
                       {selectedProduct?.imageUrl ? (
@@ -1682,10 +1683,10 @@ function PurchaseItemRow({
                           preview={false}
                           showBorder={false}
                           fit="cover"
-                          className="size-6 shrink-0 rounded object-cover border border-slate-200 dark:border-slate-700"
+                          className="size-6 shrink-0 rounded object-cover border border-border"
                         />
                       ) : selectedProduct ? (
-                        <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[9px] font-bold text-primary">
+                        <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[10px] font-bold text-primary">
                           {initials(selectedProduct.name)}
                         </div>
                       ) : null}
@@ -1711,10 +1712,10 @@ function PurchaseItemRow({
                               preview={false}
                               showBorder={false}
                               fit="cover"
-                              className="size-6 shrink-0 rounded object-cover border border-slate-200 dark:border-slate-700"
+                              className="size-6 shrink-0 rounded object-cover border border-border"
                             />
                           ) : (
-                            <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[9px] font-bold text-primary">
+                            <div className="flex size-6 shrink-0 items-center justify-center rounded bg-primary/10 text-[10px] font-bold text-primary">
                               {initials(product.name)}
                             </div>
                           )}
@@ -1746,27 +1747,27 @@ function PurchaseItemRow({
               }}
               title={Number(productId) ? "Click to set quantity & scan serial numbers" : "Select a product first"}
               aria-label={`Set quantity and scan serial numbers for ${productName || "this product"}`}
-              className={`flex h-9 w-full items-center justify-between px-2.5 rounded-[2px] border text-sm font-semibold transition-all cursor-pointer ${serialsComplete
-                ? "border-emerald-300 bg-emerald-50/70 text-emerald-800 hover:bg-emerald-100 dark:border-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-300"
+              className={`flex h-9 w-full items-center justify-between px-2.5 rounded-lg border text-sm font-semibold transition-all cursor-pointer ${serialsComplete
+                ? "border-primary/20 bg-primary-light/60 text-primary hover:bg-primary-light/60"
                 : enteredSerialCount > 0
-                  ? "border-amber-300 bg-amber-50/70 text-amber-800 hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300"
-                  : "border-[#cdd5df] bg-white hover:border-slate-400 text-slate-800 dark:bg-background dark:text-foreground"
+                  ? "border-warning/20 bg-warning/10 text-warning-text hover:bg-warning/10"
+                  : "border-border bg-card hover:border-border-strong text-foreground dark:bg-background dark:text-foreground"
                 } disabled:cursor-not-allowed disabled:opacity-50`}
             >
-              <span className="font-mono font-bold">{quantity ?? 0}</span>
+              <span className="tabular-nums font-bold">{quantity ?? 0}</span>
               <span className="flex items-center gap-1 text-xs">
-                <ScanLine className="size-3.5 text-slate-500" />
+                <ScanLine className="size-3.5 text-muted-foreground" />
                 <span>{enteredSerialCount}/{expectedSerialCount}</span>
               </span>
             </button>
           ) : (
             <form.Field name={`items[${index}].quantity`}>
               {(field: any) => (
-                <div className="flex items-center border border-slate-300 dark:border-slate-700 rounded-[2px] overflow-hidden h-9 bg-white dark:bg-background shadow-2xs">
+                <div className="flex items-center border border-border-strong rounded-lg overflow-hidden h-9 bg-card dark:bg-background shadow-2xs">
                   <button
                     type="button"
                     disabled={!Number(productId) || (Number(field.state.value) || 0) <= 1}
-                    className="size-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer border-r border-slate-200 dark:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="size-9 flex items-center justify-center text-text-secondary hover:bg-muted transition cursor-pointer border-r border-border disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={() => {
                       const cur = Math.max(1, (Number(field.state.value) || 1) - 1);
                       field.handleChange(cur);
@@ -1785,12 +1786,12 @@ function PurchaseItemRow({
                       field.handleChange(val);
                       form.setFieldValue(`items[${index}].subtotal`, cost * val);
                     }}
-                    className="h-full border-0 text-center font-mono text-sm font-bold bg-transparent shadow-none focus-visible:ring-0 p-0"
+                    className="h-full border-0 text-center tabular-nums text-sm font-bold bg-transparent shadow-none focus-visible:ring-0 p-0"
                   />
                   <button
                     type="button"
                     disabled={!Number(productId)}
-                    className="size-9 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 transition cursor-pointer border-l border-slate-200 dark:border-slate-700 disabled:opacity-40 disabled:cursor-not-allowed"
+                    className="size-9 flex items-center justify-center text-text-secondary hover:bg-muted transition cursor-pointer border-l border-border disabled:opacity-40 disabled:cursor-not-allowed"
                     onClick={() => {
                       const cur = (Number(field.state.value) || 1) + 1;
                       field.handleChange(cur);
@@ -1821,7 +1822,7 @@ function PurchaseItemRow({
                   field.handleChange(e.target.value === "" ? 0 : Number(e.target.value))
                 }
                 placeholder="0.00"
-                className="h-9 rounded-[2px] border-[#cdd5df] text-right font-mono text-sm font-semibold"
+                className="h-9 rounded-lg border-border text-right tabular-nums text-sm font-semibold"
               />
             )}
           </form.Field>
@@ -1834,7 +1835,7 @@ function PurchaseItemRow({
           </span>
           <form.Field name={`items[${index}].subtotal`}>
             {(field: any) => (
-              <div className="h-9 flex items-center justify-end px-2.5 rounded-[2px] bg-slate-50 dark:bg-muted/40 border border-[#cdd5df]/70 font-mono text-sm font-bold text-emerald-700 dark:text-emerald-400">
+              <div className="h-9 flex items-center justify-end px-2.5 rounded-lg bg-muted/50 dark:bg-muted/40 border border-border/70 tabular-nums text-sm font-bold text-primary">
                 {formatCurrency(Number(field.state.value) || 0)}
               </div>
             )}
@@ -1849,7 +1850,7 @@ function PurchaseItemRow({
             size="icon"
             onClick={onRemove}
             title="Remove product"
-            className="size-8 rounded-[2px] text-slate-400 hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
+            className="size-8 rounded-lg text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors cursor-pointer"
           >
             <Trash2 className="size-4" />
           </Button>
@@ -1859,15 +1860,15 @@ function PurchaseItemRow({
       {/* Serial numbers preview ribbon */}
       {hasSerial && enteredSerialCount > 0 && (
         <div className="mt-1.5 flex items-center gap-1.5 pl-0.5 text-xs">
-          <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Serials:</span>
+          <span className="text-[11px] font-bold uppercase tracking-wider text-muted-foreground">Serials:</span>
           <div className="flex flex-wrap gap-1 items-center max-h-12 overflow-hidden">
             {normalizedSerialNumbers.filter((s: string) => s.trim()).slice(0, 6).map((sn: string, i: number) => (
-              <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded-[2px] bg-slate-100 dark:bg-slate-800 text-[10px] font-mono text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+              <span key={i} className="inline-flex items-center px-1.5 py-0.5 rounded-lg bg-muted text-[11px] tabular-nums text-text-secondary border border-border">
                 {sn}
               </span>
             ))}
             {enteredSerialCount > 6 && (
-              <span className="text-[10px] text-muted-foreground font-mono font-semibold">
+              <span className="text-[11px] text-muted-foreground tabular-nums font-semibold">
                 +{enteredSerialCount - 6} more
               </span>
             )}
@@ -1875,7 +1876,7 @@ function PurchaseItemRow({
           <button
             type="button"
             onClick={() => setIsSerialDialogOpen(true)}
-            className="ml-auto text-[10px] text-primary hover:underline font-semibold cursor-pointer"
+            className="ml-auto text-[11px] text-primary hover:underline font-semibold cursor-pointer"
           >
             Edit Serials
           </button>
@@ -1891,9 +1892,9 @@ function PurchaseItemRow({
               setSerialDialogError("");
               setIsSerialDialogOpen(true);
             }}
-            className="inline-flex items-center gap-1 rounded-[2px] bg-amber-50 dark:bg-amber-950/40 px-2 py-0.5 text-[10px] font-medium text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-800 hover:bg-amber-100 dark:hover:bg-amber-900/40 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1 rounded-lg bg-warning/10 px-2 py-0.5 text-[11px] font-medium text-warning-text border border-warning/20 hover:bg-warning/10 transition-colors cursor-pointer"
           >
-            <Package className="size-3 text-amber-500" />
+            <Package className="size-3 text-warning-text" />
             {t("purchase.serial_required", "Serial number is required")}
           </button>
         </div>
@@ -1904,20 +1905,20 @@ function PurchaseItemRow({
         <DialogContent className="sm:max-w-xl p-4">
           <DialogHeader className="space-y-1">
             <div className="flex items-center justify-between">
-              <DialogTitle className="font-heading text-sm font-bold text-[#081d33] dark:text-slate-100">
+              <DialogTitle className="font-heading text-sm font-bold text-foreground">
                 {t("purchase.qty_serials")}
               </DialogTitle>
               <Button
                 type="button"
                 variant="outline"
                 size="sm"
-                className="h-7 gap-1 border-emerald-600/30 text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 text-xs font-semibold rounded-[2px]"
+                className="h-7 gap-1 border-primary/30 text-primary hover:bg-primary-light/60 text-xs font-semibold rounded-lg"
                 onClick={() => {
                   setIsSerialDialogOpen(false);
                   setIsExcelModalOpen(true);
                 }}
               >
-                <FileSpreadsheet className="size-3 text-emerald-600 dark:text-emerald-400" />
+                <FileSpreadsheet className="size-3 text-success" />
                 {t("purchase.import_excel")}
               </Button>
             </div>
@@ -1928,12 +1929,12 @@ function PurchaseItemRow({
 
           <form.Field name={`items[${index}].quantity`}>
             {(field: any) => (
-              <div className="flex items-center justify-between gap-3 rounded-[3px] border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-muted/20 p-2.5">
+              <div className="flex items-center justify-between gap-3 rounded-lg border border-border bg-muted/50 dark:bg-muted/20 p-2.5">
                 <div>
-                  <label htmlFor={`purchase-quantity-${index}`} className="text-xs font-bold text-slate-800 dark:text-slate-200 font-heading">
+                  <label htmlFor={`purchase-quantity-${index}`} className="text-xs font-bold text-foreground font-heading">
                     {t("purchase.intake_quantity")}
                   </label>
-                  <p className="text-[11px] text-muted-foreground">{t("purchase.serial_per_unit", "One serial number is required per unit.")}</p>
+                  <p className="text-[12px] text-muted-foreground">{t("purchase.serial_per_unit", "One serial number is required per unit.")}</p>
                 </div>
                 <Input
                   id={`purchase-quantity-${index}`}
@@ -1951,13 +1952,13 @@ function PurchaseItemRow({
                     setSerialDialogError("");
                     field.handleChange(next);
                   }}
-                  className="h-[29px] w-20 rounded-[2px] bg-white dark:bg-background text-center font-mono text-xs font-bold border-[#cdd5df]"
+                  className="h-9 w-20 rounded-lg bg-card dark:bg-background text-center tabular-nums text-xs font-bold border-border"
                 />
               </div>
             )}
           </form.Field>
 
-          <div className="rounded-[3px] bg-slate-50 dark:bg-muted/20 border border-slate-200 dark:border-slate-800 p-2.5">
+          <div className="rounded-lg bg-muted/50 dark:bg-muted/20 border border-border p-2.5">
             <div className="flex items-center gap-2">
               <ScanLine className="size-4 text-primary shrink-0" />
 
@@ -1972,9 +1973,9 @@ function PurchaseItemRow({
                   }
                 }}
                 placeholder={t("purchase.scan_placeholder")}
-                className="h-[29px] rounded-[2px] bg-white dark:bg-background font-mono text-xs border-[#cdd5df]"
+                className="h-9 rounded-lg bg-card dark:bg-background tabular-nums text-xs border-border"
               />
-              <Button type="button" onClick={addSerialNumber} className="h-[29px] shrink-0 rounded-[2px] px-3 text-xs font-bold">
+              <Button type="button" onClick={addSerialNumber} className="h-9 shrink-0 rounded-lg px-3 text-xs font-bold">
                 {t("common.add")}
               </Button>
             </div>
@@ -1986,8 +1987,8 @@ function PurchaseItemRow({
 
           <div>
             <div className="mb-1.5 flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-700 dark:text-slate-300 font-heading">{t("purchase.serials_registry")}</span>
-              <span className={`text-[11px] font-mono font-bold ${serialsComplete ? "text-emerald-600" : "text-amber-600"}`}>
+              <span className="text-xs font-bold text-text-secondary font-heading">{t("purchase.serials_registry")}</span>
+              <span className={`text-[12px] font-mono font-bold ${serialsComplete ? "text-success" : "text-warning-text"}`}>
                 {enteredSerialCount}/{expectedSerialCount}
               </span>
             </div>
@@ -1995,7 +1996,7 @@ function PurchaseItemRow({
             <div className="max-h-56 space-y-1.5 overflow-y-auto pr-1">
               {normalizedSerialNumbers.map((serial: string, serialIndex: number) => (
                 <div key={serialIndex} className="flex items-center gap-2">
-                  <div className="flex size-6 shrink-0 items-center justify-center rounded-[2px] bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                  <div className="flex size-6 shrink-0 items-center justify-center rounded-lg bg-muted text-[11px] font-bold text-text-secondary">
                     {serialIndex + 1}
                   </div>
 
@@ -2009,7 +2010,7 @@ function PurchaseItemRow({
                     }
                     aria-label={`Serial number ${serialIndex + 1}`}
                     placeholder={`Serial #${serialIndex + 1}`}
-                    className="h-[27px] rounded-[2px] font-mono text-[11px] border-[#cdd5df]"
+                    className="h-9 rounded-lg tabular-nums text-[12px] border-border"
                   />
 
                   {serial && (
@@ -2017,7 +2018,7 @@ function PurchaseItemRow({
                       type="button"
                       variant="ghost"
                       size="icon"
-                      className="size-6 text-slate-400 hover:text-destructive"
+                      className="size-6 text-muted-foreground hover:text-destructive"
                       onClick={() =>
                         form.setFieldValue(
                           `items[${index}].serialNumbers[${serialIndex}]`,
@@ -2040,7 +2041,7 @@ function PurchaseItemRow({
             <Button
               type="button"
               variant="outline"
-              className="h-8 rounded-[2px] text-xs font-semibold border-[#cdd5df]"
+              className="h-8 rounded-lg text-xs font-semibold border-border"
               onClick={() => {
                 setScanValue("");
                 setSerialDialogError("");
@@ -2051,7 +2052,7 @@ function PurchaseItemRow({
 
             <Button
               type="button"
-              className="h-8 rounded-[2px] text-xs font-bold bg-primary"
+              className="h-8 rounded-lg text-xs font-bold bg-primary"
               onClick={() => setIsSerialDialogOpen(false)}
             >
               {t("purchase.done")}

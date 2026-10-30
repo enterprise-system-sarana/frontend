@@ -15,7 +15,6 @@ import { useStore } from "@/hooks/inventory/useStore";
 import { Status } from "@/types/enum/status";
 import { ROUTERS } from "@/constants/Route";
 import { ArrowLeft, Loader2 } from "lucide-react";
-import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 export default function StoreForm() {
@@ -76,33 +75,20 @@ export default function StoreForm() {
       } as StoreRequest;
 
       const handleSuccess = () => {
-        toast.success(
-          isEditing
-            ? "Store updated successfully!"
-            : "Store created successfully!",
-        );
         navigate(ROUTERS.STORE);
       };
 
-      const handleError = (err: any) => {
-        toast.error(
-          err?.response?.data?.message ||
-          (isEditing ? "Failed to update store." : "Failed to create store."),
-        );
-      };
 
       if (isEditing && id) {
         updateStoreMutate(
           { id: Number(id), req: payload },
           {
             onSuccess: handleSuccess,
-            onError: handleError,
           },
         );
       } else {
         createStoreMutate(payload, {
           onSuccess: handleSuccess,
-          onError: handleError,
         });
       }
     },
@@ -332,7 +318,7 @@ export default function StoreForm() {
             <Button
               type="submit"
               disabled={isPending}
-              className="min-w-[140px] shadow-md shadow-primary/20"
+              className="min-w-[140px]"
             >
               {isPending ? (
                 <span className="flex items-center gap-1.5">

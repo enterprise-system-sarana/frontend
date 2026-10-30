@@ -96,10 +96,10 @@ export default function HeldSalesModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl w-full p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800">
-        <DialogHeader className="px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex flex-row items-center justify-between">
+      <DialogContent className="sm:max-w-2xl w-full p-0 overflow-hidden rounded-2xl bg-card shadow-2xl border border-border">
+        <DialogHeader className="px-6 py-4 border-b border-border flex flex-row items-center justify-between">
           <div className="flex items-center gap-2.5">
-            <div className="size-9 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
+            <div className="size-9 rounded-xl bg-warning/10 text-warning-text flex items-center justify-center">
               <PauseCircle className="size-5" />
             </div>
             <div>
@@ -107,7 +107,7 @@ export default function HeldSalesModal({
                 <DialogTitle className="text-base font-bold text-foreground">
                   {isKm ? "ការលក់ដែលផ្អាកទុក" : "Held Sales Orders"}
                 </DialogTitle>
-                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300">
+                <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-warning/10 text-warning-text">
                   {heldSales.length}
                 </span>
               </div>
@@ -135,7 +135,7 @@ export default function HeldSalesModal({
                   onClearAll();
                 }
               }}
-              className="text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1 h-8 rounded-lg cursor-pointer"
+              className="text-xs text-destructive hover:text-destructive hover:bg-destructive/10 gap-1 h-8 rounded-lg cursor-pointer"
             >
               <Trash2 className="size-3.5" />
               <span>{isKm ? "លុបទាំងអស់" : "Clear All"}</span>
@@ -145,7 +145,7 @@ export default function HeldSalesModal({
 
         {/* Search Bar */}
         {heldSales.length > 0 && (
-          <div className="px-6 py-2.5 border-b border-slate-100 dark:border-slate-800/80 bg-slate-50/50 dark:bg-slate-950/20">
+          <div className="px-6 py-2.5 border-b border-border bg-muted/50">
             <div className="relative">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-3.5 text-muted-foreground" />
               <Input
@@ -156,7 +156,7 @@ export default function HeldSalesModal({
                     ? "ស្វែងរកការលក់ផ្អាកតាមលេខយោង អតិថិជន ផលិតផល..."
                     : "Search held orders by reference, customer, product..."
                 }
-                className="pl-9 h-8 text-xs bg-white dark:bg-slate-900 rounded-lg border-slate-200 dark:border-slate-800"
+                className="pl-9 h-8 text-xs bg-card rounded-lg border-border"
               />
             </div>
           </div>
@@ -166,7 +166,7 @@ export default function HeldSalesModal({
         <div className="max-h-[60vh] overflow-y-auto p-6 space-y-3">
           {heldSales.length === 0 ? (
             <div className="text-center py-12 space-y-3">
-              <div className="size-14 rounded-2xl bg-amber-50 dark:bg-amber-950/30 text-amber-500 flex items-center justify-center mx-auto">
+              <div className="size-14 rounded-2xl bg-warning/10 text-warning-text flex items-center justify-center mx-auto">
                 <PauseCircle className="size-7" />
               </div>
               <div className="space-y-1">
@@ -204,20 +204,20 @@ export default function HeldSalesModal({
               return (
                 <div
                   key={sale.id}
-                  className="rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/80 hover:border-amber-400 dark:hover:border-amber-500/60 p-4 transition-all shadow-xs space-y-3"
+                  className="rounded-xl border border-border bg-card hover:border-warning/30 p-4 transition-all shadow-xs space-y-3"
                 >
                   <div className="flex items-start justify-between gap-3">
                     <div className="space-y-1">
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-bold text-foreground">
+                        <span className="tabular-nums text-xs font-bold text-foreground">
                           #{sale.reference}
                         </span>
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-semibold bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300">
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-semibold bg-warning/10 text-warning-text">
                           <Clock className="size-2.5" />
                           {fmtTime(sale.heldAt)}
                         </span>
                         {sale.note && (
-                          <span className="text-[11px] italic text-slate-500 truncate max-w-xs">
+                          <span className="text-[12px] italic text-muted-foreground truncate max-w-xs">
                             — "{sale.note}"
                           </span>
                         )}
@@ -238,11 +238,11 @@ export default function HeldSalesModal({
                     </div>
 
                     <div className="text-right shrink-0">
-                      <div className="text-base font-extrabold font-mono text-emerald-600 dark:text-emerald-400">
+                      <div className="text-base font-extrabold tabular-nums text-success">
                         {fmtCurrency(sale.totalAmount)}
                       </div>
                       {sale.discount > 0 && (
-                        <div className="text-[10px] text-rose-500 font-mono">
+                        <div className="text-[11px] text-destructive tabular-nums">
                           {isKm ? "បញ្ចុះតម្លៃ:" : "Disc:"} -{fmtCurrency(sale.discount)}
                         </div>
                       )}
@@ -250,13 +250,13 @@ export default function HeldSalesModal({
                   </div>
 
                   {/* Items Preview Chips */}
-                  <div className="flex flex-wrap gap-1.5 pt-1 border-t border-slate-100 dark:border-slate-800/80">
+                  <div className="flex flex-wrap gap-1.5 pt-1 border-t border-border">
                     {sale.items.map((it, idx) => (
                       <span
                         key={idx}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200/80 dark:border-slate-700"
+                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] bg-muted text-text-secondary border border-border"
                       >
-                        <span className="font-semibold text-slate-900 dark:text-white">
+                        <span className="font-semibold text-foreground">
                           {it.quantity}x
                         </span>
                         <span className="truncate max-w-[160px]">{it.productName}</span>
@@ -266,7 +266,7 @@ export default function HeldSalesModal({
 
                   {/* Actions Bar */}
                   <div className="flex items-center justify-between pt-1">
-                    <span className="text-[10px] text-slate-400">
+                    <span className="text-[11px] text-muted-foreground">
                       {isKm ? "ផ្អាកនៅថ្ងៃ " : "Held on "}
                       {new Date(sale.heldAt).toLocaleDateString()}
                     </span>
@@ -276,7 +276,7 @@ export default function HeldSalesModal({
                         variant="ghost"
                         size="sm"
                         onClick={() => onDelete(sale.id)}
-                        className="h-8 text-xs text-rose-500 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg cursor-pointer px-2.5"
+                        className="h-8 text-xs text-destructive hover:text-destructive hover:bg-destructive/10 rounded-lg cursor-pointer px-2.5"
                       >
                         <Trash2 className="size-3.5" />
                         <span className="hidden sm:inline">{isKm ? "បោះបង់" : "Discard"}</span>
@@ -285,7 +285,7 @@ export default function HeldSalesModal({
                         type="button"
                         size="sm"
                         onClick={() => onResume(sale)}
-                        className="h-8 gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg text-xs font-semibold px-3 cursor-pointer shadow-xs"
+                        className="h-8 gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-xs font-semibold px-3 cursor-pointer shadow-xs"
                       >
                         <Play className="size-3 fill-current" />
                         <span>{isKm ? "បន្តការលក់" : "Resume Sale"}</span>

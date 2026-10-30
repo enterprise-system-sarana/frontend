@@ -1,3 +1,4 @@
+import { DateRangePicker } from "@/components/ui/date-picker";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -23,6 +24,7 @@ import {
 import { PurchaseDetailModal } from "@/pages/purchases/purchase/PurchaseDetail";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import {
   Package,
   DollarSign,
@@ -216,73 +218,42 @@ export default function PurchaseItemReportPage() {
       </PageHeader>
 
       {/* Item Summary Metric Strip */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_procurement", "Total Procurement Cost")}
-            </span>
-            <div className="size-9 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <DollarSign className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {formatCurrency(totalAmount)}
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_units", "Total Units Received")}
-            </span>
-            <div className="size-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Boxes className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-              {totalQuantity.toLocaleString()}
-            </span>
-          </div>
-        </div>
-
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.recorded_lines", "Recorded Line Items")}
-            </span>
-            <div className="size-9 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-              <Package className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {searchedRows.length.toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={DollarSign}
+          title={t("purchase.total_procurement", "Total Procurement Cost")}
+          value={formatCurrency(totalAmount)}
+          caption={`${searchedRows.length.toLocaleString()} ${t("purchase.line_items", "line items")}`}
+        />
+        <KpiCard
+          tone="green"
+          icon={Boxes}
+          title={t("purchase.total_units", "Total Units Received")}
+          subtitle={t("purchase.total_units_desc", "Quantity across all items")}
+          value={totalQuantity.toLocaleString()}
+        />
+        <KpiCard
+          tone="cyan"
+          icon={Package}
+          title={t("purchase.recorded_lines", "Recorded Line Items")}
+          subtitle={t("purchase.recorded_lines_desc", "Purchase lines in this view")}
+          value={searchedRows.length.toLocaleString()}
+        />
+      </KpiGrid>
 
       {/* Date Filter & Search */}
       <div className="space-y-3">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex items-center gap-2 text-xs">
             <span className="text-muted-foreground font-semibold">Date Range:</span>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
-            />
-            <span className="text-muted-foreground">to</span>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
+            <DateRangePicker
+              startDate={startDate}
+              endDate={endDate}
+              onChange={(start, end) => {
+                setStartDate(start);
+                setEndDate(end);
+              }}
             />
           </div>
 
@@ -310,7 +281,7 @@ export default function PurchaseItemReportPage() {
       </div>
 
       {/* Table */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <DataTable
           columns={columns}
           data={searchedRows}

@@ -63,36 +63,35 @@ export function PageHeader({
     const showCreateButton = !hideButton && (handleAction || resolvedLabel);
 
     return (
-        <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-3", className)}>
-            <div>
-                <div className="flex items-center gap-2">
+        <div className={cn("flex flex-col sm:flex-row sm:items-center justify-between gap-4", className)}>
+            <div className="min-w-0">
+                <div className="flex items-center gap-2.5">
                     {titleIcon}
-                    <h1 className="text-lg font-semibold text-foreground font-heading tracking-tight flex items-center gap-2">
+                    <h1 className="font-heading text-[26px] leading-9 font-bold tracking-[-0.015em] text-foreground flex items-center gap-2">
                         {title}
                     </h1>
                     {badge}
                 </div>
                 {description && (
-                    <p className="text-xs text-muted-foreground mt-0.5">
+                    <p className="text-sm leading-[22px] text-muted-foreground mt-0.5">
                         {description}
                     </p>
                 )}
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex flex-wrap items-center gap-3">
                 {children}
                 {actions}
 
                 {showCreateButton && (
                     <Button
                         onClick={handleAction}
-                        size="sm"
                         className={cn(
-                            "h-7 px-3 rounded-md bg-primary hover:bg-primary/90 text-primary-foreground text-xs font-medium shadow-sm flex items-center gap-1.5 transition-all cursor-pointer",
+                            "gap-2",
                             buttonClassName
                         )}
                     >
-                        {buttonIcon !== undefined ? buttonIcon : <Plus className="h-3 w-3" />}
+                        {buttonIcon !== undefined ? buttonIcon : <Plus className="size-4" />}
                         {resolvedLabel || t("common.create")}
                     </Button>
                 )}

@@ -110,10 +110,10 @@ function Row({
   tone?: "danger" | "success";
 }) {
   const toneCls =
-    tone === "danger" ? "text-red-600" : tone === "success" ? "text-emerald-700" : "text-slate-800";
+    tone === "danger" ? "text-destructive" : tone === "success" ? "text-success" : "text-foreground";
   return (
     <div className={`flex justify-between py-0.5 ${strong ? "font-semibold" : ""} ${toneCls}`}>
-      <span className={tone ? "" : "text-slate-600"}>{label}</span>
+      <span className={tone ? "" : "text-text-secondary"}>{label}</span>
       <span className="tabular-nums">{value}</span>
     </div>
   );
@@ -122,16 +122,16 @@ function Row({
 function Meta({ label, value }: { label: string; value: React.ReactNode }) {
   return (
     <div className="flex gap-1.5">
-      <dt className="text-slate-500 shrink-0">{label}</dt>
-      <dd className="font-medium text-slate-900 break-words">{value}</dd>
+      <dt className="text-muted-foreground shrink-0">{label}</dt>
+      <dd className="font-medium text-foreground break-words">{value}</dd>
     </div>
   );
 }
 
 const STATUS_STYLE = {
-  PAID: "bg-emerald-50 text-emerald-700 border-emerald-300",
-  PARTIAL: "bg-amber-50 text-amber-700 border-amber-300",
-  UNPAID: "bg-red-50 text-red-700 border-red-300",
+  PAID: "bg-success/10 text-success border-success/20",
+  PARTIAL: "bg-warning/10 text-warning-text border-warning/20",
+  UNPAID: "bg-destructive/10 text-destructive border-destructive/20",
 } as const;
 
 /* ─── page ─── */
@@ -190,10 +190,10 @@ export default function SaleInvoicePage() {
   /* ── states ── */
   if (isLoading) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center">
+      <div className="min-h-screen bg-card flex items-center justify-center">
         <div className="text-center space-y-3" role="status">
-          <div className="size-9 border-4 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto" />
-          <p className="text-sm text-slate-500">Loading receipt…</p>
+          <div className="size-9 border-4 border-warning/30 border-t-transparent rounded-full animate-spin mx-auto" />
+          <p className="text-sm text-muted-foreground">Loading receipt…</p>
         </div>
       </div>
     );
@@ -201,16 +201,16 @@ export default function SaleInvoicePage() {
 
   if (isError || !sale) {
     return (
-      <div className="min-h-screen bg-white flex items-center justify-center px-4">
+      <div className="min-h-screen bg-card flex items-center justify-center px-4">
         <div className="text-center space-y-4">
-          <Receipt className="size-10 mx-auto text-slate-300" />
+          <Receipt className="size-10 mx-auto text-text-disabled" />
           <div>
-            <p className="text-base font-semibold text-slate-800">We couldn’t load this receipt</p>
-            <p className="text-sm text-slate-500 mt-1">It may have been deleted, or the link is wrong.</p>
+            <p className="text-base font-semibold text-foreground">We couldn’t load this receipt</p>
+            <p className="text-sm text-muted-foreground mt-1">It may have been deleted, or the link is wrong.</p>
           </div>
           <button
             onClick={() => navigate(ROUTERS.SALE_CREATE)}
-            className="px-5 py-2 bg-amber-600 text-white text-sm font-semibold rounded hover:bg-amber-700 transition"
+            className="px-5 py-2 bg-primary text-primary-foreground text-sm font-semibold rounded hover:bg-primary-hover transition"
           >
             Back to POS
           </button>
@@ -227,18 +227,18 @@ export default function SaleInvoicePage() {
 
   return (
     <div
-      className="min-h-screen bg-slate-200 flex flex-col items-center px-3 py-6 print:bg-white print:p-0"
+      className="min-h-screen bg-muted flex flex-col items-center px-3 py-6 print:bg-white print:p-0"
       style={{ fontFamily: "Inter, system-ui, -apple-system, 'Segoe UI', Arial, sans-serif" }}
     >
       {/* Paper size switch (screen only) */}
       <div className="w-full max-w-lg mb-3 flex items-center justify-between print:hidden">
         <button
           onClick={() => navigate(ROUTERS.SALE_CREATE)}
-          className="inline-flex items-center gap-1.5 text-sm text-slate-600 hover:text-slate-900"
+          className="inline-flex items-center gap-1.5 text-sm text-text-secondary hover:text-foreground"
         >
           <ArrowLeft className="size-4" /> Back to POS
         </button>
-        <div className="inline-flex rounded-md border border-slate-300 bg-white p-0.5 text-xs font-medium" role="group" aria-label="Paper size">
+        <div className="inline-flex rounded-md border border-border-strong bg-card p-0.5 text-xs font-medium" role="group" aria-label="Paper size">
           {(
             [
               ["a5", "Invoice", FileText],
@@ -249,7 +249,7 @@ export default function SaleInvoicePage() {
               key={key}
               onClick={() => setPaper(key)}
               aria-pressed={paper === key}
-              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded ${paper === key ? "bg-slate-900 text-white" : "text-slate-600 hover:bg-slate-100"
+              className={`inline-flex items-center gap-1 px-3 py-1.5 rounded ${paper === key ? "bg-primary text-primary-foreground" : "text-text-secondary hover:bg-muted"
                 }`}
             >
               <Icon className="size-3.5" /> {label}
@@ -261,11 +261,11 @@ export default function SaleInvoicePage() {
       <article
         id="receipt"
         data-paper={paper}
-        className={`bg-white w-full shadow-md print:shadow-none ${thermal ? "max-w-[302px] text-xs" : "max-w-lg text-sm print:max-w-none"
+        className={`bg-card w-full shadow-md print:shadow-none ${thermal ? "max-w-[302px] text-xs" : "max-w-lg text-sm print:max-w-none"
           }`}
       >
         {/* Header */}
-        <header className="text-center py-5 px-4 border-b border-slate-200">
+        <header className="text-center py-5 px-4 border-b border-border">
           <img
             src={logoUrl}
             alt={store?.name ?? "Store logo"}
@@ -275,16 +275,16 @@ export default function SaleInvoicePage() {
             }}
             className={`mx-auto mb-2 object-contain ${thermal ? "h-12" : "h-16"} max-w-[200px]`}
           />
-          <h1 className="text-base font-bold text-slate-900">{store?.name ?? "Store"}</h1>
-          {address && <p className="text-slate-600 mt-0.5">{address}</p>}
-          {store?.phone && <p className="text-slate-600">Tel: {store.phone}</p>}
+          <h1 className="text-base font-bold text-foreground">{store?.name ?? "Store"}</h1>
+          {address && <p className="text-text-secondary mt-0.5">{address}</p>}
+          {store?.phone && <p className="text-text-secondary">Tel: {store.phone}</p>}
         </header>
 
         {/* Title + status */}
         <div className="flex items-center justify-between px-5 pt-4">
           <div>
-            <p className="text-lg font-bold text-slate-900 leading-tight">Sales invoice</p>
-            <p className="text-slate-500 tabular-nums">#{String(sale.id).padStart(4, "0")}</p>
+            <p className="text-lg font-bold text-foreground leading-tight">Sales invoice</p>
+            <p className="text-muted-foreground tabular-nums">#{String(sale.id).padStart(4, "0")}</p>
           </div>
           <span
             className={`px-2.5 py-1 rounded-full border text-[11px] font-semibold ${STATUS_STYLE[totals.status]}`}
@@ -306,7 +306,7 @@ export default function SaleInvoicePage() {
         {/* Items */}
         <table className="w-full" style={{ borderCollapse: "collapse" }}>
           <thead>
-            <tr className="border-y-2 border-slate-900 text-slate-900">
+            <tr className="border-y-2 border-border text-foreground">
               <th scope="col" className="text-left pl-5 pr-2 py-2 font-semibold">Item</th>
               <th scope="col" className="text-right px-2 py-2 font-semibold w-10">Qty</th>
               {!thermal && <th scope="col" className="text-right px-2 py-2 font-semibold">Price</th>}
@@ -316,7 +316,7 @@ export default function SaleInvoicePage() {
           <tbody>
             {items.length === 0 && (
               <tr>
-                <td colSpan={thermal ? 3 : 4} className="px-5 py-5 text-center text-slate-400">
+                <td colSpan={thermal ? 3 : 4} className="px-5 py-5 text-center text-muted-foreground">
                   This sale has no items.
                 </td>
               </tr>
@@ -327,28 +327,28 @@ export default function SaleInvoicePage() {
               const disc = getItemDiscount(item);
               const serials = getSerials(item);
               return (
-                <tr key={i} className="border-b border-slate-100 align-top break-inside-avoid">
-                  <td className="pl-5 pr-2 py-2 text-slate-900">
+                <tr key={i} className="border-b border-border align-top break-inside-avoid">
+                  <td className="pl-5 pr-2 py-2 text-foreground">
                     <span className="font-medium">{item.productName ?? `Product #${item.productId}`}</span>
                     {thermal && (
-                      <span className="block text-[11px] text-slate-500 tabular-nums">
+                      <span className="block text-[11px] text-muted-foreground tabular-nums">
                         {qty} × {fmt(unit)}
                       </span>
                     )}
                     {disc > 0 && (
-                      <span className="block text-[11px] text-amber-700">Discount −{money(disc)}</span>
+                      <span className="block text-[11px] text-warning-text">Discount −{money(disc)}</span>
                     )}
                     {serials.length > 0 && (
-                      <span className="block text-[11px] text-slate-500 font-mono break-all">
+                      <span className="block text-[11px] text-muted-foreground tabular-nums break-all">
                         S/N: {serials.join(", ")}
                       </span>
                     )}
                   </td>
-                  <td className="px-2 py-2 text-right tabular-nums text-slate-700">{qty}</td>
+                  <td className="px-2 py-2 text-right tabular-nums text-text-secondary">{qty}</td>
                   {!thermal && (
-                    <td className="px-2 py-2 text-right tabular-nums text-slate-700">{fmt(unit)}</td>
+                    <td className="px-2 py-2 text-right tabular-nums text-text-secondary">{fmt(unit)}</td>
                   )}
-                  <td className="pl-2 pr-5 py-2 text-right tabular-nums font-medium text-slate-900">
+                  <td className="pl-2 pr-5 py-2 text-right tabular-nums font-medium text-foreground">
                     {fmt(lineTotal(item))}
                   </td>
                 </tr>
@@ -358,14 +358,14 @@ export default function SaleInvoicePage() {
         </table>
 
         {/* Totals */}
-        <section className="px-5 py-3 border-t-2 border-slate-900 mt-[-1px]">
+        <section className="px-5 py-3 border-t-2 border-border mt-[-1px]">
           <Row label="Subtotal" value={money(totals.subtotal)} />
           {totals.discount > 0 && <Row label="Discount" value={`−${money(totals.discount)}`} />}
           {totals.tax > 0 && <Row label="Tax" value={money(totals.tax)} />}
 
-          <div className="flex justify-between items-baseline mt-2 pt-2 border-t border-slate-200">
-            <span className="font-bold text-slate-900">Grand total</span>
-            <span className={`font-bold tabular-nums text-slate-900 ${thermal ? "text-lg" : "text-2xl"}`}>
+          <div className="flex justify-between items-baseline mt-2 pt-2 border-t border-border">
+            <span className="font-bold text-foreground">Grand total</span>
+            <span className={`font-bold tabular-nums text-foreground ${thermal ? "text-lg" : "text-2xl"}`}>
               {money(totals.grand)}
             </span>
           </div>
@@ -378,24 +378,24 @@ export default function SaleInvoicePage() {
         </section>
 
         {/* Warranty */}
-        <section className="mx-4 mt-2 mb-3 p-3 bg-slate-50 border border-slate-200 rounded break-inside-avoid">
-          <div className="flex items-center gap-1.5 font-semibold text-slate-900">
-            <ShieldCheck className="size-4 text-emerald-600 shrink-0" />
+        <section className="mx-4 mt-2 mb-3 p-3 bg-muted/50 border border-border rounded break-inside-avoid">
+          <div className="flex items-center gap-1.5 font-semibold text-foreground">
+            <ShieldCheck className="size-4 text-success shrink-0" />
             <span>{WARRANTY_DAYS}-day warranty</span>
           </div>
-          <p className="text-slate-700 mt-1">
+          <p className="text-text-secondary mt-1">
             Covered until <strong>{warrantyUntil}</strong>.
           </p>
-          <p className="text-[11px] text-slate-500 mt-0.5 leading-snug">
+          <p className="text-[11px] text-muted-foreground mt-0.5 leading-snug">
             Covers manufacturer and technical defects only. Bring this invoice
             {items.some((i) => getSerials(i).length) ? " and the item serial number" : ""} to make a claim.
           </p>
         </section>
 
         {/* Footer */}
-        <footer className="mx-4 mb-4 pt-3 border-t border-dashed border-slate-300 text-center break-inside-avoid">
-          <p className="font-semibold text-slate-800">Thank you for shopping with us.</p>
-          <p className="text-[11px] text-slate-400 mt-1">
+        <footer className="mx-4 mb-4 pt-3 border-t border-dashed border-border-strong text-center break-inside-avoid">
+          <p className="font-semibold text-foreground">Thank you for shopping with us.</p>
+          <p className="text-[11px] text-muted-foreground mt-1">
             Printed {fmtDateTime(new Date().toISOString())}
           </p>
         </footer>
@@ -405,13 +405,13 @@ export default function SaleInvoicePage() {
       <div className="w-full max-w-lg mt-3 grid grid-cols-2 gap-2 print:hidden">
         <button
           onClick={() => navigate(ROUTERS.SALE_CREATE)}
-          className="py-3 bg-white border border-slate-300 text-slate-800 text-sm font-semibold rounded hover:bg-slate-50 transition cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600"
+          className="py-3 bg-card border border-border-strong text-foreground text-sm font-semibold rounded hover:bg-muted/50 transition cursor-pointer focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600"
         >
           New sale
         </button>
         <button
           onClick={() => window.print()}
-          className="py-3 bg-slate-900 text-white text-sm font-semibold rounded hover:bg-slate-800 transition cursor-pointer inline-flex items-center justify-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600"
+          className="py-3 bg-primary text-primary-foreground text-sm font-semibold rounded hover:bg-primary-hover transition cursor-pointer inline-flex items-center justify-center gap-2 focus-visible:outline focus-visible:outline-2 focus-visible:outline-amber-600"
         >
           <Printer className="size-4" /> Print
         </button>

@@ -18,6 +18,7 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import { PageHeader } from "@/components/ui/page-header";
 import { useRole } from '@/hooks/users/useRole';
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 
 export const PermissionPage = () => {
     const { t } = useLanguage();
@@ -170,11 +171,35 @@ export const PermissionPage = () => {
                 }
             />
 
-            <div className="role-overview-grid">
-                <div className="role-overview-card"><span className="role-overview-icon blue"><ShieldCheck size={20} /></span><span><small>{t("role.selected_role", "Selected role")}</small><strong className="role-overview-name">{selectedRole?.name || t("role.no_role_selected", "No role selected")}</strong></span></div>
-                <div className="role-overview-card"><span className="role-overview-icon green"><KeyRound size={20} /></span><span><small>{t("role.enabled_permissions", "Enabled permissions")}</small><strong>{checkedCount} <em>/ {permissions.length}</em></strong></span></div>
-                <div className="role-overview-card"><span className="role-overview-icon orange"><Layers3 size={20} /></span><span><small>{t("role.modules", "Modules")}</small><strong>{moduleCount}</strong></span></div>
-            </div>
+            <KpiGrid>
+                <KpiCard
+                    featured
+                    icon={ShieldCheck}
+                    title={t("role.selected_role", "Selected role")}
+                    value={<span className="block truncate">{selectedRole?.name || t("role.no_role_selected", "No role selected")}</span>}
+                    caption={`${checkedCount} / ${permissions.length}`}
+                    splits={[
+                        { label: t("role.enabled", "Enabled"), value: checkedCount, color: "#4ade80" },
+                        { label: t("role.not_enabled", "Not enabled"), value: permissions.length - checkedCount, color: "#fbbf24" },
+                    ]}
+                />
+                <KpiCard
+                    tone="green"
+                    icon={KeyRound}
+                    title={t("role.enabled_permissions", "Enabled permissions")}
+                    subtitle={t("role.enabled_permissions_desc", "Actions this role can perform")}
+                    value={checkedCount}
+                    caption={`/ ${permissions.length}`}
+                    percent={permissions.length > 0 ? (checkedCount / permissions.length) * 100 : 0}
+                />
+                <KpiCard
+                    tone="purple"
+                    icon={Layers3}
+                    title={t("role.modules", "Modules")}
+                    subtitle={t("role.modules_desc", "Permission groups available")}
+                    value={moduleCount}
+                />
+            </KpiGrid>
 
             <div className="role-permissions-card">
               <div className="role-permissions-card-heading"><div><h2>{t("role.access_by_module", "Access by module")}</h2><p>{t("role.select_actions_desc", "Choose a role, then select the actions it can perform.")}</p></div><span>{moduleCount} {t("role.modules", "modules")}</span></div>

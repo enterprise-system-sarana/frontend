@@ -27,6 +27,7 @@ import {
   ExpenseTypePage,
   PurchasePage,
   PurchaseForm,
+  PurchaseInvoice,
   SalePage,
   SaleReturnPage,
   CashRegisterPage,
@@ -162,6 +163,10 @@ const router = createBrowserRouter([
           {
             path: ROUTERS.PURCHASE_EDIT,
             element: <PurchaseForm />,
+          },
+          {
+            path: ROUTERS.PURCHASE_INVOICE,
+            element: <PurchaseInvoice />,
           },
           {
             path: ROUTERS.PURCHASE_PAYMENT,

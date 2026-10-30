@@ -1,107 +1,75 @@
-import { useNavigate } from "react-router-dom";
+import { useLocation, useNavigate } from "react-router-dom";
+import { ArrowLeft, Home } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
-import {
-  ArrowLeft,
-  Home,
-  Package,
-  ShoppingCart,
-  Boxes,
-} from "lucide-react";
+
+/** Saw-tooth tear along the bottom of the receipt. */
+const TORN_EDGE: React.CSSProperties = {
+  maskImage:
+    "linear-gradient(#000 0 0), conic-gradient(from -45deg at 50% 100%, #0000, #000 1deg 89deg, #0000 90deg)",
+  maskSize: "100% calc(100% - 8px), 16px 8px",
+  maskPosition: "top, bottom",
+  maskRepeat: "no-repeat, repeat-x",
+};
+
+function ReceiptRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="flex items-baseline justify-between gap-6 text-sm">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="min-w-0 truncate text-right font-medium text-foreground" title={value}>
+        {value}
+      </span>
+    </div>
+  );
+}
 
 export const NotFoundPage = () => {
   const navigate = useNavigate();
+  const { pathname } = useLocation();
   const { t } = useLanguage();
 
-  const quickLinks = [
-    {
-      title: t("product.title", "Products"),
-      description: t("product.subtitle", "Manage catalog, models, and variants"),
-      icon: Package,
-      path: ROUTERS.PRODUCT,
-    },
-    {
-      title: t("purchase.title", "Purchases"),
-      description: t("purchase.subtitle", "Track supplier orders and records"),
-      icon: ShoppingCart,
-      path: ROUTERS.PURCHASE,
-    },
-    {
-      title: t("stock.title", "Stock"),
-      description: t("stock.subtitle", "View real-time store inventories"),
-      icon: Boxes,
-      path: ROUTERS.STOCK,
-    },
-  ];
-
   return (
-    <div className="flex flex-col items-center justify-center min-h-[calc(100vh-140px)] w-full py-12 px-4 text-center select-none animate-in fade-in-50 duration-300">
-      {/* Background Decorative Aura */}
-      <div className="relative mb-6">
-        <div className="absolute -inset-4 rounded-full bg-gradient-to-tr from-primary/20 via-primary/5 to-transparent blur-2xl -z-10" />
-        
-        <div className="flex items-center justify-center">
-          <span className="text-8xl sm:text-9xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-b from-foreground via-foreground/70 to-foreground/20 font-mono">
-            404
-          </span>
+    <div className="flex min-h-[calc(100vh-140px)] w-full items-center justify-center px-4 py-10">
+      <div className="w-full max-w-[380px]">
+        {/* drop-shadow follows the torn edge; box-shadow would be clipped by the mask */}
+        <div className="drop-shadow-[0_8px_16px_rgba(11,44,82,0.10)]">
+          <div className="bg-card px-7 pt-8 pb-10" style={TORN_EDGE}>
+            <p className="text-center text-sm font-semibold text-muted-foreground">
+              {t("error.receipt_title", "Page receipt")}
+            </p>
+            <p className="mt-3 text-center text-[88px] leading-none font-bold tracking-[-0.03em] text-primary tabular-nums">
+              404
+            </p>
+
+            <div className="my-6 border-t border-dashed border-border-strong" />
+
+            <div className="space-y-2.5">
+              <ReceiptRow label={t("error.receipt_requested", "Requested")} value={pathname} />
+              <ReceiptRow label={t("error.receipt_status", "Status")} value={t("error.receipt_not_found", "Not found")} />
+              <ReceiptRow label={t("error.receipt_items", "Items found")} value="0" />
+            </div>
+
+            <div className="my-6 border-t border-dashed border-border-strong" />
+
+            <h1 className="text-center text-xl leading-7 font-semibold text-foreground">
+              {t("error.not_found_title", "This page isn't here")}
+            </h1>
+            <p className="mt-1.5 text-center text-sm text-muted-foreground">
+              {t("error.not_found_desc", "The link may be old, or the page may have moved.")}
+            </p>
+          </div>
         </div>
-      </div>
 
-      {/* Main Title and Message */}
-      <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-foreground mb-2 mt-4">
-        {t("error.not_found_title", "Oops! Page not found")}
-      </h1>
-      <p className="text-sm text-muted-foreground max-w-md mx-auto mb-8 leading-relaxed">
-        {t("error.not_found_desc", "The page you are looking for doesn't exist, may have been removed, or is temporarily unavailable.")}
-      </p>
-
-      {/* Primary Actions */}
-      <div className="flex flex-wrap items-center justify-center gap-3 mb-12">
-        <Button
-          onClick={() => navigate(ROUTERS.DASHBOARD)}
-          className="rounded-md gap-2 h-10 px-5 shadow-xs"
-        >
-          <Home className="h-4 w-4" />
-          {t("error.back_dashboard", "Back to Dashboard")}
-        </Button>
-        <Button
-          variant="outline"
-          onClick={() => navigate(-1)}
-          className="rounded-md gap-2 h-10 px-5 border-border/80"
-        >
-          <ArrowLeft className="h-4 w-4" />
-          {t("error.go_back", "Go Back")}
-        </Button>
-      </div>
-
-      {/* Helpful Navigation Cards */}
-      <div className="w-full max-w-2xl border-t border-border/60 pt-8">
-        <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-4">
-          {t("error.explore_sections", "Or explore helpful sections:")}
-        </p>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-          {quickLinks.map((link) => {
-            const Icon = link.icon;
-            return (
-              <button
-                key={link.title}
-                type="button"
-                onClick={() => navigate(link.path)}
-                className="group flex flex-col p-4 rounded-md border border-border/60 bg-card/60 hover:bg-muted/50 hover:border-primary/40 transition-all duration-200 shadow-2xs cursor-pointer"
-              >
-                <div className="h-8 w-8 rounded-md bg-primary/10 text-primary flex items-center justify-center mb-2.5 group-hover:scale-105 transition-transform">
-                  <Icon className="h-4 w-4" />
-                </div>
-                <span className="text-sm font-semibold text-foreground group-hover:text-primary transition-colors">
-                  {link.title}
-                </span>
-                <span className="text-xs text-muted-foreground mt-0.5 line-clamp-2">
-                  {link.description}
-                </span>
-              </button>
-            );
-          })}
+        <div className="mt-6 flex items-center gap-2.5">
+          <Button variant="outline" size="lg" className="flex-1" onClick={() => navigate(-1)}>
+            <ArrowLeft />
+            {t("error.go_back", "Go Back")}
+          </Button>
+          <Button size="lg" className="flex-1" onClick={() => navigate(ROUTERS.DASHBOARD)}>
+            <Home />
+            {t("error.back_dashboard", "Dashboard")}
+          </Button>
         </div>
       </div>
     </div>

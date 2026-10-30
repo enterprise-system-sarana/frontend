@@ -64,7 +64,7 @@ export const UserColumns = ({
                             <span className="text-sm font-semibold text-foreground truncate">
                                 {fullName || "-"}
                             </span>
-                            <span className="text-[11px] text-muted-foreground font-mono truncate">
+                            <span className="text-[12px] text-muted-foreground tabular-nums truncate">
                                 {user?.username || "-"}
                             </span>
                         </div>
@@ -76,13 +76,13 @@ export const UserColumns = ({
             id: "email",
             accessorKey: "email",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("common.email") : "Email"} />,
-            cell: ({ row }) => <span className="text-xs text-[#566a7f]">{row.original.email || "-"}</span>,
+            cell: ({ row }) => <span className="text-xs text-text-secondary">{row.original.email || "-"}</span>,
         },
         {
             id: "phone",
             accessorKey: "phone",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("common.phone") : "Phone"} />,
-            cell: ({ row }) => <span className="text-xs text-[#566a7f]">{row.original.phone || "-"}</span>,
+            cell: ({ row }) => <span className="text-xs text-text-secondary">{row.original.phone || "-"}</span>,
         },
         {
             id: "store",
@@ -92,7 +92,7 @@ export const UserColumns = ({
                 const store = row.original.storeName;
                 if (!store) return <span className="text-muted-foreground text-xs">-</span>;
                 return (
-                    <div className="flex items-center gap-1.5 text-xs text-[#566a7f] font-medium">
+                    <div className="flex items-center gap-1.5 text-xs text-text-secondary font-medium">
                         <Store className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
                         <span>{store}</span>
                     </div>
@@ -113,7 +113,7 @@ export const UserColumns = ({
                         {roles.map((role) => (
                             <span
                                 key={role}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[11px] font-semibold bg-primary/10 text-primary border border-primary/20"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[12px] font-semibold bg-primary/10 text-primary border border-primary/20"
                             >
                                 <Shield className="h-2.5 w-2.5" />
                                 <span>{role}</span>
@@ -134,7 +134,7 @@ export const UserColumns = ({
             accessorKey: "createdAt",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : " Date"} />,
             cell: ({ row }) => (
-                <span className="text-xs text-[#566a7f]">
+                <span className="text-xs text-text-secondary">
                     {formatDate(row.original.createdAt)}
                 </span>
             ),
@@ -146,7 +146,7 @@ export const UserColumns = ({
             enableHiding: false,
             cell: ({ row }) => {
                 if (!canEdit && !canDelete) {
-                    return <span className="text-[#a1acb8] text-sm">-</span>;
+                    return <span className="text-text-disabled text-sm">-</span>;
                 }
                 return (
                     <TableActions

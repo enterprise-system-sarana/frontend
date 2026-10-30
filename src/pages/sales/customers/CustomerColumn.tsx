@@ -24,32 +24,32 @@ export const CustomerColumns = ({
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>
     },
     {
         accessorKey: "code",
         header: t ? t("common.code") : "Code",
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.code}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.code}</span>
     },
     {
         accessorKey: "email",
         header: t ? t("common.email") : "Email",
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.email}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.email}</span>
     },
     {
         accessorKey: "phone",
         header: t ? t("common.phone") : "Phone",
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.phone || "-"}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.phone || "-"}</span>
     },
     {
         accessorKey: "note",
         header: t ? t("common.notes") : "Note",
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.note || "-"}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.note || "-"}</span>
     },
     {
         accessorKey: "createdAt",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />,
-        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
+        cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
     },
     {
         accessorKey: "status",
@@ -62,7 +62,7 @@ export const CustomerColumns = ({
         enableHiding: false,
         cell: ({ row }) => {
             if (!canEdit && !canDelete) {
-                return <span className="text-[#a1acb8] text-sm">-</span>;
+                return <span className="text-text-disabled text-sm">-</span>;
             }
             return (
                 <TableActions

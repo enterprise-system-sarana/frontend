@@ -11,15 +11,15 @@ import { Button } from "@/components/ui/button";
 import { ROUTERS } from "@/constants/Route";
 import { useNavigate } from "react-router-dom";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { formatMoney } from "@/components/ui/money";
 import {
   KeyRound,
   Lock,
   ShoppingCart,
   Sparkles,
   RefreshCw,
-  Receipt,
   DollarSign,
-  CreditCard,
   Scale,
   Banknote,
 } from "lucide-react";
@@ -29,7 +29,7 @@ import RegisterDetailsModal from "../sale/components/RegisterDetailsModal";
 
 export default function CashRegisterPage() {
   const navigate = useNavigate();
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const isKm = language === "km";
 
   const [page, setPage] = useState(1);
@@ -116,6 +116,8 @@ export default function CashRegisterPage() {
       Math.max(1, Math.ceil(totalElements / size))
     );
   }, [data, totalElements, size]);
+
+  const pct = (part: number, whole: number) => (whole > 0 ? (part / whole) * 100 : 0);
 
   // Summary Metrics across loaded shifts
   const shiftMetrics = useMemo(() => {
@@ -256,7 +258,7 @@ export default function CashRegisterPage() {
                 setSelectedRegister(currentRegister);
                 setOpenCloseModal(true);
               }}
-              className="text-xs h-9 border-rose-200 text-rose-600 hover:bg-rose-50 dark:border-rose-800 dark:hover:bg-rose-950/40 gap-1.5 cursor-pointer font-semibold"
+              className="text-xs h-9 border-destructive/20 text-destructive hover:bg-destructive/10 gap-1.5 cursor-pointer font-semibold"
             >
               <Lock className="size-3.5" />
               <span>{isKm ? "បិទវេនបច្ចុប្បន្ន" : "Close Active Shift"}</span>
@@ -265,7 +267,7 @@ export default function CashRegisterPage() {
             <Button
               size="sm"
               onClick={() => setOpenOpenModal(true)}
-              className="text-xs h-9 bg-sky-600 hover:bg-sky-700 text-white font-semibold gap-1.5 cursor-pointer shadow-xs"
+              className="text-xs h-9 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold gap-1.5 cursor-pointer shadow-xs"
             >
               <KeyRound className="size-3.5" />
               <span>{isKm ? "បើកបញ្ជីលក់ថ្មី" : "Open Register "}</span>
@@ -275,7 +277,7 @@ export default function CashRegisterPage() {
           <Button
             size="sm"
             onClick={() => navigate(ROUTERS.SALE_CREATE)}
-            className="text-xs h-9 bg-emerald-600 hover:bg-emerald-700 text-white font-semibold gap-1.5 cursor-pointer shadow-xs"
+            className="text-xs h-9 bg-primary hover:bg-primary-hover text-primary-foreground font-semibold gap-1.5 cursor-pointer shadow-xs"
           >
             <ShoppingCart className="size-3.5" />
             <span>{isKm ? "ទៅកាន់ POS" : "POS Terminal"}</span>
@@ -283,112 +285,60 @@ export default function CashRegisterPage() {
         </div>
       </PageHeader>
 
-      {/* KPI Stats Cards Bar */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Active Shifts */}
-        <div className="p-3 rounded-xl bg-card border border-border/70 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-medium text-muted-foreground flex items-center gap-1.5">
-              <Receipt className="size-3.5 text-sky-500" />
-              {isKm ? "វេនកំពុងដំណើរការ" : "Active Shifts"}
-            </span>
-            <div className="flex items-baseline gap-2">
-              <span className="text-xl font-bold font-mono text-slate-900 dark:text-white">
-                {shiftMetrics.openCount}
-              </span>
-              <span className="text-[10px] text-muted-foreground font-medium">
-                / {rawRegisters.length} {isKm ? "វេនសរុប" : "shifts"}
-              </span>
-            </div>
-          </div>
-          <div className="size-9 rounded-xl bg-sky-50 dark:bg-sky-950/50 text-sky-600 flex items-center justify-center font-bold">
-            <KeyRound className="size-4.5" />
-          </div>
-        </div>
-
-        {/* Total Shift Sales */}
-        <div className="p-3 rounded-xl bg-card border border-border/70 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-medium text-emerald-700 dark:text-emerald-400 flex items-center gap-1.5">
-              <DollarSign className="size-3.5" />
-              {isKm ? "ការលក់សរុប (Shift Sales)" : "Total Shift Sales"}
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span className="text-xl font-bold font-mono text-emerald-700 dark:text-emerald-400">
-                ${shiftMetrics.totalSales.toFixed(2)}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                ({shiftMetrics.totalOrders} {isKm ? "វិក្កយបត្រ" : "bills"})
-              </span>
-            </div>
-          </div>
-          <div className="size-9 rounded-xl bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 flex items-center justify-center">
-            <DollarSign className="size-4.5" />
-          </div>
-        </div>
-
-        {/* Cash vs Bank Sales Split */}
-        <div className="p-3 rounded-xl bg-card border border-border/70 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-              <CreditCard className="size-3.5 text-indigo-500" />
-              {isKm ? "សាច់ប្រាក់ vs ធនាគារ" : "Cash vs Bank/QR"}
-            </span>
-            <div className="flex flex-col text-[11px] font-mono leading-tight">
-              <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                <Banknote className="size-3" />
-                ${shiftMetrics.totalCashSales.toFixed(2)}
-              </span>
-              <span className="text-sky-600 font-semibold flex items-center gap-1">
-                <CreditCard className="size-3" />
-                ${shiftMetrics.totalBankSales.toFixed(2)}
-              </span>
-            </div>
-          </div>
-          <div className="size-9 rounded-xl bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 flex items-center justify-center">
-            <Banknote className="size-4.5" />
-          </div>
-        </div>
-
-        {/* Total Drawer Discrepancy */}
-        <div className="p-3 rounded-xl bg-card border border-border/70 shadow-2xs flex items-center justify-between">
-          <div className="space-y-1">
-            <span className="text-[11px] font-medium text-slate-600 dark:text-slate-400 flex items-center gap-1.5">
-              <Scale className="size-3.5 text-amber-500" />
-              {isKm ? "ភាពខុសគ្នាសរុប" : "Drawer Discrepancy"}
-            </span>
-            <div className="flex items-baseline gap-1.5">
-              <span
-                className={`text-xl font-bold font-mono ${shiftMetrics.totalDifference >= 0 ? "text-emerald-600" : "text-rose-600"
-                  }`}
-              >
-                {shiftMetrics.totalDifference >= 0 ? "+" : ""}
-                ${shiftMetrics.totalDifference.toFixed(2)}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {shiftMetrics.closedCount} {isKm ? "វេនបានបិទ" : "closed"}
-              </span>
-            </div>
-          </div>
-          <div className="size-9 rounded-xl bg-amber-50 dark:bg-amber-950/50 text-amber-600 flex items-center justify-center">
-            <Scale className="size-4.5" />
-          </div>
-        </div>
-      </div>
+      {/* KPI Stats Cards Bar (shared KpiCard) */}
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={DollarSign}
+          title={t("cash_register.total_shift_sales", "Total Shift Sales")}
+          value={formatMoney(shiftMetrics.totalSales)}
+          caption={`${shiftMetrics.totalOrders} ${t("cash_register.bills", "bills")}`}
+          splits={[
+            { label: t("cash_register.cash", "Cash"), value: shiftMetrics.totalCashSales, color: "#4ade80" },
+            { label: t("cash_register.bank_qr", "Bank/QR"), value: shiftMetrics.totalBankSales, color: "#67d4f5" },
+          ]}
+        />
+        <KpiCard
+          tone="cyan"
+          icon={KeyRound}
+          title={t("cash_register.active_shifts", "Active Shifts")}
+          subtitle={t("cash_register.active_shifts_desc", "Registers currently open")}
+          value={shiftMetrics.openCount}
+          caption={`/ ${rawRegisters.length} ${t("cash_register.shifts", "shifts")}`}
+          percent={pct(shiftMetrics.openCount, rawRegisters.length)}
+        />
+        <KpiCard
+          tone="green"
+          icon={Banknote}
+          title={t("cash_register.cash_vs_bank", "Cash vs Bank/QR")}
+          subtitle={t("cash_register.cash_vs_bank_desc", "Cash share of shift sales")}
+          value={formatMoney(shiftMetrics.totalCashSales)}
+          caption={`${t("cash_register.bank_qr", "Bank/QR")}: ${formatMoney(shiftMetrics.totalBankSales)}`}
+          percent={pct(shiftMetrics.totalCashSales, shiftMetrics.totalCashSales + shiftMetrics.totalBankSales)}
+        />
+        <KpiCard
+          tone={shiftMetrics.totalDifference >= 0 ? "amber" : "red"}
+          icon={Scale}
+          title={t("cash_register.drawer_discrepancy", "Drawer Discrepancy")}
+          subtitle={t("cash_register.drawer_discrepancy_desc", "Counted cash vs expected")}
+          value={`${shiftMetrics.totalDifference >= 0 ? "+" : ""}${formatMoney(shiftMetrics.totalDifference)}`}
+          caption={`${shiftMetrics.closedCount} ${t("cash_register.closed", "closed")}`}
+        />
+      </KpiGrid>
 
       {/* Active Shift Banner (if current cashier has an open shift) */}
       {currentRegister && (
-        <div className="rounded-xl p-3 sm:p-3.5 bg-linear-to-r from-emerald-500/10 via-teal-500/5 to-transparent border border-emerald-500/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
+        <div className="rounded-xl p-3 sm:p-3.5 bg-success/10 border border-success/20 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 shadow-xs">
           <div className="flex items-center gap-3">
-            {/* <div className="size-9 rounded-lg bg-emerald-500/15 text-emerald-600 flex items-center justify-center font-bold">
+            {/* <div className="size-9 rounded-lg bg-success/15 text-success flex items-center justify-center font-bold">
               <Sparkles className="size-4.5" />
             </div> */}
             <div>
               <div className="flex items-center gap-2">
-                <span className="text-sm font-bold text-slate-900 dark:text-white">
+                <span className="text-sm font-bold text-foreground">
                   {isKm ? "វេនលក់បច្ចុប្បន្នកំពុងដំណើរការ" : "Active Register Shift"}
                 </span>
-                <span className="font-mono text-xs font-semibold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30">
+                <span className="tabular-nums text-xs font-semibold px-2 py-0.5 rounded-full bg-success/15 text-success border border-success/30">
                   {currentRegister.registerNo}
                 </span>
               </div>
@@ -396,17 +346,17 @@ export default function CashRegisterPage() {
                 {isKm ? "ហាង:" : "Store:"}{" "}
                 <span className="font-medium text-foreground">{currentRegister.storeName}</span> •{" "}
                 {isKm ? "ទឹកប្រាក់ដើមគ្រា:" : "Opening Cash:"}{" "}
-                <span className="font-mono font-semibold text-foreground">
+                <span className="tabular-nums font-semibold text-foreground">
                   ${Number(currentRegister.openingBalance || 0).toFixed(2)}
                 </span> •{" "}
                 {isKm ? "ការលក់:" : "Sales:"}{" "}
-                <span className="font-mono font-semibold text-emerald-600">
+                <span className="tabular-nums font-semibold text-success">
                   ${Number(currentRegister.totalSales || 0).toFixed(2)}
                 </span>
                 {currentRegister.totalCashSales !== null && currentRegister.totalCashSales !== undefined && (
                   <>
                     {" "}• {isKm ? "សាច់ប្រាក់:" : "Cash:"}{" "}
-                    <span className="font-mono font-semibold text-teal-600">
+                    <span className="tabular-nums font-semibold text-success">
                       ${Number(currentRegister.totalCashSales).toFixed(2)}
                     </span>
                   </>
@@ -433,7 +383,7 @@ export default function CashRegisterPage() {
                 setSelectedRegister(currentRegister);
                 setOpenCloseModal(true);
               }}
-              className="text-xs h-8 bg-rose-600 hover:bg-rose-700 text-white font-semibold cursor-pointer shadow-xs"
+              className="text-xs h-8 bg-destructive hover:bg-destructive/90 text-white font-semibold cursor-pointer shadow-xs"
             >
               {isKm ? "បិទវេន" : "Close Shift"}
             </Button>
@@ -442,7 +392,7 @@ export default function CashRegisterPage() {
       )}
 
       {/* Shifts Table with Filters */}
-      <div className="rounded-2xl border border-border/70 bg-card shadow-2xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <div className="p-3 border-b border-border/60">
           <PageFilter
             search={search}

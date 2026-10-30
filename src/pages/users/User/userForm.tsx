@@ -178,9 +178,6 @@ const FormUser = ({
 
             createUserMutate(payload, {
                 onSuccess: () => {
-                    toast.success(
-                        "User created successfully"
-                    );
                     handleSuccess();
                 },
                 onError: (error: any) => {
@@ -282,7 +279,7 @@ const FormUser = ({
                 }
             }}
         >
-            <DialogContent className="w-full max-w-/[900px] max-h-[90vh] overflow-y-auto">
+            <DialogContent className="w-full sm:max-w-[900px] max-h-[90vh] overflow-y-auto">
                 <DialogHeader>
                     <DialogTitle className="text-lg">
                         {isEdit

@@ -146,11 +146,8 @@ export const SaleDetailModal = ({
     if (!sale?.id) return;
     completeSaleMutate(sale.id, {
       onSuccess: () => {
-        toast.success("Sale marked as completed");
         onOpenChange(false);
       },
-      onError: (err: any) =>
-        toast.error(err?.response?.data?.message || "Failed to complete sale"),
     });
   };
 
@@ -180,17 +177,8 @@ export const SaleDetailModal = ({
       { id: sale.id, payload: returnData },
       {
         onSuccess: () => {
-          toast.success(`Sale #${sale.reference} return processed successfully.`);
           setOpenReturnModal(false);
           onOpenChange(false);
-        },
-        onError: (err: any) => {
-          const msg =
-            err?.response?.data?.message ||
-            (typeof err?.response?.data === "string" ? err.response.data : null) ||
-            err?.message ||
-            "Failed to return sale. Please try again.";
-          toast.error(msg);
         },
       }
     );
@@ -260,36 +248,36 @@ export const SaleDetailModal = ({
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange}>
-        <DialogContent className="sm:max-w-4xl max-h-[92vh] p-0 overflow-hidden bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl flex flex-col">
+        <DialogContent className="sm:max-w-4xl max-h-[92vh] p-0 overflow-hidden bg-card border border-border rounded-2xl shadow-2xl flex flex-col">
           <DialogHeader className="sr-only">
             <DialogTitle>Sale Details #{sale?.reference ?? validId}</DialogTitle>
           </DialogHeader>
 
           {isLoading && !sale ? (
             <div className="p-8 space-y-6 animate-pulse">
-              <div className="h-14 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+              <div className="h-14 bg-muted rounded-xl" />
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="h-28 bg-slate-100 dark:bg-slate-800 rounded-xl"
+                    className="h-28 bg-muted rounded-xl"
                   />
                 ))}
               </div>
-              <div className="h-52 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+              <div className="h-52 bg-muted rounded-xl" />
               <div className="flex justify-end">
-                <div className="h-32 w-80 bg-slate-100 dark:bg-slate-800 rounded-xl" />
+                <div className="h-32 w-80 bg-muted rounded-xl" />
               </div>
             </div>
           ) : isError && !sale ? (
             <div className="p-16 text-center">
-              <div className="mx-auto size-14 rounded-full bg-rose-50 dark:bg-rose-950/40 flex items-center justify-center mb-4">
+              <div className="mx-auto size-14 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
                 <span className="text-2xl">⚠️</span>
               </div>
-              <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+              <p className="text-sm font-semibold text-foreground">
                 Failed to load sale details
               </p>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Please try again or contact support.
               </p>
               <Button
@@ -304,26 +292,26 @@ export const SaleDetailModal = ({
           ) : sale ? (
             <div className="flex flex-col flex-1 overflow-hidden">
               {/* 1. Modal Top Banner Header */}
-              <div className="flex items-center justify-between px-6 sm:px-8 py-4 border-b border-slate-100 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/70">
+              <div className="flex items-center justify-between px-6 sm:px-8 py-4 border-b border-border bg-muted/70">
                 <div className="flex items-center gap-3">
-                  <div className="size-10 rounded-xl bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center border border-amber-500/20 shadow-xs">
+                  <div className="size-10 rounded-xl bg-warning/10 text-warning-text flex items-center justify-center border border-warning/20 shadow-xs">
                     <Receipt className="size-5" />
                   </div>
                   <div>
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h2 className="text-base font-bold text-slate-900 dark:text-white">
+                      <h2 className="text-base font-bold text-foreground">
                         Sale Order Details
                       </h2>
-                      <span className="inline-flex items-center gap-1 font-mono text-xs font-semibold px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700">
+                      <span className="inline-flex items-center gap-1 tabular-nums text-xs font-semibold px-2 py-0.5 rounded-md bg-muted text-text-secondary border border-border">
                         #{sale.reference}
                         <button
                           type="button"
                           onClick={handleCopyRef}
-                          className="hover:text-amber-600 dark:hover:text-amber-400 cursor-pointer ml-0.5 transition"
+                          className="hover:text-warning-text cursor-pointer ml-0.5 transition"
                           title="Copy Reference"
                         >
                           {copied ? (
-                            <Check className="size-3 text-emerald-500" />
+                            <Check className="size-3 text-success" />
                           ) : (
                             <Copy className="size-3" />
                           )}
@@ -332,31 +320,31 @@ export const SaleDetailModal = ({
 
                       {/* Sale status badge */}
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold text-white ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-semibold text-white dark:text-background ${
                           statusUpper === "COMPLETED"
-                            ? "bg-emerald-600"
+                            ? "bg-success"
                             : statusUpper === "PENDING"
-                            ? "bg-amber-500"
+                            ? "bg-warning"
                             : statusUpper === "RETURNED" || statusUpper === "CANCELLED"
-                            ? "bg-rose-500"
-                            : "bg-blue-600"
+                            ? "bg-destructive"
+                            : "bg-primary"
                         }`}
                       >
-                        <span className="size-1.5 rounded-full bg-white inline-block animate-pulse" />
+                        <span className="size-1.5 rounded-full bg-card inline-block animate-pulse" />
                         {sale.status || "Completed"}
                       </span>
 
                       {/* Payment status badge */}
                       <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] font-semibold ${
+                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-semibold ${
                           isPaid
-                            ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
-                            : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                            ? "bg-success/10 text-success border border-success/20"
+                            : "bg-warning/10 text-warning-text border border-warning/20"
                         }`}
                       >
                         <span
                           className={`size-1.5 rounded-full ${
-                            isPaid ? "bg-emerald-500" : "bg-amber-500"
+                            isPaid ? "bg-success" : "bg-warning"
                           }`}
                         />
                         {isPaid
@@ -365,7 +353,7 @@ export const SaleDetailModal = ({
                       </span>
                     </div>
 
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                    <p className="text-[12px] text-muted-foreground mt-0.5">
                       Recorded on{" "}
                       {sale.saleDate
                         ? formatDate(sale.saleDate, "dateTime")
@@ -378,27 +366,27 @@ export const SaleDetailModal = ({
               </div>
 
               {/* Scrollable body */}
-              <div className="overflow-y-auto p-6 sm:p-8 space-y-6 text-slate-800 dark:text-slate-100 flex-1">
+              <div className="overflow-y-auto p-6 sm:p-8 space-y-6 text-foreground flex-1">
                 {/* 2. Three Information Cards Grid */}
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
                   {/* Customer Info Card */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl bg-muted/50 border border-border flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <User className="size-3.5 text-blue-500" />
+                        <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <User className="size-3.5 text-primary" />
                           Customer Info
                         </span>
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200/50 dark:border-blue-800/50">
+                        <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-primary-light text-primary border border-primary/50">
                           {matchedCustomer?.type || "Retail"}
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      <p className="text-sm font-bold text-foreground">
                         {sale.customerName || matchedCustomer?.name || "Walk-in Customer"}
                       </p>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 mt-2.5">
+                      <div className="text-xs text-muted-foreground space-y-1.5 mt-2.5">
                         <p className="flex items-center gap-1.5">
-                          <Phone className="size-3 text-slate-400 shrink-0" />
+                          <Phone className="size-3 text-muted-foreground shrink-0" />
                           <span>
                             {matchedCustomer?.phone ||
                               (sale as any).customerPhone ||
@@ -407,12 +395,12 @@ export const SaleDetailModal = ({
                         </p>
                         {matchedCustomer?.email && (
                           <p className="flex items-center gap-1.5">
-                            <Mail className="size-3 text-slate-400 shrink-0" />
+                            <Mail className="size-3 text-muted-foreground shrink-0" />
                             <span className="truncate">{matchedCustomer.email}</span>
                           </p>
                         )}
                         {(matchedCustomer?.address || matchedCustomer?.note) && (
-                          <p className="text-[11px] text-slate-400 line-clamp-2 mt-1">
+                          <p className="text-[12px] text-muted-foreground line-clamp-2 mt-1">
                             {matchedCustomer?.address || matchedCustomer?.note}
                           </p>
                         )}
@@ -421,23 +409,23 @@ export const SaleDetailModal = ({
                   </div>
 
                   {/* Store & Terminal Card */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl bg-muted/50 border border-border flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <Store className="size-3.5 text-amber-500" />
+                        <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <Store className="size-3.5 text-warning-text" />
                           Store & Branch
                         </span>
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 border border-amber-200/50 dark:border-amber-800/50">
+                        <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-warning/10 text-warning-text border border-warning/50">
                           Branch
                         </span>
                       </div>
-                      <p className="text-sm font-bold text-slate-900 dark:text-white">
+                      <p className="text-sm font-bold text-foreground">
                         {store?.name || sale.storeName || "Primary Store"}
                       </p>
-                      <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 mt-2.5">
+                      <div className="text-xs text-muted-foreground space-y-1.5 mt-2.5">
                         <p className="flex items-center gap-1.5">
-                          <Building2 className="size-3 text-slate-400 shrink-0" />
+                          <Building2 className="size-3 text-muted-foreground shrink-0" />
                           <span className="truncate">
                             {[store?.address1, store?.city].filter(Boolean).join(", ") ||
                               "Main Branch"}
@@ -445,15 +433,15 @@ export const SaleDetailModal = ({
                         </p>
                         {store?.phone && (
                           <p className="flex items-center gap-1.5">
-                            <Phone className="size-3 text-slate-400 shrink-0" />
+                            <Phone className="size-3 text-muted-foreground shrink-0" />
                             <span>{store.phone}</span>
                           </p>
                         )}
-                        <p className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
-                          <User className="size-3 text-slate-400 shrink-0" />
+                        <p className="flex items-center gap-1.5 text-text-secondary">
+                          <User className="size-3 text-muted-foreground shrink-0" />
                           <span>
                             Cashier:{" "}
-                            <strong className="font-semibold text-slate-800 dark:text-slate-200">
+                            <strong className="font-semibold text-foreground">
                               {(sale as any).createdByName ||
                                 (sale as any).cashierName ||
                                 "Staff"}
@@ -465,36 +453,36 @@ export const SaleDetailModal = ({
                   </div>
 
                   {/* Payment & Billing Card */}
-                  <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/80 dark:border-slate-800 flex flex-col justify-between">
+                  <div className="p-4 rounded-xl bg-muted/50 border border-border flex flex-col justify-between">
                     <div>
                       <div className="flex items-center justify-between mb-2">
-                        <span className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center gap-1.5">
-                          <CreditCard className="size-3.5 text-emerald-500" />
+                        <span className="text-[12px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1.5">
+                          <CreditCard className="size-3.5 text-success" />
                           Payment & Billing
                         </span>
-                        <span className="text-[10px] font-medium px-1.5 py-0.5 rounded bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200/50 dark:border-emerald-800/50">
+                        <span className="text-[11px] font-medium px-1.5 py-0.5 rounded bg-success/10 text-success border border-success/50">
                           {sale.paymentStatus || "PAID"}
                         </span>
                       </div>
-                      <div className="space-y-1.5 text-xs text-slate-600 dark:text-slate-300 mt-2">
+                      <div className="space-y-1.5 text-xs text-text-secondary mt-2">
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-500">Method / Bank:</span>
-                          <span className="font-semibold text-slate-800 dark:text-slate-200">
+                          <span className="text-muted-foreground">Method / Bank:</span>
+                          <span className="font-semibold text-foreground">
                             {sale.bankName ||
                               (sale.paidAmount > 0 ? "Cash / Standard" : "Unpaid")}
                           </span>
                         </div>
                         <div className="flex justify-between items-center">
-                          <span className="text-slate-500">Register:</span>
-                          <span className="font-medium text-slate-700 dark:text-slate-300">
+                          <span className="text-muted-foreground">Register:</span>
+                          <span className="font-medium text-text-secondary">
                             {sale.cashRegisterNo
                               ? `Reg #${sale.cashRegisterNo}`
                               : "Standard POS"}
                           </span>
                         </div>
-                        <div className="flex justify-between items-center pt-1.5 border-t border-slate-200 dark:border-slate-700/60">
-                          <span className="text-slate-500 font-medium">Grand Total:</span>
-                          <span className="font-bold text-slate-900 dark:text-white">
+                        <div className="flex justify-between items-center pt-1.5 border-t border-border">
+                          <span className="text-muted-foreground font-medium">Grand Total:</span>
+                          <span className="font-bold text-foreground">
                             {formatCurrency(sale.grandTotal || 0)}
                           </span>
                         </div>
@@ -506,16 +494,16 @@ export const SaleDetailModal = ({
                 {/* 3. Order Summary Table */}
                 <div>
                   <div className="flex items-center justify-between mb-3">
-                    <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 flex items-center gap-2">
-                      <Package className="size-4 text-amber-500" />
+                    <h3 className="text-sm font-bold text-foreground flex items-center gap-2">
+                      <Package className="size-4 text-warning-text" />
                       <span>Order Items ({items.length})</span>
                     </h3>
                   </div>
 
-                  <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-2xs">
+                  <div className="overflow-hidden rounded-xl border border-border bg-card shadow-2xs">
                     <div className="overflow-x-auto">
                       <table className="w-full text-left text-xs">
-                        <thead className="bg-slate-50 dark:bg-slate-800/80 text-slate-600 dark:text-slate-300 font-semibold text-[11px] uppercase tracking-wider border-b border-slate-200 dark:border-slate-800">
+                        <thead className="bg-muted/50 text-text-secondary font-semibold text-[12px] uppercase tracking-wider border-b border-border">
                           <tr>
                             <th className="py-3 px-4 w-12 text-center">#</th>
                             <th className="py-3 px-4">Product</th>
@@ -525,12 +513,12 @@ export const SaleDetailModal = ({
                             <th className="py-3 px-4 text-right">Total Cost</th>
                           </tr>
                         </thead>
-                        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                        <tbody className="divide-y divide-border">
                           {items.length === 0 ? (
                             <tr>
                               <td
                                 colSpan={6}
-                                className="py-12 text-center text-slate-400 italic"
+                                className="py-12 text-center text-muted-foreground italic"
                               >
                                 No products found in this order.
                               </td>
@@ -567,13 +555,13 @@ export const SaleDetailModal = ({
                               return (
                                 <tr
                                   key={item.id ?? idx}
-                                  className="hover:bg-slate-50/70 dark:hover:bg-slate-800/30 transition-colors"
+                                  className="hover:bg-muted/70 transition-colors"
                                 >
-                                  <td className="py-3.5 px-4 text-center font-mono text-slate-400 text-xs">
+                                  <td className="py-3.5 px-4 text-center tabular-nums text-muted-foreground text-xs">
                                     {idx + 1}
                                   </td>
                                   <td className="py-3.5 px-4">
-                                    <div className="font-semibold text-slate-800 dark:text-slate-100">
+                                    <div className="font-semibold text-foreground">
                                       {item.productName || `Product #${item.productId}`}
                                     </div>
                                     {item.serialNumberIds &&
@@ -582,39 +570,39 @@ export const SaleDetailModal = ({
                                           {item.serialNumberIds.map((sId) => (
                                             <span
                                               key={sId}
-                                              className="inline-flex items-center gap-1 text-[10px] font-mono font-medium text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700"
+                                              className="inline-flex items-center gap-1 text-[11px] tabular-nums font-medium text-text-secondary bg-muted px-2 py-0.5 rounded border border-border"
                                             >
-                                              <Hash className="size-2.5 text-slate-400" />
+                                              <Hash className="size-2.5 text-muted-foreground" />
                                               {serialLookup.get(sId) || `SN-${sId}`}
                                             </span>
                                           ))}
                                         </div>
                                       )}
                                     {Number(item.returnedQuantity || 0) > 0 && (
-                                      <span className="inline-flex items-center gap-1 text-[10px] font-medium text-rose-600 bg-rose-50 dark:bg-rose-950/40 px-2 py-0.5 rounded border border-rose-200 dark:border-rose-800 mt-1">
+                                      <span className="inline-flex items-center gap-1 text-[11px] font-medium text-destructive bg-destructive/10 px-2 py-0.5 rounded border border-destructive/20 mt-1">
                                         <RotateCcw className="size-2.5" />
                                         Returned: {item.returnedQuantity}
                                       </span>
                                     )}
                                   </td>
-                                  <td className="py-3.5 px-4 text-right text-slate-600 dark:text-slate-300 tabular-nums">
+                                  <td className="py-3.5 px-4 text-right text-text-secondary tabular-nums">
                                     {formatCurrency(price)}
                                   </td>
-                                  <td className="py-3.5 px-4 text-center font-semibold text-slate-700 dark:text-slate-200 tabular-nums">
-                                    <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-800 text-xs">
+                                  <td className="py-3.5 px-4 text-center font-semibold text-text-secondary tabular-nums">
+                                    <span className="px-2 py-0.5 rounded-md bg-muted text-xs">
                                       {qty}
                                     </span>
                                   </td>
-                                  <td className="py-3.5 px-4 text-right tabular-nums text-slate-600 dark:text-slate-300">
+                                  <td className="py-3.5 px-4 text-right tabular-nums text-text-secondary">
                                     {itemDiscount > 0 ? (
-                                      <span className="text-rose-600 dark:text-rose-400 font-medium">
+                                      <span className="text-destructive font-medium">
                                         -{formatCurrency(itemDiscount)}
                                       </span>
                                     ) : (
-                                      <span className="text-slate-400">$0.00</span>
+                                      <span className="text-muted-foreground">$0.00</span>
                                     )}
                                   </td>
-                                  <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-white tabular-nums">
+                                  <td className="py-3.5 px-4 text-right font-bold text-foreground tabular-nums">
                                     {formatCurrency(total)}
                                   </td>
                                 </tr>
@@ -632,33 +620,33 @@ export const SaleDetailModal = ({
                   {/* Left: Notes & Metadata */}
                   <div className="space-y-4">
                     {sale.noted ? (
-                      <div className="p-4 rounded-xl bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-800">
-                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400 mb-2">
-                          <FileText className="size-3.5 text-slate-400" />
+                      <div className="p-4 rounded-xl bg-muted/50 border border-border">
+                        <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
+                          <FileText className="size-3.5 text-muted-foreground" />
                           <span>Sale Note / Remark</span>
                         </div>
-                        <p className="text-xs text-slate-700 dark:text-slate-300 whitespace-pre-wrap leading-relaxed">
+                        <p className="text-xs text-text-secondary whitespace-pre-wrap leading-relaxed">
                           {sale.noted}
                         </p>
                       </div>
                     ) : (
-                      <div className="p-4 rounded-xl bg-slate-50/60 dark:bg-slate-800/40 border border-dashed border-slate-200 dark:border-slate-800 text-xs text-slate-400 flex items-center gap-2">
-                        <FileText className="size-4 text-slate-300" />
+                      <div className="p-4 rounded-xl bg-muted/60 border border-dashed border-border text-xs text-muted-foreground flex items-center gap-2">
+                        <FileText className="size-4 text-text-disabled" />
                         <span>No additional notes recorded for this sale.</span>
                       </div>
                     )}
 
                     {/* Quick stats badges */}
                     <div className="flex items-center gap-3 text-xs">
-                      <div className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
-                        <span className="text-slate-500 dark:text-slate-400">Total Items: </span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <div className="px-3 py-2 rounded-lg bg-muted border border-border">
+                        <span className="text-muted-foreground">Total Items: </span>
+                        <span className="font-semibold text-foreground">
                           {items.length}
                         </span>
                       </div>
-                      <div className="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700/60">
-                        <span className="text-slate-500 dark:text-slate-400">Total Units: </span>
-                        <span className="font-semibold text-slate-800 dark:text-slate-200">
+                      <div className="px-3 py-2 rounded-lg bg-muted border border-border">
+                        <span className="text-muted-foreground">Total Units: </span>
+                        <span className="font-semibold text-foreground">
                           {items.reduce((acc, it) => acc + (Number(it.quantity) || 1), 0)}
                         </span>
                       </div>
@@ -666,10 +654,10 @@ export const SaleDetailModal = ({
                   </div>
 
                   {/* Right: Financial Totals Box */}
-                  <div className="overflow-hidden rounded-xl border border-slate-200 dark:border-slate-800 text-xs bg-white dark:bg-slate-900 shadow-xs">
-                    <div className="flex justify-between items-center px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                      <span className="text-slate-500 dark:text-slate-400">Subtotal</span>
-                      <span className="font-semibold text-slate-800 dark:text-slate-200 tabular-nums">
+                  <div className="overflow-hidden rounded-xl border border-border text-xs bg-card shadow-xs">
+                    <div className="flex justify-between items-center px-4 py-3 border-b border-border">
+                      <span className="text-muted-foreground">Subtotal</span>
+                      <span className="font-semibold text-foreground tabular-nums">
                         {formatCurrency(
                           sale.totalAmount ||
                             (Number(sale.grandTotal || 0) + Number(sale.discount || 0))
@@ -678,7 +666,7 @@ export const SaleDetailModal = ({
                     </div>
 
                     {Number(sale.discount || 0) > 0 && (
-                      <div className="flex justify-between items-center px-4 py-3 border-b border-slate-100 dark:border-slate-800 text-rose-600 dark:text-rose-400">
+                      <div className="flex justify-between items-center px-4 py-3 border-b border-border text-destructive">
                         <span className="font-medium">Discount</span>
                         <span className="font-semibold tabular-nums">
                           -{formatCurrency(sale.discount || 0)}
@@ -686,29 +674,29 @@ export const SaleDetailModal = ({
                       </div>
                     )}
 
-                    <div className="flex justify-between items-center px-4 py-3.5 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700">
-                      <span className="text-sm font-bold text-slate-900 dark:text-white">
+                    <div className="flex justify-between items-center px-4 py-3.5 bg-muted/50 border-b border-border">
+                      <span className="text-sm font-bold text-foreground">
                         Grand Total
                       </span>
-                      <span className="text-base font-extrabold text-slate-900 dark:text-white tabular-nums">
+                      <span className="text-base font-extrabold text-foreground tabular-nums">
                         {formatCurrency(sale.grandTotal || 0)}
                       </span>
                     </div>
 
-                    <div className="flex justify-between items-center px-4 py-3 border-b border-slate-100 dark:border-slate-800">
-                      <span className="text-slate-500 dark:text-slate-400">Paid Amount</span>
-                      <span className="font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                    <div className="flex justify-between items-center px-4 py-3 border-b border-border">
+                      <span className="text-muted-foreground">Paid Amount</span>
+                      <span className="font-semibold text-success tabular-nums">
                         {formatCurrency(sale.paidAmount || 0)}
                       </span>
                     </div>
 
                     <div className="flex justify-between items-center px-4 py-3">
-                      <span className="text-slate-500 dark:text-slate-400">Due Balance</span>
+                      <span className="text-muted-foreground">Due Balance</span>
                       <span
                         className={`font-bold tabular-nums ${
                           Number(sale.dueAmount || 0) > 0
-                            ? "text-rose-600 dark:text-rose-400"
-                            : "text-emerald-600 dark:text-emerald-400"
+                            ? "text-destructive"
+                            : "text-success"
                         }`}
                       >
                         {formatCurrency(sale.dueAmount || 0)}
@@ -716,7 +704,7 @@ export const SaleDetailModal = ({
                     </div>
 
                     {Number(sale.returnAmount || 0) > 0 && (
-                      <div className="flex justify-between items-center px-4 py-3 border-t border-slate-100 dark:border-slate-800 bg-amber-50/50 dark:bg-amber-950/20 text-amber-700 dark:text-amber-400">
+                      <div className="flex justify-between items-center px-4 py-3 border-t border-border bg-warning/10 text-warning-text">
                         <span className="font-medium">Refunded / Returned</span>
                         <span className="font-semibold tabular-nums">
                           {formatCurrency(sale.returnAmount || 0)}
@@ -728,13 +716,13 @@ export const SaleDetailModal = ({
               </div>
 
               {/* 5. Sticky Action Footer */}
-              <div className="flex flex-wrap items-center justify-between gap-3 px-6 sm:px-8 py-4 border-t border-slate-100 dark:border-slate-800 bg-slate-50/90 dark:bg-slate-900/90 backdrop-blur-sm">
+              <div className="flex flex-wrap items-center justify-between gap-3 px-6 sm:px-8 py-4 border-t border-border bg-muted/90 backdrop-blur-sm">
                 {/* Left: Print Actions */}
                 <div className="flex items-center gap-2">
                   <Button
                     type="button"
                     onClick={() => setIsReceiptOpen(true)}
-                    className="gap-2 bg-[#f59e0b] hover:bg-amber-600 text-white px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs transition"
+                    className="gap-2 bg-primary hover:bg-primary-hover text-primary-foreground px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs transition"
                   >
                     <Printer className="size-4" />
                     <span>Print Bill</span>
@@ -751,12 +739,12 @@ export const SaleDetailModal = ({
                         );
                       }
                     }}
-                    className="gap-1.5 border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 px-3.5 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer"
+                    className="gap-1.5 border-border-strong text-text-secondary hover:bg-muted px-3.5 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer"
                     title="Open full A4 invoice in new window"
                   >
-                    <FileText className="size-3.5 text-slate-500" />
+                    <FileText className="size-3.5 text-muted-foreground" />
                     <span>A4 Invoice</span>
-                    <ExternalLink className="size-3 text-slate-400 ml-0.5" />
+                    <ExternalLink className="size-3 text-muted-foreground ml-0.5" />
                   </Button>
                 </div>
 
@@ -766,7 +754,7 @@ export const SaleDetailModal = ({
                     type="button"
                     variant="ghost"
                     onClick={() => onOpenChange(false)}
-                    className="bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 px-5 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer"
+                    className="bg-muted hover:bg-border-strong text-text-secondary px-5 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer"
                   >
                     Close
                   </Button>
@@ -782,7 +770,7 @@ export const SaleDetailModal = ({
                             ROUTERS.SALE_COMPLETE.replace(":id", sale.id.toString())
                           );
                         }}
-                        className="flex items-center gap-1.5 bg-blue-600 hover:bg-blue-700 text-white px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs"
+                        className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs"
                       >
                         <WalletCards className="size-4" />
                         Payment / Settle
@@ -794,7 +782,7 @@ export const SaleDetailModal = ({
                       type="button"
                       onClick={() => setOpenReturnModal(true)}
                       disabled={isReturning}
-                      className="flex items-center gap-1.5 bg-amber-600 hover:bg-amber-700 text-white px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs"
+                      className="flex items-center gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs"
                     >
                       <RotateCcw className="size-4" />
                       Return
@@ -806,7 +794,7 @@ export const SaleDetailModal = ({
                       type="button"
                       variant="outline"
                       onClick={handleEditClick}
-                      className="border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer"
+                      className="border-border-strong text-text-secondary hover:bg-muted px-4 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer"
                     >
                       Edit
                     </Button>
@@ -817,7 +805,7 @@ export const SaleDetailModal = ({
                       type="button"
                       onClick={handleComplete}
                       disabled={isCompleting}
-                      className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs"
+                      className="bg-primary hover:bg-primary-hover text-primary-foreground px-5 rounded-xl font-medium text-xs sm:text-sm h-9 cursor-pointer shadow-xs"
                     >
                       {isCompleting ? "Submitting..." : "Complete Sale"}
                     </Button>

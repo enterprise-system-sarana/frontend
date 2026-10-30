@@ -6,14 +6,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronsLeft,
-  ChevronsRight,
-} from "lucide-react";
+import { ChevronLeft, ChevronRight, MoreHorizontal } from "lucide-react";
 
 import { useLanguage } from "@/i18n/LanguageContext";
+import { cn } from "@/lib/utils";
 
 export interface CustomPaginationProps {
   currentPage: number; // 1-based index
@@ -24,6 +20,18 @@ export interface CustomPaginationProps {
   onPageSizeChange?: (size: number) => void;
   pageSizeOptions?: number[];
 }
+
+// Always 7 slots once there are more than 7 pages, so the bar keeps the same
+// width while paging: 1 … 4 5 6 … 20
+const getPageNumbers = (current: number, count: number) => {
+  if (count <= 7) return Array.from({ length: count }, (_, i) => i + 1);
+  if (current <= 4) return [1, 2, 3, 4, 5, "...", count];
+  if (current >= count - 3)
+    return [1, "...", count - 4, count - 3, count - 2, count - 1, count];
+  return [1, "...", current - 1, current, current + 1, "...", count];
+};
+
+const pageButtonClass = "size-8 p-0 text-sm font-semibold tabular-nums sm:size-9";
 
 export function CustomPagination({
   currentPage,
@@ -37,51 +45,19 @@ export function CustomPagination({
   const { t } = useLanguage();
   // Safe default calculations
   const total = totalElements || 0;
-  const pagesCount = totalPages || 1;
+  const pagesCount = Math.max(totalPages || 1, 1);
   const startRow = total === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const endRow = Math.min(currentPage * pageSize, total);
-
-  const getPageNumbers = () => {
-    const pages: (number | string)[] = [];
-    const maxVisible = 5;
-
-    if (pagesCount <= maxVisible) {
-      for (let i = 1; i <= pagesCount; i++) {
-        pages.push(i);
-      }
-    } else {
-      pages.push(1);
-
-      let start = Math.max(2, currentPage - 1);
-      let end = Math.min(pagesCount - 1, currentPage + 1);
-
-      if (currentPage <= 3) {
-        end = 4;
-      } else if (currentPage >= pagesCount - 2) {
-        start = pagesCount - 3;
-      }
-
-      if (start > 2) {
-        pages.push("...");
-      }
-
-      for (let i = start; i <= end; i++) {
-        pages.push(i);
-      }
-
-      if (end < pagesCount - 1) {
-        pages.push("...");
-      }
-
-      pages.push(pagesCount);
-    }
-    return pages;
-  };
+  const isFirst = currentPage <= 1;
+  const isLast = currentPage >= pagesCount;
 
   return (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-6 py-4 border-t border-border/60">
+    <nav
+      aria-label={t("common.pagination", "Pagination")}
+      className="flex flex-col items-center justify-between gap-3 px-5 py-3.5 sm:flex-row sm:gap-4"
+    >
       {/* Showing range details */}
-      <div className="text-xs text-muted-foreground font-medium">
+      <p className="text-sm text-muted-foreground tabular-nums">
         {t("common.showing")}{" "}
         <span className="font-semibold text-foreground">{startRow}</span>{" "}
         {t("common.to")}{" "}
@@ -89,23 +65,23 @@ export function CustomPagination({
         {t("common.of")}{" "}
         <span className="font-semibold text-foreground">{total}</span>{" "}
         {t("common.entries")}
-      </div>
+      </p>
 
-      <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-5">
+      <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-6">
         {/* Rows per page select */}
         {onPageSizeChange && (
           <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground whitespace-nowrap font-medium">
+            <span className="whitespace-nowrap text-sm text-muted-foreground">
               {t("common.rows_per_page")}
             </span>
             <Select
               value={String(pageSize)}
               onValueChange={(val) => onPageSizeChange(Number(val))}
             >
-              <SelectTrigger className="h-8 w-[72px] rounded-lg border-border/70 text-xs font-medium text-foreground focus:ring-primary/20 focus:border-primary">
+              <SelectTrigger className="w-[76px] font-medium tabular-nums">
                 <SelectValue placeholder={String(pageSize)} />
               </SelectTrigger>
-              <SelectContent className="rounded-xl border-border/70">
+              <SelectContent className="min-w-[76px]">
                 {pageSizeOptions.map((opt) => (
                   <SelectItem key={opt} value={String(opt)}>
                     {opt}
@@ -118,83 +94,62 @@ export function CustomPagination({
 
         {/* Page Controls */}
         <div className="flex items-center gap-1">
-          {/* First Page */}
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
-            onClick={() => onPageChange(1)}
-            disabled={currentPage === 1}
-          >
-            <ChevronsLeft className="h-4 w-4" />
-          </Button>
-
-          {/* Previous Page */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
+            variant="outline"
+            className="h-8 px-2 sm:h-9 sm:px-3"
             onClick={() => onPageChange(currentPage - 1)}
-            disabled={currentPage === 1}
+            disabled={isFirst}
+            aria-label={t("common.previous", "Previous")}
           >
-            <ChevronLeft className="h-4 w-4" />
+            <ChevronLeft />
+            <span className="hidden sm:inline">
+              {t("common.previous", "Previous")}
+            </span>
           </Button>
 
-          {/* Page numbers */}
-          <div className="flex items-center gap-1">
-            {getPageNumbers().map((pageNum, idx) => {
-              if (pageNum === "...") {
-                return (
-                  <span
-                    key={`ellipsis-${idx}`}
-                    className="flex h-8 w-8 items-center justify-center text-xs text-muted-foreground select-none"
-                  >
-                    ···
-                  </span>
-                );
-              }
-
-              const isActive = pageNum === currentPage;
+          {getPageNumbers(currentPage, pagesCount).map((pageNum, idx) => {
+            if (pageNum === "...") {
               return (
-                <Button
-                  key={`page-${pageNum}`}
-                  variant="ghost"
-                  className={`h-8 w-8 p-0 rounded-lg text-xs font-semibold transition-all duration-200 ${
-                    isActive
-                      ? "bg-primary text-primary-foreground shadow-sm shadow-primary/30 hover:bg-primary/90 hover:text-primary-foreground"
-                      : "text-muted-foreground hover:bg-primary/10 hover:text-primary"
-                  }`}
-                  onClick={() => onPageChange(Number(pageNum))}
+                <span
+                  key={`ellipsis-${idx}`}
+                  aria-hidden
+                  className="flex size-8 items-center justify-center text-muted-foreground sm:size-9"
                 >
-                  {pageNum}
-                </Button>
+                  <MoreHorizontal className="size-4" />
+                </span>
               );
-            })}
-          </div>
+            }
 
-          {/* Next Page */}
+            const isActive = pageNum === currentPage;
+            return (
+              <Button
+                key={`page-${pageNum}`}
+                variant="outline"
+                className={cn(
+                  pageButtonClass,
+                  isActive &&
+                    "border-primary bg-primary-light text-primary hover:border-primary hover:bg-primary-light hover:text-primary",
+                )}
+                aria-current={isActive ? "page" : undefined}
+                onClick={() => !isActive && onPageChange(Number(pageNum))}
+              >
+                {pageNum}
+              </Button>
+            );
+          })}
+
           <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
+            variant="outline"
+            className="h-8 px-2 sm:h-9 sm:px-3"
             onClick={() => onPageChange(currentPage + 1)}
-            disabled={currentPage === pagesCount}
+            disabled={isLast}
+            aria-label={t("common.next", "Next")}
           >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-
-          {/* Last Page */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className="h-8 w-8 rounded-lg text-muted-foreground hover:bg-primary/10 hover:text-primary disabled:text-muted-foreground/30 disabled:hover:bg-transparent transition-all"
-            onClick={() => onPageChange(pagesCount)}
-            disabled={currentPage === pagesCount}
-          >
-            <ChevronsRight className="h-4 w-4" />
+            <span className="hidden sm:inline">{t("common.next", "Next")}</span>
+            <ChevronRight />
           </Button>
         </div>
       </div>
-    </div>
+    </nav>
   );
 }

@@ -42,7 +42,7 @@ export const SalesReportColumns = ({
       <SortableHeader column={column} title={t ? t("common.reference", "Reference") : "Reference"} />
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-xs text-[#696cff]">
+      <span className="tabular-nums text-xs text-primary">
         {row.original.no || row.original.reference || "-"}
       </span>
     ),
@@ -53,7 +53,7 @@ export const SalesReportColumns = ({
       <SortableHeader column={column} title={t ? t("sale.customer", "Customer") : "Customer"} />
     ),
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f]">
+      <span className="font-medium text-foreground">
         {row.original.customerName || "-"}
       </span>
     ),
@@ -62,7 +62,7 @@ export const SalesReportColumns = ({
     accessorKey: "storeName",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store", "Store") : "Store"} />,
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f]">
+      <span className="font-medium text-foreground">
         {row.original.storeName || "-"}
       </span>
     ),
@@ -75,7 +75,7 @@ export const SalesReportColumns = ({
       if (!raw) return <span className="text-muted-foreground text-xs">-</span>;
       const date = new Date(raw);
       return (
-        <span className="text-xs text-[#566a7f]">
+        <span className="text-xs text-text-secondary">
           {date.toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
@@ -91,7 +91,7 @@ export const SalesReportColumns = ({
       <SortableHeader column={column} title={t ? t("common.total", "Total Amount") : "Total Amount"} />
     ),
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f]">
+      <span className="font-medium text-foreground">
         {formatCurrency(row.original.totalAmount)}
       </span>
     ),
@@ -102,7 +102,7 @@ export const SalesReportColumns = ({
       <SortableHeader column={column} title={t ? t("sale.grand_total", "Grand Total") : "Grand Total"} />
     ),
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f]">
+      <span className="font-medium text-foreground">
         {formatCurrency(row.original.grandTotal)}
       </span>
     ),
@@ -111,7 +111,7 @@ export const SalesReportColumns = ({
     accessorKey: "paidAmount",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("common.paid", "Paid") : "Paid"} />,
     cell: ({ row }) => (
-      <span className="text-[#71dd37] font-medium">
+      <span className="text-success font-medium">
         {formatCurrency(row.original.paidAmount)}
       </span>
     ),
@@ -120,7 +120,7 @@ export const SalesReportColumns = ({
     accessorKey: "totalProfit",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("common.profit", "Profit") : "Profit"} />,
     cell: ({ row }) => (
-      <span className="text-[#71dd37] font-medium">
+      <span className="text-success font-medium">
         {formatCurrency(row.original.totalProfit)}
       </span>
     ),
@@ -129,7 +129,7 @@ export const SalesReportColumns = ({
     accessorKey: "dueAmount",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("common.due", "Due") : "Due"} />,
     cell: ({ row }) => (
-      <span className="text-[#ff3e1d] font-medium">
+      <span className="text-destructive font-medium">
         {formatCurrency(row.original.dueAmount)}
       </span>
     ),
@@ -145,8 +145,8 @@ export const SalesReportColumns = ({
           variant="outline"
           className={
             isPaid
-              ? "bg-[#71dd37]/10 text-[#71dd37] border-[#71dd37]/20"
-              : "bg-[#ffab00]/10 text-[#ffab00] border-[#ffab00]/20"
+              ? "bg-success/10 text-success border-success/20"
+              : "bg-warning/10 text-warning-text border-warning/20"
           }
         >
           {row.original.paymentStatus || "-"}

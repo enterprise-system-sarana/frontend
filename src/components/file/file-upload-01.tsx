@@ -267,7 +267,7 @@ export default function FileUpload01() {
                 </TooltipTrigger>
                 <TooltipContent className="py-3 bg-background text-foreground border">
                   <div className="space-y-1">
-                    <p className="text-pretty text-[13px] font-medium">Need assistance?</p>
+                    <p className="text-pretty text-[14px] font-medium">Need assistance?</p>
                     <p className="text-pretty text-muted-foreground dark:text-muted-background text-xs max-w-[200px]">
                       Upload project images by dragging and dropping files or
                       using the file browser. Supported formats: JPG, PNG, SVG.

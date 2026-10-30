@@ -21,17 +21,17 @@ export const BankColumns = ({
         {
             accessorKey: "name",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank Name"} />,
-            cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
+            cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
         },
         {
             accessorKey: "accountName",
             header: t ? t("finance.account_name") : "Account Name",
-            cell: ({ row }) => <span className="font-medium text-[#566a7f]">{row.original.accountName}</span>,
+            cell: ({ row }) => <span className="font-medium text-text-secondary">{row.original.accountName}</span>,
         },
         {
             accessorKey: "accountNumber",
             header: t ? t("finance.account_number") : "Account Number",
-            cell: ({ row }) => <span className="font-mono text-xs text-[#697a8d]">{row.original.accountNumber || "-"}</span>,
+            cell: ({ row }) => <span className="tabular-nums text-xs text-muted-foreground">{row.original.accountNumber || "-"}</span>,
         },
         {
             accessorKey: "openingBalance",
@@ -41,12 +41,12 @@ export const BankColumns = ({
         {
             accessorKey: "currentBalance",
             header: t ? t("finance.current_balance") : "Current Balance",
-            cell: ({ row }) => <span className="font-semibold text-emerald-600 dark:text-emerald-400">${row.original.currentBalance || "0.00"}</span>,
+            cell: ({ row }) => <span className="font-semibold text-success">${row.original.currentBalance || "0.00"}</span>,
         },
         {
             accessorKey: "createdAt",
             header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />,
-            cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
+            cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>,
         },
         {
             accessorKey: "status",

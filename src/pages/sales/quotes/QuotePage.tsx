@@ -197,7 +197,7 @@ export const QuotePage = () => {
         {/* Main Card with Toolbar & Table */}
         <div className="overflow-hidden border rounded-2xl border-border/60 bg-card shadow-2xs">
           {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
-          <div className="p-4 border-b border-border/60">
+          <div className="px-5 py-4 border-b border-border">
             <PageFilter
               search={search}
               onSearchChange={setSearch}

@@ -1,3 +1,4 @@
+import { PaymentMethodBadge } from "@/components/ui/payment-method-badge";
 import type { ColumnDef } from "@tanstack/react-table";
 import { SortableHeader } from "@/utils/sort-table-header";
 import { StatusBadge } from "@/components/ui/status-badge";
@@ -29,7 +30,7 @@ export const SalePaymentReportColumns = ({
       <SortableHeader column={column} title={t ? t("payment.payment_no", "Payment #") : "Payment #"} />
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-xs font-bold text-foreground">
+      <span className="tabular-nums text-xs font-bold text-foreground">
         {row.original.paymentNo || `#PAY-${row.original.paymentId ?? "-"}`}
       </span>
     ),
@@ -44,7 +45,7 @@ export const SalePaymentReportColumns = ({
       if (!raw) return <span className="text-muted-foreground text-xs">-</span>;
       const date = new Date(raw);
       return (
-        <span className="text-xs font-mono text-muted-foreground">
+        <span className="text-xs tabular-nums text-muted-foreground">
           {date.toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
@@ -67,7 +68,7 @@ export const SalePaymentReportColumns = ({
         <button
           type="button"
           onClick={() => saleId && onViewSale?.(saleId)}
-          className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer"
+          className="tabular-nums text-xs font-semibold text-primary hover:underline cursor-pointer"
         >
           {ref}
         </button>
@@ -80,7 +81,7 @@ export const SalePaymentReportColumns = ({
       <SortableHeader column={column} title={t ? t("sale.customer", "Customer") : "Customer"} />
     ),
     cell: ({ row }) => (
-      <span className="font-medium text-xs text-[#566a7f] dark:text-muted-foreground">
+      <span className="font-medium text-xs text-text-secondary dark:text-muted-foreground">
         {row.original.customerName || "Walk-in Customer"}
       </span>
     ),
@@ -114,11 +115,7 @@ export const SalePaymentReportColumns = ({
     ),
     cell: ({ row }) => {
       const method = row.original.paymentMethods || row.original.bankNames || "CASH";
-      return (
-        <span className="inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold bg-indigo-500/10 text-indigo-700 dark:text-indigo-300 border border-indigo-200 dark:border-indigo-800">
-          {method}
-        </span>
-      );
+      return <PaymentMethodBadge method={method} />;
     },
   },
   {
@@ -127,7 +124,7 @@ export const SalePaymentReportColumns = ({
       <SortableHeader column={column} title={t ? t("payment.bill_amount", "Bill Amount") : "Bill Amount"} />
     ),
     cell: ({ row }) => (
-      <span className="font-mono font-medium text-xs text-foreground">
+      <span className="tabular-nums font-medium text-xs text-foreground">
         {formatCurrency(row.original.totalAmount)}
       </span>
     ),
@@ -138,7 +135,7 @@ export const SalePaymentReportColumns = ({
       <SortableHeader column={column} title={t ? t("payment.received_amount", "Received") : "Received"} />
     ),
     cell: ({ row }) => (
-      <span className="font-mono font-bold text-xs text-emerald-600 dark:text-emerald-400">
+      <span className="tabular-nums font-bold text-xs text-success">
         {formatCurrency(row.original.receivedAmount)}
       </span>
     ),
@@ -151,7 +148,7 @@ export const SalePaymentReportColumns = ({
     cell: ({ row }) => {
       const ret = Number(row.original.returnAmount ?? 0);
       return (
-        <span className="font-mono text-xs text-muted-foreground">
+        <span className="tabular-nums text-xs text-muted-foreground">
           {ret > 0 ? formatCurrency(ret) : "-"}
         </span>
       );

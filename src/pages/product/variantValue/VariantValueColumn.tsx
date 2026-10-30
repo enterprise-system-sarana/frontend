@@ -18,22 +18,22 @@ export const VariantValueColumns = ({ onEdit, onDelete, t }: VariantValueColumns
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
     },
     {
         accessorKey: "code",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.code") : "Code"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.code}</span>,
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.code}</span>,
     },
     {
         accessorKey: "variantTypeName",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("variant.type") : "Variant Type"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.variantTypeName}</span>,
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.variantTypeName}</span>,
     },
     {
         accessorKey: "createdAt",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : "Created Date"} />,
-        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
+        cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>,
     },
     {
         accessorKey: "status",

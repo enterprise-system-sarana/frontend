@@ -17,6 +17,8 @@ import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
 import { ExpenseReportColumns } from "./ExpenseReportColumn";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { CheckCircle2, Clock, Receipt, Wallet } from "lucide-react";
 
 const formatCurrency = (value: number | string | undefined) => {
   const numeric = Number(value ?? 0);
@@ -187,33 +189,46 @@ const ExpenseReportPage = () => {
       />
 
       {/* Summary KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          {
-            label: t("dashboard.total_expense", "Total Expenses"),
-            value: formatCurrency(summary.totalExpense),
-          },
-          {
-            label: t("common.paid", "Paid Expenses"),
-            value: formatCurrency(summary.paidAmount),
-          },
-          {
-            label: t("common.pending", "Pending Expenses"),
-            value: formatCurrency(summary.pendingAmount),
-          },
-          {
-            label: t("pos.items", "Transactions"),
-            value: Number(summary.totalCount).toLocaleString(),
-          },
-        ].map((card) => (
-          <div key={card.label} className="rounded-xl border bg-card p-4 shadow-sm">
-            <p className="text-sm text-muted-foreground">{card.label}</p>
-            <h3 className="mt-2 text-2xl font-bold">{card.value}</h3>
-          </div>
-        ))}
-      </div>
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={Wallet}
+          title={t("dashboard.total_expense", "Total Expenses")}
+          value={formatCurrency(summary.totalExpense)}
+          caption={`${Number(summary.totalCount).toLocaleString()} ${t("pos.items", "Transactions")}`}
+          splits={[
+            { label: t("common.paid", "Paid Expenses"), value: summary.paidAmount, color: "#4ade80" },
+            { label: t("common.pending", "Pending Expenses"), value: summary.pendingAmount, color: "#fbbf24" },
+          ]}
+        />
+        <KpiCard
+          tone="green"
+          icon={CheckCircle2}
+          title={t("common.paid", "Paid Expenses")}
+          subtitle={t("report.paid_expenses_desc", "Already settled")}
+          value={formatCurrency(summary.paidAmount)}
+          caption={t("report.of_total_expenses", "of total expenses")}
+          percent={summary.totalExpense > 0 ? (summary.paidAmount / summary.totalExpense) * 100 : 0}
+        />
+        <KpiCard
+          tone="amber"
+          icon={Clock}
+          title={t("common.pending", "Pending Expenses")}
+          subtitle={t("report.pending_expenses_desc", "Awaiting payment")}
+          value={formatCurrency(summary.pendingAmount)}
+          caption={t("report.of_total_expenses", "of total expenses")}
+          percent={summary.totalExpense > 0 ? (summary.pendingAmount / summary.totalExpense) * 100 : 0}
+        />
+        <KpiCard
+          tone="blue"
+          icon={Receipt}
+          title={t("pos.items", "Transactions")}
+          subtitle={t("report.expense_records_desc", "Expense records in view")}
+          value={Number(summary.totalCount).toLocaleString()}
+        />
+      </KpiGrid>
 
-      <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <div className="border-b border-border/60 p-4">
           <PageFilter
             search={search}

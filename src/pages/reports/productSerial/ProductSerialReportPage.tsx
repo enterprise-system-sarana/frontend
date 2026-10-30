@@ -15,6 +15,8 @@ import { useProduct } from "@/hooks/product/useProduct";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { Boxes, CheckCircle2, DollarSign, ListChecks } from "lucide-react";
 import { ProductSerialReportColumns } from "./ProductSerialReportColumn";
 
 const formatCurrency = (value: number | string | undefined) => {
@@ -175,33 +177,44 @@ const ProductSerialReportPage = () => {
       />
 
       {/* Summary KPI Cards */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {[
-          {
-            label: t("report.total_quantity", "Total Quantity"),
-            value: Number(summary.totalQty).toLocaleString(),
-          },
-          {
-            label: t("report.total_inventory_value", "Total Inventory Value"),
-            value: formatCurrency(summary.totalValue),
-          },
-          {
-            label: t("report.available_items", "Available Items"),
-            value: Number(summary.availableCount).toLocaleString(),
-          },
-          {
-            label: t("report.total_records", "Total Records"),
-            value: Number(summary.totalRecords).toLocaleString(),
-          },
-        ].map((card) => (
-          <div key={card.label} className="rounded-xl border bg-card p-4 shadow-sm">
-            <p className="text-sm text-muted-foreground">{card.label}</p>
-            <h3 className="mt-2 text-2xl font-bold">{card.value}</h3>
-          </div>
-        ))}
-      </div>
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={DollarSign}
+          title={t("report.total_inventory_value", "Total Inventory Value")}
+          value={formatCurrency(summary.totalValue)}
+          caption={`${Number(summary.totalQty).toLocaleString()} ${t("inventory.units", "units")}`}
+          splits={[
+            { label: t("report.available_items", "Available Items"), value: summary.availableCount, color: "#4ade80" },
+            { label: t("report.not_available", "Not Available"), value: Math.max(0, summary.totalQty - summary.availableCount), color: "#fbbf24" },
+          ]}
+        />
+        <KpiCard
+          tone="blue"
+          icon={Boxes}
+          title={t("report.total_quantity", "Total Quantity")}
+          subtitle={t("report.total_quantity_desc", "Units across all serials")}
+          value={Number(summary.totalQty).toLocaleString()}
+        />
+        <KpiCard
+          tone="green"
+          icon={CheckCircle2}
+          title={t("report.available_items", "Available Items")}
+          subtitle={t("report.available_items_desc", "Ready to sell")}
+          value={Number(summary.availableCount).toLocaleString()}
+          caption={`${t("payment.of", "of")} ${Number(summary.totalQty).toLocaleString()} ${t("inventory.units", "units")}`}
+          percent={summary.totalQty > 0 ? (summary.availableCount / summary.totalQty) * 100 : 0}
+        />
+        <KpiCard
+          tone="purple"
+          icon={ListChecks}
+          title={t("report.total_records", "Total Records")}
+          subtitle={t("report.total_records_desc", "Serial rows in view")}
+          value={Number(summary.totalRecords).toLocaleString()}
+        />
+      </KpiGrid>
 
-      <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <div className="border-b border-border/60 p-4">
           <PageFilter
             search={search}

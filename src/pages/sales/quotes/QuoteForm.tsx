@@ -32,7 +32,6 @@ import {
 import { AlertCircle, ArrowLeft, Loader2, Package, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { ROUTERS } from "@/constants/Route";
-import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { generateUUID } from "@/utils/uuid";
 
@@ -182,7 +181,6 @@ export const QuoteForm = () => {
       };
 
       const handleSuccess = () => {
-        toast.success(isEditing ? t("quote.updated_success", "Quote updated successfully") : t("quote.created_success", "Quote created successfully"));
         navigate(ROUTERS.QUOTE || "/quote");
       };
 
@@ -191,17 +189,11 @@ export const QuoteForm = () => {
           { id: Number(quote.id), request: payload },
           {
             onSuccess: handleSuccess,
-            onError: (err: any) => {
-              toast.error(err?.response?.data?.message || "Failed to update quote");
-            },
           }
         );
       } else {
         createQuoteMutate(payload, {
           onSuccess: handleSuccess,
-          onError: (err: any) => {
-            toast.error(err?.response?.data?.message || "Failed to create quote");
-          },
         });
       }
     },
@@ -570,7 +562,7 @@ export const QuoteForm = () => {
                                         {displayName}
                                       </span>
                                       {p.code && (
-                                        <span className="text-xs text-muted-foreground font-mono">
+                                        <span className="text-xs text-muted-foreground tabular-nums">
                                           ({p.code})
                                         </span>
                                       )}
@@ -628,7 +620,7 @@ export const QuoteForm = () => {
                             className="w-full"
                           />
                         </TableCell>
-                        <TableCell className="text-right text-sm font-semibold text-[#566a7f]">
+                        <TableCell className="text-right text-sm font-medium text-foreground">
                           {formatCurrency(subtotal)}
                         </TableCell>
                         <TableCell className="text-center">
@@ -729,7 +721,7 @@ export const QuoteForm = () => {
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
                   {t("quote.total_discounts", "Total Discounts")}
                 </span>
-                <div className="text-base font-semibold text-[#ffab00] sm:mt-1">
+                <div className="text-base font-semibold text-warning-text sm:mt-1">
                   {formatCurrency(itemsDiscount + Number(currentQuoteDiscount || 0))}
                 </div>
               </div>
@@ -737,7 +729,7 @@ export const QuoteForm = () => {
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
                   {t("quote.paid_amount", "Paid Amount")}
                 </span>
-                <div className="text-base font-semibold text-[#71dd37] sm:mt-1">
+                <div className="text-base font-semibold text-success sm:mt-1">
                   {formatCurrency(Number(currentPaidAmount) || 0)}
                 </div>
               </div>
@@ -745,7 +737,7 @@ export const QuoteForm = () => {
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
                   {t("common.grand_total", "Grand Total")}
                 </span>
-                <div className="text-lg font-bold text-[#696cff] sm:mt-1">
+                <div className="text-lg font-bold text-primary sm:mt-1">
                   {formatCurrency(grandTotal)}
                 </div>
               </div>

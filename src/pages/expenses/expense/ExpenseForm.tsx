@@ -17,7 +17,6 @@ import { useExpense } from "@/hooks/expense/useExpense";
 import { useExpenseType } from "@/hooks/expense/useExpenseType";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useBank } from "@/hooks/finance/useBank";
-import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 type ExpenseFormProps = {
@@ -96,7 +95,6 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
             };
 
             const handleSuccess = () => {
-                toast.success(isEditing ? "Expense updated successfully!" : "Expense recorded successfully!");
                 setOpen(false);
                 form.reset();
             };
@@ -106,17 +104,11 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                     { id: expense.id, req: payload },
                     {
                         onSuccess: handleSuccess,
-                        onError: (err: any) => {
-                            toast.error(err?.response?.data?.message || "Failed to update expense.");
-                        },
                     }
                 );
             } else {
                 createExpenseMutate(payload, {
                     onSuccess: handleSuccess,
-                    onError: (err: any) => {
-                        toast.error(err?.response?.data?.message || "Failed to create expense.");
-                    },
                 });
             }
         },

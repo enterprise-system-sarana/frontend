@@ -175,7 +175,7 @@ export function FileUpload({
             {loading && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-1 z-20">
                 <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                <span className="text-[10px] font-medium text-foreground">Uploading</span>
+                <span className="text-[11px] font-medium text-foreground">Uploading</span>
               </div>
             )}
 
@@ -229,7 +229,7 @@ export function FileUpload({
             {loading ? (
               <div className="flex flex-col items-center gap-1 text-primary">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-[11px] font-medium">Uploading</span>
+                <span className="text-[12px] font-medium">Uploading</span>
               </div>
             ) : (
               <>

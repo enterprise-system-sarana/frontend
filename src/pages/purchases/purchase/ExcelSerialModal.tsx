@@ -136,11 +136,11 @@ export default function ExcelSerialModal({
       <DialogContent className="sm:max-w-xl max-h-[90vh] flex flex-col p-5 overflow-hidden">
         <DialogHeader>
           <div className="flex items-center gap-2.5">
-            <div className="size-8 rounded-[2px] bg-emerald-500/10 text-emerald-600 flex items-center justify-center">
+            <div className="size-8 rounded-lg bg-success/10 text-success flex items-center justify-center">
               <FileSpreadsheet className="size-4" />
             </div>
             <div>
-              <DialogTitle className="font-heading text-sm font-bold text-[#081d33] dark:text-slate-100">
+              <DialogTitle className="font-heading text-sm font-bold text-foreground">
                 Import Serial Numbers from Excel
               </DialogTitle>
               <DialogDescription className="text-xs text-muted-foreground mt-0.5">
@@ -151,13 +151,13 @@ export default function ExcelSerialModal({
         </DialogHeader>
 
         {/* Tab Selector */}
-        <div className="flex items-center rounded-[2px] bg-slate-100 dark:bg-muted p-0.5 text-xs font-semibold gap-1 mt-2 border border-slate-200 dark:border-slate-800">
+        <div className="flex items-center rounded-lg bg-muted dark:bg-muted p-0.5 text-xs font-semibold gap-1 mt-2 border border-border">
           <button
             type="button"
             onClick={() => setActiveTab("file")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-medium rounded-[2px] transition-colors cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
               activeTab === "file"
-                ? "bg-white dark:bg-background text-foreground shadow-2xs font-semibold"
+                ? "bg-card dark:bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -167,9 +167,9 @@ export default function ExcelSerialModal({
           <button
             type="button"
             onClick={() => setActiveTab("paste")}
-            className={`flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-medium rounded-[2px] transition-colors cursor-pointer ${
+            className={`flex-1 flex items-center justify-center gap-1.5 py-1 text-xs font-medium rounded-lg transition-colors cursor-pointer ${
               activeTab === "paste"
-                ? "bg-white dark:bg-background text-foreground shadow-2xs font-semibold"
+                ? "bg-card dark:bg-background text-foreground shadow-2xs font-semibold"
                 : "text-muted-foreground hover:text-foreground"
             }`}
           >
@@ -191,7 +191,7 @@ export default function ExcelSerialModal({
                   }
                 }}
                 onClick={() => fileInputRef.current?.click()}
-                className="group relative border-2 border-dashed border-slate-300 dark:border-slate-700 hover:border-emerald-500/60 rounded-[3px] p-5 text-center cursor-pointer transition-colors bg-slate-50/50 dark:bg-muted/20 hover:bg-emerald-500/5 flex flex-col items-center justify-center gap-2"
+                className="group relative border-2 border-dashed border-border-strong hover:border-success/60 rounded-lg p-5 text-center cursor-pointer transition-colors bg-muted/50 dark:bg-muted/20 hover:bg-success/5 flex flex-col items-center justify-center gap-2"
               >
                 <input
                   ref={fileInputRef}
@@ -204,32 +204,32 @@ export default function ExcelSerialModal({
                     }
                   }}
                 />
-                <div className="size-9 rounded-full bg-emerald-500/10 text-emerald-600 flex items-center justify-center transition-transform group-hover:scale-105">
+                <div className="size-9 rounded-full bg-success/10 text-success flex items-center justify-center transition-transform group-hover:scale-105">
                   <UploadCloud className="size-4" />
                 </div>
                 <div>
                   <p className="text-xs font-semibold text-foreground">
                     {uploadedFileName ? uploadedFileName : "Click or drag & drop Excel / CSV file"}
                   </p>
-                  <p className="text-[11px] text-muted-foreground mt-0.5">
+                  <p className="text-[12px] text-muted-foreground mt-0.5">
                     Supports Microsoft Excel (.xlsx, .xls) and CSV (.csv, .txt)
                   </p>
                 </div>
                 {isProcessing && (
-                  <p className="text-xs font-medium text-emerald-600 animate-pulse">
+                  <p className="text-xs font-medium text-success animate-pulse">
                     Reading and parsing serials...
                   </p>
                 )}
               </div>
 
               <div className="flex items-center justify-between text-xs px-1">
-                <span className="text-muted-foreground text-[11px]">
+                <span className="text-muted-foreground text-[12px]">
                   Need a template format?
                 </span>
                 <button
                   type="button"
                   onClick={downloadSerialTemplate}
-                  className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-600 hover:text-emerald-700 hover:underline cursor-pointer"
+                  className="inline-flex items-center gap-1 text-[12px] font-semibold text-success hover:text-success hover:underline cursor-pointer"
                 >
                   <Download className="size-3" />
                   Download Sample Template (.csv)
@@ -239,8 +239,8 @@ export default function ExcelSerialModal({
           ) : (
             <div className="space-y-2">
               <label className="text-xs font-semibold text-foreground flex items-center justify-between">
-                <span className="font-heading font-bold text-slate-800 dark:text-slate-200">Paste records from Excel</span>
-                <span className="text-[11px] text-muted-foreground font-normal">
+                <span className="font-heading font-bold text-foreground">Paste records from Excel</span>
+                <span className="text-[12px] text-muted-foreground font-normal">
                   Copy cells in Excel (Ctrl+C) and paste here (Ctrl+V)
                 </span>
               </label>
@@ -249,13 +249,13 @@ export default function ExcelSerialModal({
                 onChange={(e) => handlePasteChange(e.target.value)}
                 placeholder={"SN-10001\nSN-10002\nSN-10003\nSN-10004..."}
                 rows={5}
-                className="w-full rounded-[2px] border border-[#cdd5df] bg-background p-2.5 text-xs font-mono focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-emerald-500 resize-none"
+                className="w-full rounded-lg border border-border bg-background p-2.5 text-xs tabular-nums focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-success/25 resize-none"
               />
             </div>
           )}
 
           {errorMsg && (
-            <div className="flex items-center gap-2 p-2.5 rounded-[2px] bg-destructive/10 text-destructive text-xs">
+            <div className="flex items-center gap-2 p-2.5 rounded-lg bg-destructive/10 text-destructive text-xs">
               <AlertCircle className="size-3.5 shrink-0" />
               <span>{errorMsg}</span>
             </div>
@@ -263,15 +263,15 @@ export default function ExcelSerialModal({
 
           {/* Options & Preview */}
           {finalSerials.length > 0 && (
-            <div className="space-y-2.5 border-t border-slate-200 dark:border-slate-800 pt-3">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-slate-50 dark:bg-muted/30 p-2 rounded-[2px] border border-slate-200 dark:border-slate-800">
+            <div className="space-y-2.5 border-t border-border pt-3">
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-muted/50 dark:bg-muted/30 p-2 rounded-lg border border-border">
                 <div className="flex items-center gap-2">
-                  <CheckCircle2 className="size-3.5 text-emerald-600 shrink-0" />
+                  <CheckCircle2 className="size-3.5 text-success shrink-0" />
                   <span className="text-xs font-bold text-foreground">
                     {finalSerials.length} serial numbers detected
                   </span>
                   {duplicateCount > 0 && (
-                    <span className="text-[10px] bg-amber-500/10 text-amber-700 dark:text-amber-400 px-1.5 py-0.5 rounded-[2px] font-medium">
+                    <span className="text-[11px] bg-warning/10 text-warning-text px-1.5 py-0.5 rounded-lg font-medium">
                       {duplicateCount} duplicates removed
                     </span>
                   )}
@@ -283,7 +283,7 @@ export default function ExcelSerialModal({
                       type="checkbox"
                       checked={deduplicate}
                       onChange={(e) => setDeduplicate(e.target.checked)}
-                      className="rounded-[2px] border-[#cdd5df]"
+                      className="rounded-lg border-border"
                     />
                     <span>Deduplicate</span>
                   </label>
@@ -293,7 +293,7 @@ export default function ExcelSerialModal({
                       type="checkbox"
                       checked={syncQuantity}
                       onChange={(e) => setSyncQuantity(e.target.checked)}
-                      className="rounded-[2px] border-[#cdd5df]"
+                      className="rounded-lg border-border"
                     />
                     <span>
                       Set item quantity to {finalSerials.length}
@@ -304,14 +304,14 @@ export default function ExcelSerialModal({
 
               {/* Preview Chips */}
               <div>
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-wider mb-1">
+                <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wider mb-1">
                   Preview ({finalSerials.length} records)
                 </p>
-                <div className="max-h-36 overflow-y-auto p-2 bg-background border border-[#cdd5df] rounded-[2px] flex flex-wrap gap-1">
+                <div className="max-h-36 overflow-y-auto p-2 bg-background border border-border rounded-lg flex flex-wrap gap-1">
                   {finalSerials.slice(0, 100).map((serial, i) => (
                     <span
                       key={i}
-                      className="inline-flex items-center gap-1 rounded-[2px] bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 text-[10px] font-mono border border-slate-200 dark:border-slate-700 text-foreground"
+                      className="inline-flex items-center gap-1 rounded-lg bg-muted px-1.5 py-0.5 text-[11px] tabular-nums border border-border text-foreground"
                     >
                       <span>{serial}</span>
                       <button
@@ -324,7 +324,7 @@ export default function ExcelSerialModal({
                     </span>
                   ))}
                   {finalSerials.length > 100 && (
-                    <span className="text-[10px] text-muted-foreground self-center px-1 font-mono">
+                    <span className="text-[11px] text-muted-foreground self-center px-1 tabular-nums">
                       + {finalSerials.length - 100} more records...
                     </span>
                   )}
@@ -334,14 +334,14 @@ export default function ExcelSerialModal({
           )}
         </div>
 
-        <DialogFooter className="border-t border-slate-200 dark:border-slate-800 pt-2.5 flex items-center justify-between gap-2">
+        <DialogFooter className="border-t border-border pt-2.5 flex items-center justify-between gap-2">
           <Button
             type="button"
             variant="ghost"
             size="sm"
             onClick={resetState}
             disabled={parsedSerials.length === 0}
-            className="h-[29px] rounded-[2px] text-xs text-muted-foreground"
+            className="h-[29px] rounded-lg text-xs text-muted-foreground"
           >
             Clear all
           </Button>
@@ -352,7 +352,7 @@ export default function ExcelSerialModal({
               variant="outline"
               size="sm"
               onClick={handleClose}
-              className="h-[29px] rounded-[2px] border-[#cdd5df] text-xs font-semibold"
+              className="h-[29px] rounded-lg border-border text-xs font-semibold"
             >
               Cancel
             </Button>
@@ -361,7 +361,7 @@ export default function ExcelSerialModal({
               size="sm"
               onClick={handleApply}
               disabled={finalSerials.length === 0}
-              className="h-[29px] rounded-[2px] text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-bold"
+              className="h-[29px] rounded-lg text-xs bg-primary hover:bg-primary-hover text-primary-foreground font-bold"
             >
               Apply {finalSerials.length > 0 ? `(${finalSerials.length}) Serials` : ""}
             </Button>

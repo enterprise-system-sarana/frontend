@@ -6,10 +6,8 @@ import {
 } from "@/components/ui/sidebar";
 import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/store/useAuth";
-import { LogOut, BadgeCheck, CreditCard, Monitor, AlertTriangle, CalendarDays, ChevronDown } from "lucide-react";
-import { useAppDispatch } from "@/store/store";
-import { logout } from "@/store/authSlice";
-import { AuthService } from "@/services/auth/auth.service";
+import { LogOut, BadgeCheck, Monitor, AlertTriangle, CalendarDays, ChevronDown, ChevronRight } from "lucide-react";
+import { useLogout } from "@/hooks/useLogout";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -20,6 +18,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { KeyRound } from "lucide-react";
 import { ROUTERS } from "@/constants/Route";
@@ -29,21 +28,24 @@ import type { ProductResponse } from "@/types/product/Product";
 import { useStock } from "@/hooks/inventory/useStock";
 import type { StockResponse } from "@/types/inventory/Stock";
 import ImageCell from "@/components/file/ImageCell";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { fileService } from "@/services/file/file.service";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 const DashboardLayout = () => {
-  const { user } = useAuth();
-  const dispatch = useAppDispatch();
+  const { user, roles } = useAuth();
   const navigate = useNavigate();
+  const handleLogout = useLogout();
   const location = useLocation();
   const { t, language } = useLanguage();
   const currentDateString = new Date().toLocaleDateString(language === "km" ? "km-KH" : "en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  const currentPageTitle = location.pathname === ROUTERS.DASHBOARD
-    ? "Dashboard"
-    : location.pathname === ROUTERS.SALE
-      ? "Sales"
-      : location.pathname.split("/").filter(Boolean).at(-1)?.replace(/-/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase()) || "Dashboard";
+  // Breadcrumb (Figma header: "Overview › Dashboard"), derived from the URL path.
+  const toLabel = (segment: string) => segment.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
+  const pathSegments = location.pathname.split("/").filter((segment) => segment && !/^\d+$/.test(segment));
+  const breadcrumb = pathSegments.length === 0 || location.pathname === ROUTERS.DASHBOARD
+    ? [t("nav.section_overview", "Overview"), t("nav.dashboard", "Dashboard")]
+    : pathSegments.length === 1
+      ? [t("nav.section_overview", "Overview"), toLabel(pathSegments[0])]
+      : pathSegments.map(toLabel);
+  const userRole = roles[0] ? toLabel(roles[0].toLowerCase().replace(/^role_/, "")) : user?.email;
 
   const { data: products } = useProduct.useGetAllProduct({ page: 1, size: 1000 });
   const { data: stocks, isError: isStocksError } = useStock.useGetAllStock({ page: 1, size: 1000 });
@@ -77,34 +79,23 @@ const DashboardLayout = () => {
       avatar: "",
     };
 
-  const userAvatarSrc = user?.profileImage
-    ? user.profileImage.startsWith("http") || user.profileImage.startsWith("blob")
-      ? user.profileImage
-      : fileService.getPreviewUrl("user", user.profileImage)
-    : "/default-user-avatar.png";
-
-  const handleLogout = async () => {
-    try {
-      await AuthService.logout();
-    } catch (err) {
-      console.error("Failed to log out from backend:", err);
-    }
-    dispatch(logout());
-    navigate(ROUTERS.LOGIN);
-  };
 
   return (
     <SidebarProvider>
       <AppSidebar />
-      <SidebarInset className="bg-[#edf2f8] dark:bg-background overflow-hidden flex flex-col h-screen reference-layout">
-        <div className="sticky top-0 z-20 w-full">
+      <SidebarInset className="bg-background overflow-hidden flex flex-col h-screen reference-layout">
+        <div className="sticky top-0 z-20 w-full bg-background">
           <header className="reference-topbar">
             <div className="reference-topbar-left">
               <SidebarTrigger className="reference-menu-trigger" />
-              <span className="reference-header-divider" aria-hidden="true" />
-              {/* <div className="reference-workspace-title">
-                <strong>{currentPageTitle}</strong>
-              </div> */}
+              <nav aria-label="Breadcrumb" className="reference-breadcrumbs">
+                {breadcrumb.map((crumb, index) => (
+                  <span key={`${crumb}-${index}`} className="reference-crumb">
+                    {index > 0 && <ChevronRight className="reference-crumb-sep" aria-hidden="true" />}
+                    <span aria-current={index === breadcrumb.length - 1 ? "page" : undefined}>{crumb}</span>
+                  </span>
+                ))}
+              </nav>
             </div>
 
             <div className="reference-topbar-actions">
@@ -116,6 +107,7 @@ const DashboardLayout = () => {
 
               <span className="reference-header-divider reference-actions-divider" aria-hidden="true" />
               <LanguageToggle className="reference-language-toggle" />
+              <ThemeToggle className="reference-theme-toggle" />
               <span className="reference-date"><CalendarDays className="h-4 w-4" /><span>{currentDateString}</span></span>
 
               <DropdownMenu>
@@ -128,7 +120,7 @@ const DashboardLayout = () => {
                   >
                     <AlertTriangle className="h-5 w-5" />
                     {stockAlerts.length > 0 && (
-                      <span className="absolute -top-1 -right-1 flex h-5 min-w-5 px-1 items-center justify-center rounded-full border-2 border-background bg-red-500 text-[10px] font-bold text-white shadow-xs">
+                      <span className="absolute -top-1 -right-1 flex h-5 min-w-5 px-1 items-center justify-center rounded-full border-2 border-background bg-red-500 text-[11px] font-bold text-white shadow-xs">
                         {stockAlerts.length > 99 ? "99+" : stockAlerts.length}
                       </span>
                     )}
@@ -140,7 +132,7 @@ const DashboardLayout = () => {
                       {t("inventory.low_stock")} ({stockAlerts.length})
                     </DropdownMenuLabel>
                     {stockAlerts.length > 0 && (
-                      <span className="inline-flex items-center justify-center rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-semibold text-red-600 dark:text-red-400">
+                      <span className="inline-flex items-center justify-center rounded-full bg-red-500/10 px-2 py-0.5 text-[11px] font-semibold text-red-600 dark:text-red-400">
                         {stockAlerts.length} {t("inventory.low_stock")}
                       </span>
                     )}
@@ -168,14 +160,14 @@ const DashboardLayout = () => {
                               <span className="text-xs font-semibold leading-tight truncate text-foreground">
                                 {product.name}
                               </span>
-                              <span className="text-[10px] text-muted-foreground font-mono truncate mt-0.5">
+                              <span className="text-[11px] text-muted-foreground font-mono truncate mt-0.5">
                                 {[product.code || `#${product.id}`, product.storeName].filter(Boolean).join(" · ")}
                               </span>
                             </div>
 
                             <div className="shrink-0 flex items-center">
                               <span
-                                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-semibold ${quantity === 0
+                                className={`inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-[12px] font-semibold ${quantity === 0
                                   ? "bg-red-50 text-red-600 dark:bg-red-950/40 dark:text-red-400 border border-red-200 dark:border-red-900/50"
                                   : "bg-amber-50 text-amber-600 dark:bg-amber-950/40 dark:text-amber-400 border border-amber-200 dark:border-amber-900/50"
                                   }`}
@@ -225,7 +217,10 @@ const DashboardLayout = () => {
                         <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
                       </AvatarFallback>
                     </Avatar>
-                    <span className="reference-user-copy"><strong className="reference-user-name">{activeUser.name}</strong></span>
+                    <span className="reference-user-copy">
+                      <strong className="reference-user-name">{activeUser.name}</strong>
+                      {userRole && <small className="reference-user-role">{userRole}</small>}
+                    </span>
                     <ChevronDown className="reference-user-chevron" />
                   </button>
                 </DropdownMenuTrigger>
@@ -302,7 +297,7 @@ const DashboardLayout = () => {
             location.pathname.includes("/product/edit") ||
             location.pathname === ROUTERS.HOME;
           return (
-            <div className={`flex-1 overflow-auto bg-[#edf2f8] dark:bg-background ${isNoPaddingPage ? "p-0" : "p-4 sm:p-6"}`}>
+            <div className={`flex-1 overflow-auto bg-background ${isNoPaddingPage ? "p-0" : "px-4 pt-5 pb-8 sm:px-6"}`}>
               <Outlet />
             </div>
           );

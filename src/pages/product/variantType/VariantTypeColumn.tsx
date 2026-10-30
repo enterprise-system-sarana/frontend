@@ -22,13 +22,13 @@ export const VariantTypeColumns = ({
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
     },
     {
         accessorKey: "code",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.code") : "Code"} />,
         cell: ({ row }) => (
-            <span className="font-mono text-xs font-medium text-[#566a7f]">
+            <span className="tabular-nums text-xs font-medium text-text-secondary">
                 {row.original.code || "-"}
             </span>
         ),
@@ -48,13 +48,13 @@ export const VariantTypeColumns = ({
                     {displayValues.map((v) => (
                         <span
                             key={v.id}
-                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[11px] font-medium bg-primary/10 text-primary border border-primary/20"
+                            className="inline-flex items-center px-2 py-0.5 rounded-md text-[12px] font-medium bg-primary/10 text-primary border border-primary/20"
                         >
                             {v.name}
                         </span>
                     ))}
                     {remaining > 0 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[10px] font-semibold bg-muted text-muted-foreground border border-border">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
                             +{remaining} more
                         </span>
                     )}
@@ -65,7 +65,7 @@ export const VariantTypeColumns = ({
     {
         accessorKey: "createdAt",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_at") : "Created Date"} />,
-        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
+        cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>,
     },
     {
         accessorKey: "status",

@@ -36,7 +36,7 @@ export const PurchaseReportColumns = ({
       <button
         type="button"
         onClick={() => row.original.purchaseId && onViewDetail?.(row.original.purchaseId)}
-        className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer"
+        className="tabular-nums text-xs font-semibold text-primary hover:underline cursor-pointer"
       >
         {row.original.referenceNo || "-"}
       </button>
@@ -48,7 +48,7 @@ export const PurchaseReportColumns = ({
       <SortableHeader column={column} title={t ? t("purchase.supplier", "Supplier") : "Supplier"} />
     ),
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f] dark:text-muted-foreground">
+      <span className="font-medium text-foreground dark:text-muted-foreground">
         {row.original.supplierName || "-"}
       </span>
     ),
@@ -59,7 +59,7 @@ export const PurchaseReportColumns = ({
       <SortableHeader column={column} title={t ? t("inventory.store", "Store") : "Store"} />
     ),
     cell: ({ row }) => (
-      <span className="font-medium text-[#566a7f] dark:text-muted-foreground">
+      <span className="font-medium text-text-secondary dark:text-muted-foreground">
         {row.original.storeName || "-"}
       </span>
     ),
@@ -74,7 +74,7 @@ export const PurchaseReportColumns = ({
       if (!raw) return <span className="text-muted-foreground text-xs">-</span>;
       const date = new Date(raw);
       return (
-        <span className="text-xs text-[#566a7f] dark:text-muted-foreground">
+        <span className="text-xs text-text-secondary dark:text-muted-foreground">
           {date.toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
@@ -101,7 +101,7 @@ export const PurchaseReportColumns = ({
       <SortableHeader column={column} title={t ? t("purchase.paid_amount", "Paid Amount") : "Paid Amount"} />
     ),
     cell: ({ row }) => (
-      <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+      <span className="font-semibold text-success">
         {formatCurrency(row.original.paidAmount)}
       </span>
     ),
@@ -114,7 +114,7 @@ export const PurchaseReportColumns = ({
     cell: ({ row }) => {
       const due = Number(row.original.dueAmount ?? 0);
       return (
-        <span className={due > 0 ? "font-semibold text-rose-600 dark:text-rose-400" : "font-medium text-muted-foreground"}>
+        <span className={due > 0 ? "font-semibold text-destructive" : "font-medium text-muted-foreground"}>
           {formatCurrency(due)}
         </span>
       );

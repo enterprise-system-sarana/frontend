@@ -5,7 +5,6 @@ import {
     AlertDialogContent,
     AlertDialogDescription,
     AlertDialogFooter,
-    AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Trash2 } from "lucide-react";
@@ -28,31 +27,30 @@ const ConfirmDelete = ({
 
     return (
         <AlertDialog open={isOpen} onOpenChange={setIsOpen}>
-            <AlertDialogContent>
-                <AlertDialogHeader className="sm:text-left">
-                    <div className="flex items-center gap-3 mb-1">
-                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-destructive/10 text-destructive">
-                            <Trash2 className="h-5 w-5" />
-                        </div>
-                        <div>
-                            <AlertDialogTitle className="text-base font-bold font-heading">
-                                {t("common.delete")} {entityName || t("common.item")}
-                            </AlertDialogTitle>
-                            <AlertDialogDescription className="text-xs text-muted-foreground">
-                                {t("common.confirm_delete_desc")}
-                            </AlertDialogDescription>
-                        </div>
+            <AlertDialogContent className="max-w-[420px] gap-0">
+                <div className="flex items-start gap-4">
+                    <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-danger-soft text-destructive">
+                        <Trash2 className="size-5" strokeWidth={1.75} />
                     </div>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                    <AlertDialogCancel className="rounded-xl font-medium">
+                    <div className="min-w-0 space-y-1 pt-0.5">
+                        <AlertDialogTitle>
+                            {t("common.delete")} {entityName || t("common.item")}?
+                        </AlertDialogTitle>
+                        <AlertDialogDescription>
+                            {t("common.confirm_delete_desc")}
+                        </AlertDialogDescription>
+                    </div>
+                </div>
+                <AlertDialogFooter className="mt-6">
+                    <AlertDialogCancel className="min-w-24">
                         {t("common.cancel")}
                     </AlertDialogCancel>
                     <AlertDialogAction
                         variant="destructive"
-                        className="rounded-xl font-medium shadow-sm shadow-destructive/20"
+                        className="min-w-24"
                         onClick={() => confirmDelete()}
                     >
+                        <Trash2 className="size-4" />
                         {t("common.delete")}
                     </AlertDialogAction>
                 </AlertDialogFooter>

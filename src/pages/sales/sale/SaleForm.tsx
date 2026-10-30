@@ -10,25 +10,42 @@ import {
   Trash2,
   Hash,
   ShoppingCart,
-  Package,
+  PackageSearch,
+  SearchX,
+  RotateCcw,
+  CalendarDays,
+  Clock,
   Check,
   AlertTriangle,
-  AlertCircle,
   User,
-  Monitor,
+  UserPlus,
+  Store as StoreIcon,
+  Maximize2,
   CalendarCheck,
   X,
   XCircle,
-  FileText,
+  PauseCircle,
   Banknote,
-  Edit3,
-  MessageSquare,
+  Pencil,
+  KeyRound,
   Smartphone,
   LogOut,
   ChevronDown,
   LayoutDashboard,
   BadgeCheck,
 } from "lucide-react";
+import { cn } from "@/lib/utils";
+import { statusToneClass } from "@/components/ui/status-badge";
+import { Avatar } from "@/components/ui/avatar";
+import { InitialsAvatar } from "@/components/ui/initials-avatar";
+import { SearchSelect, type SearchSelectOption } from "@/components/ui/search-select";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useDispatch } from "react-redux";
 import { logout } from "@/store/authSlice";
 import { AuthService } from "@/services/auth/auth.service";
@@ -40,6 +57,7 @@ import {
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { LanguageToggle } from "@/components/layout/LanguageToggle";
+import { ThemeToggle } from "@/components/layout/ThemeToggle";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 import { Button } from "@/components/ui/button";
@@ -48,6 +66,7 @@ import {
   Dialog,
   DialogContent,
   DialogDescription,
+  DialogFooter,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
@@ -98,6 +117,38 @@ function formatCurrency(value: number) {
     style: "currency",
     currency: "USD",
   }).format(Number(value) || 0);
+}
+
+/** Live date and time for the top bar. Ticks on the minute in its own component so the POS form doesn't re-render. */
+function PosClock() {
+  const { language } = useLanguage();
+  const [now, setNow] = useState(() => new Date());
+
+  useEffect(() => {
+    let interval: ReturnType<typeof setInterval> | undefined;
+    const timeout = setTimeout(() => {
+      setNow(new Date());
+      interval = setInterval(() => setNow(new Date()), 60_000);
+    }, 60_000 - (Date.now() % 60_000));
+    return () => {
+      clearTimeout(timeout);
+      if (interval) clearInterval(interval);
+    };
+  }, []);
+
+  const isKm = language === "km";
+  return (
+    <span className="reference-date">
+      <CalendarDays className="h-4 w-4" />
+      <span>
+        {now.toLocaleDateString(isKm ? "km-KH" : "en-GB", { weekday: "short", day: "2-digit", month: "short", year: "numeric" })}
+      </span>
+      <Clock className="h-4 w-4" />
+      <span className="tabular-nums">
+        {now.toLocaleTimeString(isKm ? "km-KH" : "en-US", { hour: "2-digit", minute: "2-digit" })}
+      </span>
+    </span>
+  );
 }
 
 function generateRef() {
@@ -452,7 +503,6 @@ export default function SaleForm() {
         request: payload,
       });
       if (isEditing) {
-        toast.success("Sale updated successfully!");
         navigate(ROUTERS.SALE);
       }
     } else {
@@ -464,7 +514,6 @@ export default function SaleForm() {
         createdSale;
       savedSaleId = Number(createdSaleData?.id || 0);
       setRegisteredSaleId(savedSaleId);
-      toast.success("Sale registered successfully!");
     }
 
     // Handle payment creation for split, multi-row, and direct flows
@@ -1104,218 +1153,206 @@ export default function SaleForm() {
      RENDER
   ========================================================= */
 
+  const activeStoreName = storeList.find((s) => s.id === Number(formValues.storeId))?.name;
+  const hasCartItems = (formValues.items || []).length > 0;
+  const hasProductFilters = selectedCategory !== "All" || stockFilter !== "ALL";
+
+  const customerOptions: SearchSelectOption[] = [
+    {
+      value: "",
+      label: t("pos.walk_in_customer", "Walk-In Customer"),
+      leading: (
+        <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-muted text-muted-foreground">
+          <User className="size-3.5" />
+        </span>
+      ),
+    },
+    ...customerList.map((c) => ({
+      value: String(c.id),
+      label: c.name,
+      description: c.phone || undefined,
+      leading: <InitialsAvatar name={c.name || "?"} className="size-7 text-[11px]" />,
+    })),
+  ];
+
+  const stockFilterOptions: { value: StockFilterType; label: string; count: number; dot?: string }[] = [
+    { value: "ALL", label: t("pos.stock_all", "All Stock"), count: stockCounts.all },
+    { value: "IN_STOCK", label: t("pos.in_stock", "In Stock"), count: stockCounts.inStock, dot: "bg-success" },
+    { value: "OUT_OF_STOCK", label: t("pos.out_of_stock", "Out of Stock"), count: stockCounts.outOfStock, dot: "bg-destructive" },
+    ...(stockCounts.lowStock > 0
+      ? [{ value: "LOW_STOCK" as const, label: t("pos.low_stock", "Low Stock"), count: stockCounts.lowStock, dot: "bg-warning" }]
+      : []),
+  ];
+
   return (
     <div className="flex h-screen flex-col overflow-hidden bg-background text-foreground">
-      {/* 1. TOP NAVBAR */}
-      <header className="h-13 shrink-0 bg-[#f8f9fa] dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 px-3 md:px-4 flex items-center justify-between z-20">
-        {/* Left: Brand Logo (360° Phone Shop like Login) */}
-        <div className="flex items-center gap-3">
-          <div
-            className="flex items-center gap-2.5 select-none group cursor-pointer"
-            onClick={() => navigate(ROUTERS.DASHBOARD)}
-            title={isKm ? "ត្រឡប់ទៅផ្ទាំងដើម" : "Go to Dashboard"}
-          >
-            {/* Store Circular Logo Badge */}
-            <div className="relative size-9 rounded-full bg-gradient-to-tr from-blue-600 to-sky-400 p-[1.5px] shadow-sm flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
-              <div className="size-full rounded-full bg-white dark:bg-slate-900 overflow-hidden flex items-center justify-center">
-                <img
-                  src="/logo.png"
-                  alt="360° Phone Shop"
-                  className="size-full object-cover"
-                  onError={(e) => {
-                    const target = e.currentTarget;
-                    target.style.display = "none";
-                    if (target.nextElementSibling) {
-                      (target.nextElementSibling as HTMLElement).style.display = "flex";
-                    }
-                  }}
-                />
-                <div className="hidden size-full items-center justify-center text-blue-600 dark:text-sky-400 bg-blue-50 dark:bg-blue-950/50">
-                  <Smartphone className="size-4.5" />
-                </div>
-              </div>
-            </div>
-
-            {/* Brand Title & Subtitle */}
-            <div className="flex flex-col justify-center">
-              <div className="flex items-center gap-1.5 leading-none">
-                <span className="font-black text-base tracking-tight text-blue-600 dark:text-sky-400 font-sans">
-                  360°
-                </span>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-slate-800 dark:text-slate-100 font-sans">
-                  Phone Shop
-                </span>
-              </div>
-              <span className="text-[9px] font-semibold tracking-wide text-slate-400 dark:text-slate-500 mt-0.5">
-                {isKm ? "ហាងលក់ទូរស័ព្ទដៃទំនើប" : "Smartphones & Accessories"}
-              </span>
-            </div>
-          </div>
-
-          <div className="h-6 w-px bg-slate-300 dark:bg-slate-700 hidden sm:block mx-1" />
-          <span className="text-xs font-semibold text-slate-500 dark:text-slate-400 hidden sm:inline">
-            {t("pos.terminal", "POS Terminal")}
-          </span>
-        </div>
-
-        {/* Right: POS Actions & Cashier Profile */}
-        <div className="flex items-center gap-2 sm:gap-3">
-          <LanguageToggle className="flex items-center gap-1.5 h-8 px-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-800 shadow-2xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 transition select-none text-xs font-bold text-slate-800 dark:text-slate-100" />
-
+      {/* 1. TOP BAR — same shell as the dashboard top bar */}
+      <header className="reference-topbar z-20 shrink-0">
+        <div className="reference-topbar-left">
           <button
             type="button"
-            onClick={toggleFullscreen}
-            className="p-1.5 text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white rounded hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
-            title={t("pos.fullscreen", "Toggle Fullscreen")}
+            onClick={() => navigate(ROUTERS.DASHBOARD)}
+            className="flex min-w-0 cursor-pointer items-center gap-3 rounded-lg text-left"
+            title={isKm ? "ត្រឡប់ទៅផ្ទាំងដើម" : "Go to Dashboard"}
           >
-            <Monitor className="size-4.5" />
+            <span className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-card">
+              <img
+                src="/logo.png"
+                alt=""
+                className="size-full object-cover"
+                onError={(e) => {
+                  const target = e.currentTarget;
+                  target.style.display = "none";
+                  if (target.nextElementSibling) {
+                    (target.nextElementSibling as HTMLElement).style.display = "flex";
+                  }
+                }}
+              />
+              <span className="hidden size-full items-center justify-center bg-primary-light text-primary">
+                <Smartphone className="size-5" />
+              </span>
+            </span>
+            <span className="min-w-0">
+              <span className="block truncate text-[15px] leading-5 font-semibold text-foreground">360 Phone Shop</span>
+              <span className="block truncate text-[13px] leading-[18px] text-muted-foreground">
+                {t("pos.terminal", "POS Terminal")}
+                {activeStoreName ? ` · ${activeStoreName}` : ""}
+              </span>
+            </span>
           </button>
+        </div>
 
-          {/* Register Status & Actions */}
+        <div className="reference-topbar-actions">
+          {/* Register status */}
           {currentRegister ? (
-            <div className="flex items-center gap-1.5">
+            <>
               <button
                 type="button"
                 onClick={() => setIsRegisterDetailsOpen(true)}
-                className="hidden sm:flex items-center gap-1.5 text-xs text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 font-semibold px-2.5 py-1 rounded-full hover:bg-emerald-100 dark:hover:bg-emerald-950/60 transition cursor-pointer"
-                title={isKm ? "ព័ត៌មានលម្អិតវេនលក់" : "Register Shift Details"}
+                className="hidden h-9 cursor-pointer items-center gap-2 rounded-lg border border-border bg-card px-3 text-[14px] font-medium text-foreground transition-colors hover:border-border-strong hover:bg-muted sm:inline-flex"
+                title={t("pos.register_details", "Register Details")}
               >
-                <span className="size-2 rounded-full bg-emerald-500 animate-pulse shrink-0" />
-                <span className="font-mono">{currentRegister.registerNo}</span>
-                <span className="hidden md:inline text-muted-foreground font-normal">
-                  (${Number(currentRegister.openingBalance || 0).toFixed(2)})
+                <span className="size-2 shrink-0 rounded-full bg-success" />
+                <span className="tabular-nums">{currentRegister.registerNo}</span>
+                <span className="hidden text-muted-foreground tabular-nums md:inline">
+                  {formatCurrency(Number(currentRegister.openingBalance || 0))}
                 </span>
               </button>
-
-              <button
+              <Button
                 type="button"
+                variant="ghost"
                 onClick={() => setIsCloseRegisterOpen(true)}
-                className="flex items-center gap-1 text-xs text-rose-600 dark:text-rose-400 font-medium px-2 py-1 rounded hover:bg-rose-50 dark:hover:bg-rose-950/30 transition cursor-pointer"
-                title={isKm ? "បិទបញ្ជីលក់" : "Close Register"}
+                className="text-destructive hover:bg-destructive/8 hover:text-destructive"
+                title={t("pos.close_register", "Close Register")}
               >
-                <X className="size-4 text-rose-500 stroke-[2.5]" />
+                <X />
                 <span className="hidden md:inline">{t("pos.close_register", "Close Register")}</span>
-              </button>
-            </div>
+              </Button>
+            </>
           ) : (
             <button
               type="button"
               onClick={() => setIsOpenRegisterOpen(true)}
-              className="flex items-center gap-1.5 text-xs text-amber-800 dark:text-amber-200 bg-amber-50 dark:bg-amber-950/40 border border-amber-300 dark:border-amber-800 font-semibold px-2.5 py-1 rounded-full hover:bg-amber-100 transition cursor-pointer"
-              title={isKm ? "បើកបញ្ជីលក់ដើម្បីចាប់ផ្តើមវេន" : "Open Register Shift"}
+              className={cn(
+                "inline-flex h-9 cursor-pointer items-center gap-2 rounded-lg px-3 text-[14px] font-medium transition-opacity hover:opacity-85",
+                statusToneClass.warning
+              )}
+              title={t("pos.open_register", "Open Register")}
             >
-              <span className="size-2 rounded-full bg-amber-500 animate-ping shrink-0" />
-              <span>{isKm ? "បើកបញ្ជីលក់" : "Open Register"}</span>
+              <span className="size-2 shrink-0 rounded-full bg-current" />
+              <span>{t("pos.register_closed", "Register closed")}</span>
             </button>
           )}
 
-          <button
+          <Button
             type="button"
+            variant="ghost"
             onClick={() => setIsTodaySaleOpen(true)}
-            className="hidden sm:flex items-center gap-1.5 text-xs text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white font-medium px-2 py-1 rounded hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer"
+            className="hidden sm:inline-flex"
           >
-            <CalendarCheck className="size-4 text-slate-500" />
+            <CalendarCheck />
             <span>{t("pos.today_sale", "Today's Sale")}</span>
-          </button>
+          </Button>
 
-          {/* User Profile & Logout Dropdown */}
-          <div className="flex items-center gap-1 pl-2 border-l border-slate-300 dark:border-slate-700">
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button
-                  type="button"
-                  className="flex items-center gap-2 px-2 py-1 rounded-lg hover:bg-slate-200/60 dark:hover:bg-slate-800 transition cursor-pointer select-none group"
-                  title={isKm ? "ព័ត៌មានគណនី និងចាកចេញ" : "Account menu & Logout"}
-                >
-                  <div className="size-7 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950 dark:text-blue-300 overflow-hidden flex items-center justify-center font-bold text-xs shrink-0 border border-blue-200 dark:border-blue-800">
-                    <User className="size-4" />
-                  </div>
-                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200 max-w-[120px] truncate hidden md:inline group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors">
-                    {user?.username || "younam"}
-                  </span>
-                  <ChevronDown className="size-3.5 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-slate-200 transition-transform hidden sm:inline" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 p-1.5 shadow-xl border border-slate-200 dark:border-slate-800">
-                <div className="flex items-center gap-2.5 p-2 rounded-md bg-slate-50 dark:bg-slate-900 mb-1 border border-slate-100 dark:border-slate-800">
-                  <div className="size-8 rounded-full bg-blue-600 text-white flex items-center justify-center font-bold text-xs shrink-0">
-                    <User className="size-4" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-bold text-foreground truncate">
-                      {user?.username || "younam"}
-                    </p>
-                    <p className="text-[10px] text-muted-foreground truncate">
-                      {user?.email || "cashier@pos.com"}
-                    </p>
-                  </div>
-                </div>
-
-                <DropdownMenuSeparator className="my-1" />
-
-                <DropdownMenuItem
-                  className="cursor-pointer text-xs py-2 px-2.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                  onClick={() => navigate(ROUTERS.DASHBOARD)}
-                >
-                  <LayoutDashboard className="mr-2 size-4 text-slate-500" />
-                  <span>{isKm ? "ផ្ទាំងគ្រប់គ្រង" : "Dashboard"}</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuItem
-                  className="cursor-pointer text-xs py-2 px-2.5 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 transition"
-                  onClick={() => navigate(ROUTERS.PROFILE)}
-                >
-                  <BadgeCheck className="mr-2 size-4 text-slate-500" />
-                  <span>{t("user.profile", "Profile")}</span>
-                </DropdownMenuItem>
-
-                <DropdownMenuSeparator className="my-1" />
-
-                <DropdownMenuItem
-                  className="cursor-pointer text-xs py-2 px-2.5 rounded-md text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 focus:bg-rose-50 dark:focus:bg-rose-950/40 font-semibold transition"
-                  onClick={handleLogout}
-                >
-                  <LogOut className="mr-2 size-4 text-rose-500 stroke-[2.2]" />
-                  <span>{t("user.logout", "Log out")}</span>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
-
-            {/* Direct Quick Logout Button */}
-            <button
-              type="button"
-              onClick={handleLogout}
-              className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg transition cursor-pointer"
-              title={isKm ? "ចាកចេញ (Log out)" : "Log out"}
-            >
-              <LogOut className="size-4" />
-            </button>
-          </div>
-
-          <span className="text-xs font-extrabold tracking-wider text-slate-900 dark:text-white px-2.5 py-1 bg-slate-200/80 dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded uppercase">
-            {storeList.find((s) => s.id === Number(formValues.storeId))?.name || "360SYSTEM"}
+          <span className="reference-header-divider reference-actions-divider" aria-hidden="true" />
+          <LanguageToggle className="reference-language-toggle" />
+          <ThemeToggle className="reference-theme-toggle" />
+          <span className="hidden xl:flex">
+            <PosClock />
           </span>
+          <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={toggleFullscreen}
+            className="text-text-secondary"
+            title={t("pos.fullscreen", "Fullscreen")}
+            aria-label={t("pos.fullscreen", "Fullscreen")}
+          >
+            <Maximize2 />
+          </Button>
+
+          {/* Account menu */}
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <button type="button" className="reference-user-trigger">
+                <Avatar className="reference-user-avatar">
+                  <ImageCell
+                    fileName={user?.profileImage || ""}
+                    name={user?.username || ""}
+                    bucketName="user"
+                    preview={false}
+                    className="size-full rounded-full"
+                    fallbackSrc="/default-user-avatar.png"
+                  />
+                </Avatar>
+                <span className="reference-user-copy">
+                  <strong className="reference-user-name">{user?.username}</strong>
+                  <small className="reference-user-role">{t("pos.cashier", "Cashier")}</small>
+                </span>
+                <ChevronDown className="reference-user-chevron" />
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56 rounded-xl">
+              <div className="px-2.5 py-2">
+                <p className="truncate text-sm font-semibold text-foreground">{user?.username}</p>
+                <p className="truncate text-xs text-muted-foreground">{user?.email}</p>
+              </div>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(ROUTERS.DASHBOARD)}>
+                <LayoutDashboard className="size-4 text-muted-foreground" />
+                <span>{isKm ? "ផ្ទាំងគ្រប់គ្រង" : "Dashboard"}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem className="cursor-pointer" onClick={() => navigate(ROUTERS.PROFILE)}>
+                <BadgeCheck className="size-4 text-muted-foreground" />
+                <span>{t("user.profile", "Profile")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                className="cursor-pointer text-destructive focus:bg-destructive/8 focus:text-destructive"
+                onClick={handleLogout}
+              >
+                <LogOut className="size-4 text-destructive" />
+                <span>{t("user.logout", "Log out")}</span>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
 
-      {/* Closed Shift Alert Banner */}
+      {/* Closed shift notice */}
       {!isLoadingRegister && currentRegister === null && (
-        <div className="bg-amber-500/10 border-b border-amber-500/20 px-4 py-2 flex items-center justify-between text-xs text-amber-900 dark:text-amber-200 shrink-0">
-          <div className="flex items-center gap-2">
-            <span className="size-2 rounded-full bg-amber-500 animate-pulse" />
-            <span className="font-semibold">
-              {isKm
-                ? "វេនលក់មិនទាន់បានបើកនៅឡើយទេ — សូមបើកបញ្ជីលក់ដើម្បីចាប់ផ្តើមធ្វើការលក់"
-                : "Cash register shift is currently closed — please open your register to record sales."}
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-warning/30 bg-warning/10 px-4 py-2.5 text-[14px] text-warning-text md:px-8">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <AlertTriangle className="size-4 shrink-0" />
+            <span className="truncate font-medium">
+              {t("pos.register_closed_notice", "Your cash register is closed. Open a shift to start recording sales.")}
             </span>
           </div>
-          <button
-            type="button"
-            onClick={() => setIsOpenRegisterOpen(true)}
-            className="px-3 py-1 bg-amber-600 hover:bg-amber-700 text-white font-bold rounded-lg text-xs transition cursor-pointer"
-          >
-            {isKm ? "បើកបញ្ជីលក់ឥឡូវនេះ" : "Open Register Now"}
-          </button>
+          <Button type="button" size="sm" onClick={() => setIsOpenRegisterOpen(true)}>
+            <KeyRound />
+            {t("pos.open_register", "Open Register")}
+          </Button>
         </div>
       )}
 
@@ -1324,125 +1361,57 @@ export default function SaleForm() {
         {/* ===================================================
             LEFT PANEL: PRODUCT CATALOG & CATEGORIES
         =================================================== */}
-        <section className="flex-1 flex flex-col min-w-0 bg-[#f4f6f9] dark:bg-slate-950 overflow-hidden">
-          {/* Category Filter Pills & Search Bar & Stock Filter */}
-          <div className="p-3 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 shrink-0 space-y-2">
-            <div className="flex items-center gap-2 flex-wrap lg:flex-nowrap">
-              {/* Product search input */}
-              <div className="relative flex-1 min-w-[200px]">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
+        <section className="flex min-w-0 flex-1 flex-col overflow-hidden bg-background">
+          {/* Search, stock filter and categories */}
+          <div className="shrink-0 space-y-3 border-b border-border bg-card px-4 py-3.5 md:px-6">
+            <div className="flex flex-wrap items-center gap-3 lg:flex-nowrap">
+              <div className="relative min-w-[220px] flex-1">
+                <Search className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={productSearch}
                   onChange={(e) => setProductSearch(e.target.value)}
                   placeholder={t("pos.search_placeholder", "Search product by name or code...")}
-                  className="pl-9 h-8.5 text-xs bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-md focus-visible:ring-sky-500"
+                  className="h-10 pr-9 pl-9 text-[14px]"
                 />
                 {productSearch && (
                   <button
                     type="button"
                     onClick={() => setProductSearch("")}
-                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 text-xs cursor-pointer"
+                    className="absolute top-1/2 right-2 flex size-6 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
+                    aria-label={t("pos.btn_reset", "Reset")}
                   >
-                    ×
+                    <X className="size-3.5" />
                   </button>
                 )}
               </div>
 
-              {/* Stock Status Filter Group (All, In Stock, Not Stock, Low Stock) */}
-              <div className="flex items-center p-0.5 bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-xs font-semibold shrink-0 select-none">
-                {/* All */}
-                <button
-                  type="button"
-                  onClick={() => setStockFilter("ALL")}
-                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    stockFilter === "ALL"
-                      ? "bg-white dark:bg-slate-900 text-slate-900 dark:text-white shadow-2xs"
-                      : "text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200"
-                  }`}
-                  title={isKm ? "បង្ហាញស្តុកទាំងអស់" : "Show all products"}
-                >
-                  <span>{isKm ? "ស្តុកទាំងអស់" : "All Stock"}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    stockFilter === "ALL"
-                      ? "bg-slate-200 dark:bg-slate-800 text-slate-900 dark:text-slate-100"
-                      : "bg-slate-200/80 dark:bg-slate-700 text-slate-600 dark:text-slate-300"
-                  }`}>
-                    {stockCounts.all}
-                  </span>
-                </button>
-
-                {/* In Stock */}
-                <button
-                  type="button"
-                  onClick={() => setStockFilter("IN_STOCK")}
-                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    stockFilter === "IN_STOCK"
-                      ? "bg-emerald-600 text-white shadow-2xs"
-                      : "text-emerald-700 dark:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40"
-                  }`}
-                  title={isKm ? "ទំនិញដែលមានក្នុងស្តុក" : "In Stock products"}
-                >
-                  <span className="size-1.5 rounded-full bg-emerald-500 shrink-0" />
-                  <span>{isKm ? "មានស្តុក" : "In Stock"}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    stockFilter === "IN_STOCK"
-                      ? "bg-emerald-700 text-white"
-                      : "bg-emerald-100 text-emerald-800 dark:bg-emerald-950 dark:text-emerald-300"
-                  }`}>
-                    {stockCounts.inStock}
-                  </span>
-                </button>
-
-                {/* Out of Stock (Not Stock) */}
-                <button
-                  type="button"
-                  onClick={() => setStockFilter("OUT_OF_STOCK")}
-                  className={`px-2.5 py-1 rounded-md text-xs font-bold transition flex items-center gap-1.5 cursor-pointer ${
-                    stockFilter === "OUT_OF_STOCK"
-                      ? "bg-rose-600 text-white shadow-2xs"
-                      : "text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40"
-                  }`}
-                  title={isKm ? "ទំនិញដែលដាច់ស្តុក/គ្មានស្តុក" : "Out of Stock / Not Stock products"}
-                >
-                  <span className="size-1.5 rounded-full bg-rose-500 shrink-0" />
-                  <span>{isKm ? "ដាច់ស្តុក" : "Not Stock"}</span>
-                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                    stockFilter === "OUT_OF_STOCK"
-                      ? "bg-rose-700 text-white"
-                      : "bg-rose-100 text-rose-800 dark:bg-rose-950 dark:text-rose-300"
-                  }`}>
-                    {stockCounts.outOfStock}
-                  </span>
-                </button>
-
-                {/* Low Stock (if any exist) */}
-                {stockCounts.lowStock > 0 && (
-                  <button
-                    type="button"
-                    onClick={() => setStockFilter("LOW_STOCK")}
-                    className={`px-2 py-1 rounded-md text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-                      stockFilter === "LOW_STOCK"
-                        ? "bg-amber-500 text-white shadow-2xs"
-                        : "text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/40"
-                    }`}
-                    title={isKm ? "ទំនិញដែលជិតអស់ស្តុក" : "Low Stock products"}
-                  >
-                    <span className="size-1.5 rounded-full bg-amber-400 shrink-0" />
-                    <span>{isKm ? "ជិតអស់" : "Low"}</span>
-                    <span className={`px-1.5 py-0.2 rounded-full text-[10px] font-bold ${
-                      stockFilter === "LOW_STOCK"
-                        ? "bg-amber-600 text-white"
-                        : "bg-amber-100 text-amber-800 dark:bg-amber-950 dark:text-amber-300"
-                    }`}>
-                      {stockCounts.lowStock}
-                    </span>
-                  </button>
-                )}
+              {/* Stock filter — segmented control */}
+              <div className="flex shrink-0 items-center gap-0.5 rounded-lg bg-muted p-1 select-none">
+                {stockFilterOptions.map((option) => {
+                  const isActive = stockFilter === option.value;
+                  return (
+                    <button
+                      key={option.value}
+                      type="button"
+                      onClick={() => setStockFilter(option.value)}
+                      className={cn(
+                        "inline-flex h-8 cursor-pointer items-center gap-2 rounded-md px-3 text-[14px] font-medium whitespace-nowrap transition-colors",
+                        isActive
+                          ? "bg-card text-foreground shadow-xs"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {option.dot && <span className={cn("size-2 shrink-0 rounded-full", option.dot)} />}
+                      <span>{option.label}</span>
+                      <span className="text-[13px] text-muted-foreground tabular-nums">{option.count}</span>
+                    </button>
+                  );
+                })}
               </div>
             </div>
 
-            {/* Category Pills Bar */}
-            <div className="flex items-center gap-2 overflow-x-auto no-scrollbar pb-0.5">
+            {/* Category chips */}
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
               {categoriesToDisplay.map((cat) => {
                 const isSelected =
                   selectedCategory === cat.id ||
@@ -1455,20 +1424,15 @@ export default function SaleForm() {
                     onClick={() => {
                       setSelectedCategory(cat.id);
                     }}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 whitespace-nowrap transition cursor-pointer ${
+                    className={cn(
+                      "inline-flex h-8 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-[14px] font-medium whitespace-nowrap transition-colors",
                       isSelected
-                        ? "bg-[#0b1b32] text-white shadow-xs"
-                        : "bg-[#edf0f3] dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700"
-                    }`}
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-text-secondary hover:border-border-strong hover:text-foreground"
+                    )}
                   >
                     <span>{cat.name}</span>
-                    <span
-                      className={`px-1.5 py-0.2 text-[10px] rounded-full font-bold ${
-                        isSelected
-                          ? "bg-white/25 text-white"
-                          : "bg-slate-300 dark:bg-slate-700 text-slate-700 dark:text-slate-300"
-                      }`}
-                    >
+                    <span className={cn("text-[13px] tabular-nums", isSelected ? "text-primary-foreground/75" : "text-muted-foreground")}>
                       {cat.count}
                     </span>
                   </button>
@@ -1477,18 +1441,53 @@ export default function SaleForm() {
             </div>
           </div>
 
-          {/* 4-Column Product Cards Grid */}
-          <div className="flex-1 overflow-y-auto p-3.5 sm:p-4 min-h-0">
+          {/* Product grid */}
+          <div className="min-h-0 flex-1 overflow-y-auto p-4 md:p-6">
             {paginatedProducts.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-slate-400 py-16">
-                <Package className="size-12 mb-3 opacity-25" />
-                <p className="text-sm font-semibold">{t("pos.no_products", "No products found")}</p>
-                <p className="text-xs text-slate-400 mt-1">
-                  {t("pos.no_products_desc", "Try another category or clear your search.")}
-                </p>
+              <div className="flex h-full items-center justify-center py-10">
+                <div className="flex w-full max-w-md flex-col items-center rounded-2xl border border-dashed border-border-strong bg-card px-8 py-10 text-center">
+                  <span className="mb-4 flex size-14 items-center justify-center rounded-2xl bg-primary-light text-primary">
+                    {productSearch.trim() ? <SearchX className="size-6" /> : <PackageSearch className="size-6" />}
+                  </span>
+                  <h3 className="text-[17px] leading-6 font-semibold break-words text-foreground">
+                    {productSearch.trim()
+                      ? t("pos.no_results_for", 'No results for "{query}"').replace("{query}", productSearch.trim())
+                      : t("pos.no_products", "No products found")}
+                  </h3>
+                  <p className="mt-1.5 text-[14px] leading-[22px] text-muted-foreground">
+                    {t("pos.no_products_desc", "Try another category or clear your search.")}
+                  </p>
+                  {(productSearch || hasProductFilters) && (
+                    <div className="mt-5 flex flex-wrap items-center justify-center gap-2">
+                      {productSearch && (
+                        <Button
+                          type="button"
+                          variant={hasProductFilters ? "outline" : "default"}
+                          onClick={() => setProductSearch("")}
+                        >
+                          <X />
+                          {t("pos.clear_search", "Clear search")}
+                        </Button>
+                      )}
+                      {hasProductFilters && (
+                        <Button
+                          type="button"
+                          onClick={() => {
+                            setProductSearch("");
+                            setSelectedCategory("All");
+                            setStockFilter("ALL");
+                          }}
+                        >
+                          <RotateCcw />
+                          {t("pos.show_all_products", "Show all products")}
+                        </Button>
+                      )}
+                    </div>
+                  )}
+                </div>
               </div>
             ) : (
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-4 2xl:grid-cols-5 gap-2.5 sm:gap-3">
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:gap-4 xl:grid-cols-4 2xl:grid-cols-5">
                 {paginatedProducts.map((product) => {
                   const inCartItem = (formValues.items || []).find(
                     (it: any) => Number(it.productId) === Number(product.id)
@@ -1504,52 +1503,35 @@ export default function SaleForm() {
                   const isOutOfStock = stock <= 0;
                   const isLowStock = stock > 0 && stock <= reorder;
 
+                  const stockTone = isOutOfStock ? "text-destructive" : isLowStock ? "text-warning-text" : "text-success";
+                  const stockDot = isOutOfStock ? "bg-destructive" : isLowStock ? "bg-warning" : "bg-success";
+                  const stockLabel = isOutOfStock
+                    ? t("pos.out_of_stock", "Out of Stock")
+                    : isKm
+                      ? `ស្តុក ${stock}`
+                      : `${stock} in stock`;
+
                   return (
                     <div
                       key={product.id}
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleAddProduct(product)}
-                      className={`rounded-xl border overflow-hidden transition-all duration-200 cursor-pointer flex flex-col relative group select-none hover:shadow-md hover:-translate-y-0.5 ${
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          handleAddProduct(product);
+                        }
+                      }}
+                      className={cn(
+                        "group relative flex cursor-pointer flex-col rounded-xl border bg-card p-2 shadow-2xs transition-[border-color,box-shadow] duration-150 outline-none select-none hover:shadow-card focus-visible:ring-3 focus-visible:ring-ring/25",
                         inCartQty > 0
-                          ? "bg-emerald-50/15 dark:bg-emerald-950/20 border-emerald-400 dark:border-emerald-500 shadow-xs ring-1 ring-emerald-400/40"
-                          : isOutOfStock
-                          ? "bg-white dark:bg-slate-900 border-rose-200/80 dark:border-rose-900/60 shadow-2xs hover:border-rose-400"
-                          : "bg-white dark:bg-slate-900 border-slate-200/80 dark:border-slate-800 shadow-2xs hover:border-blue-400 dark:hover:border-sky-500"
-                      }`}
+                          ? "border-primary ring-1 ring-primary/25"
+                          : "border-border hover:border-border-strong"
+                      )}
                     >
-                      {/* Top Badges (Category + Stock Alert + In Cart) */}
-                      <div className="absolute top-1.5 inset-x-1.5 z-10 flex items-center justify-between pointer-events-none gap-1">
-                        {/* Category or Brand Pill */}
-                        {(product.categoryName || product.brandName) ? (
-                          <span className="px-1.5 py-0.2 rounded-full text-[9px] font-bold bg-white/95 dark:bg-slate-900/95 text-slate-700 dark:text-slate-300 shadow-2xs backdrop-blur-xs border border-slate-200/60 dark:border-slate-700/60 max-w-[80px] truncate">
-                            {product.categoryName || product.brandName}
-                          </span>
-                        ) : <div />}
-
-                        {/* Top-Right Badges: Stock Alert & In-Cart */}
-                        <div className="flex items-center gap-1">
-                          {isOutOfStock ? (
-                            <span className="inline-flex items-center gap-0.5 bg-rose-600 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full shadow-xs">
-                              <AlertTriangle className="size-2.5" />
-                              <span>{isKm ? "ដាច់ស្តុក" : "Out of Stock"}</span>
-                            </span>
-                          ) : isLowStock ? (
-                            <span className="inline-flex items-center gap-0.5 bg-amber-500 text-white text-[9px] font-extrabold px-1.5 py-0.2 rounded-full shadow-xs">
-                              <AlertCircle className="size-2.5" />
-                              <span>{isKm ? `សល់ ${stock}` : `Low: ${stock}`}</span>
-                            </span>
-                          ) : null}
-
-                          {inCartQty > 0 && (
-                            <span className="inline-flex items-center gap-0.5 bg-emerald-600 text-white text-[10px] font-extrabold px-1.5 py-0.2 rounded-full shadow-xs">
-                              <Check className="size-2.5 stroke-[3]" />
-                              <span>{inCartQty}</span>
-                            </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Product Image Showcase - Compact & Clean */}
-                      <div className="h-28 sm:h-32 w-full bg-white dark:bg-slate-900/60 p-1.5 overflow-hidden relative flex items-center justify-center">
+                      {/* Image */}
+                      <div className="relative flex aspect-[4/3] items-center justify-center overflow-hidden rounded-lg bg-muted">
                         {product.imageUrl ? (
                           <ImageCell
                             fileName={product.imageUrl}
@@ -1558,65 +1540,56 @@ export default function SaleForm() {
                             preview={false}
                             showBorder={false}
                             fit="contain"
-                            className="w-full h-full flex items-center justify-center overflow-hidden"
-                            imageClassName={`w-full h-full object-contain filter drop-shadow-sm group-hover:drop-shadow-md scale-100 group-hover:scale-108 transition-all duration-200 ease-out ${
-                              isOutOfStock ? "grayscale-[35%] opacity-85" : ""
-                            }`}
+                            className="flex size-full items-center justify-center overflow-hidden p-2"
+                            imageClassName={cn(
+                              "size-full object-contain transition-transform duration-200 group-hover:scale-105",
+                              isOutOfStock && "opacity-60 grayscale-[35%]"
+                            )}
                           />
                         ) : (
-                          <div className="flex flex-col items-center justify-center text-slate-400 dark:text-slate-500">
-                            <div className="size-10 rounded-xl bg-slate-50 dark:bg-slate-800 shadow-2xs flex items-center justify-center mb-1 border border-slate-200/60 dark:border-slate-700/60">
-                              <Smartphone className="size-5 text-slate-400" />
-                            </div>
-                            <span className="text-[9px] uppercase font-mono tracking-wider font-semibold">{code}</span>
-                          </div>
+                          <Smartphone className="size-8 text-text-disabled" strokeWidth={1.5} />
+                        )}
+
+                        {(product.categoryName || product.brandName) && (
+                          <span className="absolute top-2 left-2 max-w-[60%] truncate rounded-md bg-card/95 px-2 py-0.5 text-[12px] font-medium text-text-secondary shadow-2xs">
+                            {product.categoryName || product.brandName}
+                          </span>
+                        )}
+                        {inCartQty > 0 && (
+                          <span className="absolute top-2 right-2 inline-flex h-6 min-w-6 items-center justify-center gap-1 rounded-full bg-primary px-2 text-[12px] font-semibold text-primary-foreground tabular-nums">
+                            <Check className="size-3" strokeWidth={3} />
+                            {inCartQty}
+                          </span>
                         )}
                       </div>
 
-                      {/* Product Details Section - Compact */}
-                      <div className="p-2 sm:p-2.5 flex-1 flex flex-col justify-between bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800/70">
-                        <div>
-                          <h3
-                            className="font-bold text-xs text-slate-900 dark:text-slate-100 line-clamp-1 group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors leading-tight"
-                            title={product.name}
-                          >
-                            {product.name}
-                          </h3>
-                          <div className="flex items-center gap-1 mt-0.5 flex-wrap">
-                            <span className="inline-block px-1 py-0.2 rounded bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 font-mono text-[9px] tracking-wide">
-                              {code}
-                            </span>
-
-                            {/* Qty Stock Alert Status Tag */}
-                            {isOutOfStock ? (
-                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-rose-600 dark:text-rose-400">
-                                <span className="size-1 rounded-full bg-rose-500" />
-                                <span>{isKm ? "អស់ស្តុក (0)" : "0 in stock"}</span>
-                              </span>
-                            ) : isLowStock ? (
-                              <span className="inline-flex items-center gap-1 text-[9px] font-bold text-amber-600 dark:text-amber-400">
-                                <span className="size-1 rounded-full bg-amber-500" />
-                                <span>{isKm ? `ជិតអស់ (${stock})` : `Low (${stock})`}</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center gap-1 text-[9px] font-medium text-emerald-600 dark:text-emerald-400">
-                                <span className="size-1 rounded-full bg-emerald-500" />
-                                <span>{isKm ? `ស្តុក: ${stock}` : `${stock} in stock`}</span>
-                              </span>
-                            )}
-                          </div>
+                      {/* Details */}
+                      <div className="flex flex-1 flex-col gap-1 px-1 pt-2.5">
+                        <h3 className="line-clamp-1 text-[14px] leading-5 font-semibold text-foreground" title={product.name}>
+                          {product.name}
+                        </h3>
+                        <div className="flex min-w-0 items-center gap-1.5 text-[12px] leading-4">
+                          <span className="truncate text-muted-foreground tabular-nums">{code}</span>
+                          <span className="text-border-strong" aria-hidden="true">•</span>
+                          <span className={cn("inline-flex shrink-0 items-center gap-1 font-medium", stockTone)}>
+                            <span className={cn("size-1.5 rounded-full", stockDot)} />
+                            {stockLabel}
+                          </span>
                         </div>
-
-                        <div className="mt-2 pt-1.5 border-t border-slate-100 dark:border-slate-800/50 flex items-center justify-between">
-                          <span className="text-xs sm:text-sm font-black text-emerald-600 dark:text-emerald-400 font-mono tracking-tight">
+                        <div className="mt-auto flex items-center justify-between pt-1.5">
+                          <span className="text-[16px] leading-6 font-semibold text-primary tabular-nums">
                             {formatCurrency(Number(product.salePrice) || 0)}
                           </span>
-                          <span className={`size-6 sm:size-7 rounded-full shadow-2xs group-hover:shadow-xs group-hover:scale-105 active:scale-95 transition-all flex items-center justify-center ${
-                            isOutOfStock
-                              ? "bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500"
-                              : "bg-blue-50 text-blue-600 dark:bg-blue-950/60 dark:text-sky-300 group-hover:bg-blue-600 group-hover:text-white dark:group-hover:bg-sky-500"
-                          }`}>
-                            <Plus className="size-3.5 stroke-[2.5]" />
+                          <span
+                            className={cn(
+                              "flex size-8 items-center justify-center rounded-lg transition-colors",
+                              isOutOfStock
+                                ? "bg-muted text-text-disabled"
+                                : "bg-primary-light text-primary group-hover:bg-primary group-hover:text-primary-foreground"
+                            )}
+                            aria-hidden="true"
+                          >
+                            <Plus className="size-4" strokeWidth={2.25} />
                           </span>
                         </div>
                       </div>
@@ -1630,92 +1603,95 @@ export default function SaleForm() {
         </section>
 
         {/* ===================================================
-            RIGHT PANEL: CART & CHECKOUT (Mockup Style)
+            RIGHT PANEL: CURRENT ORDER & CHECKOUT
         =================================================== */}
-        <aside className="w-full lg:w-[40%] xl:w-[38%] flex flex-col border-l border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 min-w-0 shrink-0">
-          {/* Row 1: Customer selector with (+) button */}
-          <div className="p-2 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5 bg-slate-50/50 dark:bg-slate-900/50">
-            <div className="relative flex-1">
-              <select
-                value={formValues.customerId ? String(formValues.customerId) : ""}
-                onChange={(e) => form.setFieldValue("customerId", Number(e.target.value))}
-                className="w-full h-8.5 pl-2.5 pr-8 text-xs font-normal bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-700 dark:text-slate-200 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-              >
-                <option value="">{t("pos.walk_in_customer", "Walk-In Customer")}</option>
-                {customerList.map((c) => (
-                  <option key={c.id} value={c.id}>
-                    {c.name} {c.phone ? `(${c.phone})` : ""}
-                  </option>
-                ))}
-              </select>
+        <aside className="flex w-full min-w-0 shrink-0 flex-col border-l border-border bg-card lg:w-[40%] xl:w-[36%]">
+          {/* Order header: customer, store, scanner */}
+          <div className="shrink-0 space-y-3 border-b border-border px-4 py-3.5">
+            <div className="flex items-center gap-2">
+              <h2 className="text-[16px] leading-6 font-semibold text-foreground">
+                {t("pos.current_order", "Current Order")}
+              </h2>
+              {totalItemsCount > 0 && (
+                <span className="rounded-full bg-primary-light px-2 py-0.5 text-[12px] font-semibold text-primary tabular-nums">
+                  {totalItemsCount}
+                </span>
+              )}
             </div>
-            <button
-              type="button"
-              onClick={() => setIsCustomerDialogOpen(true)}
-              className="size-8.5 rounded bg-[#17a2b8] hover:bg-[#138496] text-white flex items-center justify-center shrink-0 shadow-2xs transition cursor-pointer"
-              title={t("pos.add_customer", "Add New Customer")}
-            >
-              <Plus className="size-4 stroke-[3]" />
-            </button>
-          </div>
 
-          {/* Row 2: Seller Selector */}
-          <div className="px-2 py-1.5 border-b border-slate-200 dark:border-slate-800 bg-slate-50/30 dark:bg-slate-900/30">
-            <select
-              value={formValues.storeId ? String(formValues.storeId) : ""}
-              onChange={(e) => form.setFieldValue("storeId", Number(e.target.value))}
-              className="w-full h-8 px-2.5 text-xs bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-700 rounded text-slate-600 dark:text-slate-300 focus:outline-none focus:ring-1 focus:ring-sky-500 cursor-pointer"
-            >
-              <option value="">{t("pos.seller", "Seller")} ({storeList[0]?.name || "Default"})</option>
-              {storeList.map((s) => (
-                <option key={s.id} value={s.id}>
-                  {s.name}
-                </option>
-              ))}
-            </select>
-          </div>
+            <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+              <div className="flex min-w-0 gap-2">
+                <SearchSelect
+                  value={formValues.customerId ? String(formValues.customerId) : ""}
+                  onValueChange={(value) => form.setFieldValue("customerId", Number(value))}
+                  options={customerOptions}
+                  icon={User}
+                  placeholder={t("pos.walk_in_customer", "Walk-In Customer")}
+                  searchPlaceholder={t("pos.search_customer", "Search or select customer...")}
+                  emptyText={t("pos.no_customer_found", "No customer found")}
+                  aria-label={t("pos.customer", "Customer")}
+                  className="flex-1"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsCustomerDialogOpen(true)}
+                  className="size-10"
+                  title={t("pos.add_customer", "Add Customer")}
+                  aria-label={t("pos.add_customer", "Add Customer")}
+                >
+                  <UserPlus />
+                </Button>
+              </div>
 
-          {/* Row 3: Search / Scan Input */}
-          <div className="p-2 border-b border-slate-200 dark:border-slate-800">
+              <Select
+                value={formValues.storeId ? String(formValues.storeId) : ""}
+                onValueChange={(value) => form.setFieldValue("storeId", Number(value))}
+              >
+                <SelectTrigger className="h-10 text-[14px]" aria-label={t("pos.seller", "Seller")}>
+                  <StoreIcon className="text-muted-foreground" />
+                  <SelectValue placeholder={`${t("pos.seller", "Seller")} (${storeList[0]?.name || "Default"})`} />
+                </SelectTrigger>
+                <SelectContent>
+                  {storeList.map((s) => (
+                    <SelectItem key={s.id} value={String(s.id)}>
+                      {s.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             <div className="relative">
+              <ScanLine className="pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={cartBarcodeScan}
                 onChange={(e) => setCartBarcodeScan(e.target.value)}
                 onKeyDown={handleCartBarcodeScan}
                 placeholder={t("pos.scan_barcode", "Scan barcode or enter SKU / serial...")}
-                className="h-8.5 text-xs pl-2.5 pr-8 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-700 rounded placeholder:text-slate-400 focus-visible:ring-1 focus-visible:ring-sky-500"
+                className="h-10 pl-9 text-[14px]"
               />
-              <ScanLine className="absolute right-2.5 top-1/2 -translate-y-1/2 size-4 text-slate-400" />
             </div>
           </div>
 
-          {/* Items Table */}
-          <div className="flex-1 overflow-y-auto min-h-0 bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead className="sticky top-0 bg-slate-50/90 dark:bg-slate-800 text-slate-800 dark:text-slate-200 font-bold border-b border-slate-300 dark:border-slate-700 z-10 shadow-2xs backdrop-blur-xs">
-                <tr>
-                  <th className="py-2.5 px-3.5 border-b border-slate-300 dark:border-slate-700">{t("pos.col_product", "Product")}</th>
-                  <th className="py-2.5 px-2.5 text-right w-20 border-b border-slate-300 dark:border-slate-700">{t("pos.col_price", "Price")}</th>
-                  <th className="py-2.5 px-2.5 text-center w-28 border-b border-slate-300 dark:border-slate-700">{t("pos.col_qty", "Qty")}</th>
-                  <th className="py-2.5 px-2.5 text-right w-24 border-b border-slate-300 dark:border-slate-700">{t("pos.col_subtotal", "Subtotal")}</th>
-                  <th className="py-2.5 px-2 text-center w-10 border-b border-slate-300 dark:border-slate-700">
-                    <Trash2 className="size-3.5 mx-auto text-slate-400" />
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                {(!formValues.items || formValues.items.length === 0) ? (
-                  <tr>
-                    <td colSpan={5} className="py-20 text-center text-slate-400 dark:text-slate-500">
-                      <ShoppingCart className="size-8 mx-auto mb-2 opacity-30 text-slate-400" />
-                      <p className="text-xs font-medium">{t("pos.cart_empty_title", "Cart is empty")}</p>
-                      <p className="text-[11px] text-slate-400/80 mt-0.5">
-                        {t("pos.cart_empty_desc", "Click products on the left or scan barcode")}
-                      </p>
-                    </td>
+          {/* Items */}
+          <div className="min-h-0 flex-1 overflow-y-auto">
+            {hasCartItems ? (
+              <table className="w-full border-collapse text-left">
+                <thead className="sticky top-0 z-10 bg-card shadow-[0_1px_0_0_var(--border)]">
+                  <tr className="text-[13px] text-muted-foreground">
+                    <th className="px-4 py-2.5 font-medium">{t("pos.col_product", "Product")}</th>
+                    <th className="w-24 px-2 py-2.5 text-right font-medium">{t("pos.col_price", "Price")}</th>
+                    <th className="w-28 px-2 py-2.5 text-center font-medium">{t("pos.col_qty", "Qty")}</th>
+                    <th className="w-24 px-2 py-2.5 text-right font-medium">{t("pos.col_subtotal", "Subtotal")}</th>
+                    <th className="w-12 py-2.5 pr-3 pl-1">
+                      <span className="sr-only">{t("pos.col_action", "Action")}</span>
+                    </th>
                   </tr>
-                ) : (
-                  formValues.items.map((_: any, idx: number) => (
+                </thead>
+                <tbody>
+                  {formValues.items.map((_: any, idx: number) => (
                     <PosItemRow
                       key={idx}
                       form={form}
@@ -1729,80 +1705,79 @@ export default function SaleForm() {
                         form.setFieldValue("items", updated);
                       }}
                     />
-                  ))
-                )}
-              </tbody>
-            </table>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <div className="flex h-full flex-col items-center justify-center px-6 py-12 text-center">
+                <span className="mb-3 flex size-14 items-center justify-center rounded-2xl bg-muted text-muted-foreground">
+                  <ShoppingCart className="size-6" />
+                </span>
+                <p className="text-[15px] font-semibold text-foreground">{t("pos.cart_empty_title", "Your cart is empty")}</p>
+                <p className="mt-1 max-w-[260px] text-[14px] text-muted-foreground">
+                  {t("pos.cart_empty_desc", "Scan a barcode or click products to add to cart")}
+                </p>
+              </div>
+            )}
           </div>
 
-          {/* 2x3 Classic Summary Grid */}
-          <div className="shrink-0 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-xs select-none">
-            {/* Row 1: Total Items | Total */}
-            <div className="grid grid-cols-2 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between p-2.5 border-r border-slate-200 dark:border-slate-700">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">{t("pos.summary_items", "Total Items")}</span>
-                <span className="font-bold text-slate-900 dark:text-white tabular-nums">
-                  {totalItemsCount}
-                </span>
+          {/* Totals & actions */}
+          <div className="shrink-0 space-y-3 border-t border-border px-4 pt-3.5 pb-4">
+            <dl className="grid grid-cols-2 gap-x-6 gap-y-2 text-[14px]">
+              <div className="flex items-center justify-between gap-2">
+                <dt className="text-muted-foreground">{t("pos.summary_items", "Items")}</dt>
+                <dd className="font-medium text-foreground tabular-nums">{totalItemsCount}</dd>
               </div>
-              <div className="flex items-center justify-between p-2.5">
-                <span className="font-semibold text-slate-700 dark:text-slate-300">{t("pos.summary_subtotal", "Total")}</span>
-                <span className="font-bold text-slate-900 dark:text-white tabular-nums font-mono">
-                  {formatCurrency(subtotalCalc)}
-                </span>
+              <div className="flex items-center justify-between gap-2">
+                <dt className="text-muted-foreground">{t("pos.summary_subtotal", "Subtotal")}</dt>
+                <dd className="font-medium text-foreground tabular-nums">{formatCurrency(subtotalCalc)}</dd>
               </div>
-            </div>
+              <div className="flex items-center justify-between gap-2">
+                <dt>
+                  <button
+                    type="button"
+                    onClick={() => setIsDiscountPopoverOpen(true)}
+                    className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {t("pos.summary_discount", "Discount")}
+                    <Pencil className="size-3.5" />
+                  </button>
+                </dt>
+                <dd className={cn("font-medium tabular-nums", discountVal > 0 ? "text-destructive" : "text-foreground")}>
+                  {discountVal > 0 ? `-${formatCurrency(discountVal)}` : formatCurrency(0)}
+                </dd>
+              </div>
+              <div className="flex items-center justify-between gap-2">
+                <dt>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setTaxInputValue(orderTax);
+                      setIsOrderTaxOpen(true);
+                    }}
+                    className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
+                  >
+                    {t("pos.summary_tax", "Order Tax")}
+                    <Pencil className="size-3.5" />
+                  </button>
+                </dt>
+                <dd className="font-medium text-foreground tabular-nums">{formatCurrency(orderTax)}</dd>
+              </div>
+            </dl>
 
-            {/* Row 2: Discount | Order Tax */}
-            <div className="grid grid-cols-2 border-b border-slate-200 dark:border-slate-700">
-              <div className="flex items-center justify-between p-2.5 border-r border-slate-200 dark:border-slate-700">
-                <button
-                  type="button"
-                  onClick={() => setIsDiscountPopoverOpen(true)}
-                  className="inline-flex items-center gap-1 text-[#0066cc] dark:text-sky-400 font-semibold hover:underline cursor-pointer"
-                >
-                  <span>{t("pos.summary_discount", "Discount")}</span>
-                  <Edit3 className="size-3 text-[#0066cc] dark:text-sky-400" />
-                </button>
-                <span className="font-bold text-slate-900 dark:text-white tabular-nums font-mono">
-                  {discountVal > 0 ? `-${formatCurrency(discountVal)}` : "0"}
-                </span>
-              </div>
-              <div className="flex items-center justify-between p-2.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setTaxInputValue(orderTax);
-                    setIsOrderTaxOpen(true);
-                  }}
-                  className="inline-flex items-center gap-1 text-[#0066cc] dark:text-sky-400 font-semibold hover:underline cursor-pointer"
-                >
-                  <span>{t("pos.summary_tax", "Order Tax")}</span>
-                  <Edit3 className="size-3 text-[#0066cc] dark:text-sky-400" />
-                </button>
-                <span className="font-bold text-slate-900 dark:text-white tabular-nums font-mono">
-                  {orderTax > 0 ? formatCurrency(orderTax) : "0"}
-                </span>
-              </div>
-            </div>
-
-            {/* Row 3: Total Payable (Full Width) */}
-            <div className="flex items-center justify-between px-3 py-2.5 bg-[#eaf4ea] dark:bg-emerald-950/40 text-emerald-950 dark:text-emerald-100">
-              <div className="flex items-center gap-1.5 font-bold text-sm text-emerald-900 dark:text-emerald-300">
-                <span>{t("pos.total_payable", "Total Payable")}</span>
-                <MessageSquare className="size-3.5 fill-emerald-600 text-emerald-600" />
-              </div>
-              <span className="font-black text-base md:text-lg text-emerald-800 dark:text-emerald-200 tabular-nums font-mono">
+            <div className="flex items-end justify-between gap-3 border-t border-dashed border-border pt-3">
+              <span className="pb-1 text-[15px] font-semibold text-foreground">
+                {t("pos.total_payable", "Total Payable")}
+              </span>
+              <span className="text-[28px] leading-9 font-bold tracking-[-0.01em] text-foreground tabular-nums">
                 {formatCurrency(grandTotalCalc)}
               </span>
             </div>
-          </div>
 
-          {/* 3 Bottom Action Buttons with distinct colored backgrounds (shifted up with padding) */}
-          <div className="p-2 pb-3.5 sm:pb-4 bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 shrink-0">
-            <div className="grid grid-cols-3 gap-1.5 sm:gap-2">
-              <button
+            <div className="grid grid-cols-[1fr_1fr_1.6fr] gap-2">
+              <Button
                 type="button"
+                variant="outline"
                 onClick={() => {
                   if (formValues.items && formValues.items.length > 0) {
                     if (window.confirm("Are you sure you want to cancel and clear the cart?")) {
@@ -1812,27 +1787,23 @@ export default function SaleForm() {
                     handleVoidCart();
                   }
                 }}
-                className="h-10 sm:h-11 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-rose-500 hover:bg-rose-600 active:bg-rose-700 transition cursor-pointer shadow-xs select-none"
+                className="h-12 text-[15px] text-destructive hover:border-destructive/40 hover:bg-destructive/5 hover:text-destructive"
               >
-                <XCircle className="size-4 text-white fill-white/20" />
-                <span>{t("pos.btn_cancel", "Cancel")}</span>
-              </button>
+                <XCircle className="size-[18px]" />
+                {t("pos.btn_cancel", "Cancel")}
+              </Button>
 
-              <button
-                type="button"
-                onClick={handleHoldSale}
-                className="h-10 sm:h-11 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-amber-500 hover:bg-amber-600 active:bg-amber-700 transition cursor-pointer shadow-xs select-none"
-              >
-                <FileText className="size-4 text-white" />
-                <span>{t("pos.btn_hold", "Hold")}</span>
+              <Button type="button" variant="outline" onClick={handleHoldSale} className="h-12 text-[15px]">
+                <PauseCircle className="size-[18px]" />
+                {t("pos.btn_hold", "Hold")}
                 {heldSales.length > 0 && (
-                  <span className="ml-0.5 px-1.5 py-0.2 rounded-full text-[10px] bg-white text-amber-700 font-extrabold shadow-2xs">
+                  <span className="rounded-full bg-primary-light px-1.5 text-[12px] font-semibold text-primary tabular-nums">
                     {heldSales.length}
                   </span>
                 )}
-              </button>
+              </Button>
 
-              <button
+              <Button
                 type="button"
                 onClick={() => {
                   if (!formValues.items || formValues.items.length === 0) {
@@ -1862,11 +1833,11 @@ export default function SaleForm() {
 
                     setIsPaymentModalOpen(true);
                 }}
-                className="h-10 sm:h-11 rounded-xl flex items-center justify-center gap-1.5 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 transition cursor-pointer shadow-xs select-none"
+                className="h-12 text-[15px] font-semibold"
               >
-                <span>{t("pos.btn_payment", "Payment")}</span>
-                <Banknote className="size-4 text-white stroke-[2.5]" />
-              </button>
+                <Banknote className="size-[18px]" />
+                {t("pos.btn_payment", "Payment")}
+              </Button>
             </div>
           </div>
         </aside>
@@ -1960,40 +1931,30 @@ export default function SaleForm() {
 
       {/* 10. Discount Dialog */}
       <Dialog open={isDiscountPopoverOpen} onOpenChange={setIsDiscountPopoverOpen}>
-        <DialogContent className="sm:max-w-xs bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-sm font-bold flex items-center gap-1.5">
-              <Edit3 className="size-4 text-sky-600" />
-              {language === "km" ? "កំណត់ការបញ្ចុះតម្លៃ" : "Set Discount"}
-            </DialogTitle>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{language === "km" ? "កំណត់ការបញ្ចុះតម្លៃ" : "Set Discount"}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-1 rounded-lg">
-              <button
-                type="button"
-                onClick={() => handleToggleDiscountType("FIXED", subtotalCalc, discountVal)}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition cursor-pointer ${
-                  discountType === "FIXED"
-                    ? "bg-white dark:bg-slate-700 text-sky-600 shadow-xs"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {language === "km" ? "$ ប្រាក់ដុល្លារ" : "$ Fixed"}
-              </button>
-              <button
-                type="button"
-                onClick={() => handleToggleDiscountType("PERCENT", subtotalCalc, discountVal)}
-                className={`flex-1 py-1.5 text-xs font-bold rounded-md transition cursor-pointer ${
-                  discountType === "PERCENT"
-                    ? "bg-white dark:bg-slate-700 text-sky-600 shadow-xs"
-                    : "text-muted-foreground"
-                }`}
-              >
-                {language === "km" ? "% ភាគរយ" : "% Percent"}
-              </button>
+          <div className="space-y-4">
+            <div className="flex items-center gap-0.5 rounded-lg bg-muted p-1">
+              {(["FIXED", "PERCENT"] as const).map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  onClick={() => handleToggleDiscountType(type, subtotalCalc, discountVal)}
+                  className={cn(
+                    "h-8 flex-1 cursor-pointer rounded-md text-[14px] font-medium transition-colors",
+                    discountType === type ? "bg-card text-foreground shadow-xs" : "text-muted-foreground hover:text-foreground"
+                  )}
+                >
+                  {type === "FIXED"
+                    ? (language === "km" ? "$ ប្រាក់ដុល្លារ" : "$ Fixed")
+                    : (language === "km" ? "% ភាគរយ" : "% Percent")}
+                </button>
+              ))}
             </div>
-            <div>
-              <label className="text-[11px] text-muted-foreground font-medium mb-1 block">
+            <div className="space-y-1.5">
+              <label className="block text-[14px] font-medium text-foreground">
                 {discountType === "FIXED"
                   ? (language === "km" ? "បញ្ចុះតម្លៃជាប្រាក់ដុល្លារ ($)" : "Discount in Dollars ($)")
                   : (language === "km" ? "បញ្ចុះតម្លៃជាភាគរយ (%)" : "Discount in Percent (%)")}
@@ -2007,91 +1968,77 @@ export default function SaleForm() {
                 onChange={(e) =>
                   handleDiscountChange(Number(e.target.value) || 0, discountType, subtotalCalc)
                 }
-                className="h-9 text-sm font-mono"
+                className="h-10 text-[15px] tabular-nums"
               />
             </div>
-            <div className="flex items-center gap-1.5 flex-wrap">
-              {discountType === "PERCENT"
-                ? [5, 10, 15, 20, 25].map((pct) => (
-                    <button
-                      key={pct}
-                      type="button"
-                      onClick={() => handleDiscountChange(pct, "PERCENT", subtotalCalc)}
-                      className="px-2 py-0.5 text-xs rounded bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 hover:text-sky-600 font-medium cursor-pointer"
-                    >
-                      {pct}%
-                    </button>
-                  ))
-                : [1, 2, 5, 10, 20].map((amt) => (
-                    <button
-                      key={amt}
-                      type="button"
-                      onClick={() => handleDiscountChange(amt, "FIXED", subtotalCalc)}
-                      className="px-2 py-0.5 text-xs rounded bg-slate-100 dark:bg-slate-800 hover:bg-sky-50 hover:text-sky-600 font-medium font-mono cursor-pointer"
-                    >
-                      ${amt}
-                    </button>
-                  ))}
-            </div>
-            <div className="pt-2 flex justify-end">
-              <Button
-                size="sm"
-                onClick={() => setIsDiscountPopoverOpen(false)}
-                className="h-8 text-xs bg-sky-600 hover:bg-sky-700 text-white"
-              >
-                {language === "km" ? "យល់ព្រម" : "Apply"}
-              </Button>
+            <div className="grid grid-cols-5 gap-2">
+              {(discountType === "PERCENT" ? [5, 10, 15, 20, 25] : [1, 2, 5, 10, 20]).map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  onClick={() => handleDiscountChange(preset, discountType, subtotalCalc)}
+                  className={cn(
+                    "h-9 cursor-pointer rounded-lg border text-[14px] font-medium tabular-nums transition-colors",
+                    discountInputValue === preset
+                      ? "border-primary bg-primary-light text-primary"
+                      : "border-border bg-card text-text-secondary hover:border-border-strong hover:text-foreground"
+                  )}
+                >
+                  {discountType === "PERCENT" ? `${preset}%` : `$${preset}`}
+                </button>
+              ))}
             </div>
           </div>
+          <DialogFooter>
+            <Button type="button" onClick={() => setIsDiscountPopoverOpen(false)}>
+              {language === "km" ? "យល់ព្រម" : "Apply"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* 11. Order Tax Dialog */}
       <Dialog open={isOrderTaxOpen} onOpenChange={setIsOrderTaxOpen}>
-        <DialogContent className="sm:max-w-xs bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 p-4">
-          <DialogHeader className="pb-2">
-            <DialogTitle className="text-sm font-bold flex items-center gap-1.5">
-              <Edit3 className="size-4 text-sky-600" />
-              {t("pos.order_tax_title", "Order Tax (%)")}
-            </DialogTitle>
+        <DialogContent className="sm:max-w-sm">
+          <DialogHeader>
+            <DialogTitle>{t("pos.order_tax_title", "Order Tax (%)")}</DialogTitle>
           </DialogHeader>
-          <div className="space-y-3 pt-2">
-            <div>
-              <label className="text-[11px] text-muted-foreground font-medium mb-1 block">
+          <div className="space-y-1.5">
+            <div className="flex items-center justify-between gap-2">
+              <label className="block text-[14px] font-medium text-foreground">
                 {language === "km" ? "ចំនួនពន្ធជាប្រាក់ ($)" : "Tax Amount in Dollars ($)"}
               </label>
-              <Input
-                type="number"
-                min="0"
-                step="0.01"
-                value={taxInputValue}
-                onChange={(e) => setTaxInputValue(Number(e.target.value) || 0)}
-                className="h-9 text-sm font-mono"
-              />
-            </div>
-            <div className="pt-2 flex justify-between items-center">
               <button
                 type="button"
                 onClick={() => {
                   const calculatedTax = Number((subtotalCalc * 0.1).toFixed(2));
                   setTaxInputValue(calculatedTax);
                 }}
-                className="text-xs text-sky-600 hover:underline cursor-pointer"
+                className="cursor-pointer text-[13px] font-medium text-primary underline-offset-4 hover:underline"
               >
                 {language === "km" ? "ពន្ធរហ័ស 10%" : "Quick 10% Tax"}
               </button>
-              <Button
-                size="sm"
-                onClick={() => {
-                  setOrderTax(taxInputValue);
-                  setIsOrderTaxOpen(false);
-                }}
-                className="h-8 text-xs bg-sky-600 hover:bg-sky-700 text-white"
-              >
-                {language === "km" ? "អនុវត្តពន្ធ" : "Apply Tax"}
-              </Button>
             </div>
+            <Input
+              type="number"
+              min="0"
+              step="0.01"
+              value={taxInputValue}
+              onChange={(e) => setTaxInputValue(Number(e.target.value) || 0)}
+              className="h-10 text-[15px] tabular-nums"
+            />
           </div>
+          <DialogFooter>
+            <Button
+              type="button"
+              onClick={() => {
+                setOrderTax(taxInputValue);
+                setIsOrderTaxOpen(false);
+              }}
+            >
+              {language === "km" ? "អនុវត្តពន្ធ" : "Apply Tax"}
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
@@ -2144,6 +2091,7 @@ function PosItemRow({
   isOpenModal: boolean;
   onCloseModal: () => void;
 }) {
+  const { t } = useLanguage();
   const productId = useFormStore(
     form.store,
     (state: any) => state.values.items[index]?.productId
@@ -2266,13 +2214,12 @@ function PosItemRow({
 
   return (
     <>
-      {/* Data row with clear border */}
-      <tr className="border-b border-slate-200 dark:border-slate-700 hover:bg-slate-50/80 dark:hover:bg-slate-800/40 transition-colors">
-        {/* 1. Product Name & Serials */}
-        <td className="px-3.5 py-2.5">
-          <div className="space-y-0.5">
+      <tr className="border-b border-border transition-colors last:border-b-0 hover:bg-muted/40">
+        {/* Product & serials */}
+        <td className="px-4 py-3">
+          <div className="min-w-0 space-y-1">
             <span
-              className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate block max-w-[170px]"
+              className="block max-w-[200px] truncate text-[14px] leading-5 font-semibold text-foreground"
               title={selectedProduct?.name}
             >
               {selectedProduct?.name || `Product #${productId}`}
@@ -2281,36 +2228,34 @@ function PosItemRow({
               <button
                 type="button"
                 onClick={() => setIsSerialModalOpen(true)}
-                className={`inline-flex items-center gap-1 text-[10px] font-mono px-1.5 py-0.5 rounded cursor-pointer transition ${
-                  serialsComplete
-                    ? "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                    : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                }`}
+                className={cn(
+                  "inline-flex h-6 cursor-pointer items-center gap-1 rounded-full px-2 text-[12px] font-medium tabular-nums transition-opacity hover:opacity-85",
+                  serialsComplete ? statusToneClass.success : statusToneClass.warning
+                )}
                 title="Click to select serial numbers"
               >
-                <Hash className="size-2.5" />
+                {serialsComplete ? <Check className="size-3" strokeWidth={3} /> : <Hash className="size-3" />}
                 <span>
-                  {serialNumberIds.length} / {quantity} serials
-                  {serialsComplete ? " ✓" : " (select)"}
+                  {serialNumberIds.length}/{quantity} serials
                 </span>
               </button>
             )}
           </div>
         </td>
 
-        {/* 2. Price */}
-        <td className="px-2.5 py-2.5 text-right">
-          <span className="text-xs font-bold text-slate-700 dark:text-slate-300 tabular-nums font-mono">
-            {formatCurrency(price)}
-          </span>
+        {/* Price */}
+        <td className="px-2 py-3 text-right text-[14px] text-text-secondary tabular-nums">
+          {formatCurrency(price)}
         </td>
 
-        {/* 3. Qty Stepper with borders */}
-        <td className="px-2.5 py-2.5 text-center">
-          <div className="flex items-center justify-center border border-slate-300 dark:border-slate-600 rounded-lg overflow-hidden h-7 bg-white dark:bg-slate-800 w-fit mx-auto shadow-2xs">
+        {/* Qty stepper */}
+        <td className="px-2 py-3 text-center">
+          <div className="mx-auto flex h-8 w-fit items-center overflow-hidden rounded-lg border border-input bg-card shadow-2xs">
             <button
               type="button"
-              className="size-7 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer border-r border-slate-200 dark:border-slate-700"
+              aria-label="Decrease quantity"
+              className="flex size-8 cursor-pointer items-center justify-center text-text-secondary transition-colors hover:bg-muted hover:text-foreground disabled:cursor-not-allowed disabled:opacity-40"
+              disabled={quantity <= 1}
               onClick={() => {
                 if (quantity <= 1) return;
                 const newQuantity = quantity - 1;
@@ -2323,37 +2268,37 @@ function PosItemRow({
                 }
               }}
             >
-              <Minus className="size-3" />
+              <Minus className="size-3.5" />
             </button>
-            <span className="w-8 text-center text-xs font-bold font-mono text-slate-800 dark:text-slate-200 bg-slate-50/50 dark:bg-slate-800/50">
+            <span className="w-8 text-center text-[14px] font-semibold text-foreground tabular-nums">
               {quantity}
             </span>
             <button
               type="button"
-              className="size-7 flex items-center justify-center text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-700 transition cursor-pointer border-l border-slate-200 dark:border-slate-700"
+              aria-label="Increase quantity"
+              className="flex size-8 cursor-pointer items-center justify-center text-text-secondary transition-colors hover:bg-muted hover:text-foreground"
               onClick={() => form.setFieldValue(`items[${index}].quantity`, quantity + 1)}
             >
-              <Plus className="size-3" />
+              <Plus className="size-3.5" />
             </button>
           </div>
         </td>
 
-        {/* 4. Subtotal */}
-        <td className="px-2.5 py-2.5 text-right">
-          <span className="text-xs font-bold text-slate-900 dark:text-white tabular-nums font-mono">
-            {formatCurrency(price * quantity - (Number(form.store.state.values.items[index]?.itemDiscount) || 0))}
-          </span>
+        {/* Subtotal */}
+        <td className="px-2 py-3 text-right text-[14px] font-semibold text-foreground tabular-nums">
+          {formatCurrency(price * quantity - (Number(form.store.state.values.items[index]?.itemDiscount) || 0))}
         </td>
 
-        {/* 5. Delete with border */}
-        <td className="px-2 py-2.5 text-center">
+        {/* Remove */}
+        <td className="py-3 pr-3 pl-1 text-center">
           <button
             type="button"
             onClick={onRemove}
-            className="size-7 rounded-md border border-slate-200 dark:border-slate-700 hover:border-rose-300 hover:bg-rose-50 dark:hover:bg-rose-950/40 text-slate-400 hover:text-rose-600 transition flex items-center justify-center mx-auto cursor-pointer"
+            className="mx-auto flex size-8 cursor-pointer items-center justify-center rounded-lg text-muted-foreground transition-colors hover:bg-destructive/8 hover:text-destructive"
             title="Remove item"
+            aria-label="Remove item"
           >
-            <Trash2 className="size-3.5" />
+            <Trash2 className="size-4" />
           </button>
         </td>
       </tr>
@@ -2369,7 +2314,7 @@ function PosItemRow({
         >
         <DialogContent className="sm:max-w-135 max-h-[85vh] p-0 overflow-hidden bg-background rounded-2xl border border-border/60 shadow-2xl flex flex-col">
           {/* Modal Header */}
-          <DialogHeader className="px-5 py-4 border-b border-border/60 bg-muted/20 shrink-0">
+          <DialogHeader className="px-5 py-4 pr-14 border-b border-border/60 bg-muted/20 shrink-0">
             <div className="flex items-center justify-between gap-3">
               <div className="min-w-0 space-y-0.5">
                 <DialogTitle className="text-base font-bold text-foreground flex items-center gap-2">
@@ -2384,11 +2329,11 @@ function PosItemRow({
               <div className="flex items-center gap-2 shrink-0">
                 <span
                   className={`px-2.5 py-1 text-xs font-bold rounded-lg border tabular-nums ${serialsComplete
-                    ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20"
-                    : "bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/20"
+                    ? "bg-success/10 text-success border-success/20"
+                    : "bg-warning/10 text-warning-text border-warning/20"
                     }`}
                 >
-                  {serialNumberIds.length} / {quantity} {serialsComplete ? "✓ Selected" : "needed"}
+                  {serialNumberIds.length} / {quantity} {serialsComplete ? t("pos.selected", "selected") : t("pos.needed", "needed")}
                 </span>
               </div>
             </div>
@@ -2424,7 +2369,7 @@ function PosItemRow({
             </div>
 
             {serialError && (
-              <div className="flex items-center gap-1.5 text-xs text-rose-500 font-medium px-1">
+              <div className="flex items-center gap-1.5 text-xs text-destructive font-medium px-1">
                 <AlertTriangle className="size-3.5 shrink-0" />
                 <span>{serialError}</span>
               </div>
@@ -2438,7 +2383,7 @@ function PosItemRow({
                   value={modalSearch}
                   onChange={(e) => setModalSearch(e.target.value)}
                   placeholder="Filter serials..."
-                  className="h-7 pl-7 text-[11px] rounded-lg bg-background border-border/60"
+                  className="h-7 pl-7 text-[12px] rounded-lg bg-background border-border/60"
                 />
               </div> */}
 
@@ -2447,7 +2392,7 @@ function PosItemRow({
                   <button
                     type="button"
                     onClick={handleAutoSelect}
-                    className="px-2 py-1 text-[11px] font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer"
+                    className="px-2 py-1 text-[12px] font-medium rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition cursor-pointer"
                   >
                     Auto-Fill ({Math.min(quantity, availableSerials.length)})
                   </button>
@@ -2456,7 +2401,7 @@ function PosItemRow({
                   <button
                     type="button"
                     onClick={handleClearSerials}
-                    className="px-2 py-1 text-[11px] font-medium rounded-lg text-muted-foreground hover:bg-muted transition cursor-pointer"
+                    className="px-2 py-1 text-[12px] font-medium rounded-lg text-muted-foreground hover:bg-muted transition cursor-pointer"
                   >
                     Clear All
                   </button>
@@ -2490,7 +2435,7 @@ function PosItemRow({
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
                       <div
-                        className={`size-4.5 rounded-md border flex items-center justify-center text-[10px] shrink-0 transition-colors ${isSelected
+                        className={`size-4.5 rounded-md border flex items-center justify-center text-[11px] shrink-0 transition-colors ${isSelected
                           ? "bg-primary border-primary text-primary-foreground font-bold"
                           : "border-border/70 bg-background"
                           }`}
@@ -2502,11 +2447,11 @@ function PosItemRow({
 
                     <div className="flex items-center gap-2 shrink-0">
                       {/* {store && (
-                        <span className="text-[10px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
+                        <span className="text-[11px] text-muted-foreground bg-muted/60 px-1.5 py-0.5 rounded">
                           {store}
                         </span>
                       )} */}
-                      <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-500/10 border border-emerald-500/20 px-2 py-0.5 rounded">
+                      <span className="text-[11px] text-success font-bold bg-success/10 border border-success/20 px-2 py-0.5 rounded">
                         Available
                       </span>
                     </div>

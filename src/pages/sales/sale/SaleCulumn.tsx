@@ -44,7 +44,7 @@ export const SaleColumns = ({
     //   accessorKey: "id",
     //   header: ({ column }) => <SortableHeader column={column} title="ID" />,
     //   cell: ({ row }) => (
-    //     <span className="font-semibold text-[#566a7f]">
+    //     <span className="font-medium text-foreground">
     //       {safeText(row.original.id.toString())}
     //     </span>
     //   ),
@@ -53,7 +53,7 @@ export const SaleColumns = ({
       accessorKey: "customer",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("sale.customer") : "Customer"} />,
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {safeText(row.original.customerName)}
         </span>
       ),
@@ -64,7 +64,7 @@ export const SaleColumns = ({
       cell: ({ row }) => (
         <span
           onClick={() => onView?.(row.original)}
-          className={`font-mono text-xs ${onView ? "text-[#696cff] hover:underline cursor-pointer font-semibold" : "text-[#696cff]"
+          className={`tabular-nums text-xs ${onView ? "text-primary hover:underline cursor-pointer font-semibold" : "text-primary"
             }`}
         >
           {row.original.reference}
@@ -75,7 +75,7 @@ export const SaleColumns = ({
     //   accessorKey: "no",
     //   header: ({ column }) => <SortableHeader column={column} title={t ? t("common.id") : "No"} />,
     //   cell: ({ row }) => (
-    //     <span className="font-mono text-xs text-[#696cff]">
+    //     <span className="tabular-nums text-xs text-primary">
     //       {row.index + 1}
     //     </span>
     //   ),
@@ -84,7 +84,7 @@ export const SaleColumns = ({
       accessorKey: "store",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store") : "Store"} />,
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {safeText(row.original.storeName)}
         </span>
       ),
@@ -92,14 +92,14 @@ export const SaleColumns = ({
     {
       accessorKey: "createdAt",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("common.date") : "Date"} />,
-      cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
+      cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
     },
 
     // {
     //   accessorKey: "bank",
     //   header: ({ column }) => <SortableHeader column={column} title="Bank" />,
     //   cell: ({ row }) => (
-    //     <span className="font-semibold text-[#566a7f]">
+    //     <span className="font-medium text-foreground">
     //       {safeText(row.original.bankName)}
     //     </span>
     //   ),
@@ -108,7 +108,7 @@ export const SaleColumns = ({
       accessorKey: "grandTotal",
       header: t ? t("common.total") : "Total",
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {formatCurrency(row.original.grandTotal)}
         </span>
       ),
@@ -117,7 +117,7 @@ export const SaleColumns = ({
       accessorKey: "paidAmount",
       header: t ? t("common.paid") : "Paid",
       cell: ({ row }) => (
-        <span className="text-[#71dd37] font-medium">
+        <span className="text-success font-medium">
           {formatCurrency(row.original.paidAmount)}
         </span>
       ),
@@ -126,7 +126,7 @@ export const SaleColumns = ({
       accessorKey: "dueAmount",
       header: t ? t("common.due") : "Due",
       cell: ({ row }) => (
-        <span className="text-[#ff3e1d] font-medium">
+        <span className="text-destructive font-medium">
           {formatCurrency(row.original.dueAmount)}
         </span>
       ),
@@ -143,8 +143,8 @@ export const SaleColumns = ({
             variant="outline"
             className={
               isPaid
-                ? "bg-[#71dd37]/10 text-[#71dd37] border-[#71dd37]/20"
-                : "bg-[#ffab00]/10 text-[#ffab00] border-[#ffab00]/20"
+                ? "bg-success/10 text-success border-success/20"
+                : "bg-warning/10 text-warning-text border-warning/20"
             }
           >
             {label}
@@ -175,7 +175,7 @@ export const SaleColumns = ({
           canDelete;
 
         if (!hasActions) {
-          return <span className="text-[#a1acb8] text-sm">-</span>;
+          return <span className="text-text-disabled text-sm">-</span>;
         }
 
         return (
@@ -190,7 +190,7 @@ export const SaleColumns = ({
                 variant="ghost"
                 size="icon"
                 title={t ? t("common.payment") : "Payment"}
-                className="h-8 w-8 text-[#696cff] hover:bg-[#696cff]/10 rounded-lg"
+                className="h-8 w-8 text-primary hover:bg-primary-hover rounded-lg"
                 onClick={() => onPayment(row.original)}
               >
                 <Wallet className="h-4 w-4" />
@@ -201,7 +201,7 @@ export const SaleColumns = ({
                 variant="ghost"
                 size="icon"
                 title={t ? t("sale.return") : "Return Sale"}
-                className="h-8 w-8 text-amber-500 hover:bg-amber-500/10 rounded-lg"
+                className="h-8 w-8 text-warning-text hover:bg-warning/10 rounded-lg"
                 onClick={() => onReturn(row.original.id)}
               >
                 <RotateCcw className="h-4 w-4" />
@@ -221,7 +221,7 @@ export const SaleColumnsReturn = ({
       accessorKey: "id",
       header: ({ column }) => <SortableHeader column={column} title="ID" />,
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {safeText(row.original.id.toString())}
         </span>
       ),
@@ -230,7 +230,7 @@ export const SaleColumnsReturn = ({
       accessorKey: "reference",
       header: ({ column }) => <SortableHeader column={column} title="Reference" />,
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-[#696cff]">
+        <span className="tabular-nums text-xs text-primary">
           {row.original.reference}
         </span>
       ),
@@ -250,14 +250,14 @@ export const SaleColumnsReturn = ({
         const isPartialReturned =
           row.original.status?.toUpperCase() === "PARTIAL_RETURNED";
         if (!onReturn || (!isCompleted && !isPartialReturned)) {
-          return <span className="text-[#a1acb8] text-sm">-</span>;
+          return <span className="text-text-disabled text-sm">-</span>;
         }
         return (
           <Button
             variant="ghost"
             size="icon"
             title="Return"
-            className="h-8 w-8 text-[#03c3ec] hover:bg-[#03c3ec]/10 rounded-lg"
+            className="h-8 w-8 text-primary hover:bg-primary/10 rounded-lg"
             onClick={() => onReturn(row.original.id)}
           >
             <RotateCcw className="h-4 w-4" />

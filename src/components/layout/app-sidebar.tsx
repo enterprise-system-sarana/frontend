@@ -22,14 +22,24 @@ import {
   Receipt,
   FileText,
   RotateCcw,
+  ChevronsLeft,
+  LogOut,
 } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
+import { NavPrimaryColor } from "@/components/layout/nav-primary-color";
 import {
   Sidebar,
   SidebarContent,
+  SidebarFooter,
   SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  useSidebar,
 } from "@/components/ui/sidebar";
+import { useLogout } from "@/hooks/useLogout";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { PERMISSION } from "@/constants/Permission";
 import { usePermission } from "@/utils/UsePermission";
 
@@ -357,8 +367,25 @@ const data = {
   ],
 };
 
+/** Sidebar section each top-level menu belongs to (Figma: OVERVIEW / STUDENTS / …). */
+const SECTION_BY_TITLE: Record<string, { key: string; fallback: string }> = {
+  Dashboard: { key: "nav.section_overview", fallback: "Overview" },
+  POS: { key: "nav.section_overview", fallback: "Overview" },
+  Sales: { key: "nav.section_operations", fallback: "Operations" },
+  Products: { key: "nav.section_operations", fallback: "Operations" },
+  Purchases: { key: "nav.section_operations", fallback: "Operations" },
+  Expenses: { key: "nav.section_finance", fallback: "Finance" },
+  Finance: { key: "nav.section_finance", fallback: "Finance" },
+  "Catalog Setup": { key: "nav.section_management", fallback: "Management" },
+  People: { key: "nav.section_management", fallback: "Management" },
+  Reports: { key: "nav.section_reports", fallback: "Reports" },
+};
+
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { Can } = usePermission();
+  const { t } = useLanguage();
+  const { toggleSidebar } = useSidebar();
+  const handleLogout = useLogout();
 
   const filteredNavMain = data.navMain
     .map((group) => {
@@ -373,8 +400,14 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     })
     .filter((group) => !group.items || group.items.length > 0)
     .sort((a, b) => {
-      const order = ["Dashboard", "Sales", "Products", "Purchases", "Expenses", "Finance", "Catalog Setup", "People", "Reports"];
+      const order = ["Dashboard", "POS", "Sales", "Products", "Purchases", "Expenses", "Finance", "Catalog Setup", "People", "Reports"];
       return order.indexOf(a.title) - order.indexOf(b.title);
+    })
+    .map((group, index, list) => {
+      const section = SECTION_BY_TITLE[group.title];
+      const previous = index > 0 ? SECTION_BY_TITLE[list[index - 1].title] : undefined;
+      const startsSection = section && section.key !== previous?.key;
+      return startsSection ? { ...group, sectionLabel: t(section.key, section.fallback) } : group;
     });
 
   return (
@@ -384,17 +417,46 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       {...props}
       className="h-screen border-r-0 bg-sidebar shadow-none reference-sidebar"
     >
-      <SidebarHeader className="flex items-center justify-center border-b bg-sidebar">
-        <img
-          className="reference-brand-logo"
-          src="/logo.png"
-          alt="360 Phone Shop"
-        />
+      <SidebarHeader className="reference-sidebar-header">
+        <span className="reference-brand-mark">
+          <img
+            className="reference-brand-logo"
+            src="/logo.png"
+            alt="360 Phone Shop"
+          />
+        </span>
+        <span className="reference-brand-wordmark">
+          <strong>360 Phone Shop</strong>
+        </span>
+        <button
+          type="button"
+          onClick={toggleSidebar}
+          className="reference-collapse-button"
+          aria-label="Collapse sidebar"
+        >
+          <ChevronsLeft className="size-5" />
+        </button>
       </SidebarHeader>
 
-      <SidebarContent className="px-1 py-2">
+      <SidebarContent className="gap-0 py-3">
         <NavMain items={filteredNavMain} />
       </SidebarContent>
+
+      <SidebarFooter className="reference-sidebar-footer">
+        <SidebarMenu>
+          <NavPrimaryColor />
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              tooltip={t("user.logout", "Sign out")}
+              onClick={handleLogout}
+              className="h-9 rounded-lg px-3 text-sm font-medium text-sidebar-foreground/88 hover:bg-sidebar-accent hover:text-sidebar-foreground"
+            >
+              <LogOut strokeWidth={1.75} />
+              <span>{t("user.logout", "Sign out")}</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </Sidebar>
   );
 }

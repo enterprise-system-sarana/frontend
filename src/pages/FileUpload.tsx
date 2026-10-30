@@ -195,7 +195,7 @@ export function FileUpload({
             {loading && (
               <div className="absolute inset-0 bg-background/80 backdrop-blur-xs flex flex-col items-center justify-center gap-1 z-20">
                 <Loader2 className="h-5 w-5 text-primary animate-spin" />
-                <span className="text-[10px] font-medium text-foreground">Uploading</span>
+                <span className="text-[11px] font-medium text-foreground">Uploading</span>
               </div>
             )}
 
@@ -220,7 +220,7 @@ export function FileUpload({
                   <button
                     type="button"
                     onClick={handleClear}
-                    className="p-1.5 rounded-lg text-white/90 hover:text-red-400 hover:bg-white/20 transition-all cursor-pointer"
+                    className="p-1.5 rounded-lg text-white/90 hover:text-destructive hover:bg-white/20 transition-all cursor-pointer"
                     title="Remove image"
                   >
                     <Trash2 className="h-5 w-5" />
@@ -249,7 +249,7 @@ export function FileUpload({
             {loading ? (
               <div className="flex flex-col items-center gap-1 text-primary">
                 <Loader2 className="h-5 w-5 animate-spin" />
-                <span className="text-[11px] font-medium">Uploading</span>
+                <span className="text-[12px] font-medium">Uploading</span>
               </div>
             ) : (
               <>
@@ -273,9 +273,9 @@ export function FileUpload({
 
       {/* Image Preview Modal (Dialog) */}
       <Dialog open={previewOpen} onOpenChange={setPreviewOpen}>
-        <DialogContent className="max-w-2xl p-2 sm:p-4 bg-card/95 backdrop-blur-md overflow-hidden border-border/80">
+        <DialogContent className="sm:max-w-2xl p-2 sm:p-4 bg-card/95 backdrop-blur-md overflow-hidden border-border/80">
           <DialogHeader className="px-2 pt-2">
-            <DialogTitle className="text-sm font-semibold text-foreground font-mono truncate">
+            <DialogTitle className="text-sm font-semibold text-foreground tabular-nums truncate">
               {uploadedFileName || file?.name || "Image Preview"}
             </DialogTitle>
           </DialogHeader>

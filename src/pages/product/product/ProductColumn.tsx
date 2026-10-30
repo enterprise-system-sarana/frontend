@@ -157,7 +157,7 @@ export const ProductColumns = ({
       cell: ({ row }) => {
         const price = row.original.salePrice;
         return price != null ? (
-          <span className="text-sm font-semibold text-emerald-600 dark:text-emerald-400 tabular-nums">
+          <span className="text-sm font-semibold text-success tabular-nums">
             $
             {Number(price).toLocaleString("en-US", {
               minimumFractionDigits: 2,
@@ -248,7 +248,7 @@ export const ProductColumns = ({
     //   cell: ({ row }) => {
     //     const level = row.original.reorderLevel;
     //     return level != null ? (
-    //       <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-md text-xs font-semibold bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-400 border border-amber-200/60 dark:border-amber-700/30 tabular-nums">
+    //       <span className="inline-flex items-center justify-center min-w-[28px] px-2 py-0.5 rounded-md text-xs font-semibold bg-warning/10 text-warning-text border border-warning/60 tabular-nums">
     //         {level}
     //       </span>
     //     ) : (

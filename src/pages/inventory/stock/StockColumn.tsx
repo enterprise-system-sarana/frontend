@@ -47,8 +47,8 @@ export const StockColumns = (props?: StockColumnsProps): ColumnDef<StockResponse
                 return (
                     <span
                         className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-semibold ${isLowStock
-                                ? "bg-red-500/10 text-red-600 dark:text-red-400 border border-red-500/20"
-                                : "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20"
+                                ? "bg-destructive/10 text-destructive border border-destructive/20"
+                                : "bg-success/10 text-success border border-success/20"
                             }`}
                     >
                         {qty.toLocaleString()}
@@ -73,7 +73,7 @@ export const StockColumns = (props?: StockColumnsProps): ColumnDef<StockResponse
                 const isInStock = statusStr === "IN STOCK" || statusStr === "IN_STOCK";
                 const label = isInStock && t ? t("pos.in_stock") : !isInStock && t ? t("pos.out_of_stock") : row.original.status;
                 return (
-                    <span className={`font-medium text-sm ${isInStock ? "text-emerald-500" : "text-red-500"}`}>
+                    <span className={`font-medium text-sm ${isInStock ? "text-success" : "text-destructive"}`}>
                         {label ?? "-"}
                     </span>
                 );

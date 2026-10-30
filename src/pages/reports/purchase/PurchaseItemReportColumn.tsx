@@ -32,7 +32,7 @@ export const PurchaseItemReportColumns = ({
       <button
         type="button"
         onClick={() => row.original.purchaseId && onViewPurchase?.(row.original.purchaseId)}
-        className="font-mono text-xs font-semibold text-primary hover:underline cursor-pointer"
+        className="tabular-nums text-xs font-semibold text-primary hover:underline cursor-pointer"
       >
         {row.original.referenceNo || "-"}
       </button>
@@ -49,7 +49,7 @@ export const PurchaseItemReportColumns = ({
           {row.original.productName || "-"}
         </span>
         {row.original.productCode && (
-          <span className="font-mono text-[11px] text-muted-foreground">
+          <span className="tabular-nums text-[12px] text-muted-foreground">
             {row.original.productCode}
           </span>
         )}
@@ -62,7 +62,7 @@ export const PurchaseItemReportColumns = ({
       <SortableHeader column={column} title={t ? t("purchase.supplier", "Supplier") : "Supplier"} />
     ),
     cell: ({ row }) => (
-      <span className="text-xs text-[#566a7f] dark:text-muted-foreground font-medium">
+      <span className="text-xs text-text-secondary dark:text-muted-foreground font-medium">
         {row.original.supplierName || "-"}
       </span>
     ),
@@ -73,7 +73,7 @@ export const PurchaseItemReportColumns = ({
       <SortableHeader column={column} title={t ? t("inventory.store", "Store") : "Store"} />
     ),
     cell: ({ row }) => (
-      <span className="text-xs text-[#566a7f] dark:text-muted-foreground font-medium">
+      <span className="text-xs text-text-secondary dark:text-muted-foreground font-medium">
         {row.original.storeName || "-"}
       </span>
     ),
@@ -88,7 +88,7 @@ export const PurchaseItemReportColumns = ({
       if (!raw) return <span className="text-muted-foreground text-xs">-</span>;
       const date = new Date(raw);
       return (
-        <span className="text-xs text-[#566a7f] dark:text-muted-foreground font-mono">
+        <span className="text-xs text-text-secondary dark:text-muted-foreground tabular-nums">
           {date.toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",
@@ -115,7 +115,7 @@ export const PurchaseItemReportColumns = ({
       <SortableHeader column={column} title={t ? t("purchase.unit_cost", "Unit Cost") : "Unit Cost"} />
     ),
     cell: ({ row }) => (
-      <span className="text-xs font-mono font-medium text-muted-foreground">
+      <span className="text-xs tabular-nums font-medium text-muted-foreground">
         {formatCurrency(row.original.unitCost ?? row.original.unitPrice)}
       </span>
     ),
@@ -126,7 +126,7 @@ export const PurchaseItemReportColumns = ({
       <SortableHeader column={column} title={t ? t("common.subtotal", "Subtotal") : "Subtotal"} />
     ),
     cell: ({ row }) => (
-      <span className="text-xs font-mono font-bold text-foreground">
+      <span className="text-xs tabular-nums font-bold text-foreground">
         {formatCurrency(
           row.original.subtotal != null
             ? row.original.subtotal

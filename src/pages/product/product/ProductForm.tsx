@@ -167,28 +167,14 @@ const ProductForm = () => {
           },
           {
             onSuccess: () => {
-              toast.success(t("product.update_success"));
               navigate(ROUTERS.PRODUCT);
-            },
-            onError: (err: any) => {
-              toast.error(
-                err?.response?.data?.message ||
-                t("product.update_failed"),
-              );
             },
           },
         );
       } else {
         createProduct(payload, {
           onSuccess: () => {
-            toast.success(t("product.create_success"));
             navigate(ROUTERS.PRODUCT);
-          },
-          onError: (err: any) => {
-            toast.error(
-              err?.response?.data?.message ||
-              t("product.create_failed"),
-            );
           },
         });
       }
@@ -373,7 +359,7 @@ const ProductForm = () => {
                     <Field>
                       <FieldLabel>
                         {t("product.model")}
-                        <span className="text-red-600">*</span>
+                        <span className="text-destructive">*</span>
                       </FieldLabel>
 
                       <div className="flex items-center gap-2">

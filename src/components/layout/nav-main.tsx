@@ -6,6 +6,7 @@ import {
 } from "@/components/ui/collapsible";
 import {
   SidebarGroup,
+  SidebarGroupLabel,
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
@@ -20,6 +21,12 @@ import { ROUTERS } from "@/constants/Route";
 
 const isRouteActive = (pathname: string, url: string) =>
   url !== "#" && (pathname === url || pathname.startsWith(`${url}/`));
+
+/** Most specific matching sub-route, so "/product/create" doesn't also light up "/product". */
+const findActiveSubUrl = (pathname: string, subItems: { url: string }[] = []) =>
+  subItems
+    .filter((subItem) => isRouteActive(pathname, subItem.url))
+    .sort((a, b) => b.url.length - a.url.length)[0]?.url;
 
 export function NavMain({
   items,
@@ -147,9 +154,17 @@ export function NavMain({
     <>
 
 
-      {groupedItems.map((group) => (
-        <SidebarGroup key={group.label} className="space-y-0.5 py-1">
-          <SidebarMenu className="space-y-0.5">
+      {groupedItems.filter((group) => group.items.length > 0).map((group, groupIndex) => (
+        <SidebarGroup
+          key={group.label || groupIndex}
+          className={`px-2 py-2 ${groupIndex > 0 ? "pt-3" : "pt-1"}`}
+        >
+          {group.label && (
+            <SidebarGroupLabel className="reference-nav-label">
+              {group.label}
+            </SidebarGroupLabel>
+          )}
+          <SidebarMenu className="gap-0.5">
             {group.items.map((item) => {
               const hasSubItems = Boolean(item.items && item.items.length > 0);
 
@@ -158,9 +173,8 @@ export function NavMain({
                 !hasSubItems &&
                 isRouteActive(location.pathname, item.url);
 
-              const hasActiveChild = item.items?.some(
-                (subItem) => isRouteActive(location.pathname, subItem.url),
-              );
+              const activeSubUrl = findActiveSubUrl(location.pathname, item.items);
+              const hasActiveChild = Boolean(activeSubUrl);
 
               // ----------------------------------------------------
               // 1. RENDER DIRECT LINK (FOR ITEMS WITHOUT SUB-ITEMS)
@@ -174,11 +188,11 @@ export function NavMain({
                       tooltip={translateTitle(item.title)}
                       isActive={isDirectActive}
                       className={`
-                        group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
-                        shadow-none transition-all duration-200
+                        group/btn relative h-9 rounded-lg px-3 text-sm font-medium
+                        shadow-none transition-colors duration-150
                         ${isDirectActive
-                          ? "bg-primary/12 text-primary font-semibold ring-1 ring-primary/30 before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                          : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:ring-1 hover:ring-sidebar-border/50"
+                          ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground"
+                          : "bg-transparent text-sidebar-foreground/88 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                         }
                       `}
                     >
@@ -186,13 +200,13 @@ export function NavMain({
                         to={item.url}
                         target={item.url === ROUTERS.SALE_CREATE ? "_blank" : undefined}
                         rel={item.url === ROUTERS.SALE_CREATE ? "noopener noreferrer" : undefined}
-                        className="flex w-full items-center gap-2.5"
+                        className="flex w-full items-center gap-3"
                       >
                         {ItemIcon && (
                           <ItemIcon
                             className={`h-5 w-5 shrink-0 transition-colors duration-200 ${isDirectActive
-                              ? "text-primary"
-                              : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
+                              ? "text-sidebar-primary-foreground"
+                              : "text-sidebar-foreground/80 group-hover/btn:text-sidebar-foreground"
                               }`}
                             strokeWidth={1.75}
                           />
@@ -201,7 +215,7 @@ export function NavMain({
                           {translateTitle(item.title)}
                         </span>
                         {item.badge && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                          <span className="flex h-[18px] min-w-5 items-center justify-center rounded-full bg-[#c10517] px-[7px] text-[12px] font-semibold text-white">
                             {item.badge}
                           </span>
                         )}
@@ -216,6 +230,8 @@ export function NavMain({
               // 2. RENDER COLLAPSIBLE DROPDOWN (FOR ITEMS WITH SUB-ITEMS)
               // ----------------------------------------------------
               const isOpen = openMenuKey === item.title;
+              // Open group: the active child carries the highlight. Closed group: the parent does.
+              const isParentHighlighted = hasActiveChild && !isOpen;
 
               return (
                 <Collapsible
@@ -231,22 +247,24 @@ export function NavMain({
                     <CollapsibleTrigger asChild>
                       <SidebarMenuButton
                         tooltip={translateTitle(item.title)}
-                        isActive={Boolean(hasActiveChild)}
+                        isActive={isParentHighlighted}
                         className={`
-                          group/btn relative mx-1 h-[42px] rounded-xl px-3 text-[14px] font-medium
+                          group/btn relative h-9 rounded-lg px-3 text-sm font-medium
                           ${item.title === "Reports" ? "reference-reports-trigger" : ""}
-                          shadow-none transition-all duration-200
-                          ${hasActiveChild
-                            ? "bg-primary/12 text-primary font-semibold ring-1 ring-primary/30 before:absolute before:left-0 before:top-1/2 before:h-[24px] before:w-[3.5px] before:-translate-y-1/2 before:rounded-r-full before:bg-primary before:content-['']"
-                            : "bg-transparent text-sidebar-foreground/70 hover:bg-sidebar-accent hover:text-sidebar-foreground hover:ring-1 hover:ring-sidebar-border/50"
+                          shadow-none transition-colors duration-150
+                          ${isParentHighlighted
+                            ? "bg-sidebar-primary text-sidebar-primary-foreground font-semibold hover:bg-sidebar-primary hover:text-sidebar-primary-foreground data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-primary-foreground"
+                            : hasActiveChild
+                              ? "bg-transparent text-sidebar-foreground font-semibold hover:bg-sidebar-accent hover:text-sidebar-foreground group-data-[collapsible=icon]:bg-sidebar-primary"
+                              : "bg-transparent text-sidebar-foreground/88 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                           }
                         `}
                       >
                         {item.icon && (
                           <item.icon
                             className={`h-5 w-5 shrink-0 transition-colors duration-200 ${hasActiveChild
-                              ? "text-primary"
-                              : "text-sidebar-foreground/60 group-hover/btn:text-sidebar-foreground"
+                              ? "text-sidebar-primary-foreground"
+                              : "text-sidebar-foreground/80 group-hover/btn:text-sidebar-foreground"
                               }`}
                             strokeWidth={1.75}
                           />
@@ -255,36 +273,43 @@ export function NavMain({
                           {translateTitle(item.title)}
                         </span>
                         {item.badge && (
-                          <span className="flex h-5 min-w-5 items-center justify-center rounded-full bg-destructive px-1.5 text-[10px] font-bold text-destructive-foreground">
+                          <span className="flex h-[18px] min-w-5 items-center justify-center rounded-full bg-[#c10517] px-[7px] text-[12px] font-semibold text-white">
                             {item.badge}
                           </span>
                         )}
                         <ChevronRightIcon
                           className={`ml-auto h-4 w-4 shrink-0 transition-transform duration-200 group-data-[state=open]/collapsible:rotate-90 ${hasActiveChild
-                            ? "text-primary"
-                            : "text-sidebar-foreground/40"
+                            ? "text-sidebar-primary-foreground"
+                            : "text-sidebar-foreground/60"
                             }`}
                         />
                       </SidebarMenuButton>
                     </CollapsibleTrigger>
 
                     <CollapsibleContent>
-                      <SidebarMenuSub className={`mt-0.5 ml-[18px] border-l border-border/40 py-0.5 pl-3 ${item.title === "Reports" ? "reference-reports-submenu" : ""}`}>
+                      <SidebarMenuSub className={`mt-1 ml-[21px] mr-0 gap-0.5 border-l border-sidebar-border py-0.5 pl-2.5 ${item.title === "Reports" ? "reference-reports-submenu" : ""}`}>
                         {item.items?.map((subItem) => {
-                          const isActive = isRouteActive(location.pathname, subItem.url);
+                          const isActive = subItem.url === activeSubUrl;
                           const SubIcon = subItem.icon;
 
                           return (
                             <SidebarMenuSubItem key={subItem.title}>
+                              {/* Marks the active page on the tree line */}
+                              {isActive && (
+                                <span
+                                  aria-hidden="true"
+                                  className="absolute -left-[11.5px] top-1.5 bottom-1.5 w-[2px] rounded-full bg-sidebar-foreground"
+                                />
+                              )}
                               <SidebarMenuSubButton
                                 asChild
                                 isActive={isActive}
                                 className={`
-                                  h-[34px] rounded-lg px-2.5 text-[13px] font-medium
-                                  transition-all duration-150
+                                  h-8 rounded-lg px-2.5 text-[14px] font-medium shadow-none
+                                  transition-colors duration-150
                                   ${isActive
-                                    ? "bg-primary/8 text-primary font-semibold shadow-sm ring-1 ring-primary/20"
-                                    : "bg-transparent text-sidebar-foreground/60 hover:bg-sidebar-accent/50 hover:text-sidebar-foreground"
+                                    ? "bg-sidebar-primary text-sidebar-foreground font-semibold data-[active=true]:bg-sidebar-primary data-[active=true]:text-sidebar-foreground data-active:shadow-none"
+                                    : "bg-transparent text-sidebar-foreground/72 hover:bg-sidebar-accent hover:text-sidebar-foreground"
                                   }
                                 `}
                               >
@@ -297,8 +322,8 @@ export function NavMain({
                                   {SubIcon ? (
                                     <SubIcon
                                       className={`h-4 w-4 shrink-0 transition-colors duration-150 ${isActive
-                                        ? "text-primary"
-                                        : "text-sidebar-foreground/45"
+                                        ? "text-sidebar-foreground"
+                                        : "text-sidebar-foreground/60"
                                         }`}
                                       strokeWidth={1.75}
                                     />
@@ -308,8 +333,8 @@ export function NavMain({
                                         inline-flex h-[5px] w-[5px] shrink-0 rounded-full
                                         transition-all duration-150
                                         ${isActive
-                                          ? "bg-primary"
-                                          : "border border-sidebar-foreground/35 bg-transparent"
+                                          ? "bg-sidebar-primary"
+                                          : "border border-sidebar-foreground/40 bg-transparent"
                                         }
                                       `}
                                     />

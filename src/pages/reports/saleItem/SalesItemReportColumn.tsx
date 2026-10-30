@@ -67,16 +67,16 @@ export const SalesItemReportColumns = (
           <div className="flex flex-col">
             <span
               onClick={() => saleId && props?.onViewSale?.(saleId)}
-              className={`font-mono text-xs font-semibold ${
+              className={`tabular-nums text-xs font-semibold ${
                 props?.onViewSale && saleId
-                  ? "text-[#696cff] hover:underline cursor-pointer"
-                  : "text-[#696cff]"
+                  ? "text-primary hover:underline cursor-pointer"
+                  : "text-primary"
               }`}
             >
               {ref}
             </span>
             {row.original.customerName && row.original.customerName !== "-" && (
-              <span className="text-[11px] text-muted-foreground truncate max-w-[130px]">
+              <span className="text-[12px] text-muted-foreground truncate max-w-[130px]">
                 {row.original.customerName}
               </span>
             )}
@@ -95,22 +95,22 @@ export const SalesItemReportColumns = (
         const code = row.original.productCode;
         return (
           <div className="flex flex-col max-w-[200px]">
-            <span className="font-semibold text-[#566a7f] truncate">
+            <span className="font-medium text-foreground truncate">
               {row.original.productName || "-"}
             </span>
             <div className="flex items-center gap-1.5 flex-wrap mt-0.5">
               {code && (
-                <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-muted text-muted-foreground border border-border/50">
+                <span className="text-[11px] tabular-nums px-1.5 py-0.2 rounded bg-muted text-muted-foreground border border-border/50">
                   {code}
                 </span>
               )}
               {brand && (
-                <span className="text-[10px] text-muted-foreground">
+                <span className="text-[11px] text-muted-foreground">
                   {brand}
                 </span>
               )}
               {category && (
-                <span className="text-[10px] text-muted-foreground/80">
+                <span className="text-[11px] text-muted-foreground/80">
                   • {category}
                 </span>
               )}
@@ -127,7 +127,7 @@ export const SalesItemReportColumns = (
         if (!raw || raw === "-") return <span className="text-muted-foreground text-xs">-</span>;
         const date = new Date(raw);
         return (
-          <span className="text-xs text-[#566a7f] whitespace-nowrap">
+          <span className="text-xs text-text-secondary whitespace-nowrap">
             {date.toLocaleDateString("en-US", {
               year: "numeric",
               month: "short",
@@ -141,7 +141,7 @@ export const SalesItemReportColumns = (
       accessorKey: "storeName",
       header: ({ column }) => <SortableHeader column={column} title={t("store.name", "Store")} />,
       cell: ({ row }) => (
-        <span className="font-medium text-xs text-[#566a7f] whitespace-nowrap">
+        <span className="font-medium text-xs text-text-secondary whitespace-nowrap">
           {row.original.storeName || "-"}
         </span>
       ),
@@ -154,9 +154,9 @@ export const SalesItemReportColumns = (
         const returned = Number(row.original.returnedQuantity ?? 0);
         return (
           <div className="flex items-center gap-1">
-            <span className="font-semibold text-sm text-[#566a7f]">{qty}</span>
+            <span className="font-semibold text-sm text-text-secondary">{qty}</span>
             {returned > 0 && (
-              <span className="text-[10px] text-[#ff3e1d] font-medium" title="Returned Quantity">
+              <span className="text-[11px] text-destructive font-medium" title="Returned Quantity">
                 (-{returned})
               </span>
             )}
@@ -170,7 +170,7 @@ export const SalesItemReportColumns = (
         <SortableHeader column={column} title={t("report.unit_price", "Unit Price")} />
       ),
       cell: ({ row }) => (
-        <span className="font-semibold text-xs text-[#566a7f]">
+        <span className="font-semibold text-xs text-text-secondary">
           {formatCurrency(row.original.price ?? row.original.unitPrice)}
         </span>
       ),
@@ -183,7 +183,7 @@ export const SalesItemReportColumns = (
       cell: ({ row }) => {
         const discount = Number(row.original.itemDiscount ?? 0);
         return (
-          <span className={`text-xs ${discount > 0 ? "text-[#ff3e1d] font-semibold" : "text-muted-foreground"}`}>
+          <span className={`text-xs ${discount > 0 ? "text-destructive font-semibold" : "text-muted-foreground"}`}>
             {formatCurrency(discount)}
           </span>
         );
@@ -195,7 +195,7 @@ export const SalesItemReportColumns = (
         <SortableHeader column={column} title={t("quote.subtotal", "Subtotal")} />
       ),
       cell: ({ row }) => (
-        <span className="text-xs text-[#71dd37] font-bold">
+        <span className="text-xs text-success font-bold">
           {formatCurrency(row.original.subTotal)}
         </span>
       ),
@@ -220,10 +220,10 @@ export const SalesItemReportColumns = (
             variant="outline"
             className={
               isPaid
-                ? "bg-[#71dd37]/10 text-[#71dd37] border-[#71dd37]/20"
+                ? "bg-success/10 text-success border-success/20"
                 : isPartial
-                  ? "bg-[#696cff]/10 text-[#696cff] border-[#696cff]/20"
-                  : "bg-[#ffab00]/10 text-[#ffab00] border-[#ffab00]/20"
+                  ? "bg-primary/10 text-primary border-primary/20"
+                  : "bg-warning/10 text-warning-text border-warning/20"
             }
           >
             {row.original.paymentStatus || "-"}
@@ -237,7 +237,7 @@ export const SalesItemReportColumns = (
       cell: ({ row }) => {
         const ids = row.original.serialNumbers;
         return ids && ids.length > 0 ? (
-          <span className="font-mono text-xs text-[#566a7f] max-w-[140px] truncate block" title={ids.join(", ")}>
+          <span className="tabular-nums text-xs text-text-secondary max-w-[140px] truncate block" title={ids.join(", ")}>
             {ids.join(", ")}
           </span>
         ) : (

@@ -1,3 +1,4 @@
+import { DatePicker, DateRangePicker, MonthPicker } from "@/components/ui/date-picker";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -23,6 +24,7 @@ import {
 import { SaleDetailModal } from "@/pages/sales/sale/SaleDetailModal";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import {
   CreditCard,
   DollarSign,
@@ -78,6 +80,8 @@ const getPeriod = (mode: ReportPeriodMode, value: string) => {
   }
   return { startDate: "", endDate: "" };
 };
+
+const pct = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
 
 const formatCurrency = (value: number | string | undefined) => {
   const numeric = Number(value ?? 0);
@@ -275,81 +279,44 @@ export default function SalePaymentReportPage({ mode: initialMode = "all" }: { m
       </PageHeader>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Billed */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-primary/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("payment.total_invoiced", "Total Invoiced")}
-            </span>
-            <div className="size-9 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <Receipt className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {formatCurrency(totalAmount)}
-            </span>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {totalTransactions} {t("common.payments", "payments")}
-            </span>
-          </div>
-        </div>
-
-        {/* Total Collected / Received */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-emerald-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("payment.total_received", "Total Collected")}
-            </span>
-            <div className="size-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <DollarSign className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-              {formatCurrency(totalReceived)}
-            </span>
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              {totalAmount > 0 ? `${((totalReceived / totalAmount) * 100).toFixed(1)}% collected` : "—"}
-            </span>
-          </div>
-        </div>
-
-        {/* Total Return / Change */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-amber-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("payment.total_change", "Total Change Given")}
-            </span>
-            <div className="size-9 rounded-lg bg-amber-500/10 text-amber-600 dark:text-amber-400 flex items-center justify-center">
-              <ArrowRightLeft className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {formatCurrency(totalReturn)}
-            </span>
-          </div>
-        </div>
-
-        {/* Net Cash Flow from Sales */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-sky-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("payment.net_collection", "Net Inflow")}
-            </span>
-            <div className="size-9 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-              <CreditCard className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold tracking-tight text-sky-600 dark:text-sky-400">
-              {formatCurrency(Math.max(0, totalReceived - totalReturn))}
-            </span>
-          </div>
-        </div>
-      </div>
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={Receipt}
+          title={t("payment.total_invoiced", "Total Invoiced")}
+          value={formatCurrency(totalAmount)}
+          caption={`${totalTransactions} ${t("common.payments", "payments")}`}
+          splits={[
+            { label: t("payment.collected", "Collected"), value: Math.min(totalReceived, totalAmount), color: "#4ade80" },
+            { label: t("common.due", "Due"), value: Math.max(0, totalAmount - totalReceived), color: "#fbbf24" },
+          ]}
+        />
+        <KpiCard
+          tone="green"
+          icon={DollarSign}
+          title={t("payment.total_received", "Total Collected")}
+          subtitle={t("payment.total_received_desc", "Received from customers")}
+          value={formatCurrency(totalReceived)}
+          caption={t("payment.of_invoiced", "of total invoiced")}
+          percent={pct(totalReceived, totalAmount)}
+        />
+        <KpiCard
+          tone="amber"
+          icon={ArrowRightLeft}
+          title={t("payment.total_change", "Total Change Given")}
+          subtitle={t("payment.total_change_desc", "Change returned to customers")}
+          value={formatCurrency(totalReturn)}
+          caption={t("payment.of_received", "of total collected")}
+          percent={pct(totalReturn, totalReceived)}
+        />
+        <KpiCard
+          tone="blue"
+          icon={CreditCard}
+          title={t("payment.net_collection", "Net Inflow")}
+          subtitle={t("payment.net_collection_desc", "Collected minus change")}
+          value={formatCurrency(Math.max(0, totalReceived - totalReturn))}
+        />
+      </KpiGrid>
 
       {/* Filter and Period Selection */}
       <div className="space-y-3">
@@ -378,48 +345,39 @@ export default function SalePaymentReportPage({ mode: initialMode = "all" }: { m
 
           <div className="flex items-center gap-2">
             {activeTab === "daily" && (
-              <input
-                type="date"
+              <DatePicker
                 value={periodValue}
-                onChange={(e) => {
-                  setPeriodValue(e.target.value);
-                  setStartDate(e.target.value);
-                  setEndDate(e.target.value);
+                required
+                className="w-[170px]"
+                onChange={(value) => {
+                  setPeriodValue(value);
+                  setStartDate(value);
+                  setEndDate(value);
                 }}
-                className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background shadow-xs"
               />
             )}
             {activeTab === "monthly" && (
-              <input
-                type="month"
+              <MonthPicker
                 value={periodValue}
-                onChange={(e) => {
-                  setPeriodValue(e.target.value);
-                  const p = getPeriod("monthly", e.target.value);
+                className="w-[170px]"
+                onChange={(value) => {
+                  setPeriodValue(value);
+                  const p = getPeriod("monthly", value);
                   setStartDate(p.startDate);
                   setEndDate(p.endDate);
                 }}
-                className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background shadow-xs"
               />
             )}
             {activeTab === "all" && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
-                  placeholder="From"
-                />
-                <span className="text-muted-foreground">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
-                  placeholder="To"
-                />
-              </div>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                align="end"
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+              />
             )}
             {(storeId !== "all" || customerId !== "all" || bankId !== "all" || paymentStatus !== "all" || search || startDate || endDate) && (
               <button
@@ -446,7 +404,7 @@ export default function SalePaymentReportPage({ mode: initialMode = "all" }: { m
       </div>
 
       {/* Main Table Card */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <DataTable
           columns={columns}
           data={searchedRows}

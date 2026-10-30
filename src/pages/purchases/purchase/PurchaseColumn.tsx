@@ -44,19 +44,19 @@ export const PurchaseColumns = ({
         const imp = match ? match[1].toUpperCase() : null;
         return (
           <div className="flex flex-col gap-0.5">
-            <span className="font-mono text-xs text-[#696cff]">
+            <span className="tabular-nums text-xs text-primary">
               {row.original.referenceNo}
             </span>
             {imp && (
               <span
-                className={`w-fit inline-flex items-center rounded-full px-1.5 py-0.2 text-[9px] font-bold ${
+                className={`w-fit inline-flex items-center rounded-full px-1.5 py-0.2 text-[10px] font-bold ${
                   imp === "URGENT"
-                    ? "bg-rose-500/15 text-rose-600 border border-rose-500/25"
+                    ? "bg-destructive/15 text-destructive border border-destructive/25"
                     : imp === "HIGH"
-                    ? "bg-amber-500/15 text-amber-600 border border-amber-500/25"
+                    ? "bg-warning/15 text-warning-text border border-warning/25"
                     : imp === "LOW"
-                    ? "bg-slate-500/15 text-slate-600 border border-slate-500/25"
-                    : "bg-blue-500/15 text-blue-600 border border-blue-500/25"
+                    ? "bg-muted-foreground text-text-secondary border border-border-strong"
+                    : "bg-primary/15 text-primary border border-primary/25"
                 }`}
               >
                 {imp}
@@ -70,7 +70,7 @@ export const PurchaseColumns = ({
       accessorKey: "purchaseDate",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("purchase.date") : "Date"} />,
       cell: ({ row }) => (
-        <span className="text-[#6cacf4]">
+        <span className="text-primary">
           {formatDate(row.original.purchaseDate)}
         </span>
       ),
@@ -79,7 +79,7 @@ export const PurchaseColumns = ({
       accessorKey: "store",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("purchase.store") : "Store"} />,
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {safeText(row.original.storeName)}
         </span>
       ),
@@ -88,7 +88,7 @@ export const PurchaseColumns = ({
       accessorKey: "supplier",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("purchase.supplier") : "Supplier"} />,
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {safeText(row.original.supplierName)}
         </span>
       ),
@@ -97,7 +97,7 @@ export const PurchaseColumns = ({
       accessorKey: "Bank",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank"} />,
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {safeText(row.original.bankName)}
         </span>
       ),
@@ -107,7 +107,7 @@ export const PurchaseColumns = ({
       accessorKey: "grandTotal",
       header: t ? t("sale.grand_total") : "Grand Total",
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {formatCurrency(row.original.grandTotal)}
         </span>
       ),
@@ -118,7 +118,7 @@ export const PurchaseColumns = ({
       cell: ({ row }) => {
         const paid = row.original.paidAmount;
         return (
-          <span className="text-[#71dd37] font-medium">
+          <span className="text-success font-medium">
             {formatCurrency(paid)}
           </span>
         );
@@ -130,7 +130,7 @@ export const PurchaseColumns = ({
       cell: ({ row }) => {
         const due = row.original.dueAmount ?? 0;
         return (
-          <span className="text-[#ff3e1d] font-medium">
+          <span className="text-destructive font-medium">
             {formatCurrency(due)}
           </span>
         );
@@ -148,8 +148,8 @@ export const PurchaseColumns = ({
             variant="outline"
             className={
               isPaid
-                ? "bg-[#71dd37]/10 text-[#71dd37] border-[#71dd37]/20"
-                : "bg-[#ffab00]/10 text-[#ffab00] border-[#ffab00]/20"
+                ? "bg-success/10 text-success border-success/20"
+                : "bg-warning/10 text-warning-text border-warning/20"
             }
           >
             {label}
@@ -171,7 +171,7 @@ export const PurchaseColumns = ({
         const hasActions = canEdit || canDelete || Boolean(onView) || (Boolean(onPayment) && due > 0);
 
         if (!hasActions) {
-          return <span className="text-[#a1acb8] text-sm">-</span>;
+          return <span className="text-text-disabled text-sm">-</span>;
         }
 
         return (
@@ -186,7 +186,7 @@ export const PurchaseColumns = ({
                 variant="ghost"
                 size="icon"
                 title={t ? t("common.payment") : "Payment"}
-                className="h-8 w-8 text-[#10b981] hover:bg-[#10b981]/10 rounded-lg cursor-pointer"
+                className="h-8 w-8 text-success hover:bg-success/10 rounded-lg cursor-pointer"
                 onClick={() => onPayment(row.original)}
               >
                 <Wallet className="h-4 w-4" />

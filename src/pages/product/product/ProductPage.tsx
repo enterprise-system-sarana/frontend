@@ -19,7 +19,6 @@ import { Status } from "@/types/enum/status";
 import { ProductColumns } from "./ProductColumn";
 import { ProductDetailModal } from "./ProductDetailModal";
 import { ROUTERS } from "@/constants/Route";
-import { toast } from "sonner";
 import { useModel } from "@/hooks/product/useModel";
 import type { ModelResponse } from "@/types/product/Model";
 import { useBrand } from "@/hooks/product/useBrand";
@@ -243,7 +242,6 @@ export const ProductPage = () => {
         { id: selectedProduct.id },
         {
           onSuccess: () => {
-            toast.success(t("product.delete_success"));
             setOpenConfirmDelete(false);
             setSelectedProduct(null);
           },
@@ -289,9 +287,9 @@ export const ProductPage = () => {
         />
 
         {/* Main Card with Toolbar & Table */}
-        <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
           {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
-          <div className="p-4 border-b border-border/60">
+          <div className="px-5 py-4 border-b border-border">
             <PageFilter
               search={search}
               onSearchChange={setSearch}

@@ -156,7 +156,7 @@ const FormBank = ({ open, setOpen, bank }: FormBankProps) => {
                         type="submit"
                         form="bank-form"
                         disabled={isPending}
-                        className="rounded-xl shadow-md shadow-primary/20 bg-[#0B1120] hover:bg-[#0B1120]/90 text-white"
+                       
                     >
                         {isPending ? t("common.saving") : (bank ? t("common.save") : `${t("common.create")} ${t("finance.bank")}`)}
                     </Button>

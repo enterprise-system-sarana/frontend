@@ -1,16 +1,15 @@
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogTitle } from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import React, { useState, useMemo, useEffect } from "react";
 import {
   Plus,
   Trash2,
   X,
-  CheckCircle,
   AlertCircle,
   Calculator,
   Loader2,
   CreditCard,
-  Coins,
-  Receipt,
-  Sparkles,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useCurrency } from "@/hooks/finance/useCurrency";
@@ -517,7 +516,8 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         (typeof err?.response?.data === "string" ? err.response.data : null) ||
         err?.message ||
         t("payment.failed", "Payment submission failed.");
-      toast.error(msg);
+      // API failures already toast through mutationHandler.
+      if (!err?.isAxiosError) toast.error(msg);
     } finally {
       setIsSubmitting(false);
     }
@@ -528,71 +528,63 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
   const isPurchase = mode === "purchase";
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 md:p-6 bg-slate-900/40 backdrop-blur-sm animate-fade-in overflow-y-auto">
-      <div className="bg-white text-slate-800 rounded-2xl max-w-2xl w-full shadow-2xl border border-slate-200/80 flex flex-col overflow-hidden my-auto max-h-[92vh]">
+    <Dialog open onOpenChange={(next) => { if (!next && !isSubmitting) handleClose(); }}>
+      <DialogContent
+        showCloseButton={false}
+        closeOnOutsideClick={false}
+        className="flex max-h-[92vh] flex-col gap-0 overflow-hidden p-0 sm:max-w-2xl"
+      >
         {/* MODAL HEADER */}
-        <div className="bg-white px-6 py-4 flex justify-between items-center border-b border-slate-100 shrink-0">
-          <div className="flex items-center gap-3">
-            <div
-              className={`w-10 h-10 rounded-xl flex items-center justify-center ${isPurchase
-                ? "bg-emerald-50 text-emerald-600 border border-emerald-100"
-                : "bg-blue-50 text-blue-600 border border-blue-100"
-                }`}
-            >
-              <Calculator className="w-5 h-5" />
+        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-border px-6 py-4">
+          <div className="flex min-w-0 items-center gap-3">
+            <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary">
+              <Calculator className="size-5" strokeWidth={1.75} />
             </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h2 className="text-base font-bold text-slate-900 leading-tight">
-                  {isPurchase
-                    ? t("payment.title_purchase", "Purchase Payment")
-                    : t("payment.title_sale", "Payment Checkout")}
-                </h2>
-              </div>
+            <div className="min-w-0">
+              <DialogTitle>
+                {isPurchase
+                  ? t("payment.title_purchase", "Purchase Payment")
+                  : t("payment.title_sale", "Payment Checkout")}
+              </DialogTitle>
+              <DialogDescription className="text-[13px]">
+                {t("payment.exchange_rate", "Exchange Rate")}: 1 USD = {khrRate.toLocaleString()} {khrCurrency?.symbol || "៛"}
+              </DialogDescription>
             </div>
           </div>
-          <span className="text-[10px] font-medium text-slate-400 block mt-0.5">
-            {t("payment.exchange_rate", "Exchange Rate")}: 1 USD = {khrRate.toLocaleString()} {khrCurrency?.symbol || "៛"}
-          </span>
-          <button
+          <Button
             type="button"
+            variant="ghost"
+            size="icon-sm"
             onClick={handleClose}
-            className="p-2 rounded-xl text-slate-400 hover:text-slate-600 hover:bg-slate-100 transition cursor-pointer"
             title={t("common.close", "Close")}
           >
-            <X className="w-4.5 h-4.5" />
-          </button>
+            <X />
+          </Button>
         </div>
 
         {/* MODAL BODY */}
-        <div className="p-6 overflow-y-auto flex-1 bg-white">
-          {/* TOTAL PAYABLE BANNER (CLEAN & MODERN) */}
-          <div className="p-4 rounded-xl bg-gradient-to-r from-slate-50 via-blue-50/20 to-slate-50 border border-slate-200/80 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">
-                  {t("payment.total_payable", "Total Payable")}
-                </span>
-              </div>
-              <div className="flex items-baseline gap-2.5 mt-1">
-                <span className={`text-3xl font-extrabold font-mono tracking-tight ${isPurchase ? "text-emerald-600" : "text-blue-600"}`}>
-                  ${effectiveTotalBill.toFixed(2)}
-                </span>
-                <span className="text-xs font-bold text-slate-400">USD</span>
-                <span className="text-sm font-bold font-mono text-emerald-600 ml-1">
-                  = {(effectiveTotalBill * khrRate).toLocaleString()} {khrCurrency?.symbol || "៛"}
-                </span>
-              </div>
-
-            </div>
+        <div className="flex-1 space-y-5 overflow-y-auto px-6 py-5">
+          {/* TOTAL PAYABLE */}
+          <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 rounded-xl bg-primary-light/60 px-5 py-4">
+            <span className="text-sm font-medium text-text-secondary">
+              {t("payment.total_payable", "Total Payable")}
+            </span>
+            <span className="flex items-baseline gap-2">
+              <span className="text-[28px] leading-9 font-bold tabular-nums tracking-[-0.01em] text-primary">
+                ${effectiveTotalBill.toFixed(2)}
+              </span>
+              <span className="text-sm font-medium tabular-nums text-muted-foreground">
+                {(effectiveTotalBill * khrRate).toLocaleString()} {khrCurrency?.symbol || "៛"}
+              </span>
+            </span>
           </div>
 
           {/* PAYMENT METHOD LINES */}
           <div className="space-y-3.5">
             <div className="flex justify-between items-center">
               <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-slate-400" />
+                <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                  <CreditCard className="size-4 text-primary" />
                   {t("payment.payment_methods", "Payment Methods")}
                 </span>
               </div>
@@ -603,9 +595,9 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                     key={c.id}
                     type="button"
                     onClick={() => addLine(c.id)}
-                    className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-slate-200 bg-white hover:bg-slate-50 text-slate-700 hover:text-slate-900 shadow-2xs transition cursor-pointer flex items-center gap-1"
+                    className="text-xs font-semibold px-2.5 py-1 rounded-lg border border-border bg-card hover:bg-muted/50 text-text-secondary hover:text-foreground shadow-2xs transition cursor-pointer flex items-center gap-1"
                   >
-                    <Plus className="w-3.5 h-3.5 text-slate-400" />
+                    <Plus className="w-3.5 h-3.5 text-muted-foreground" />
                     <span>{t("payment.add_split", "+{code} Split").replace("{code}", c.code)}</span>
                   </button>
                 ))}
@@ -628,49 +620,51 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                 return (
                   <div
                     key={line.id}
-                    className="p-3.5 bg-slate-50/70 hover:bg-slate-50 rounded-xl border border-slate-200/80 transition-all space-y-3"
+                    className="space-y-3 rounded-xl border border-border bg-muted/40 p-3.5"
                   >
                     <div className="grid grid-cols-1 sm:grid-cols-12 gap-3 items-start">
                       {/* Method */}
                       <div className="sm:col-span-4">
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-secondary">
                           {t("payment.method", "Method")}
                         </label>
-                        <select
-                          value={line.paymentMethod}
-                          onChange={(e) => updateLine(line.id, "paymentMethod", e.target.value)}
-                          className="w-full text-xs font-semibold rounded-lg h-10 px-3 bg-white border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-800 cursor-pointer shadow-2xs"
-                        >
-                          <option value="CASH">{t("payment.method_cash", "Cash")}</option>
-                          <option value="BANK_TRANSFER">{t("payment.method_bank", "Bank / KHQR")}</option>
-                        </select>
+                        <Select value={line.paymentMethod} onValueChange={(value) => updateLine(line.id, "paymentMethod", value)}>
+                          <SelectTrigger className="h-10 w-full bg-card">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="CASH">{t("payment.method_cash", "Cash")}</SelectItem>
+                            <SelectItem value="BANK_TRANSFER">{t("payment.method_bank", "Bank / KHQR")}</SelectItem>
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Currency */}
                       <div className="sm:col-span-3">
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-secondary">
                           {t("payment.currency", "Currency")}
                         </label>
-                        <select
-                          value={line.currencyId}
-                          onChange={(e) => handleCurrencyChange(line.id, Number(e.target.value))}
-                          className="w-full text-xs font-bold rounded-lg h-10 px-2.5 bg-white border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-800 cursor-pointer shadow-2xs"
-                        >
-                          {activeCurrencies.map((c) => (
-                            <option key={c.id} value={c.id}>
-                              {c.flag ? `${c.flag} ` : ""}{c.code} ({c.symbol})
-                            </option>
-                          ))}
-                        </select>
+                        <Select value={String(line.currencyId)} onValueChange={(value) => handleCurrencyChange(line.id, Number(value))}>
+                          <SelectTrigger className="h-10 w-full bg-card">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {activeCurrencies.map((c) => (
+                              <SelectItem key={c.id} value={String(c.id)}>
+                                {c.code} ({c.symbol})
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                       </div>
 
                       {/* Amount */}
                       <div className="sm:col-span-4">
-                        <label className="text-[11px] font-semibold text-slate-500 block mb-1.5 flex items-center justify-between">
+                        <label className="mb-1.5 block text-[13px] font-medium text-text-secondary flex items-center justify-between">
                           <span>{t("payment.amount", "Amount")}</span>
                         </label>
                         <div className="relative">
-                          <span className="absolute left-3 top-2.5 text-xs font-bold text-slate-400 select-none">
+                          <span className="absolute left-3 top-2.5 text-xs font-bold text-muted-foreground select-none">
                             {selectedCurrency?.symbol || "$"}
                           </span>
                           <input
@@ -685,7 +679,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                                 e.target.value === "" ? "" : parseFloat(e.target.value)
                               )
                             }
-                            className="w-full text-sm font-bold font-mono rounded-lg h-10 pl-8 pr-3 bg-white border border-slate-200 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 outline-none text-slate-900 shadow-2xs"
+                            className="h-10 w-full rounded-lg border border-input bg-card pr-3 pl-8 text-sm font-semibold tabular-nums text-foreground shadow-2xs outline-none focus:border-primary focus:ring-3 focus:ring-primary/15"
                           />
                         </div>
                       </div>
@@ -697,7 +691,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                           onClick={() => removeLine(line.id)}
                           disabled={lines.length === 1}
                           title={t("payment.remove_line", "Remove split line")}
-                          className="p-2 text-slate-400 hover:text-rose-500 hover:bg-rose-50 rounded-lg disabled:opacity-20 disabled:hover:text-slate-400 disabled:hover:bg-transparent transition cursor-pointer"
+                          className="p-2 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded-lg disabled:opacity-20 disabled:hover:text-muted-foreground disabled:hover:bg-transparent transition cursor-pointer"
                         >
                           <Trash2 className="w-4 h-4" />
                         </button>
@@ -706,33 +700,34 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
                     {/* Bank / Reference details */}
                     {line.paymentMethod !== "CASH" && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2.5 pl-3 border-l-2 border-blue-500 bg-blue-50/30 rounded-r-lg">
+                      <div className="grid grid-cols-1 gap-3 border-t border-border pt-3 sm:grid-cols-2">
                         <div>
-                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                          <label className="mb-1.5 block text-[13px] font-medium text-text-secondary">
                             {t("payment.bank_account", "Bank Account")}
                           </label>
-                          <select
-                            value={line.bankId || ""}
-                            onChange={(e) =>
-                              updateLine(line.id, "bankId", e.target.value ? Number(e.target.value) : null)
-                            }
-                            className="w-full text-xs font-medium rounded-lg h-9 px-2.5 bg-white border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 shadow-2xs"
+                          <Select
+                            value={line.bankId ? String(line.bankId) : ""}
+                            onValueChange={(value) => updateLine(line.id, "bankId", value ? Number(value) : null)}
                           >
-                            <option value="">{t("payment.choose_bank", "-- Choose Bank --")}</option>
-                            {banks.map((b) => (
-                              <option key={b.id} value={b.id}>
-                                {b.displayName}
-                              </option>
-                            ))}
-                          </select>
+                            <SelectTrigger className="h-10 w-full bg-card">
+                              <SelectValue placeholder={t("payment.choose_bank", "Choose bank")} />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {banks.map((b) => (
+                                <SelectItem key={b.id} value={String(b.id)}>
+                                  {b.displayName}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
                           {banks.length === 0 && (
-                            <span className="text-[10px] text-amber-600 block mt-1 font-medium">
+                            <span className="text-[11px] text-warning-text block mt-1 font-medium">
                               {t("payment.no_banks", "No active bank accounts in database")}
                             </span>
                           )}
                         </div>
                         <div>
-                          <label className="text-[11px] font-semibold text-slate-600 block mb-1">
+                          <label className="mb-1.5 block text-[13px] font-medium text-text-secondary">
                             {t("payment.txn_reference", "Txn Reference")}
                           </label>
                           <input
@@ -740,7 +735,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
                             placeholder={t("payment.txn_placeholder", "e.g. TXN-12345")}
                             value={line.transactionNo}
                             onChange={(e) => updateLine(line.id, "transactionNo", e.target.value)}
-                            className="w-full text-xs font-mono rounded-lg h-9 px-3 bg-white border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 text-slate-700 shadow-2xs"
+                            className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground shadow-2xs outline-none placeholder:text-text-disabled focus:border-primary focus:ring-3 focus:ring-primary/15"
                           />
                         </div>
                       </div>
@@ -753,7 +748,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
           {/* NOTE INPUT */}
           <div>
-            <label className="text-[11px] font-semibold text-slate-500 block mb-1.5">
+            <label className="mb-1.5 block text-[13px] font-medium text-text-secondary">
               {t("payment.note", "Note")}
             </label>
             <input
@@ -761,37 +756,37 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
               value={note}
               onChange={(e) => setNote(e.target.value)}
               placeholder={t("payment.note_placeholder", "Add payment note or remarks...")}
-              className="w-full text-xs rounded-lg h-10 px-3 border border-slate-200 outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 bg-white text-slate-700 placeholder:text-slate-400 shadow-2xs"
+              className="h-10 w-full rounded-lg border border-input bg-card px-3 text-sm text-foreground shadow-2xs outline-none placeholder:text-text-disabled focus:border-primary focus:ring-3 focus:ring-primary/15"
             />
           </div>
 
           {/* SETTLEMENT SUMMARY BREAKDOWN */}
-          <div className="p-4 rounded-xl bg-slate-50/80 border border-slate-200/80 space-y-2.5">
-            <div className="flex justify-between items-center text-xs">
-              <span className="text-slate-500 font-medium">
+          <div className="space-y-2.5 rounded-xl border border-border bg-muted/40 p-4">
+            <div className="flex items-center justify-between text-sm">
+              <span className="text-muted-foreground font-medium">
                 {t("payment.total_received", "Total Received")}:
               </span>
               <div className="text-right">
-                <span className="font-mono font-bold text-slate-800 text-sm">
+                <span className="tabular-nums font-bold text-foreground text-sm">
                   ${totalReceivedUSD.toFixed(2)} USD
                 </span>
-                <span className="text-xs text-slate-400 font-mono ml-2">
+                <span className="text-xs text-muted-foreground tabular-nums ml-2">
                   ({Math.round(totalReceivedUSD * khrRate).toLocaleString()} {khrCurrency?.symbol || "៛"})
                 </span>
               </div>
             </div>
 
             {dueAmountUSD > 0.001 && (
-              <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/60">
-                <span className="flex items-center gap-1.5 text-rose-600 font-bold">
-                  <AlertCircle className="w-4 h-4 text-rose-500" />
+              <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
+                <span className="flex items-center gap-1.5 text-destructive font-bold">
+                  <AlertCircle className="w-4 h-4 text-destructive" />
                   <span>{t("payment.remaining_due", "Remaining Due")}:</span>
                 </span>
                 <div className="text-right">
-                  <span className="font-mono text-sm font-extrabold text-rose-600">
+                  <span className="tabular-nums text-sm font-bold text-destructive">
                     ${dueAmountUSD.toFixed(2)} USD
                   </span>
-                  <span className="text-xs text-rose-500 font-semibold font-mono ml-2">
+                  <span className="text-xs text-destructive font-semibold tabular-nums ml-2">
                     ({Math.round(dueAmountUSD * khrRate).toLocaleString()} {khrCurrency?.symbol || "៛"})
                   </span>
                 </div>
@@ -799,15 +794,15 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             )}
 
             {returnAmountUSD >= 0 && dueAmountUSD <= 0.001 && (
-              <div className="flex justify-between items-center text-xs pt-2 border-t border-slate-200/60">
-                <span className="flex items-center gap-1.5 text-emerald-600 font-bold">
+              <div className="flex items-center justify-between text-sm pt-2 border-t border-border">
+                <span className="flex items-center gap-1.5 text-success font-bold">
                   <span>{t("payment.change_return", "Change Return")}:</span>
                 </span>
                 <div className="text-right">
-                  <span className="font-mono text-base font-extrabold text-emerald-600">
+                  <span className="tabular-nums text-base font-bold text-success">
                     ${returnAmountUSD.toFixed(2)} USD
                   </span>
-                  <span className="text-xs text-emerald-600 font-bold font-mono ml-2">
+                  <span className="text-xs text-success font-bold tabular-nums ml-2">
                     ({returnAmountKHR.toLocaleString()} {khrCurrency?.symbol || "៛"})
                   </span>
                 </div>
@@ -817,27 +812,19 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
         </div>
 
         {/* MODAL FOOTER: ONLY CLOSE AND CHECKOUT */}
-        <div className="px-6 py-4 bg-white border-t border-slate-100 flex items-center justify-end gap-3 shrink-0">
-          <button
-            type="button"
-            onClick={handleClose}
-            disabled={isSubmitting}
-            className="px-5 py-2.5 text-xs font-bold text-slate-600 hover:bg-slate-100 rounded-xl transition cursor-pointer border border-slate-200"
-          >
+        <DialogFooter className="m-0 shrink-0 rounded-none">
+          <Button type="button" variant="outline" onClick={handleClose} disabled={isSubmitting}>
             {t("common.close", "Close")}
-          </button>
-          <button
+          </Button>
+          <Button
             type="button"
+            size="lg"
             onClick={handleSubmit}
             disabled={totalReceivedUSD < effectiveTotalBill - 0.001 || isSubmitting}
-            className={`py-2.5 px-6 text-white font-bold text-sm rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-sm ${isPurchase
-              ? "bg-emerald-600 hover:bg-emerald-500 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-              : "bg-blue-600 hover:bg-blue-500 disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-              }`}
           >
             {isSubmitting ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="animate-spin" />
                 {t("payment.processing", "Processing...")}
               </>
             ) : totalReceivedUSD >= effectiveTotalBill - 0.001 ? (
@@ -847,11 +834,10 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
             ) : (
               `${t("payment.due_prefix", "Due")} $${dueAmountUSD.toFixed(2)}`
             )}
-          </button>
-        </div>
-
-      </div>
-    </div>
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 };
 

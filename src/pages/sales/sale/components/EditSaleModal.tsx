@@ -1,3 +1,4 @@
+import { DatePicker } from "@/components/ui/date-picker";
 import { useState, useEffect, useMemo, useRef } from "react";
 import {
   Dialog,
@@ -17,7 +18,6 @@ import {
 import {
   X,
   Plus,
-  Calendar,
   ScanLine,
   Trash2,
   Package,
@@ -434,19 +434,8 @@ export default function EditSaleModal({
       { id: effectiveSaleId, request },
       {
         onSuccess: () => {
-          toast.success(`Sale #${reference} updated successfully.`);
           onOpenChange(false);
           onSuccess?.();
-        },
-        onError: (err: any) => {
-          const msg =
-            err?.response?.data?.message ||
-            (typeof err?.response?.data === "string"
-              ? err.response.data
-              : null) ||
-            err?.message ||
-            "Failed to update sale. Please try again.";
-          toast.error(msg);
         },
       }
     );
@@ -462,7 +451,7 @@ export default function EditSaleModal({
       >
         <DialogContent
           showCloseButton={false}
-          className="sm:max-w-5xl md:max-w-6xl w-[95vw] gap-0 overflow-hidden rounded-xl border border-border/80 bg-white dark:bg-card p-0 shadow-2xl"
+          className="sm:max-w-5xl md:max-w-6xl w-[95vw] gap-0 overflow-hidden rounded-xl border border-border/80 bg-card dark:bg-card p-0 shadow-2xl"
         >
           {/* Header */}
           <DialogHeader className="flex flex-row items-center justify-between border-b border-border/60 px-6 py-4">
@@ -473,7 +462,7 @@ export default function EditSaleModal({
               type="button"
               onClick={handleCancel}
               aria-label="Close"
-              className="h-6 w-6 rounded-full bg-red-600 hover:bg-red-700 text-white flex items-center justify-center transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-red-400 cursor-pointer"
+              className="h-6 w-6 rounded-full bg-destructive hover:bg-destructive/90 text-white flex items-center justify-center transition-colors shadow-sm focus:outline-none focus:ring-2 focus:ring-destructive/25 cursor-pointer"
             >
               <X className="h-3.5 w-3.5 stroke-[2.5]" />
             </button>
@@ -491,7 +480,7 @@ export default function EditSaleModal({
                 {/* Customer Name */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Customer Name <span className="text-red-500">*</span>
+                    Customer Name <span className="text-destructive">*</span>
                   </label>
                   <div className="flex items-center gap-1.5">
                     <Select value={customerId} onValueChange={setCustomerId}>
@@ -510,7 +499,7 @@ export default function EditSaleModal({
                       type="button"
                       size="icon"
                       onClick={() => setOpenCustomerModal(true)}
-                      className="h-10 w-10 shrink-0 rounded-md bg-[#1c2437] hover:bg-[#2b354f] text-white cursor-pointer"
+                      className="h-10 w-10 shrink-0 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground cursor-pointer"
                       title="Add Customer"
                     >
                       <Plus className="h-4 w-4" />
@@ -521,30 +510,22 @@ export default function EditSaleModal({
                 {/* Date */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Date <span className="text-red-500">*</span>
+                    Date <span className="text-destructive">*</span>
                   </label>
-                  <div className="relative">
-                    <Input
-                      type="date"
-                      value={saleDate}
-                      onChange={(e) => setSaleDate(e.target.value)}
-                      className="h-10 border-border/80 bg-background pr-9 text-sm"
-                    />
-                    <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  </div>
+                  <DatePicker value={saleDate} onChange={setSaleDate} required className="h-10" />
                 </div>
 
                 {/* Reference */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Reference <span className="text-red-500">*</span>
+                    Reference <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="text"
                     value={reference}
                     onChange={(e) => setReference(e.target.value)}
                     placeholder="Reference"
-                    className="h-10 border-border/80 bg-background font-mono text-sm"
+                    className="h-10 border-border/80 bg-background tabular-nums text-sm"
                   />
                 </div>
               </div>
@@ -552,7 +533,7 @@ export default function EditSaleModal({
               {/* Row 2: Product Search */}
               <div className="space-y-1.5" ref={searchRef}>
                 <label className="text-xs font-semibold text-foreground">
-                  Product <span className="text-red-500">*</span>
+                  Product <span className="text-destructive">*</span>
                 </label>
                 <div className="relative">
                   <Input
@@ -582,7 +563,7 @@ export default function EditSaleModal({
                           <div className="flex items-center gap-2">
                             <Package className="h-4 w-4 text-muted-foreground" />
                             <span className="font-medium">{p.name}</span>
-                            <span className="text-xs text-muted-foreground font-mono">
+                            <span className="text-xs text-muted-foreground tabular-nums">
                               ({p.code})
                             </span>
                           </div>
@@ -599,7 +580,7 @@ export default function EditSaleModal({
               {/* Row 3: Items Table */}
               <div className="rounded-lg border border-border/80 overflow-hidden">
                 <table className="w-full text-left text-sm table-fixed">
-                  <thead className="bg-[#eaedf1] dark:bg-muted/60 text-xs font-semibold text-foreground">
+                  <thead className="bg-muted text-xs font-semibold text-foreground">
                     <tr>
                       <th className="px-4 py-3 w-[30%]">Product Name</th>
                       <th className="px-3 py-3 text-center w-[14%]">
@@ -655,7 +636,7 @@ export default function EditSaleModal({
                                 {/* Serial Numbers Selection if Serialized */}
                                 {item.isSerialized && (
                                   <div className="mt-1.5 space-y-1">
-                                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                                    <div className="flex items-center gap-1 text-[12px] text-muted-foreground">
                                       <Barcode className="h-3 w-3" />
                                       <span>
                                         Serials ({item.selectedSerialIds.length}/
@@ -675,9 +656,9 @@ export default function EditSaleModal({
                                             onClick={() =>
                                               toggleSerial(item.productId, sid)
                                             }
-                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[11px] font-mono transition-colors border cursor-pointer ${
+                                            className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[12px] tabular-nums transition-colors border cursor-pointer ${
                                               isSelected
-                                                ? "bg-amber-500/15 text-amber-700 dark:text-amber-400 border-amber-500/40 font-semibold"
+                                                ? "bg-warning/15 text-warning-text border-warning/40 font-semibold"
                                                 : "bg-muted/40 text-muted-foreground border-border/60 hover:bg-muted"
                                             }`}
                                           >
@@ -784,7 +765,7 @@ export default function EditSaleModal({
                               variant="ghost"
                               size="icon"
                               onClick={() => removeItem(item.productId)}
-                              className="h-7 w-7 text-muted-foreground hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-950/30 rounded cursor-pointer"
+                              className="h-7 w-7 text-muted-foreground hover:text-destructive hover:bg-destructive/10 rounded cursor-pointer"
                               title="Remove item from sale"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -828,7 +809,7 @@ export default function EditSaleModal({
                     <div className="border-r border-border/60 px-4 py-3 font-bold text-foreground">
                       Grand Total
                     </div>
-                    <div className="px-4 py-3 text-right font-bold text-base text-[#10b981] dark:text-[#34d399]">
+                    <div className="px-4 py-3 text-right font-bold text-base text-success">
                       {formatCurrency(grandTotal)}
                     </div>
                   </div>
@@ -840,7 +821,7 @@ export default function EditSaleModal({
                 {/* Order Tax */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Order Tax <span className="text-red-500">*</span>
+                    Order Tax <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="number"
@@ -855,7 +836,7 @@ export default function EditSaleModal({
                 {/* Discount */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Discount <span className="text-red-500">*</span>
+                    Discount <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="number"
@@ -870,7 +851,7 @@ export default function EditSaleModal({
                 {/* Shipping */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Shipping <span className="text-red-500">*</span>
+                    Shipping <span className="text-destructive">*</span>
                   </label>
                   <Input
                     type="number"
@@ -885,7 +866,7 @@ export default function EditSaleModal({
                 {/* Status */}
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-foreground">
-                    Status <span className="text-red-500">*</span>
+                    Status <span className="text-destructive">*</span>
                   </label>
                   <Select value={status} onValueChange={setStatus}>
                     <SelectTrigger className="h-10 border-border/80 bg-background text-sm">
@@ -909,7 +890,7 @@ export default function EditSaleModal({
               variant="outline"
               onClick={handleCancel}
               disabled={isUpdating}
-              className="h-10 rounded-md bg-[#1c2437] hover:bg-[#2b354f] text-white border-none px-6 font-medium text-sm transition-colors cursor-pointer"
+              className="h-10 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground border-none px-6 font-medium text-sm transition-colors cursor-pointer"
             >
               Cancel
             </Button>
@@ -917,7 +898,7 @@ export default function EditSaleModal({
               type="button"
               onClick={handleSave}
               disabled={isUpdating || items.length === 0}
-              className="h-10 rounded-md bg-[#ff9f43] hover:bg-[#f08c2a] text-white font-semibold px-6 shadow-sm disabled:opacity-60 transition-colors cursor-pointer"
+              className="h-10 rounded-md bg-primary hover:bg-primary-hover text-primary-foreground font-semibold px-6 shadow-sm disabled:opacity-60 transition-colors cursor-pointer"
             >
               {isUpdating ? (
                 <span className="flex items-center gap-2">

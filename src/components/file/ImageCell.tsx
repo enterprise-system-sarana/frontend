@@ -386,12 +386,12 @@ export const ImageCell = ({
                                     <div className="mt-0.5 flex items-center gap-2">
                                         <Badge
                                             variant="secondary"
-                                            className="h-5 border-white/10 bg-white/10 px-1.5 text-[10px] text-white/70"
+                                            className="h-5 border-white/10 bg-white/10 px-1.5 text-[11px] text-white/70"
                                         >
                                             {bucketName}
                                         </Badge>
 
-                                        <span className="hidden max-w-[250px] truncate text-[10px] text-white/40 sm:block">
+                                        <span className="hidden max-w-[250px] truncate text-[11px] text-white/40 sm:block">
                                             {fileName}
                                         </span>
                                     </div>
@@ -554,7 +554,7 @@ export const ImageCell = ({
                         </div>
 
                         {/* Keyboard shortcuts */}
-                        <div className="absolute bottom-5 left-5 hidden text-[10px] text-white/30 lg:block">
+                        <div className="absolute bottom-5 left-5 hidden text-[11px] text-white/30 lg:block">
                             ESC close · + / − zoom · R rotate · 0 reset
                         </div>
                     </div>

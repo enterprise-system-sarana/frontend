@@ -18,22 +18,22 @@ export const ExpenseTypeColumns = ({ onEdit, onDelete, t }: ExpenseTypeColumnsPr
     {
         accessorKey: "code",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.code") : "Code"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.code}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.code}</span>
     },
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>
     },
     {
         accessorKey: "description",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.description") : "Description"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.description}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.description}</span>
     },
     {
         accessorKey: "createdAt",
         header: t ? t("common.created_date") : "Created Date",
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{formatDate(row.original.createdAt)}</span>
     },
     {
         accessorKey: "status",

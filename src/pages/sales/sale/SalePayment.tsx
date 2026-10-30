@@ -340,9 +340,9 @@
 
 //   if (isSaleLoading || isSummaryLoading) {
 //     return (
-//       <div className="flex min-h-[500px] flex-col items-center justify-center py-20 text-slate-400">
-//         <Loader2 className="size-8 animate-spin text-blue-600 mb-3" />
-//         <p className="text-sm font-semibold text-slate-700 dark:text-slate-300">
+//       <div className="flex min-h-[500px] flex-col items-center justify-center py-20 text-muted-foreground">
+//         <Loader2 className="size-8 animate-spin text-primary mb-3" />
+//         <p className="text-sm font-semibold text-text-secondary">
 //           Loading sale and payment information...
 //         </p>
 //       </div>
@@ -352,13 +352,13 @@
 //   if (isSaleError || !sale) {
 //     return (
 //       <div className="mx-auto max-w-xl py-20 text-center">
-//         <div className="mx-auto size-12 rounded-2xl bg-rose-50 p-3 text-rose-600 dark:bg-rose-950/60 mb-3 flex items-center justify-center">
+//         <div className="mx-auto size-12 rounded-2xl bg-destructive/10 p-3 text-destructive mb-3 flex items-center justify-center">
 //           <AlertCircle className="size-6" />
 //         </div>
-//         <h2 className="text-lg font-bold text-slate-900 dark:text-white">
+//         <h2 className="text-lg font-bold text-foreground">
 //           Sale Not Found or Ineligible
 //         </h2>
-//         <p className="mt-1 text-xs text-slate-500">
+//         <p className="mt-1 text-xs text-muted-foreground">
 //           Could not retrieve sale #{saleId}. It may have been deleted or an invalid ID was requested.
 //         </p>
 //         <Button
@@ -378,33 +378,33 @@
 //   return (
 //     <div className="space-y-6 pb-12">
 //       {/* 1. Page Header with Compact Breadcrumb & Quick Actions */}
-//       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-slate-200 bg-white p-4 shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+//       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-border bg-card p-4 shadow-2xs">
 //         <div className="flex items-center gap-3">
 //           <Button
 //             type="button"
 //             variant="outline"
 //             size="icon"
 //             onClick={() => navigate(ROUTERS.SALE)}
-//             className="size-9 rounded-xl border-slate-200 hover:bg-slate-100 dark:border-slate-800 cursor-pointer"
+//             className="size-9 rounded-xl border-border hover:bg-muted cursor-pointer"
 //             title="Back to Sales"
 //           >
-//             <ArrowLeft className="size-4 text-slate-600 dark:text-slate-300" />
+//             <ArrowLeft className="size-4 text-text-secondary" />
 //           </Button>
 
 //           <div>
 //             <div className="flex items-center gap-2">
-//               <h1 className="text-lg font-bold text-slate-900 dark:text-white flex items-center gap-2">
-//                 <WalletCards className="size-5 text-blue-600" />
+//               <h1 className="text-lg font-bold text-foreground flex items-center gap-2">
+//                 <WalletCards className="size-5 text-primary" />
 //                 <span>Close Sale & Payment Management</span>
 //               </h1>
 //               <Badge
 //                 variant="outline"
-//                 className="font-mono text-[11px] px-2 py-0.5 bg-blue-50 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300 border-blue-200"
+//                 className="tabular-nums text-[12px] px-2 py-0.5 bg-primary-light text-primary border-primary/20"
 //               >
 //                 #{sale.reference || sale.no || `SALE-${sale.id}`}
 //               </Badge>
 //             </div>
-//             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
+//             <p className="text-xs text-muted-foreground mt-0.5">
 //               Review sale balance, record multiple split payment methods, and close out the sale.
 //             </p>
 //           </div>
@@ -417,9 +417,9 @@
 //               variant="outline"
 //               size="sm"
 //               onClick={() => setIsPrintBillOpen(true)}
-//               className="h-9 rounded-xl border-slate-200 text-xs font-semibold hover:bg-slate-50 dark:border-slate-800 cursor-pointer gap-1.5"
+//               className="h-9 rounded-xl border-border text-xs font-semibold hover:bg-muted/50 cursor-pointer gap-1.5"
 //             >
-//               <Printer className="size-3.5 text-slate-500" />
+//               <Printer className="size-3.5 text-muted-foreground" />
 //               <span>Print Bill</span>
 //             </Button>
 //           )}
@@ -431,64 +431,64 @@
 //             onClick={() =>
 //               navigate(ROUTERS.SALE_INVOICE.replace(":id", String(saleId)))
 //             }
-//             className="h-9 rounded-xl border-slate-200 text-xs font-semibold hover:bg-slate-50 dark:border-slate-800 cursor-pointer gap-1.5"
+//             className="h-9 rounded-xl border-border text-xs font-semibold hover:bg-muted/50 cursor-pointer gap-1.5"
 //           >
-//             <Receipt className="size-3.5 text-blue-600" />
+//             <Receipt className="size-3.5 text-primary" />
 //             <span>Full Invoice</span>
 //           </Button>
 //         </div>
 //       </div>
 
 //       {/* 2. Sale Info Header Summary Card */}
-//       <Card className="rounded-2xl border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
+//       <Card className="rounded-2xl border-border bg-card shadow-2xs">
 //         <CardContent className="p-4 sm:p-5">
 //           <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6 text-xs">
 //             {/* Order Ref */}
 //             <div>
-//               <p className="text-[11px] text-slate-400 uppercase font-semibold">
+//               <p className="text-[12px] text-muted-foreground uppercase font-semibold">
 //                 Sale Reference
 //               </p>
-//               <p className="mt-1 font-mono font-bold text-slate-900 dark:text-white">
+//               <p className="mt-1 tabular-nums font-bold text-foreground">
 //                 {sale.reference || sale.no || `SALE-${sale.id}`}
 //               </p>
 //             </div>
 
 //             {/* Date */}
 //             <div>
-//               <p className="text-[11px] text-slate-400 uppercase font-semibold flex items-center gap-1">
+//               <p className="text-[12px] text-muted-foreground uppercase font-semibold flex items-center gap-1">
 //                 <Calendar className="size-3" />
 //                 <span>Sale Date</span>
 //               </p>
-//               <p className="mt-1 font-medium text-slate-800 dark:text-slate-200">
+//               <p className="mt-1 font-medium text-foreground">
 //                 {sale.saleDate || sale.date || (sale.createdAt ? String(sale.createdAt).split("T")[0] : "-")}
 //               </p>
 //             </div>
 
 //             {/* Customer */}
 //             <div>
-//               <p className="text-[11px] text-slate-400 uppercase font-semibold flex items-center gap-1">
+//               <p className="text-[12px] text-muted-foreground uppercase font-semibold flex items-center gap-1">
 //                 <User className="size-3" />
 //                 <span>Customer</span>
 //               </p>
-//               <p className="mt-1 font-semibold text-slate-900 dark:text-white">
+//               <p className="mt-1 font-semibold text-foreground">
 //                 {sale.customerName || "Walk-in Customer"}
 //               </p>
 //             </div>
 
 //             {/* Store & Items */}
 //             <div>
-//               <p className="text-[11px] text-slate-400 uppercase font-semibold flex items-center gap-1">
+//               <p className="text-[12px] text-muted-foreground uppercase font-semibold flex items-center gap-1">
 //                 <ShoppingBag className="size-3" />
 //                 <span>Store & Items</span>
 //               </p>
-//               <p className="mt-1 font-medium text-slate-800 dark:text-slate-200">
+//               <p className="mt-1 font-medium text-foreground">
 //                 {sale.storeName || "Store"} ({(sale.items || []).length} items)
 //               </p>
 //             </div>
 
 //             {/* Sale Status */}
 //             <div>
-//               <p className="text-[11px] text-slate-400 uppercase font-semibold">
+//               <p className="text-[12px] text-muted-foreground uppercase font-semibold">
 //                 Sale Status
 //               </p>
 //               <div className="mt-1">
@@ -498,17 +498,17 @@
 
 //             {/* Payment Status */}
 //             <div>
-//               <p className="text-[11px] text-slate-400 uppercase font-semibold">
+//               <p className="text-[12px] text-muted-foreground uppercase font-semibold">
 //                 Payment Status
 //               </p>
 //               <div className="mt-1">
 //                 <Badge
 //                   variant="outline"
-//                   className={`text-[10px] px-2 py-0.5 uppercase ${currentPaymentStatus === "PAID"
-//                     ? "bg-emerald-50 text-emerald-800 border-emerald-300 dark:bg-emerald-950/60 dark:text-emerald-300"
+//                   className={`text-[11px] px-2 py-0.5 uppercase ${currentPaymentStatus === "PAID"
+//                     ? "bg-success/10 text-success border-success/20"
 //                     : currentPaymentStatus === "PARTIAL"
-//                       ? "bg-amber-50 text-amber-800 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300"
-//                       : "bg-slate-100 text-slate-800 border-slate-300 dark:bg-slate-800 dark:text-slate-300"
+//                       ? "bg-warning/10 text-warning-text border-warning/20"
+//                       : "bg-muted text-foreground border-border-strong"
 //                     }`}
 //                 >
 //                   {currentPaymentStatus}
@@ -528,17 +528,17 @@
 //       /> */}
 
 //       {/* 4. Split Payment Entry Card */}
-//       <Card className="rounded-2xl border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-//         <CardHeader className="border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+//       <Card className="rounded-2xl border-border bg-card shadow-2xs">
+//         <CardHeader className="border-b border-border px-5 py-3.5">
 //           <div className="flex flex-wrap items-center justify-between gap-2">
-//             <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-//               <Banknote className="size-4 text-emerald-600" />
+//             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+//               <Banknote className="size-4 text-success" />
 //               <span>Record Payment (ការទូទាត់ប្រាក់ - បង់ច្រើនវិធីសាស្ត្រ)</span>
 //             </CardTitle>
 
-//             <span className="text-[11px] font-medium text-slate-500">
+//             <span className="text-[12px] font-medium text-muted-foreground">
 //               Outstanding:{" "}
-//               <span className="font-mono font-bold text-blue-600">
+//               <span className="tabular-nums font-bold text-primary">
 //                 ${outstandingBalance.toFixed(2)}
 //               </span>
 //             </span>
@@ -557,8 +557,8 @@
 //           /> */}
 
 //           {isRemainingZero && (
-//             <div className="flex items-center gap-2 rounded-xl border border-emerald-200 bg-emerald-50/70 p-3 text-xs text-emerald-800 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-300">
-//               <CheckCircle2 className="size-4 text-emerald-600" />
+//             <div className="flex items-center gap-2 rounded-xl border border-success/20 bg-success/10 p-3 text-xs text-success">
+//               <CheckCircle2 className="size-4 text-success" />
 //               <span>
 //                 This sale is already fully paid! No additional payment is required.
 //               </span>
@@ -566,7 +566,7 @@
 //           )}
 
 //           {/* Action Submission Footer */}
-//           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4 dark:border-slate-800">
+//           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-border pt-4">
 //             <Button
 //               type="button"
 //               variant="outline"
@@ -584,9 +584,9 @@
 //                   variant="outline"
 //                   onClick={handleCloseSale}
 //                   disabled={isSubmitting}
-//                   className="h-10 rounded-xl border-slate-300 text-xs font-semibold hover:bg-slate-100 dark:border-slate-700 cursor-pointer gap-1.5"
+//                   className="h-10 rounded-xl border-border-strong text-xs font-semibold hover:bg-muted cursor-pointer gap-1.5"
 //                 >
-//                   <ShieldCheck className="size-4 text-slate-600" />
+//                   <ShieldCheck className="size-4 text-text-secondary" />
 //                   <span>Finalize & Close Sale</span>
 //                 </Button>
 //               )}
@@ -600,7 +600,7 @@
 //                   currentPaymentTotal <= 0 ||
 //                   isRemainingZero
 //                 }
-//                 className="h-10 rounded-xl bg-blue-600 px-5 text-xs font-bold text-white hover:bg-blue-700 cursor-pointer transition-all shadow-xs disabled:opacity-50"
+//                 className="h-10 rounded-xl bg-primary px-5 text-xs font-bold text-white hover:bg-primary-hover cursor-pointer transition-all shadow-xs disabled:opacity-50"
 //               >
 //                 {isSubmitting ? (
 //                   <>
@@ -622,14 +622,14 @@
 //       </Card>
 
 //       {/* 5. Authoritative Payment History Table Card */}
-//       <Card className="rounded-2xl border-slate-200 bg-white shadow-2xs dark:border-slate-800 dark:bg-slate-900">
-//         <CardHeader className="border-b border-slate-100 px-5 py-3.5 dark:border-slate-800">
+//       <Card className="rounded-2xl border-border bg-card shadow-2xs">
+//         <CardHeader className="border-b border-border px-5 py-3.5">
 //           <div className="flex items-center justify-between">
-//             <CardTitle className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-//               <History className="size-4 text-blue-600" />
+//             <CardTitle className="text-sm font-bold text-foreground flex items-center gap-2">
+//               <History className="size-4 text-primary" />
 //               <span>Payment History & Audit Trail</span>
 //             </CardTitle>
-//             <span className="text-[11px] text-slate-400 font-medium">
+//             <span className="text-[12px] text-muted-foreground font-medium">
 //               {paymentHistory.length} transaction(s) recorded
 //             </span>
 //           </div>

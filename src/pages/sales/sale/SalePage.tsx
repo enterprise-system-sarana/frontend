@@ -24,7 +24,6 @@ import ReturnSaleModal from "./components/ReturnSaleModal";
 import EditSaleModal from "./components/EditSaleModal";
 import { Button } from "@/components/ui/button";
 import { Receipt } from "lucide-react";
-import { toast } from "sonner";
 import { useLanguage } from "@/i18n/LanguageContext";
 
 const SalePage = () => {
@@ -210,17 +209,8 @@ const SalePage = () => {
       { id: returningSale.id, payload: returnData },
       {
         onSuccess: () => {
-          toast.success(`Sale #${returningSale.reference} return processed successfully.`);
           setOpenReturnModal(false);
           setReturningSale(null);
-        },
-        onError: (err: any) => {
-          const msg =
-            err?.response?.data?.message ||
-            (typeof err?.response?.data === "string" ? err.response.data : null) ||
-            err?.message ||
-            "Failed to return sale. Please try again.";
-          toast.error(msg);
         },
       }
     );
@@ -267,8 +257,8 @@ const SalePage = () => {
           </Button>
         </PageHeader>
 
-        <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-border/60">
+        <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
             <PageFilter
               search={search}
               onSearchChange={setSearch}

@@ -20,6 +20,9 @@ import type { StoreResponse } from "@/types/inventory/Store";
 import type { SupplierResponse } from "@/types/purchases/Supplier";
 import { PurchaseDetailModal } from "./PurchaseDetail";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { formatMoney } from "@/components/ui/money";
+import { AlertCircle, CheckCircle2, DollarSign, Flame } from "lucide-react";
 import { PaymentForm } from "@/pages/sales/payment/PaymentForm";
 import { useQueryClient } from "@tanstack/react-query";
 
@@ -147,6 +150,8 @@ const PurchasePage = () => {
       paymentStatus,
     };
   }, [allPurchases, data?.payload?.pagination?.totalElements]);
+
+  const pct = (part: number, whole: number) => (whole > 0 ? (part / whole) * 100 : 0);
 
   const basePurchases = useSearch<PurchaseResponse>(
     data?.payload?.data,
@@ -290,8 +295,49 @@ const PurchasePage = () => {
         {/* TOP SUMMARY & IMPORTANCE KPI BAR                                  */}
         {/* ================================================================ */}
 
-        <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
-          <div className="p-4 border-b border-border/60">
+        <KpiGrid>
+          <KpiCard
+            featured
+            icon={DollarSign}
+            title={t("purchase.total_amount", "Total Amount")}
+            value={formatMoney(summary.totalGrandTotal)}
+            caption={`${summary.totalOrders} ${t("purchase.orders", "orders")}`}
+            splits={[
+              { label: t("purchase.paid_amount", "Paid Amount"), value: summary.totalPaid, color: "#4ade80" },
+              { label: t("purchase.due_amount", "Due Amount"), value: summary.totalBalanceDue, color: "#fb7185" },
+            ]}
+          />
+          <KpiCard
+            tone="green"
+            icon={CheckCircle2}
+            title={t("purchase.paid_amount", "Paid Amount")}
+            subtitle={t("purchase.paid_amount_desc", "Settled with suppliers")}
+            value={formatMoney(summary.totalPaid)}
+            caption={t("purchase.of_total", "of total amount")}
+            percent={pct(summary.totalPaid, summary.totalGrandTotal)}
+          />
+          <KpiCard
+            tone="red"
+            icon={AlertCircle}
+            title={t("purchase.due_amount", "Due Amount")}
+            subtitle={t("purchase.due_amount_desc", "Still owed to suppliers")}
+            value={formatMoney(summary.totalBalanceDue)}
+            caption={t("purchase.of_total", "of total amount")}
+            percent={pct(summary.totalBalanceDue, summary.totalGrandTotal)}
+          />
+          <KpiCard
+            tone="amber"
+            icon={Flame}
+            title={t("purchase.high_priority", "High Priority")}
+            subtitle={t("purchase.high_priority_desc", "Marked urgent or high importance")}
+            value={summary.counts.URGENT + summary.counts.HIGH}
+            caption={`${t("purchase.of", "of")} ${summary.counts.ALL} ${t("purchase.orders", "orders")}`}
+            percent={pct(summary.counts.URGENT + summary.counts.HIGH, summary.counts.ALL)}
+          />
+        </KpiGrid>
+
+        <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
+          <div className="px-5 py-4 border-b border-border">
             <PageFilter
               search={search}
               onSearchChange={setSearch}

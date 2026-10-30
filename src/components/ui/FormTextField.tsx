@@ -1,4 +1,5 @@
 import { Input } from "@/components/ui/input";
+import { DatePicker } from "@/components/ui/date-picker";
 import { Field, FieldError, FieldLabel } from "@/components/ui/field";
 import { useRef, useMemo, useEffect } from "react";
 import { Upload, X } from "lucide-react";
@@ -54,7 +55,19 @@ const FormTextField = ({
               {required && <span className="text-destructive"> *</span>}
             </FieldLabel>
 
-            {type === "number" ? (
+            {type === "date" ? (
+              <DatePicker
+                id={field.name}
+                value={field.state.value ?? ""}
+                onBlur={field.handleBlur}
+                onChange={(value) => field.handleChange(value)}
+                aria-invalid={isInvalid}
+                placeholder={placeholder}
+                disabled={disabled}
+                required={required}
+                className={className}
+              />
+            ) : type === "number" ? (
               <Input
                 id={field.name}
                 name={field.name}
@@ -299,7 +312,7 @@ export const FormSelectField = ({
                   className="inline-flex items-center justify-center size-4 rounded-[2px] bg-primary text-primary-foreground hover:bg-primary/90 transition-colors"
                   title={`Add new ${label}`}
                 >
-                  <span className="text-[10px] font-bold leading-none">+</span>
+                  <span className="text-[11px] font-bold leading-none">+</span>
                 </button>
               )}
             </FieldLabel>
@@ -538,7 +551,7 @@ export const FormSwitchField = ({
                 {(activeLabel || inactiveLabel) && (
                   <span
                     className={cn(
-                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold transition-colors",
+                      "inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[12px] font-semibold transition-colors",
                       isChecked
                         ? "bg-primary/15 text-primary border border-primary/25"
                         : "bg-muted text-muted-foreground border border-border"

@@ -44,13 +44,13 @@ export const CashRegisterColumns = ({
         return (
           <div className="flex flex-col">
             <div className="flex items-center gap-1.5">
-              <span className="font-mono font-bold text-xs text-slate-900 dark:text-white">
+              <span className="tabular-nums font-bold text-xs text-foreground">
                 {reg.registerNo}
               </span>
               {isOpen && (
                 <span className="flex h-2 w-2 relative" title="Active Shift">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                  <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-success opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-success" />
                 </span>
               )}
             </div>
@@ -71,10 +71,10 @@ export const CashRegisterColumns = ({
               <img
                 src={reg.userProfileImage}
                 alt={reg.userName}
-                className="size-7 rounded-full object-cover border border-slate-200 dark:border-slate-700"
+                className="size-7 rounded-full object-cover border border-border"
               />
             ) : (
-              <div className="size-7 rounded-full bg-linear-to-tr from-sky-500 to-indigo-500 text-white flex items-center justify-center font-bold text-[11px] shadow-2xs">
+              <div className="size-7 rounded-full bg-linear-to-tr from-primary/10 to-primary/10 text-white flex items-center justify-center font-bold text-[12px] shadow-2xs">
                 {initial}
               </div>
             )}
@@ -82,7 +82,7 @@ export const CashRegisterColumns = ({
               <span className="font-medium text-xs text-foreground leading-tight">
                 {reg.userName || "N/A"}
               </span>
-              <span className="text-[10px] text-muted-foreground flex items-center gap-1">
+              <span className="text-[11px] text-muted-foreground flex items-center gap-1">
                 <Store className="size-2.5" />
                 {reg.storeName || `Store #${reg.storeId}`}
               </span>
@@ -101,13 +101,13 @@ export const CashRegisterColumns = ({
 
         return (
           <div className="flex flex-col gap-0.5 text-xs">
-            <div className="flex items-center gap-1 text-slate-800 dark:text-slate-200 font-medium text-[11px]">
-              {/* <Clock className="size-3 text-slate-400 shrink-0" /> */}
+            <div className="flex items-center gap-1 text-foreground font-medium text-[12px]">
+              {/* <Clock className="size-3 text-muted-foreground shrink-0" /> */}
               <span>{reg.openedAt ? formatDate(reg.openedAt, "dateTime") : "N/A"}</span>
             </div>
-            <div className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
               {isOpen ? (
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
+                <span className="text-success font-semibold flex items-center gap-1">
                   Active now ({duration || "ongoing"})
                 </span>
               ) : (
@@ -125,7 +125,7 @@ export const CashRegisterColumns = ({
       accessorKey: "openingBalance",
       header: ({ column }) => <SortableHeader column={column} title="Opening Cash" />,
       cell: ({ row }) => (
-        <span className="font-mono text-xs font-semibold text-foreground">
+        <span className="tabular-nums text-xs font-semibold text-foreground">
           {formatCurrency(row.original.openingBalance)}
         </span>
       ),
@@ -135,10 +135,10 @@ export const CashRegisterColumns = ({
       header: ({ column }) => <SortableHeader column={column} title="Total Sales" />,
       cell: ({ row }) => (
         <div className="flex flex-col">
-          <span className="font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">
+          <span className="tabular-nums text-xs font-bold text-success">
             {formatCurrency(row.original.totalSales)}
           </span>
-          <span className="text-[10px] text-muted-foreground font-medium">
+          <span className="text-[11px] text-muted-foreground font-medium">
             {row.original.saleCount || 0} orders
           </span>
         </div>
@@ -152,13 +152,13 @@ export const CashRegisterColumns = ({
         const bank = Number(row.original.totalBankSales ?? 0);
 
         return (
-          <div className="flex flex-col gap-0.5 text-[11px] font-mono">
-            <span className="text-emerald-700 dark:text-emerald-300 font-semibold flex items-center gap-1">
-              <span className="text-[10px] text-muted-foreground font-sans">Cash:</span>
+          <div className="flex flex-col gap-0.5 text-[12px] tabular-nums">
+            <span className="text-success font-semibold flex items-center gap-1">
+              <span className="text-[11px] text-muted-foreground font-sans">Cash:</span>
               {formatCurrency(cash)}
             </span>
-            <span className="text-sky-700 dark:text-sky-300 font-semibold flex items-center gap-1">
-              <span className="text-[10px] text-muted-foreground font-sans">Bank:</span>
+            <span className="text-primary font-semibold flex items-center gap-1">
+              <span className="text-[11px] text-muted-foreground font-sans">Bank:</span>
               {formatCurrency(bank)}
             </span>
           </div>
@@ -175,25 +175,25 @@ export const CashRegisterColumns = ({
         const hasAny = cashIn > 0 || cashOut > 0 || returns > 0;
 
         if (!hasAny) {
-          return <span className="text-xs text-muted-foreground font-mono">$0.00</span>;
+          return <span className="text-xs text-muted-foreground tabular-nums">$0.00</span>;
         }
 
         return (
-          <div className="flex flex-col gap-0.5 text-[10px] font-mono">
+          <div className="flex flex-col gap-0.5 text-[11px] tabular-nums">
             {cashIn > 0 && (
-              <span className="text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-0.5">
+              <span className="text-success font-semibold flex items-center gap-0.5">
                 <ArrowDownRight className="size-2.5" />
                 +{formatCurrency(cashIn)}
               </span>
             )}
             {cashOut > 0 && (
-              <span className="text-amber-600 dark:text-amber-400 font-semibold flex items-center gap-0.5">
+              <span className="text-warning-text font-semibold flex items-center gap-0.5">
                 <ArrowUpRight className="size-2.5" />
                 -{formatCurrency(cashOut)}
               </span>
             )}
             {returns > 0 && (
-              <span className="text-rose-600 dark:text-rose-400 font-semibold flex items-center gap-0.5">
+              <span className="text-destructive font-semibold flex items-center gap-0.5">
                 <RotateCcw className="size-2.5" />
                 -{formatCurrency(returns)}
               </span>
@@ -219,11 +219,11 @@ export const CashRegisterColumns = ({
         const isClosed = reg.status === "CLOSED";
 
         return (
-          <div className="flex flex-col text-xs font-mono">
-            <span className="font-semibold text-slate-800 dark:text-slate-200">
+          <div className="flex flex-col text-xs tabular-nums">
+            <span className="font-semibold text-foreground">
               Exp: {formatCurrency(expected)}
             </span>
-            <span className="text-[10px] text-muted-foreground">
+            <span className="text-[11px] text-muted-foreground">
               {isClosed ? `Act: ${formatCurrency(reg.closingBalance)}` : "In Progress"}
             </span>
           </div>
@@ -237,7 +237,7 @@ export const CashRegisterColumns = ({
         const reg = row.original;
         if (reg.status !== "CLOSED") {
           return (
-            <span className="text-[11px] text-muted-foreground italic font-sans">
+            <span className="text-[12px] text-muted-foreground italic font-sans">
               In shift
             </span>
           );
@@ -249,11 +249,11 @@ export const CashRegisterColumns = ({
 
         return (
           <span
-            className={`font-mono text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${isBalanced
-              ? "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+            className={`tabular-nums text-xs font-semibold px-2 py-0.5 rounded-full inline-block ${isBalanced
+              ? "bg-primary-light text-primary border border-primary/20"
               : isOver
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800"
-                : "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-300 border border-rose-200 dark:border-rose-800"
+                ? "bg-success/10 text-success border border-success/20"
+                : "bg-destructive/10 text-destructive border border-destructive/20"
               }`}
           >
             {isBalanced ? "Balanced" : isOver ? `+${formatCurrency(diff)} Over` : `${formatCurrency(diff)} Short`}
@@ -268,13 +268,13 @@ export const CashRegisterColumns = ({
         const isOpen = row.original.status === "OPEN";
         return (
           <Badge
-            className={`text-[11px] font-semibold gap-1 px-2.5 py-0.5 ${isOpen
-              ? "bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30 hover:bg-emerald-500/20"
-              : "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300 border border-slate-200 dark:border-slate-700 hover:bg-slate-200"
+            className={`text-[12px] font-semibold gap-1 px-2.5 py-0.5 ${isOpen
+              ? "bg-success/15 text-success border border-success/30 hover:bg-success/20"
+              : "bg-muted text-text-secondary border border-border hover:bg-muted"
               }`}
             variant="outline"
           >
-            {isOpen && <span className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />}
+            {isOpen && <span className="size-1.5 rounded-full bg-success animate-pulse" />}
             {row.original.status}
           </Badge>
         );
@@ -293,7 +293,7 @@ export const CashRegisterColumns = ({
               size="sm"
               variant="ghost"
               onClick={() => onView?.(reg)}
-              className="h-8 w-8 p-0 text-slate-600 hover:text-slate-900 dark:text-slate-400 dark:hover:text-white cursor-pointer"
+              className="h-8 w-8 p-0 text-text-secondary hover:text-foreground cursor-pointer"
               title="View Details"
             >
               <Eye className="size-4" />
@@ -304,7 +304,7 @@ export const CashRegisterColumns = ({
                 size="sm"
                 variant="ghost"
                 onClick={() => onClose?.(reg)}
-                className="h-8 px-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/30 gap-1 cursor-pointer"
+                className="h-8 px-2 text-xs font-semibold text-destructive hover:bg-destructive/10 gap-1 cursor-pointer"
                 title="Close Shift"
               >
                 <Lock className="size-3.5" />

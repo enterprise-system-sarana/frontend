@@ -39,7 +39,7 @@ export const ProductSerialReportColumns = (
         <SortableHeader column={column} title={t("product.name", "Product")} />
       ),
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {row.original.productName || "-"}
         </span>
       ),
@@ -50,7 +50,7 @@ export const ProductSerialReportColumns = (
         <SortableHeader column={column} title={t("product.barcode", "Barcode")} />
       ),
       cell: ({ row }) => (
-        <span className="font-mono text-xs text-[#696cff]">
+        <span className="tabular-nums text-xs text-primary">
           {row.original.barcode || "-"}
         </span>
       ),
@@ -61,7 +61,7 @@ export const ProductSerialReportColumns = (
         <SortableHeader column={column} title={t("store.name", "Store")} />
       ),
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {row.original.storeName || "-"}
         </span>
       ),
@@ -77,7 +77,7 @@ export const ProductSerialReportColumns = (
         <SortableHeader column={column} title={t("product.price", "Price")} />
       ),
       cell: ({ row }) => (
-        <span className="text-[#71dd37] font-medium">
+        <span className="text-success font-medium">
           {formatCurrency(row.original.price)}
         </span>
       ),
@@ -88,7 +88,7 @@ export const ProductSerialReportColumns = (
         <SortableHeader column={column} title={t("product.cost", "Cost")} />
       ),
       cell: ({ row }) => (
-        <span className="text-[#ff3e1d] font-medium">
+        <span className="text-destructive font-medium">
           {formatCurrency(row.original.cost)}
         </span>
       ),
@@ -99,7 +99,7 @@ export const ProductSerialReportColumns = (
         <SortableHeader column={column} title={t("product.quantity", "Qty")} />
       ),
       cell: ({ row }) => (
-        <span className="font-semibold text-[#566a7f]">
+        <span className="font-medium text-foreground">
           {row.original.quantity ?? 0}
         </span>
       ),
@@ -117,8 +117,8 @@ export const ProductSerialReportColumns = (
           <span
             className={
               isLow
-                ? "text-[#ff3e1d] font-semibold"
-                : "font-semibold text-[#566a7f]"
+                ? "text-destructive font-semibold"
+                : "font-medium text-foreground"
             }
           >
             {alertQty}
@@ -137,7 +137,7 @@ export const ProductSerialReportColumns = (
           return <span className="text-muted-foreground text-xs">-</span>;
         const date = new Date(raw);
         return (
-          <span className="text-xs text-[#566a7f]">
+          <span className="text-xs text-text-secondary">
             {date.toLocaleDateString("en-US", {
               year: "numeric",
               month: "short",

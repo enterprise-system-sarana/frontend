@@ -1,7 +1,10 @@
+import { StatusBadge } from "@/components/ui/status-badge";
 import { useEffect, useMemo, useState } from "react";
 import { DataTable } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import { PageHeader } from "@/components/ui/page-header";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { PageFilter } from "@/utils/PageFilter";
 import { usePayment } from "@/hooks/sales/usePayment";
 import { PaymentColumns } from "@/pages/sales/payment/PaymentColumn";
@@ -16,7 +19,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/utils/formatDate";
 import {
@@ -91,68 +93,12 @@ const isPurchasePayment = (payment: PaymentResponse) => {
   );
 };
 
-type SummaryCardProps = {
-  label: string;
-  value: string;
-  description: string;
-  icon: React.ElementType;
-  tone: "green" | "blue" | "amber" | "red";
-};
-
-const toneClasses: Record<SummaryCardProps["tone"], string> = {
-  green: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-400",
-  blue: "bg-blue-50 text-blue-700 dark:bg-blue-950/40 dark:text-blue-400",
-  amber: "bg-amber-50 text-amber-700 dark:bg-amber-950/40 dark:text-amber-400",
-  red: "bg-rose-50 text-rose-700 dark:bg-rose-950/40 dark:text-rose-400",
-};
-
-function SummaryCard({
-  label,
-  value,
-  description,
-  icon: Icon,
-  tone,
-}: SummaryCardProps) {
-  return (
-    <section className="min-w-0 rounded-xl border border-border/70 bg-card p-4 shadow-2xs transition-all">
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-xs font-medium text-muted-foreground">{label}</p>
-          <p className="mt-2 truncate text-xl font-semibold tracking-tight tabular-nums text-foreground">
-            {value}
-          </p>
-          <p className="mt-1 text-[11px] text-muted-foreground">{description}</p>
-        </div>
-        <span
-          className={`flex size-10 shrink-0 items-center justify-center rounded-lg ${toneClasses[tone]}`}
-        >
-          <Icon className="size-5" aria-hidden="true" />
-        </span>
-      </div>
-    </section>
-  );
-}
-
 function PaymentStatusBadge({ status }: { status?: string | null }) {
-  const normalized = String(status ?? "COMPLETED").toUpperCase();
-  const styles =
-    normalized === "PAID" || normalized === "COMPLETED"
-      ? "border-emerald-200 bg-emerald-50 text-emerald-700 dark:border-emerald-900 dark:bg-emerald-950/40 dark:text-emerald-400"
-      : normalized === "PARTIAL"
-        ? "border-amber-200 bg-amber-50 text-amber-700 dark:border-amber-900 dark:bg-amber-950/40 dark:text-amber-400"
-        : "border-slate-200 bg-slate-50 text-slate-600 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-300";
-
-  return (
-    <Badge
-      variant="outline"
-      className={`rounded-sm px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${styles}`}
-    >
-      {normalized}
-    </Badge>
-  );
+  return <StatusBadge status={status ?? "COMPLETED"} />;
 }
 
 export const PurchasePaymentPage = () => {
+  const { t } = useLanguage();
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -315,7 +261,6 @@ export const PurchasePaymentPage = () => {
         key: "status",
         label: "Status",
         options: [
-          { label: "All Status", value: "all" },
           { label: "Paid", value: "PAID" },
           { label: "Partial", value: "PARTIAL" },
           { label: "Pending", value: "PENDING" },
@@ -344,38 +289,45 @@ export const PurchasePaymentPage = () => {
 
   return (
     <div className="space-y-5 pb-6">
-      <PageHeader title="Purchase Payments" hideButton />
+      <PageHeader title={t("purchase_payment.title", "Purchase Payments")} hideButton />
 
-      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <SummaryCard
-          label="Total Paid"
-          value={formatCurrency(stats.totalPaid)}
-          description=""
+      <KpiGrid>
+        <KpiCard
+          featured
           icon={Wallet}
+          title={t("purchase_payment.total_paid", "Total Paid")}
+          value={formatCurrency(stats.totalPaid)}
+          caption={`${stats.paidCount + stats.partialCount} ${t("purchase_payment.payments", "payments")}`}
+          splits={[
+            { label: t("purchase_payment.paid", "Paid"), value: stats.totalPaid, color: "#4ade80" },
+            { label: t("purchase_payment.due", "Due"), value: stats.totalDue, color: "#fbbf24" },
+          ]}
+        />
+        <KpiCard
           tone="green"
-        />
-        <SummaryCard
-          label="Fully Paid"
-          value={String(stats.paidCount)}
-          description=""
           icon={CheckCircle2}
-          tone="blue"
+          title={t("purchase_payment.fully_paid", "Fully Paid")}
+          subtitle={t("purchase_payment.fully_paid_sub", "Settled payments")}
+          value={stats.paidCount}
+          percent={stats.paidCount + stats.partialCount > 0 ? (stats.paidCount / (stats.paidCount + stats.partialCount)) * 100 : 0}
         />
-        <SummaryCard
-          label="Partial / Pending"
-          value={String(stats.partialCount)}
-          description=""
-          icon={Clock3}
+        <KpiCard
           tone="amber"
+          icon={Clock3}
+          title={t("purchase_payment.partial_pending", "Partial / Pending")}
+          subtitle={t("purchase_payment.partial_pending_sub", "Awaiting balance")}
+          value={stats.partialCount}
+          percent={stats.paidCount + stats.partialCount > 0 ? (stats.partialCount / (stats.paidCount + stats.partialCount)) * 100 : 0}
         />
-        <SummaryCard
-          label="Outstanding Due"
-          value={formatCurrency(stats.totalDue)}
-          description=""
-          icon={Building2}
+        <KpiCard
           tone="red"
+          icon={Building2}
+          title={t("purchase_payment.outstanding", "Outstanding Due")}
+          subtitle={t("purchase_payment.outstanding_sub", "Still owed to suppliers")}
+          value={formatCurrency(stats.totalDue)}
+          percent={stats.totalPaid + stats.totalDue > 0 ? (stats.totalDue / (stats.totalPaid + stats.totalDue)) * 100 : 0}
         />
-      </div>
+      </KpiGrid>
 
       <section className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-2xs">
 
@@ -384,7 +336,7 @@ export const PurchasePaymentPage = () => {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search payment, purchase, user, bank..."
+            searchPlaceholder={t("purchase_payment.search", "Search payment, purchase, user, bank...")}
             filterGroups={filterGroups}
             filterValues={filterValues}
             onFilterChange={handleFilterChange}
@@ -431,18 +383,18 @@ export const PurchasePaymentPage = () => {
             if (!open) setSelectedPayment(null);
           }}
         >
-          <DialogContent className="max-h-[90vh] w-[calc(100%-1.5rem)] max-w-lg overflow-y-auto rounded-none border-border p-0">
+          <DialogContent className="max-h-[90vh] w-[calc(100%-1.5rem)] sm:max-w-lg overflow-y-auto rounded-2xl border-border p-0">
             <DialogHeader className="border-b border-border px-5 py-4 text-left">
               <div className="flex items-start justify-between gap-3 pr-7">
                 <div className="flex min-w-0 items-start gap-3">
-                  <span className="flex size-10 shrink-0 items-center justify-center bg-emerald-50 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-400">
+                  <span className="flex size-10 shrink-0 items-center justify-center bg-success/10 text-success">
                     <ReceiptText className="size-5" />
                   </span>
                   <div className="min-w-0">
                     <DialogTitle className="text-base font-semibold">
                       Payment voucher
                     </DialogTitle>
-                    <DialogDescription className="mt-1 truncate font-mono text-xs">
+                    <DialogDescription className="mt-1 truncate tabular-nums text-xs">
                       {selectedPayment.paymentNo ||
                         `PPAY-${selectedPayment.id}`}
                     </DialogDescription>
@@ -455,10 +407,10 @@ export const PurchasePaymentPage = () => {
             <div className="space-y-5 px-5 py-4">
               <div className="grid grid-cols-2 gap-x-4 gap-y-4">
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
                     Purchase reference
                   </p>
-                  <p className="mt-1 flex items-center gap-2 break-words text-sm font-semibold text-emerald-700 dark:text-emerald-400">
+                  <p className="mt-1 flex items-center gap-2 break-words text-sm font-semibold text-success">
                     <ShoppingBag className="size-4 shrink-0" />
                     {selectedPayment.purchaseNo ||
                       (selectedPayment.purchaseId
@@ -467,7 +419,7 @@ export const PurchasePaymentPage = () => {
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
                     Payment date
                   </p>
                   <p className="mt-1 flex items-center gap-2 text-sm font-medium">
@@ -476,7 +428,7 @@ export const PurchasePaymentPage = () => {
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
                     Processed by
                   </p>
                   <p className="mt-1 break-words text-sm font-medium">
@@ -487,10 +439,10 @@ export const PurchasePaymentPage = () => {
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                  <p className="text-[12px] font-medium uppercase tracking-wide text-muted-foreground">
                     Payment ID
                   </p>
-                  <p className="mt-1 font-mono text-sm font-medium">
+                  <p className="mt-1 tabular-nums text-sm font-medium">
                     #{selectedPayment.id}
                   </p>
                 </div>
@@ -537,7 +489,7 @@ export const PurchasePaymentPage = () => {
                               </p>
                             )}
                             {line.transactionNo && (
-                              <p className="mt-0.5 break-all font-mono text-[11px] text-muted-foreground">
+                              <p className="mt-0.5 break-all tabular-nums text-[12px] text-muted-foreground">
                                 Ref: {line.transactionNo}
                               </p>
                             )}
@@ -549,7 +501,7 @@ export const PurchasePaymentPage = () => {
                           </p>
                           {line.currencyCode &&
                             line.currencyCode !== "USD" && (
-                              <p className="mt-0.5 text-[11px] text-muted-foreground">
+                              <p className="mt-0.5 text-[12px] text-muted-foreground">
                                 {line.currencyCode}
                               </p>
                             )}
@@ -571,7 +523,7 @@ export const PurchasePaymentPage = () => {
                 </div>
                 <div className="flex items-center justify-between gap-3 text-sm">
                   <span className="text-muted-foreground">Amount paid</span>
-                  <span className="font-semibold tabular-nums text-emerald-700 dark:text-emerald-400">
+                  <span className="font-semibold tabular-nums text-success">
                     {formatCurrency(paidAmount)}
                   </span>
                 </div>
@@ -583,14 +535,14 @@ export const PurchasePaymentPage = () => {
                 </div>
                 <div className="flex items-center justify-between gap-3 border-t border-dashed border-border pt-3 text-sm">
                   <span className="font-semibold">Remaining due</span>
-                  <span className="text-base font-bold tabular-nums text-rose-600 dark:text-rose-400">
+                  <span className="text-base font-bold tabular-nums text-destructive">
                     {formatCurrency(selectedPayment.dueAmount ?? 0)}
                   </span>
                 </div>
               </div>
 
               {selectedPayment.note && (
-                <div className="flex gap-2 border border-amber-200 bg-amber-50/70 p-3 text-amber-950 dark:border-amber-900 dark:bg-amber-950/20 dark:text-amber-200">
+                <div className="flex gap-2 border border-warning/20 bg-warning/10 p-3 text-warning-text">
                   <FileText className="mt-0.5 size-4 shrink-0" />
                   <div className="min-w-0">
                     <p className="text-xs font-semibold">Payment note</p>
@@ -607,7 +559,7 @@ export const PurchasePaymentPage = () => {
                 type="button"
                 variant="outline"
                 size="sm"
-                className="rounded-none"
+                className="rounded-lg"
                 onClick={() => window.print()}
               >
                 <Printer className="mr-2 size-4" />
@@ -616,7 +568,7 @@ export const PurchasePaymentPage = () => {
               <Button
                 type="button"
                 size="sm"
-                className="rounded-none bg-[#0062EA] text-white hover:bg-[#0054CC]"
+                className="rounded-lg bg-primary text-primary-foreground hover:bg-primary-hover"
                 onClick={() => setIsDetailOpen(false)}
               >
                 <X className="mr-1.5 size-4" />

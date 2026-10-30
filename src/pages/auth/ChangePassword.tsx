@@ -42,15 +42,15 @@ export default function ChangePasswordPage() {
 
     switch (score) {
       case 1:
-        return { score: 1, label: t("profile.strength_weak", "Weak"), color: "bg-red-500", text: "text-red-500" };
+        return { score: 1, label: t("profile.strength_weak", "Weak"), color: "bg-destructive", text: "text-destructive" };
       case 2:
-        return { score: 2, label: t("profile.strength_fair", "Fair"), color: "bg-amber-500", text: "text-amber-500" };
+        return { score: 2, label: t("profile.strength_fair", "Fair"), color: "bg-warning", text: "text-warning-text" };
       case 3:
-        return { score: 3, label: t("profile.strength_good", "Good"), color: "bg-blue-500", text: "text-blue-500" };
+        return { score: 3, label: t("profile.strength_good", "Good"), color: "bg-primary", text: "text-primary" };
       case 4:
-        return { score: 4, label: t("profile.strength_strong", "Strong"), color: "bg-emerald-500", text: "text-emerald-500" };
+        return { score: 4, label: t("profile.strength_strong", "Strong"), color: "bg-success", text: "text-success" };
       default:
-        return { score: 0, label: t("profile.strength_too_short", "Too Short"), color: "bg-red-400", text: "text-red-400" };
+        return { score: 0, label: t("profile.strength_too_short", "Too Short"), color: "bg-destructive", text: "text-destructive" };
     }
   }, [newPassword, t]);
 
@@ -121,7 +121,7 @@ export default function ChangePasswordPage() {
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl font-bold tracking-tight text-foreground">
             {t("auth.change.title")}
           </h1>
         </div>
@@ -140,7 +140,7 @@ export default function ChangePasswordPage() {
             </span>
           </div>
 
-          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[11px] font-medium bg-primary/10 text-primary">
+          <span className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-0.5 text-[12px] font-medium bg-primary/10 text-primary">
             <Lock className="size-3" />
             {t("auth.change.encrypted")}
           </span>
@@ -214,8 +214,8 @@ export default function ChangePasswordPage() {
             {newPassword && (
               <div className="pt-2 space-y-1.5">
                 <div className="flex items-center justify-between text-xs">
-                  <span className="text-muted-foreground text-[11px]">{t("profile.strength")}</span>
-                  <span className={`text-[11px] font-semibold ${strength.text}`}>
+                  <span className="text-muted-foreground text-[12px]">{t("profile.strength")}</span>
+                  <span className={`text-[12px] font-semibold ${strength.text}`}>
                     {strength.label}
                   </span>
                 </div>
@@ -284,36 +284,36 @@ export default function ChangePasswordPage() {
               <span>{t("auth.change.requirements")}</span>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[11px]">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-[12px]">
               <div className="flex items-center gap-1.5">
                 {hasMinLength ? (
-                  <Check className="size-3.5 text-emerald-500 shrink-0" />
+                  <Check className="size-3.5 text-success shrink-0" />
                 ) : (
                   <X className="size-3.5 text-muted-foreground shrink-0" />
                 )}
-                <span className={hasMinLength ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>
+                <span className={hasMinLength ? "text-success font-medium" : "text-muted-foreground"}>
                   {t("auth.change.min_chars")}
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
                 {hasNumberOrSymbol ? (
-                  <Check className="size-3.5 text-emerald-500 shrink-0" />
+                  <Check className="size-3.5 text-success shrink-0" />
                 ) : (
                   <X className="size-3.5 text-muted-foreground shrink-0" />
                 )}
-                <span className={hasNumberOrSymbol ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>
+                <span className={hasNumberOrSymbol ? "text-success font-medium" : "text-muted-foreground"}>
                   {t("auth.change.num_symbol")}
                 </span>
               </div>
 
               <div className="flex items-center gap-1.5">
                 {passwordsMatch ? (
-                  <Check className="size-3.5 text-emerald-500 shrink-0" />
+                  <Check className="size-3.5 text-success shrink-0" />
                 ) : (
                   <X className="size-3.5 text-muted-foreground shrink-0" />
                 )}
-                <span className={passwordsMatch ? "text-emerald-600 dark:text-emerald-400 font-medium" : "text-muted-foreground"}>
+                <span className={passwordsMatch ? "text-success font-medium" : "text-muted-foreground"}>
                   {t("auth.change.passwords_match")}
                 </span>
               </div>
@@ -330,7 +330,7 @@ export default function ChangePasswordPage() {
 
           {/* Success Banner */}
           {success && (
-            <div className="flex items-start gap-2.5 rounded-xl border border-emerald-500/20 bg-emerald-500/10 p-3 text-xs text-emerald-600 dark:text-emerald-400">
+            <div className="flex items-start gap-2.5 rounded-xl border border-success/20 bg-success/10 p-3 text-xs text-success">
               <CheckCircle2 className="size-4 shrink-0 mt-0.5" />
               <span className="leading-snug">{success}</span>
             </div>
@@ -351,11 +351,11 @@ export default function ChangePasswordPage() {
             <Button
               type="submit"
               disabled={isLoading || !isValid}
-              className="h-10 px-6 rounded-xl text-xs font-semibold bg-primary text-primary-foreground shadow-md shadow-primary/20 hover:brightness-105 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
+              className="h-10 px-6 rounded-xl text-xs font-semibold bg-primary text-primary-foreground hover:brightness-105 active:scale-[0.99] transition-all cursor-pointer disabled:opacity-50"
             >
               {isLoading ? (
                 <>
-                  <div className="mr-2 size-3.5 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <div className="mr-2 size-3.5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                   <span>{t("common.loading")}</span>
                 </>
               ) : (

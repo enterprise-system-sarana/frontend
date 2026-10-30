@@ -19,6 +19,7 @@ import { useSearch } from "@/utils/useSearch";
 import { SalesReportColumns, type SaleReportRow } from "./SalesReportColumn";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import {
   DollarSign,
   TrendingUp,
@@ -28,8 +29,6 @@ import {
   CalendarDays,
   CalendarRange,
   LayoutList,
-  ArrowUpRight,
-  ArrowDownRight,
 } from "lucide-react";
 
 type SalesReportMode = "daily" | "weekly" | "monthly" | "3months" | "6months" | "all";
@@ -268,45 +267,7 @@ const ReportPage = ({ mode = "all" }: { mode?: SalesReportMode }) => {
     { label: t("report.six_months", "6 Months"), route: `${ROUTERS.REPORT_SALES}?range=6months`, value: "6months" as const, icon: CalendarRange },
   ];
 
-  const kpiCards = [
-    {
-      label: t("dashboard.total_sales", "Total Sales"),
-      value: formatCurrency(totalSales),
-      detail: `${totalTransactions} ${t("pos.items", "transactions")}`,
-      icon: DollarSign,
-      iconBg: "bg-blue-500/10 dark:bg-blue-500/20",
-      iconColor: "text-blue-600 dark:text-blue-400",
-      accent: "border-l-blue-500",
-    },
-    {
-      label: t("dashboard.total_profit", "Total Profit"),
-      value: formatCurrency(totalProfit),
-      detail: `${profitMargin}% ${t("product.margin", "margin")}`,
-      icon: TrendingUp,
-      iconBg: "bg-emerald-500/10 dark:bg-emerald-500/20",
-      iconColor: "text-emerald-600 dark:text-emerald-400",
-      accent: "border-l-emerald-500",
-      trend: totalProfit >= 0 ? "up" as const : "down" as const,
-    },
-    {
-      label: t("dashboard.total_cost", "Total Cost"),
-      value: formatCurrency(totalCost),
-      detail: t("dashboard.cost_of_goods", "Cost of goods sold"),
-      icon: Package,
-      iconBg: "bg-amber-500/10 dark:bg-amber-500/20",
-      iconColor: "text-amber-600 dark:text-amber-400",
-      accent: "border-l-amber-500",
-    },
-    {
-      label: t("dashboard.total_expense", "Total Expense"),
-      value: formatCurrency(totalExpense),
-      detail: t("dashboard.operating_expenses", "Operating expenses"),
-      icon: Wallet,
-      iconBg: "bg-rose-500/10 dark:bg-rose-500/20",
-      iconColor: "text-rose-600 dark:text-rose-400",
-      accent: "border-l-rose-500",
-    },
-  ];
+  const pctOfSales = (part: number) => (totalSales > 0 ? (part / totalSales) * 100 : 0);
 
   return (
     <div className="space-y-5">
@@ -317,40 +278,47 @@ const ReportPage = ({ mode = "all" }: { mode?: SalesReportMode }) => {
           description={reportDescription}
         />
       </div>
-      {/* KPI Cards */}
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        {kpiCards.map((card) => {
-          const Icon = card.icon;
-          return (
-            <div
-              key={card.label}
-              className={`relative rounded-xl border border-border/60 border-l-[3px] ${card.accent} bg-card p-4 transition-all duration-200 hover:shadow-md group`}
-            >
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <p className="text-xs font-medium tracking-wide text-muted-foreground uppercase">
-                    {card.label}
-                  </p>
-                  <div className="flex items-baseline gap-2">
-                    <h3 className="text-xl font-bold tracking-tight text-foreground">
-                      {card.value}
-                    </h3>
-                    {card.trend && (
-                      <span className={`inline-flex items-center text-[10px] font-semibold ${card.trend === "up" ? "text-emerald-600" : "text-rose-600"}`}>
-                        {card.trend === "up" ? <ArrowUpRight className="size-3" /> : <ArrowDownRight className="size-3" />}
-                      </span>
-                    )}
-                  </div>
-                </div>
-                <div className={`rounded-lg p-2.5 ${card.iconBg} transition-transform duration-200 group-hover:scale-110`}>
-                  <Icon className={`size-4 ${card.iconColor}`} />
-                </div>
-              </div>
-              <p className="mt-2 text-[11px] text-muted-foreground">{card.detail}</p>
-            </div>
-          );
-        })}
-      </div>
+      {/* KPI Cards (shared KpiCard) */}
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={DollarSign}
+          title={t("dashboard.total_sales", "Total Sales")}
+          value={formatCurrency(totalSales)}
+          caption={`${totalTransactions} ${t("pos.items", "transactions")}`}
+          splits={[
+            { label: t("dashboard.total_profit", "Total Profit"), value: totalProfit, color: "#4ade80" },
+            { label: t("dashboard.total_cost", "Total Cost"), value: totalCost, color: "#fbbf24" },
+          ]}
+        />
+        <KpiCard
+          tone={totalProfit >= 0 ? "green" : "red"}
+          icon={TrendingUp}
+          title={t("dashboard.total_profit", "Total Profit")}
+          subtitle={t("report.profit_desc", "Sales minus cost of goods")}
+          value={formatCurrency(totalProfit)}
+          caption={`${profitMargin}% ${t("product.margin", "margin")}`}
+          percent={pctOfSales(totalProfit)}
+        />
+        <KpiCard
+          tone="amber"
+          icon={Package}
+          title={t("dashboard.total_cost", "Total Cost")}
+          subtitle={t("dashboard.cost_of_goods", "Cost of goods sold")}
+          value={formatCurrency(totalCost)}
+          caption={t("report.of_sales", "of total sales")}
+          percent={pctOfSales(totalCost)}
+        />
+        <KpiCard
+          tone="red"
+          icon={Wallet}
+          title={t("dashboard.total_expense", "Total Expense")}
+          subtitle={t("dashboard.operating_expenses", "Operating expenses")}
+          value={formatCurrency(totalExpense)}
+          caption={t("report.of_sales", "of total sales")}
+          percent={pctOfSales(totalExpense)}
+        />
+      </KpiGrid>
       {/* Tab Navigation */}
       <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-muted/30 p-1 w-fit">
         {tabs.map((tab) => {

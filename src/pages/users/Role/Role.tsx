@@ -25,6 +25,7 @@ import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { KeyRound, ShieldCheck, UsersRound } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 
 
 const RolePage = () => {
@@ -190,17 +191,41 @@ const RolePage = () => {
           hideButton={!canCreate}
         />
 
-        <div className="role-overview-grid">
-          <div className="role-overview-card"><span className="role-overview-icon blue"><UsersRound size={20} /></span><span><small>{t("common.all", "Total")} {t("role.title", "roles")}</small><strong>{totalRoles}</strong></span></div>
-          <div className="role-overview-card"><span className="role-overview-icon green"><ShieldCheck size={20} /></span><span><small>{t("common.active", "Active")}</small><strong>{activeRoles}</strong></span></div>
-          <div className="role-overview-card"><span className="role-overview-icon orange"><KeyRound size={20} /></span><span><small>{t("role.permissions", "Assigned permissions")}</small><strong>{permissionCount}</strong></span></div>
-        </div>
+        <KpiGrid>
+          <KpiCard
+            featured
+            icon={UsersRound}
+            title={`${t("common.total", "Total")} ${t("role.title", "Roles")}`}
+            value={totalRoles}
+            caption={`${activeRoles} ${t("common.active", "Active")}`}
+            splits={[
+              { label: t("common.active", "Active"), value: activeRoles, color: "#4ade80" },
+              { label: t("common.inactive", "Inactive"), value: pageRoles.length - activeRoles, color: "#fbbf24" },
+            ]}
+          />
+          <KpiCard
+            tone="green"
+            icon={ShieldCheck}
+            title={t("common.active", "Active")}
+            subtitle={t("role.active_roles_desc", "Roles currently in use")}
+            value={activeRoles}
+            caption={`/ ${pageRoles.length} ${t("role.title", "Roles")}`}
+            percent={pageRoles.length > 0 ? (activeRoles / pageRoles.length) * 100 : 0}
+          />
+          <KpiCard
+            tone="purple"
+            icon={KeyRound}
+            title={t("role.permissions", "Permissions")}
+            subtitle={t("role.assigned_permissions_desc", "Assigned across listed roles")}
+            value={permissionCount}
+          />
+        </KpiGrid>
 
         {/* Main Card with Toolbar & Table */}
-        <div className="role-table-card rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+        <div className="role-table-card rounded-2xl border border-border bg-card shadow-card overflow-hidden">
           <div className="role-table-heading"><div><h2>{t("role.title", "Role directory")}</h2><p>{t("role.choose_role", "Search roles, review access, and manage permissions.")}</p></div><span>{totalRoles} {t("common.total", "total")}</span></div>
           {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
-          <div className="p-4 border-b border-border/60">
+          <div className="px-5 py-4 border-b border-border">
             <PageFilter
               search={search}
               onSearchChange={setSearch}

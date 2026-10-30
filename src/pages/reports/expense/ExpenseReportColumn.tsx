@@ -40,7 +40,7 @@ export const ExpenseReportColumns = ({
       <SortableHeader column={column} title={t ? t("common.reference", "Reference") : "Reference"} />
     ),
     cell: ({ row }) => (
-      <span className="font-mono text-xs text-[#696cff]">
+      <span className="tabular-nums text-xs text-primary">
         {row.original.reference || "-"}
       </span>
     ),
@@ -49,7 +49,7 @@ export const ExpenseReportColumns = ({
     accessorKey: "storeName",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store", "Store") : "Store"} />,
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f]">
+      <span className="font-medium text-foreground">
         {row.original.storeName || "-"}
       </span>
     ),
@@ -60,7 +60,7 @@ export const ExpenseReportColumns = ({
       <SortableHeader column={column} title={t ? t("nav.expense_type", "Expense Type") : "Expense Type"} />
     ),
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f]">
+      <span className="font-medium text-foreground">
         {row.original.expenseTypeName || "-"}
       </span>
     ),
@@ -69,7 +69,7 @@ export const ExpenseReportColumns = ({
     accessorKey: "bankName",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("nav.bank", "Bank") : "Bank"} />,
     cell: ({ row }) => (
-      <span className="font-semibold text-[#566a7f]">
+      <span className="font-medium text-foreground">
         {row.original.bankName || "-"}
       </span>
     ),
@@ -80,7 +80,7 @@ export const ExpenseReportColumns = ({
       <SortableHeader column={column} title={t ? t("common.description", "Description") : "Description"} />
     ),
     cell: ({ row }) => (
-      <span className="text-xs text-[#566a7f] max-w-[200px] truncate block">
+      <span className="text-xs text-text-secondary max-w-[200px] truncate block">
         {row.original.description || "-"}
       </span>
     ),
@@ -94,7 +94,7 @@ export const ExpenseReportColumns = ({
     accessorKey: "amount",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("common.amount", "Amount") : "Amount"} />,
     cell: ({ row }) => (
-      <span className="text-[#ff3e1d] font-medium">
+      <span className="text-destructive font-medium">
         {formatCurrency(row.original.amount)}
       </span>
     ),
@@ -109,7 +109,7 @@ export const ExpenseReportColumns = ({
       if (!raw) return <span className="text-muted-foreground text-xs">-</span>;
       const date = new Date(raw);
       return (
-        <span className="text-xs text-[#566a7f]">
+        <span className="text-xs text-text-secondary">
           {date.toLocaleDateString("en-US", {
             year: "numeric",
             month: "short",

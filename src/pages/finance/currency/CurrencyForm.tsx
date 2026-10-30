@@ -165,7 +165,7 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
                                     <Sparkles className="size-3.5 text-primary" />
                                     {t("finance.quick_presets", "Quick Presets")}
                                 </span>
-                                <span className="text-[11px] text-muted-foreground">
+                                <span className="text-[12px] text-muted-foreground">
                                     {t("common.click_to_autofill", "Click to autofill")}
                                 </span>
                             </div> */}
@@ -279,7 +279,7 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
                                         <ArrowRightLeft className="size-3.5" />
                                         <span>{t("finance.rate_preview", "Exchange Rate Preview")}:</span>
                                     </div>
-                                    <div className="font-mono font-bold text-foreground">
+                                    <div className="tabular-nums font-bold text-foreground">
                                         1 USD = {numericRate.toLocaleString()} {symbol || ""}{" "}
                                         {code ? `(${code.toUpperCase()})` : ""}
                                     </div>

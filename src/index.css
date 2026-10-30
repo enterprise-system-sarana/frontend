@@ -2,25 +2,54 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 
-@custom-variant dark (&:is(.dark *));
+/* Dark mode is screen-only: invoices and reports always print on light paper. */
+@custom-variant dark {
+   @media screen {
+      &:is(.dark *) {
+         @slot;
+      }
+   }
+}
+
+/* Khmer glyphs render visually smaller than Latin at the same size; scale them up. */
+@font-face {
+   font-family: "Kantumruy Pro Khmer";
+   font-style: normal;
+   font-display: swap;
+   font-weight: 100 700;
+   size-adjust: 112%;
+   src: url("./assets/fonts/kantumruy-pro-khmer-wght-normal.woff2") format("woff2-variations");
+   unicode-range: U+1780-17FF, U+19E0-19FF, U+200C-200D, U+25CC;
+}
 
 @theme inline {
    /* =====================================================
-       FONTS
+       FONTS  (Figma: Albert Sans — Khmer falls back to Kantumruy Pro)
        ===================================================== */
 
-   --font-sans: "Plus Jakarta Sans", "Kantumruy Pro", ui-sans-serif, system-ui,
-      -apple-system, "Segoe UI Variable", Roboto, "Noto Sans Khmer", sans-serif;
+   --font-sans: "Albert Sans Variable", "Albert Sans", "Kantumruy Pro Khmer",
+      "Kantumruy Pro Variable", "Noto Sans Khmer", ui-sans-serif, system-ui, sans-serif;
 
-   --font-heading: "Bricolage Grotesque", "Plus Jakarta Sans", "Kantumruy Pro",
-      ui-sans-serif, system-ui, "Noto Sans Khmer", sans-serif;
+   --font-heading: "Albert Sans Variable", "Albert Sans", "Kantumruy Pro Khmer",
+      "Kantumruy Pro Variable", "Noto Sans Khmer", ui-sans-serif, system-ui, sans-serif;
 
-   --font-serif: "Fraunces", ui-serif, Georgia, "Noto Serif Khmer",
-      "Noto Sans Khmer", serif;
+   /* =====================================================
+       TYPE SCALE  (one step larger than Tailwind defaults)
+       ===================================================== */
+
+   --text-xs: 0.8125rem;
+   --text-xs--line-height: 1.125rem;
+   --text-sm: 0.9375rem;
+   --text-sm--line-height: 1.4rem;
+   --text-base: 1.0625rem;
+   --text-base--line-height: 1.6rem;
+   --text-lg: 1.1875rem;
+   --text-lg--line-height: 1.75rem;
+
+   --font-serif: ui-serif, Georgia, "Noto Serif Khmer", serif;
 
    --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, Consolas,
       monospace;
-      
 
    /* =====================================================
        CORE COLORS
@@ -52,9 +81,14 @@
 
    --color-success: var(--success);
    --color-warning: var(--warning);
+   --color-warning-text: var(--warning-text);
+   --color-info: var(--info);
    --color-orange: var(--orange);
+   --color-danger-soft: var(--danger-soft);
 
    --color-border: var(--border);
+   --color-border-strong: var(--border-strong);
+   --color-border-subtle: var(--border-subtle);
    --color-input: var(--input);
    --color-ring: var(--ring);
 
@@ -71,6 +105,7 @@
    --color-text-primary: var(--text-primary);
    --color-text-secondary: var(--text-secondary);
    --color-text-muted: var(--text-muted);
+   --color-text-disabled: var(--text-disabled);
 
    --color-green-soft: var(--green-soft);
    --color-sage: var(--sage);
@@ -102,143 +137,145 @@
    --color-sidebar-ring: var(--sidebar-ring);
 
    /* =====================================================
-       RADIUS
+       RADIUS  (Figma: controls 10px, cards 16px)
        ===================================================== */
 
    --radius-sm: calc(var(--radius) * 0.6);
    --radius-md: calc(var(--radius) * 0.8);
    --radius-lg: var(--radius);
-   --radius-xl: calc(var(--radius) * 1.4);
-   --radius-2xl: calc(var(--radius) * 1.8);
+   --radius-xl: calc(var(--radius) * 1.1);
+   --radius-2xl: calc(var(--radius) * 1.3);
    --radius-3xl: calc(var(--radius) * 2.2);
+
+   /* =====================================================
+       SHADOWS  (Figma: Shadow/xs, card elevation)
+       ===================================================== */
+
+   --shadow-2xs: var(--elevation-2xs);
+   --shadow-xs: var(--elevation-xs);
+   --shadow-card: var(--elevation-card);
+   --shadow-kpi: var(--elevation-kpi);
+   --shadow-popover: var(--elevation-popover);
 }
 
 
 /* =========================================================
-   LIGHT MODE
+   LIGHT MODE  (values from Figma "HRD Intelligence" tokens)
    ========================================================= */
 
 :root {
 
-   /* =====================================================
-       PRIMARY
-       ===================================================== */
-
-   --primary: #0062EA;
-   --primary-hover: #0054CC;
-   --primary-light: #EBF3FE;
+   /* PRIMARY — action/primary */
+   --primary: #0B4A82;
+   --primary-hover: #093D6C;
+   --primary-light: #DBEBFA;
    --primary-foreground: #FFFFFF;
+   --primary-gradient-from: #1D67A9;
 
-   /* =====================================================
-       BACKGROUND
-       ===================================================== */
+   /* BRAND SURFACES — white text on these in both modes */
+   --brand-panel: #093D6C;
+   --brand-hue-shift: 0deg;
+   --featured-from: #13568F;
+   --featured-via: #0B4A82;
+   --featured-to: #083A66;
 
-   --background: #F4F5F4;
-   --foreground: #2A1E12;
+   /* BACKGROUND — background/app, background/surface */
+   --background: #F3F6FB;
+   --foreground: #0F172A;
 
-   --surface: #FEFFFE;
-   --surface-green: #E1E8E7;
+   --surface: #FFFFFF;
+   --surface-green: #EEF3F9;
 
-   /* =====================================================
-       CARD
-       ===================================================== */
+   /* CARD */
+   --card: #FFFFFF;
+   --card-foreground: #0F172A;
 
-   --card: #FEFFFE;
-   --card-foreground: #2A1E12;
+   /* POPOVER */
+   --popover: #FFFFFF;
+   --popover-foreground: #0F172A;
 
-   /* =====================================================
-       POPOVER
-       ===================================================== */
+   /* SECONDARY — action/secondary (white w/ brand text) */
+   --secondary: #EEF3F9;
+   --secondary-foreground: #0B4A82;
 
-   --popover: #FEFFFE;
-   --popover-foreground: #2A1E12;
+   /* MUTED — background/muted */
+   --muted: #F0F4F8;
+   --muted-foreground: #4E565F;
 
-   /* =====================================================
-       SECONDARY
-       ===================================================== */
+   /* ACCENT */
+   --accent: #EEF4FB;
+   --accent-foreground: #0B4A82;
 
-   --secondary: #68836C;
-   --secondary-foreground: #FFFFFF;
-
-   /* =====================================================
-       MUTED
-       ===================================================== */
-
-   --muted: #E1E8E7;
-   --muted-foreground: #98998F;
-
-   /* =====================================================
-       ACCENT
-       ===================================================== */
-
-   --accent: #EBF3FE;
-   --accent-foreground: #0062EA;
-
-   /* =====================================================
-       STATUS
-       ===================================================== */
-
-   --success: #04912E;
-   --warning: #F3C03C;
+   /* STATUS */
+   --success: #15803D;
+   --warning: #F5A300;
+   --warning-text: #9A5B00;
+   --info: #1D67A9;
    --orange: #DE6713;
 
-   --destructive: #DC3545;
+   --destructive: #C10517;
    --destructive-foreground: #FFFFFF;
 
-   /* =====================================================
-       BORDER / INPUT
-       ===================================================== */
+   /* STATUS SOFT — tinted fills for icons and pills */
+   --success-soft: #D3F2DE;
+   --success-soft-foreground: #166534;
+   --warning-soft: #FDECC0;
+   --warning-soft-foreground: #9A5B00;
+   --danger-soft: #FEE1DE;
+   --danger-soft-foreground: #9B0512;
 
-   --border: #C9D3CF;
-   --input: #C9D3CF;
-   --ring: #0062EA;
+   /* BORDER / INPUT — border/default, border/strong */
+   --border: #E2E9F2;
+   --border-strong: #CED8E4;
+   --border-subtle: rgb(11 74 130 / 0.07);
+   --input: #CED8E4;
+   --ring: #0B4A82;
 
-   /* =====================================================
-       TEXT
-       ===================================================== */
+   /* TEXT — text/heading, text/body, text/muted, text/disabled */
+   --text-primary: #0F172A;
+   --text-secondary: #334155;
+   --text-muted: #4E565F;
+   --text-disabled: #99A3AD;
 
-   --text-primary: #2A1E12;
-   --text-secondary: #4F483C;
-   --text-muted: #98998F;
+   /* LEGACY GREEN ALIASES (kept for existing classes) */
+   --green-soft: #D3F2DE;
+   --sage: #15803D;
 
-   /* =====================================================
-       SECONDARY GREEN
-       ===================================================== */
+   /* CHARTS */
+   --chart-1: #0B4A82;
+   --chart-2: #1D67A9;
+   --chart-3: #0A6E89;
+   --chart-4: #F5A300;
+   --chart-5: #6847E8;
 
-   --green-soft: #D5E1DD;
-   --sage: #68836C;
+   /* DASHBOARD SERIES — colour-blind checked as a set */
+   --chart-sales: #0B4A82;
+   --chart-cost: #E08A00;
+   --chart-profit: #0D9488;
+   --chart-expense: #E5484D;
 
-   /* =====================================================
-       CHARTS
-       ===================================================== */
+   /* RADIUS */
+   --radius: 0.625rem;
 
-   --chart-1: #0062EA;
-   --chart-2: #68836C;
-   --chart-3: #DE6713;
-   --chart-4: #F3C03C;
-   --chart-5: #4F483C;
+   /* ELEVATION */
+   --elevation-2xs: 0 1px 1px 0 rgb(11 44 82 / 0.04);
+   --elevation-xs: 0 1px 2px 0 rgb(11 44 82 / 0.04);
+   --elevation-card: 0 1px 2px 0 rgb(11 44 82 / 0.04), 0 1px 3px 0 rgb(11 44 82 / 0.03);
+   --elevation-kpi: 0 8px 24px 0 rgb(28 59 115 / 0.06);
+   --elevation-popover: 0 10px 15px -3px rgb(30 60 110 / 0.10), 0 1px 2px 0 rgb(30 60 110 / 0.05);
 
-   /* =====================================================
-       RADIUS
-       ===================================================== */
+   /* SIDEBAR — navy brand rail */
+   --sidebar: #0B4A82;
+   --sidebar-foreground: #FFFFFF;
 
-   --radius: 0.375rem;
+   --sidebar-primary: rgb(255 255 255 / 0.14);
+   --sidebar-primary-foreground: #FFFFFF;
 
-   /* =====================================================
-       SIDEBAR
-       ===================================================== */
+   --sidebar-accent: rgb(255 255 255 / 0.08);
+   --sidebar-accent-foreground: #FFFFFF;
 
-   --sidebar: #052949;
-   --sidebar-foreground: #ffffff;
-
-   --sidebar-primary: #d6e0d9;
-   /* --sidebar-primary-foreground: #FFFFFF; */
-
-   /* --sidebar-accent: #E8F5EC; */
-   /* --sidebar-accent-foreground: #04912E; */
-
-   /* --sidebar-border: #C9D3CF; */
-   /* --sidebar-ring: #04912E; */
+   --sidebar-border: rgb(255 255 255 / 0.18);
+   --sidebar-ring: #DBEBFA;
 }
 
 
@@ -246,121 +283,100 @@
    DARK MODE
    ========================================================= */
 
+@media print {
+   html {
+      color-scheme: light !important;
+   }
+}
+
+@media screen {
 .dark {
 
-   /* =====================================================
-       PRIMARY
-       ===================================================== */
+   --primary: #5AA2E6;
+   --primary-hover: #7AB5EC;
+   --primary-light: #12304F;
+   --primary-foreground: #06182B;
 
-   --primary: #2B7FFF;
-   --primary-hover: #4893FF;
-   --primary-light: #0C284D;
-   --primary-foreground: #FFFFFF;
+   --background: #0A1220;
+   --foreground: #E6EDF6;
 
-   /* =====================================================
-       BACKGROUND
-       ===================================================== */
+   --surface: #111B2C;
+   --surface-green: #16233A;
 
-   --background: #151A17;
-   --foreground: #F4F5F4;
+   --card: #111B2C;
+   --card-foreground: #E6EDF6;
 
-   --surface: #1C231F;
-   --surface-green: #26352D;
+   --popover: #111B2C;
+   --popover-foreground: #E6EDF6;
 
-   /* =====================================================
-       CARD
-       ===================================================== */
+   --secondary: #16233A;
+   --secondary-foreground: #A8CDF2;
 
-   --card: #1C231F;
-   --card-foreground: #F4F5F4;
+   --muted: #16233A;
+   --muted-foreground: #9AA8B8;
 
-   /* =====================================================
-       POPOVER
-       ===================================================== */
+   --accent: #16233A;
+   --accent-foreground: #A8CDF2;
 
-   --popover: #1C231F;
-   --popover-foreground: #F4F5F4;
+   --success: #34C26E;
+   --warning: #F5B83D;
+   --warning-text: #F5B83D;
+   --info: #5AA2E6;
+   --orange: #F08A3E;
 
-   /* =====================================================
-       SECONDARY
-       ===================================================== */
-
-   --secondary: #68836C;
-   --secondary-foreground: #FFFFFF;
-
-   /* =====================================================
-       MUTED
-       ===================================================== */
-
-   --muted: #26352D;
-   --muted-foreground: #A5AEA8;
-
-   /* =====================================================
-       ACCENT
-       ===================================================== */
-
-   --accent: #0C284D;
-   --accent-foreground: #2B7FFF;
-
-   /* =====================================================
-       STATUS
-       ===================================================== */
-
-   --success: #0AA63A;
-   --warning: #F3C03C;
-   --orange: #DE6713;
-
-   --destructive: #DC3545;
+   --destructive: #F0525F;
    --destructive-foreground: #FFFFFF;
 
-   /* =====================================================
-       BORDER / INPUT
-       ===================================================== */
+   --success-soft: rgb(16 185 129 / 0.15);
+   --success-soft-foreground: #6EE7B7;
+   --warning-soft: rgb(245 158 11 / 0.15);
+   --warning-soft-foreground: #FCD34D;
+   --danger-soft: rgb(239 68 68 / 0.15);
+   --danger-soft-foreground: #FCA5A5;
 
-   --border: #34423A;
-   --input: #34423A;
-   --ring: #2B7FFF;
+   --border: #1F2C42;
+   --border-strong: #2B3B55;
+   --border-subtle: rgb(255 255 255 / 0.07);
+   --input: #2B3B55;
+   --ring: #5AA2E6;
 
-   /* =====================================================
-       TEXT
-       ===================================================== */
+   --text-primary: #E6EDF6;
+   --text-secondary: #C3CEDB;
+   --text-muted: #9AA8B8;
+   --text-disabled: #5F6E80;
 
-   --text-primary: #F4F5F4;
-   --text-secondary: #C9D3CF;
-   --text-muted: #8E9992;
+   --green-soft: #12301F;
+   --sage: #34C26E;
 
-   /* =====================================================
-       SECONDARY GREEN
-       ===================================================== */
+   --chart-1: #5AA2E6;
+   --chart-2: #7AB5EC;
+   --chart-3: #3CB4D1;
+   --chart-4: #F5B83D;
+   --chart-5: #9C86F5;
 
-   --green-soft: #2A3931;
-   --sage: #7F9983;
+   --chart-sales: #3F8FD8;
+   --chart-cost: #C98312;
+   --chart-profit: #16A08C;
+   --chart-expense: #E8606A;
 
-   /* =====================================================
-       CHARTS
-       ===================================================== */
+   --elevation-2xs: 0 1px 1px 0 rgb(0 0 0 / 0.20);
+   --elevation-xs: 0 1px 2px 0 rgb(0 0 0 / 0.25);
+   --elevation-card: 0 8px 24px 0 rgb(0 0 0 / 0.25);
+   --elevation-kpi: 0 8px 24px 0 rgb(0 0 0 / 0.25);
+   --elevation-popover: 0 10px 20px -4px rgb(0 0 0 / 0.45);
 
-   --chart-1: #2B7FFF;
-   --chart-2: #7F9983;
-   --chart-3: #DE6713;
-   --chart-4: #F3C03C;
-   --chart-5: #C9D3CF;
+   --sidebar: #0C1A2E;
+   --sidebar-foreground: #E6EDF6;
 
-   /* =====================================================
-       SIDEBAR
-       ===================================================== */
-
-   --sidebar: #151A17;
-   --sidebar-foreground: #F4F5F4;
-
-   --sidebar-primary: #2B7FFF;
+   --sidebar-primary: #1D3A5C;
    --sidebar-primary-foreground: #FFFFFF;
 
-   --sidebar-accent: #26352D;
-   --sidebar-accent-foreground: #2B7FFF;
+   --sidebar-accent: rgb(255 255 255 / 0.06);
+   --sidebar-accent-foreground: #FFFFFF;
 
-   --sidebar-border: #26352D;
-   --sidebar-ring: #2B7FFF;
+   --sidebar-border: rgb(255 255 255 / 0.08);
+   --sidebar-ring: #5AA2E6;
+}
 }
 
 
@@ -385,19 +401,13 @@
    body {
       @apply bg-background text-foreground antialiased;
 
-      font-feature-settings:
-         "cv02",
-         "cv03",
-         "cv04",
-         "cv11",
-         "calt" 1;
+      font-size: 15px;
+      line-height: 1.6;
 
       -webkit-font-smoothing: antialiased;
       -moz-osx-font-smoothing: grayscale;
 
       text-rendering: optimizeLegibility;
-
-      letter-spacing: -0.01em;
    }
 
    h1,
@@ -407,12 +417,13 @@
    h5,
    h6 {
       font-family: var(--font-heading);
-      letter-spacing: -0.02em;
+      color: var(--text-primary);
+      letter-spacing: -0.01em;
    }
 
    ::selection {
-      background: #0062EA;
-      color: #FFFFFF;
+      background: var(--primary);
+      color: var(--primary-foreground);
    }
 
    /* =====================================================
@@ -425,12 +436,12 @@
    }
 
    ::-webkit-scrollbar-thumb {
-      background: rgba(104, 131, 108, 0.45);
+      background: color-mix(in srgb, var(--primary) 22%, transparent);
       border-radius: 999px;
    }
 
    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(0, 98, 234, 0.7);
+      background: color-mix(in srgb, var(--primary) 55%, transparent);
    }
 
    ::-webkit-scrollbar-track {

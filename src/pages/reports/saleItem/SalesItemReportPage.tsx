@@ -16,6 +16,8 @@ import { SalePaymentStatus, SaleStatus } from "@/types/sales/Sale";
 import { PageFilter } from "@/utils/PageFilter";
 import { useSearch } from "@/utils/useSearch";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { Activity, CreditCard, DollarSign, Tag } from "lucide-react";
 import {
   SalesItemReportColumns,
   type SaleItemRow,
@@ -29,6 +31,8 @@ const formatCurrency = (value: number | string | undefined) => {
     maximumFractionDigits: 2,
   }).format(numeric);
 };
+
+const pct = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
 
 const SalesItemReportPage = () => {
   const { t } = useLanguage();
@@ -270,58 +274,6 @@ const SalesItemReportPage = () => {
     return <AccessDenied resource="sales item reports" showBackButton />;
   }
 
-  // KPI card definitions with icon, accent color, and formatted values
-  const kpiCards = [
-    {
-      label: t("report.total_sales", "Total Sales"),
-      value: formatCurrency(summary.totalSalesAmount),
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-        </svg>
-      ),
-      iconBg: "bg-[#696cff]/10 text-[#696cff]",
-      valueColor: "text-[#696cff]",
-      border: "border-[#696cff]/20",
-    },
-    {
-      label: t("sale.total_discount", "Total Discount"),
-      value: formatCurrency(summary.totalDiscount),
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
-        </svg>
-      ),
-      iconBg: "bg-[#ff3e1d]/10 text-[#ff3e1d]",
-      valueColor: "text-[#ff3e1d]",
-      border: "border-[#ff3e1d]/20",
-    },
-    {
-      label: t("sale.paid_amount", "Paid Amount"),
-      value: formatCurrency(summary.totalPaidAmount),
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <rect x="1" y="4" width="22" height="16" rx="2" ry="2" /><line x1="1" y1="10" x2="23" y2="10" />
-        </svg>
-      ),
-      iconBg: "bg-[#71dd37]/10 text-[#71dd37]",
-      valueColor: "text-[#71dd37]",
-      border: "border-[#71dd37]/20",
-    },
-    {
-      label: t("report.transactions", "Transactions"),
-      value: Number(summary.totalTransactions).toLocaleString(),
-      icon: (
-        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12" />
-        </svg>
-      ),
-      iconBg: "bg-[#ffab00]/10 text-[#ffab00]",
-      valueColor: "text-[#ffab00]",
-      border: "border-[#ffab00]/20",
-    },
-  ];
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -330,26 +282,46 @@ const SalesItemReportPage = () => {
       />
 
       {/* KPI Summary Cards */}
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-        {kpiCards.map((card) => (
-          <div
-            key={card.label}
-            className={`rounded-xl border ${card.border} bg-card p-5 shadow-sm transition-shadow hover:shadow-md`}
-          >
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-muted-foreground">{card.label}</p>
-              <span className={`flex h-9 w-9 items-center justify-center rounded-lg ${card.iconBg}`}>
-                {card.icon}
-              </span>
-            </div>
-            <h3 className={`mt-3 text-2xl font-bold tracking-tight ${card.valueColor}`}>
-              {card.value}
-            </h3>
-          </div>
-        ))}
-      </div>
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={DollarSign}
+          title={t("report.total_sales", "Total Sales")}
+          value={formatCurrency(summary.totalSalesAmount)}
+          caption={`${Number(summary.totalTransactions).toLocaleString()} ${t("report.transactions", "Transactions")}`}
+          splits={[
+            { label: t("common.paid", "Paid"), value: summary.totalPaidAmount, color: "#4ade80" },
+            { label: t("common.due", "Due"), value: Math.max(0, summary.totalSalesAmount - summary.totalPaidAmount), color: "#fbbf24" },
+          ]}
+        />
+        <KpiCard
+          tone="red"
+          icon={Tag}
+          title={t("sale.total_discount", "Total Discount")}
+          subtitle={t("report.total_discount_desc", "Discounts given on sales")}
+          value={formatCurrency(summary.totalDiscount)}
+          caption={t("report.of_total_sales", "of total sales")}
+          percent={pct(summary.totalDiscount, summary.totalSalesAmount)}
+        />
+        <KpiCard
+          tone="green"
+          icon={CreditCard}
+          title={t("sale.paid_amount", "Paid Amount")}
+          subtitle={t("report.paid_amount_desc", "Collected from customers")}
+          value={formatCurrency(summary.totalPaidAmount)}
+          caption={t("report.of_total_sales", "of total sales")}
+          percent={pct(summary.totalPaidAmount, summary.totalSalesAmount)}
+        />
+        <KpiCard
+          tone="amber"
+          icon={Activity}
+          title={t("report.transactions", "Transactions")}
+          subtitle={t("report.transactions_desc", "Sales in this period")}
+          value={Number(summary.totalTransactions).toLocaleString()}
+        />
+      </KpiGrid>
 
-      <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <div className="border-b border-border/60 p-4">
           <PageFilter
             search={search}

@@ -37,7 +37,7 @@ export const StoreColumns = ({
           <span className="font-semibold text-foreground text-sm truncate">
             {row.original.name}
           </span>
-          <span className="font-mono text-[11px] text-muted-foreground">
+          <span className="tabular-nums text-[12px] text-muted-foreground">
             {row.original.code || `#${row.original.id}`}
           </span>
         </div>
@@ -96,7 +96,7 @@ export const StoreColumns = ({
     accessorKey: "currencyCode",
     header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.currency") : "Currency"} />,
     cell: ({ row }) => (
-      <span className="font-mono text-xs px-2 py-0.5 rounded-md bg-muted text-foreground font-medium">
+      <span className="tabular-nums text-xs px-2 py-0.5 rounded-md bg-muted text-foreground font-medium">
         {row.original.currencyCode || "-"}
       </span>
     ),

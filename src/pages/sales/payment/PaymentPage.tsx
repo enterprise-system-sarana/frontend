@@ -8,29 +8,34 @@ import { PaymentColumns } from "./PaymentColumn";
 import { PaymentForm } from "./PaymentForm";
 import type { PaymentResponse } from "@/types/sales/Payment";
 import ConfirmDelete from "@/components/ui/confirmDelete";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { KpiCard } from "@/components/ui/kpi-card";
+import { Money, formatMoney } from "@/components/ui/money";
+import { StatusBadge } from "@/components/ui/status-badge";
+import { DetailGrid, DetailItem, DetailSection, SummaryRow } from "@/components/ui/detail-list";
+import { useLanguage } from "@/i18n/LanguageContext";
 import { formatDate } from "@/utils/formatDate";
 import {
-  CreditCard,
-  Coins,
-  Building2,
-  Receipt,
-  ShoppingCart,
-  ShoppingBag,
-  Hash,
-  User,
-  Calendar,
-  DollarSign,
-  Printer,
+  AlertCircle,
   CheckCircle2,
   Clock,
+  Coins,
+  CreditCard,
+  DollarSign,
+  Printer,
+  Receipt,
 } from "lucide-react";
 
-const formatCurrency = (val: number | null | undefined) => `$${(Number(val) || 0).toFixed(2)}`;
-
 export const PaymentPage = () => {
+  const { t } = useLanguage();
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -213,17 +218,16 @@ export const PaymentPage = () => {
     () => [
       {
         key: "status",
-        label: "Status",
+        label: t("common.status", "Status"),
         options: [
-          { label: "All Status", value: "all" },
-          { label: "Paid", value: "PAID" },
-          { label: "Partial", value: "PARTIAL" },
-          { label: "Pending", value: "PENDING" },
-          { label: "Void", value: "VOID" },
+          { label: t("common.paid", "Paid"), value: "PAID" },
+          { label: t("common.partial", "Partial"), value: "PARTIAL" },
+          { label: t("common.pending", "Pending"), value: "PENDING" },
+          { label: t("payment.void", "Void"), value: "VOID" },
         ],
       },
     ],
-    []
+    [t]
   );
 
   const filterValues = useMemo(
@@ -244,84 +248,82 @@ export const PaymentPage = () => {
     setPage(1);
   };
 
+  const totalPayments = paymentList.length;
+  const pct = (part: number, whole: number) => (whole > 0 ? (part / whole) * 100 : 0);
+
+  const voucherLines = selectedPayment
+    ? selectedPayment.lines?.length
+      ? selectedPayment.lines
+      : selectedPayment.paymentLines?.length
+        ? selectedPayment.paymentLines
+        : [
+          {
+            paymentMethod: selectedPayment.paymentMethod || "CASH",
+            amount: selectedPayment.totalAmount ?? selectedPayment.amount ?? 0,
+            bankName: selectedPayment.bankName,
+            transactionNo: selectedPayment.transactionNo,
+          },
+        ]
+    : [];
+
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       {/* 1. Header */}
       <PageHeader
-        title="Sale Payments"
+        title={t("payment.sale_payments", "Sale Payments")}
+        description={t("payment.sale_payments_desc", "Every payment received against sales, with method, change and balance due.")}
         hideButton={true}
       />
 
-      {/* 2. Top Summary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-        {/* Total Collected */}
-        <div className="bg-card border border-border/70 rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="size-10 rounded-lg bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-sky-400 flex items-center justify-center shrink-0 border border-blue-200/50 dark:border-blue-900/50">
-            <DollarSign className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Total Sales Collected
-            </p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white font-mono">
-              {formatCurrency(stats.totalCollected)}
-            </p>
-          </div>
-        </div>
-
-        {/* Fully Settled Sales */}
-        <div className="bg-card border border-border/70 rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="size-10 rounded-lg bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 flex items-center justify-center shrink-0 border border-emerald-200/50 dark:border-emerald-900/50">
-            <CheckCircle2 className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Fully Settled
-            </p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white font-mono">
-              {stats.paidCount} sales
-            </p>
-          </div>
-        </div>
-
-        {/* Partial Payments */}
-        <div className="bg-card border border-border/70 rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="size-10 rounded-lg bg-amber-50 dark:bg-amber-950/50 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-200/50 dark:border-amber-900/50">
-            <Clock className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Partial Payments
-            </p>
-            <p className="text-lg font-bold text-slate-900 dark:text-white font-mono">
-              {stats.partialCount} sales
-            </p>
-          </div>
-        </div>
-
-        {/* Outstanding Due */}
-        <div className="bg-card border border-border/70 rounded-xl p-3.5 shadow-2xs flex items-center gap-3">
-          <div className="size-10 rounded-lg bg-rose-50 dark:bg-rose-950/50 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0 border border-rose-200/50 dark:border-rose-900/50">
-            <DollarSign className="size-5" />
-          </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
-              Outstanding Sales Due
-            </p>
-            <p className="text-lg font-bold text-rose-600 dark:text-rose-400 font-mono">
-              {formatCurrency(stats.totalDue)}
-            </p>
-          </div>
-        </div>
+      {/* 2. KPI cards (shared Figma KpiCard) */}
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <KpiCard
+          featured
+          icon={DollarSign}
+          title={t("payment.total_collected", "Total Collected")}
+          value={formatMoney(stats.totalCollected)}
+          caption={`${totalPayments} ${t("payment.payments", "payments")}`}
+          splits={[
+            { label: t("payment.settled", "Settled"), value: stats.paidCount, color: "#4ade80" },
+            { label: t("common.partial", "Partial"), value: stats.partialCount, color: "#fbbf24" },
+          ]}
+        />
+        <KpiCard
+          tone="green"
+          icon={CheckCircle2}
+          title={t("payment.fully_settled", "Fully Settled")}
+          subtitle={t("payment.fully_settled_desc", "No balance remaining")}
+          value={stats.paidCount}
+          caption={`${t("payment.of", "of")} ${totalPayments} ${t("payment.payments", "payments")}`}
+          percent={pct(stats.paidCount, totalPayments)}
+        />
+        <KpiCard
+          tone="amber"
+          icon={Clock}
+          title={t("payment.partial_payments", "Partial Payments")}
+          subtitle={t("payment.partial_payments_desc", "Customer still owes a balance")}
+          value={stats.partialCount}
+          caption={`${t("payment.of", "of")} ${totalPayments} ${t("payment.payments", "payments")}`}
+          percent={pct(stats.partialCount, totalPayments)}
+        />
+        <KpiCard
+          tone="red"
+          icon={AlertCircle}
+          title={t("payment.outstanding_due", "Outstanding Due")}
+          subtitle={t("payment.outstanding_due_desc", "Unpaid balance on sales")}
+          value={formatMoney(stats.totalDue)}
+          caption={t("payment.of_billed", "of total billed")}
+          percent={pct(stats.totalDue, stats.totalCollected)}
+        />
       </div>
 
       {/* 3. Main Data Table with Filters */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
-        <div className="p-4 border-b border-border/60">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
+        <div className="px-5 py-4 border-b border-border">
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder="Search payment #, sale invoice #, processed by..."
+            searchPlaceholder={t("payment.search_placeholder", "Search payment, sale or cashier…")}
             filterGroups={filterGroups}
             filterValues={filterValues}
             onFilterChange={handleFilterChange}
@@ -329,225 +331,134 @@ export const PaymentPage = () => {
           />
         </div>
 
-        <div className="px-0">
-          <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
-            <DataTable
-              columns={PaymentColumns({
-                mode: "sale",
-                onView: handleView,
-                onEdit: handleEdit,
-                onDelete: handleDelete,
-              })}
-              data={paginatedList}
-              pagination={{
-                currentPage: page,
-                pageSize: size,
-                totalElements: paginationMeta.totalElements,
-                totalPages: paginationMeta.totalPages,
-                onPageChange: setPage,
-                onPageSizeChange: (newSize) => {
-                  setPage(1);
-                  setSize(newSize);
-                },
-              }}
-            />
-          </QueryBoundary>
-        </div>
+        <QueryBoundary isLoading={isLoading} isError={isError} onRetry={refetch}>
+          <DataTable
+            columns={PaymentColumns({
+              mode: "sale",
+              onView: handleView,
+              onEdit: handleEdit,
+              onDelete: handleDelete,
+              t,
+            })}
+            data={paginatedList}
+            pagination={{
+              currentPage: page,
+              pageSize: size,
+              totalElements: paginationMeta.totalElements,
+              totalPages: paginationMeta.totalPages,
+              onPageChange: setPage,
+              onPageSizeChange: (newSize) => {
+                setPage(1);
+                setSize(newSize);
+              },
+            }}
+          />
+        </QueryBoundary>
       </div>
 
       {/* 4. Delete Confirmation */}
       <ConfirmDelete
         isOpen={isDeleteOpen}
         setIsOpen={setIsDeleteOpen}
-        entityName="Payment Record"
+        entityName={t("payment.record", "Payment Record")}
         confirmDelete={confirmDelete}
       />
 
-      {/* 5. Payment Details Receipt Modal */}
+      {/* 5. Payment voucher (shared dialog + detail components) */}
       {selectedPayment && (
         <Dialog open={isDetailOpen} onOpenChange={setIsDetailOpen}>
-          <DialogContent className="max-w-md w-full p-0 overflow-hidden rounded-2xl bg-white text-slate-800">
-            {/* Modal Header */}
-            <DialogHeader className="p-5 border-b border-slate-100 bg-slate-50/60">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2.5">
-                  <div className="size-9 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center border border-blue-100">
-                    <Receipt className="size-5" />
-                  </div>
-                  <div>
-                    <DialogTitle className="text-base font-bold text-slate-900">
-                      Payment Voucher
-                    </DialogTitle>
-                    <p className="text-xs font-mono text-slate-500 mt-0.5">
-                      {selectedPayment.paymentNo || `PAY-${selectedPayment.id}`}
-                    </p>
-                  </div>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <div className="flex items-center gap-3">
+                <span className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-primary-light text-primary">
+                  <Receipt className="size-5" strokeWidth={1.75} />
+                </span>
+                <div className="min-w-0">
+                  <DialogTitle>{t("payment.voucher", "Payment Voucher")}</DialogTitle>
+                  <DialogDescription>
+                    {selectedPayment.paymentNo || `PAY-${selectedPayment.id}`}
+                  </DialogDescription>
                 </div>
-                <Badge
-                  variant="outline"
-                  className={
-                    selectedPayment.status === "PAID"
-                      ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-amber-50 text-amber-700 border-amber-200"
-                  }
-                >
-                  {selectedPayment.status || "COMPLETED"}
-                </Badge>
+                <StatusBadge status={selectedPayment.status || "COMPLETED"} className="ml-auto" />
               </div>
             </DialogHeader>
 
-            {/* Modal Body */}
-            <div className="p-5 space-y-4 text-xs">
-              {/* Order Context */}
-              <div className="grid grid-cols-2 gap-3 p-3 rounded-xl bg-slate-50 border border-slate-100">
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                    Sale Reference
-                  </span>
-                  <span className="font-semibold text-blue-700 dark:text-sky-400 mt-0.5 block flex items-center gap-1">
-                    <ShoppingCart className="size-3.5" />
-                    {selectedPayment.saleNo || (selectedPayment.saleId ? `Sale #${selectedPayment.saleId}` : "POS Sale")}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                    Date & Time
-                  </span>
-                  <span className="font-medium text-slate-700 mt-0.5 block">
-                    {formatDate(selectedPayment.paymentDate)}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                    Processed By
-                  </span>
-                  <span className="font-medium text-slate-700 mt-0.5 block">
-                    {selectedPayment.username || (selectedPayment.userId ? `User #${selectedPayment.userId}` : "System")}
-                  </span>
-                </div>
-                <div>
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">
-                    Payment ID
-                  </span>
-                  <span className="font-mono text-slate-700 mt-0.5 block">
-                    #{selectedPayment.id}
-                  </span>
-                </div>
-              </div>
+            <DetailGrid>
+              <DetailItem label={t("payment.sale_ref", "Sale Ref.")}>
+                {selectedPayment.saleNo || (selectedPayment.saleId ? `SALE-${selectedPayment.saleId}` : t("payment.pos_sale", "POS Sale"))}
+              </DetailItem>
+              <DetailItem label={t("common.date", "Date")}>
+                {formatDate(selectedPayment.paymentDate)}
+              </DetailItem>
+              <DetailItem label={t("payment.processed_by", "Processed By")}>
+                {selectedPayment.username || (selectedPayment.userId ? `User #${selectedPayment.userId}` : "System")}
+              </DetailItem>
+              <DetailItem label={t("payment.payment_id", "Payment ID")}>
+                #{selectedPayment.id}
+              </DetailItem>
+            </DetailGrid>
 
-              {/* Payment Lines Breakdown */}
-              <div>
-                <h4 className="text-[11px] font-bold uppercase tracking-wider text-slate-500 mb-2">
-                  Tendered Breakdown
-                </h4>
-                <div className="rounded-xl border border-slate-200/80 divide-y divide-slate-100 overflow-hidden">
-                  {(selectedPayment.lines?.length
-                    ? selectedPayment.lines
-                    : selectedPayment.paymentLines?.length
-                    ? selectedPayment.paymentLines
-                    : [
-                        {
-                          paymentMethod: selectedPayment.paymentMethod || "CASH",
-                          amount: selectedPayment.totalAmount ?? selectedPayment.amount ?? 0,
-                          bankName: selectedPayment.bankName,
-                          transactionNo: selectedPayment.transactionNo,
-                        },
-                      ]
-                  ).map((line: any, i: number) => (
-                    <div key={i} className="p-2.5 flex items-center justify-between text-xs">
-                      <div className="flex items-center gap-2">
-                        {String(line.paymentMethod).toUpperCase().includes("CASH") ? (
-                          <Coins className="size-4 text-amber-500 shrink-0" />
-                        ) : (
-                          <CreditCard className="size-4 text-indigo-500 shrink-0" />
-                        )}
-                        <div>
-                          <p className="font-bold text-slate-800">
-                            {line.paymentMethod}
-                            {line.bankName && (
-                              <span className="font-normal text-slate-500 ml-1">
-                                ({line.bankName})
-                              </span>
-                            )}
+            <DetailSection title={t("payment.payment_methods", "Payment Methods")}>
+              <div className="divide-y divide-border rounded-xl border border-border">
+                {voucherLines.map((line: any, i: number) => {
+                  const isCash = String(line.paymentMethod).toUpperCase().includes("CASH");
+                  return (
+                    <div key={i} className="flex items-center justify-between gap-3 px-4 py-3">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <span className={`flex size-8 shrink-0 items-center justify-center rounded-full ${isCash ? "bg-warning/10 text-warning-text" : "bg-primary-light text-primary"}`}>
+                          {isCash ? <Coins className="size-4" /> : <CreditCard className="size-4" />}
+                        </span>
+                        <div className="min-w-0">
+                          <p className="truncate text-sm font-medium text-foreground">
+                            {String(line.paymentMethod || "CASH").replace(/_/g, " ").toLowerCase().replace(/\b\w/g, (c: string) => c.toUpperCase())}
+                            {line.bankName && <span className="font-normal text-muted-foreground"> · {line.bankName}</span>}
                           </p>
                           {line.transactionNo && (
-                            <p className="font-mono text-[10px] text-slate-400">
-                              TX: {line.transactionNo}
-                            </p>
+                            <p className="truncate text-xs text-muted-foreground">TX {line.transactionNo}</p>
                           )}
                         </div>
                       </div>
                       <div className="text-right">
-                        <span className="font-mono font-bold text-slate-800 text-sm">
-                          {formatCurrency(line.amount)}
-                        </span>
+                        <Money value={line.amount} />
                         {line.currencyCode && line.currencyCode !== "USD" && (
-                          <p className="text-[10px] text-slate-500 font-mono">
-                            {line.currencyCode}
-                          </p>
+                          <p className="text-xs text-muted-foreground">{line.currencyCode}</p>
                         )}
                       </div>
                     </div>
-                  ))}
-                </div>
+                  );
+                })}
               </div>
+            </DetailSection>
 
-              {/* Amount Summary */}
-              <div className="space-y-1.5 pt-2 border-t border-slate-100">
-                <div className="flex justify-between text-slate-600">
-                  <span>Total Bill:</span>
-                  <span className="font-mono font-bold text-slate-900">
-                    {formatCurrency(selectedPayment.totalAmount ?? selectedPayment.amount)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Received Amount:</span>
-                  <span className="font-mono font-semibold text-emerald-600">
-                    {formatCurrency(selectedPayment.receivedAmount ?? selectedPayment.totalAmount ?? selectedPayment.amount)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Return / Change:</span>
-                  <span className="font-mono font-semibold text-amber-600">
-                    {formatCurrency(selectedPayment.returnAmount ?? 0)}
-                  </span>
-                </div>
-                <div className="flex justify-between text-slate-600">
-                  <span>Remaining Due:</span>
-                  <span className="font-mono font-bold text-rose-600">
-                    {formatCurrency(selectedPayment.dueAmount ?? 0)}
-                  </span>
-                </div>
-              </div>
-
-              {/* Note */}
-              {selectedPayment.note && (
-                <div className="p-2.5 rounded-lg bg-amber-50/70 border border-amber-200/50 text-amber-900 text-xs">
-                  <span className="font-semibold block mb-0.5">Note:</span>
-                  <p className="text-[11px] leading-relaxed">{selectedPayment.note}</p>
-                </div>
-              )}
+            <div className="space-y-2.5">
+              <SummaryRow label={t("payment.total_bill", "Total Bill")}>
+                <Money value={selectedPayment.totalAmount ?? selectedPayment.amount} />
+              </SummaryRow>
+              <SummaryRow label={t("payment.total_received", "Total Received")}>
+                <Money value={selectedPayment.receivedAmount ?? selectedPayment.totalAmount ?? selectedPayment.amount} tone="success" />
+              </SummaryRow>
+              <SummaryRow label={t("payment.change_return", "Change Return")}>
+                <Money value={selectedPayment.returnAmount ?? 0} tone="warning" />
+              </SummaryRow>
+              <SummaryRow label={t("payment.remaining_due", "Remaining Due")} emphasis>
+                <Money value={selectedPayment.dueAmount ?? 0} tone={Number(selectedPayment.dueAmount ?? 0) > 0.005 ? "danger" : "default"} />
+              </SummaryRow>
             </div>
 
-            {/* Footer */}
-            <div className="p-4 border-t border-slate-100 bg-slate-50/60 flex items-center justify-end gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handlePrint}
-                className="gap-1.5 cursor-pointer text-xs"
-              >
-                <Printer className="size-3.5" />
-                Print Voucher
+            {selectedPayment.note && (
+              <div className="rounded-xl border border-warning/30 bg-warning/10 px-4 py-3 text-sm text-warning-text">
+                <p className="mb-0.5 font-medium">{t("payment.note", "Note")}</p>
+                <p className="leading-relaxed">{selectedPayment.note}</p>
+              </div>
+            )}
+
+            <DialogFooter>
+              <Button variant="outline" onClick={handlePrint}>
+                <Printer className="size-4" />
+                {t("payment.print_voucher", "Print Voucher")}
               </Button>
-              <Button
-                size="sm"
-                onClick={() => setIsDetailOpen(false)}
-                className="bg-slate-900 hover:bg-slate-800 text-white text-xs cursor-pointer"
-              >
-                Close
-              </Button>
-            </div>
+              <Button onClick={() => setIsDetailOpen(false)}>{t("common.close", "Close")}</Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
       )}

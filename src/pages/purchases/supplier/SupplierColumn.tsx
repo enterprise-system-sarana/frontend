@@ -29,7 +29,7 @@ export const SupplierColumns = ({
         <span className="font-semibold text-foreground text-sm truncate">
           {row.original.name}
         </span>
-        <span className="font-mono text-[11px] text-muted-foreground">
+        <span className="tabular-nums text-[12px] text-muted-foreground">
           {row.original.code || `#${row.original.id}`}
         </span>
       </div>

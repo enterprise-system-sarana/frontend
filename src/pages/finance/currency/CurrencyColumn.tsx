@@ -19,27 +19,27 @@ export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete, t }: Cur
     {
         accessorKey: "code",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.code") : "Code"} />,
-        cell: ({ row }) => <span className="font-mono text-xs text-[#696cff] font-bold">{row.original.code}</span>,
+        cell: ({ row }) => <span className="tabular-nums text-xs text-primary font-bold">{row.original.code}</span>,
     },
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.currency") : "Currency Name"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
     },
     {
         accessorKey: "rate",
         header: t ? t("finance.exchange_rate") : "Exchange Rate",
-        cell: ({ row }) => <span className="font-medium text-[#71dd37]">{row.original.rate}</span>,
+        cell: ({ row }) => <span className="font-medium text-success">{row.original.rate}</span>,
     },
     {
         accessorKey: "symbol",
         header: t ? t("finance.symbol") : "Symbol",
-        cell: ({ row }) => <span className="font-mono text-sm font-semibold text-[#566a7f]">{row.original.symbol || "-"}</span>,
+        cell: ({ row }) => <span className="tabular-nums text-sm font-medium text-foreground">{row.original.symbol || "-"}</span>,
     },
     {
         accessorKey: "createdAt",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />,
-        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
+        cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>,
     },
     // {
     //     accessorKey: "status",
@@ -52,7 +52,7 @@ export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete, t }: Cur
         enableHiding: false,
         cell: ({ row }) => {
             if (!canEdit && !canDelete) {
-                return <span className="text-[#a1acb8] text-sm">-</span>;
+                return <span className="text-text-disabled text-sm">-</span>;
             }
             return (
                 <TableActions

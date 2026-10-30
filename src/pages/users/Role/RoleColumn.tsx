@@ -37,7 +37,7 @@ export const RoleColumns = ({
       <button
         type="button"
         onClick={() => onViewPermissions?.(row.original)}
-        className="inline-flex items-center px-2 py-0.5 rounded-md text-xs font-mono font-bold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-colors cursor-pointer text-left"
+        className="inline-flex items-center px-2 py-0.5 rounded-md text-xs tabular-nums font-bold bg-primary/10 text-primary border border-primary/20 hover:bg-primary/20 hover:border-primary/40 transition-colors cursor-pointer text-left"
         title="View role permissions"
       >
         {row.original.code}
@@ -97,7 +97,7 @@ export const RoleColumns = ({
       />
     ),
     cell: ({ row }) => (
-      <span className="text-xs text-[#566a7f]">
+      <span className="text-xs text-text-secondary">
         {formatDate(row.original.createdAt)}
       </span>
     ),
@@ -108,7 +108,7 @@ export const RoleColumns = ({
     enableHiding: false,
     cell: ({ row }) => {
       if (!canEdit && !canDelete && !onViewPermissions) {
-        return <span className="text-[#a1acb8] text-sm">-</span>;
+        return <span className="text-text-disabled text-sm">-</span>;
       }
       return (
         <TableActions

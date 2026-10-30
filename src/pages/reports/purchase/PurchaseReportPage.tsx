@@ -1,3 +1,4 @@
+import { DatePicker, DateRangePicker, MonthPicker } from "@/components/ui/date-picker";
 import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import {
@@ -19,6 +20,7 @@ import { PurchaseReportColumns, type PurchaseReportRow } from "./PurchaseReportC
 import { PurchaseDetailModal } from "@/pages/purchases/purchase/PurchaseDetail";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import {
   DollarSign,
   Package,
@@ -77,6 +79,8 @@ const getPeriod = (mode: ReportPeriodMode, value: string) => {
   }
   return { startDate: "", endDate: "" };
 };
+
+const pct = (part: number, total: number) => (total > 0 ? (part / total) * 100 : 0);
 
 const formatCurrency = (value: number | string | undefined) => {
   const numeric = Number(value ?? 0);
@@ -278,91 +282,45 @@ export default function PurchaseReportPage({ mode: initialMode = "all" }: { mode
       </PageHeader>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Purchases */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs relative overflow-hidden group hover:border-primary/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_purchases", "Total Purchases")}
-            </span>
-            <div className="size-9 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <ShoppingBag className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {formatCurrency(totalAmount)}
-            </span>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {totalTransactions} {t("common.invoices", "orders")}
-            </span>
-          </div>
-        </div>
-
-        {/* Total Paid Amount */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs relative overflow-hidden group hover:border-emerald-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_paid", "Total Paid")}
-            </span>
-            <div className="size-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <Wallet className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-              {formatCurrency(totalPaid)}
-            </span>
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              {totalAmount > 0 ? `${((totalPaid / totalAmount) * 100).toFixed(1)}% settled` : "—"}
-            </span>
-          </div>
-        </div>
-
-        {/* Outstanding Due Amount */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs relative overflow-hidden group hover:border-rose-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_due", "Total Due / Unpaid")}
-            </span>
-            <div className={`size-9 rounded-lg flex items-center justify-center ${
-              totalDue > 0 ? "bg-rose-500/10 text-rose-600 dark:text-rose-400" : "bg-muted text-muted-foreground"
-            }`}>
-              <AlertCircle className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className={`text-2xl font-bold tracking-tight ${totalDue > 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"}`}>
-              {formatCurrency(totalDue)}
-            </span>
-            {totalDue > 0 && (
-              <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full">
-                Action Needed
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Total Units / Quantity */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs relative overflow-hidden group hover:border-sky-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_quantity", "Purchased Items")}
-            </span>
-            <div className="size-9 rounded-lg bg-sky-500/10 text-sky-600 dark:text-sky-400 flex items-center justify-center">
-              <Package className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {totalQuantity.toLocaleString()}
-            </span>
-            <span className="text-xs font-semibold text-muted-foreground">
-              Units Received
-            </span>
-          </div>
-        </div>
-      </div>
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={ShoppingBag}
+          title={t("purchase.total_purchases", "Total Purchases")}
+          value={formatCurrency(totalAmount)}
+          caption={`${totalTransactions} ${t("common.invoices", "orders")}`}
+          splits={[
+            { label: t("common.paid", "Paid"), value: totalPaid, color: "#4ade80" },
+            { label: t("common.due", "Due"), value: totalDue, color: "#fb7185" },
+          ]}
+        />
+        <KpiCard
+          tone="green"
+          icon={Wallet}
+          title={t("purchase.total_paid", "Total Paid")}
+          subtitle={t("purchase.total_paid_desc", "Settled with suppliers")}
+          value={formatCurrency(totalPaid)}
+          caption={t("purchase.of_total_purchases", "of total purchases")}
+          percent={pct(totalPaid, totalAmount)}
+        />
+        <KpiCard
+          tone="red"
+          icon={AlertCircle}
+          title={t("purchase.total_due", "Total Due / Unpaid")}
+          subtitle={t("purchase.total_due_desc", "Still owed to suppliers")}
+          value={formatCurrency(totalDue)}
+          caption={t("purchase.of_total_purchases", "of total purchases")}
+          percent={pct(totalDue, totalAmount)}
+        />
+        <KpiCard
+          tone="cyan"
+          icon={Package}
+          title={t("purchase.total_quantity", "Purchased Items")}
+          subtitle={t("purchase.total_quantity_desc", "Units received")}
+          value={totalQuantity.toLocaleString()}
+          caption={t("purchase.units_received", "Units Received")}
+        />
+      </KpiGrid>
 
       {/* Filter Bar & Quick Period Selector */}
       <div className="space-y-3">
@@ -393,48 +351,39 @@ export default function PurchaseReportPage({ mode: initialMode = "all" }: { mode
           {/* Quick Date Range / Period Input */}
           <div className="flex items-center gap-2">
             {activeTab === "daily" && (
-              <input
-                type="date"
+              <DatePicker
                 value={periodValue}
-                onChange={(e) => {
-                  setPeriodValue(e.target.value);
-                  setStartDate(e.target.value);
-                  setEndDate(e.target.value);
+                required
+                className="w-[170px]"
+                onChange={(value) => {
+                  setPeriodValue(value);
+                  setStartDate(value);
+                  setEndDate(value);
                 }}
-                className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background shadow-xs focus:ring-1 focus:ring-primary/40"
               />
             )}
             {activeTab === "monthly" && (
-              <input
-                type="month"
+              <MonthPicker
                 value={periodValue}
-                onChange={(e) => {
-                  setPeriodValue(e.target.value);
-                  const p = getPeriod("monthly", e.target.value);
+                className="w-[170px]"
+                onChange={(value) => {
+                  setPeriodValue(value);
+                  const p = getPeriod("monthly", value);
                   setStartDate(p.startDate);
                   setEndDate(p.endDate);
                 }}
-                className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background shadow-xs focus:ring-1 focus:ring-primary/40"
               />
             )}
             {activeTab === "all" && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
-                  placeholder="From"
-                />
-                <span className="text-muted-foreground">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
-                  placeholder="To"
-                />
-              </div>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                align="end"
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+              />
             )}
             {(storeId !== "all" || supplierId !== "all" || status !== "all" || paymentStatus !== "all" || search || startDate || endDate) && (
               <button
@@ -463,7 +412,7 @@ export default function PurchaseReportPage({ mode: initialMode = "all" }: { mode
       </div>
 
       {/* Main Data Table Card */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <DataTable
           columns={columns}
           data={searchedRows}

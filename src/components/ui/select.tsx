@@ -52,35 +52,35 @@ function SelectTrigger({
       data-size={size}
       className={cn(
         // Base
-        "flex h-11 w-full items-center justify-between gap-2 rounded-md min-w-0 overflow-hidden",
-        "border border-border/70 bg-background",
-        "px-3.5 py-2",
+        "flex h-9 w-full cursor-pointer items-center justify-between gap-2 rounded-lg min-w-0 overflow-hidden",
+        "border border-input bg-card shadow-2xs",
+        "px-3 py-2",
         "text-sm text-foreground text-left",
-        "transition-all duration-200 ease-out",
+        "transition-[border-color,box-shadow] duration-150 ease-out",
         "outline-none select-none",
 
         // Hover
-        "hover:border-foreground/30 hover:bg-background",
+        "hover:border-primary/40",
 
         // Focus
-        "focus-visible:border-foreground/50 focus-visible:ring-2 focus-visible:ring-foreground/15",
+        "focus-visible:border-primary focus-visible:ring-3 focus-visible:ring-primary/15 data-[state=open]:border-primary",
 
         // Invalid
-        "aria-invalid:border-destructive aria-invalid:ring-2 aria-invalid:ring-destructive/15",
+        "aria-invalid:border-destructive aria-invalid:ring-3 aria-invalid:ring-destructive/15",
 
         // Placeholder
-        "data-placeholder:text-muted-foreground/60",
+        "data-placeholder:text-text-disabled",
 
         // Sizes
         "data-[size=sm]:h-8 data-[size=sm]:rounded-md data-[size=sm]:px-2.5 data-[size=sm]:text-xs",
-        "data-[size=default]:h-11",
-        "data-[size=lg]:h-12 data-[size=lg]:text-base",
+        "data-[size=default]:h-9",
+        "data-[size=lg]:h-10",
 
         // Disabled
-        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted/50 disabled:text-muted-foreground disabled:opacity-60",
+        "disabled:pointer-events-none disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground disabled:opacity-60",
 
         // Dark mode
-        "dark:bg-card/60 dark:border-border/60 dark:hover:bg-card/80 dark:focus-visible:border-foreground/60 dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
+        "dark:bg-card dark:aria-invalid:border-destructive/50 dark:aria-invalid:ring-destructive/40",
 
         // Child elements
         "[&>span]:truncate [&>span]:block [&>span]:text-left [&>span]:min-w-0 [&>span]:flex-1",
@@ -111,7 +111,7 @@ function SelectContent({
         data-slot="select-content"
         data-align-trigger={position === "item-aligned"}
         className={cn(
-          "relative z-50 max-h-80 min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-border/70 bg-popover text-popover-foreground shadow-lg backdrop-blur-sm duration-150 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+          "relative z-50 max-h-80 min-w-36 origin-(--radix-select-content-transform-origin) overflow-x-hidden overflow-y-auto rounded-xl border border-border bg-popover text-popover-foreground shadow-popover duration-150 data-[align-trigger=true]:animate-none data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95 data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
           position === "popper" &&
           "data-[side=bottom]:translate-y-1 data-[side=left]:-translate-x-1 data-[side=right]:translate-x-1 data-[side=top]:-translate-y-1",
           className

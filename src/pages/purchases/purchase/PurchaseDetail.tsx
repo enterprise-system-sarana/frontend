@@ -422,7 +422,7 @@ export const PurchaseDetailModal = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-4xl max-h-[92vh] p-0 overflow-y-auto bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl shadow-2xl">
+      <DialogContent className="sm:max-w-4xl max-h-[92vh] p-0 overflow-y-auto bg-card border border-border rounded-xl shadow-2xl">
         <DialogHeader className="sr-only">
           <DialogTitle>Purchase Details</DialogTitle>
         </DialogHeader>
@@ -430,15 +430,15 @@ export const PurchaseDetailModal = ({
         {isLoading && !purchase ? (
           <div className="p-8 space-y-4 animate-pulse">
             <div className="grid grid-cols-3 gap-6">
-              <div className="h-24 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-              <div className="h-24 bg-slate-100 dark:bg-slate-800 rounded-lg" />
-              <div className="h-24 bg-slate-100 dark:bg-slate-800 rounded-lg" />
+              <div className="h-24 bg-muted rounded-lg" />
+              <div className="h-24 bg-muted rounded-lg" />
+              <div className="h-24 bg-muted rounded-lg" />
             </div>
-            <div className="h-48 bg-slate-100 dark:bg-slate-800 rounded-lg mt-6" />
+            <div className="h-48 bg-muted rounded-lg mt-6" />
           </div>
         ) : isError && !purchase ? (
           <div className="p-12 text-center text-muted-foreground">
-            <p className="text-sm font-semibold text-slate-800 dark:text-slate-200">
+            <p className="text-sm font-semibold text-foreground">
               Failed to load purchase details
             </p>
             <Button
@@ -451,18 +451,18 @@ export const PurchaseDetailModal = ({
             </Button>
           </div>
         ) : purchase ? (
-          <div className="p-6 sm:p-8 space-y-6 text-slate-800 dark:text-slate-100">
+          <div className="p-6 sm:p-8 space-y-6 text-foreground">
             {/* 1. Header Information Section (3 columns) */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pb-6 border-b border-slate-100 dark:border-slate-800">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 pb-6 border-b border-border">
               {/* Supplier Info */}
               <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <h4 className="text-xs font-bold text-foreground">
                   Supplier Info
                 </h4>
-                <p className="text-base font-bold text-slate-900 dark:text-white mt-1.5">
+                <p className="text-base font-bold text-foreground mt-1.5">
                   {purchase.supplierName || "Supplier Name"}
                 </p>
-                <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5 mt-1 leading-relaxed">
+                <div className="text-xs text-muted-foreground space-y-0.5 mt-1 leading-relaxed">
                   <p>
                     {matchedSupplier?.note || "3103 Trainer Avenue Peoria, IL 61602"}
                   </p>
@@ -477,13 +477,13 @@ export const PurchaseDetailModal = ({
 
               {/* Company Info */}
               {/* <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <h4 className="text-xs font-bold text-foreground">
                   Company Info
                 </h4>
-                <p className="text-base font-bold text-slate-900 dark:text-white mt-1.5">
+                <p className="text-base font-bold text-foreground mt-1.5">
                   {purchase.storeName || "DGT"}
                 </p>
-                <div className="text-xs text-slate-500 dark:text-slate-400 space-y-0.5 mt-1 leading-relaxed">
+                <div className="text-xs text-muted-foreground space-y-0.5 mt-1 leading-relaxed">
                   <p>2077 Chicago Avenue Orosi, CA 93647</p>
                   <p>Email: admin@example.com</p>
                   <p>Phone: +1 893 174 0385</p>
@@ -492,19 +492,19 @@ export const PurchaseDetailModal = ({
 
               {/* Invoice Info */}
               <div>
-                <h4 className="text-xs font-bold text-slate-800 dark:text-slate-200">
+                <h4 className="text-xs font-bold text-foreground">
                   Invoice Info
                 </h4>
-                <div className="text-xs text-slate-500 dark:text-slate-400 space-y-1.5 mt-1.5">
+                <div className="text-xs text-muted-foreground space-y-1.5 mt-1.5">
                   <p>
                     Reference:{" "}
-                    <span className="font-semibold text-[#f97316]">
+                    <span className="font-semibold text-primary">
                       {purchase.referenceNo || `PO0101`}
                     </span>
                   </p>
                   <p>
                     Date:{" "}
-                    <span className="text-slate-700 dark:text-slate-300">
+                    <span className="text-text-secondary">
                       {purchase.purchaseDate
                         ? formatDate(purchase.purchaseDate)
                         : "Dec 24, 2024"}
@@ -521,21 +521,21 @@ export const PurchaseDetailModal = ({
                             {imp && (
                               <p className="flex items-center gap-1.5">
                                 <span>Importance:</span>
-                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold ${
+                                <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-bold ${
                                   imp === "URGENT"
-                                    ? "bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/25"
+                                    ? "bg-destructive/15 text-destructive border border-destructive/25"
                                     : imp === "HIGH"
-                                    ? "bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25"
+                                    ? "bg-warning/15 text-warning-text border border-warning/25"
                                     : imp === "LOW"
-                                    ? "bg-slate-500/15 text-slate-600 dark:text-slate-400 border border-slate-500/25"
-                                    : "bg-blue-500/15 text-blue-600 dark:text-blue-400 border border-blue-500/25"
+                                    ? "bg-muted-foreground text-text-secondary border border-border-strong"
+                                    : "bg-primary/15 text-primary border border-primary/25"
                                 }`}>
                                   {imp} Priority
                                 </span>
                               </p>
                             )}
                             {cleanNote && (
-                              <p className="text-slate-600 dark:text-slate-400">
+                              <p className="text-text-secondary">
                                 Note: <span className="italic">{cleanNote}</span>
                               </p>
                             )}
@@ -547,11 +547,11 @@ export const PurchaseDetailModal = ({
                   {/* <div className="flex items-center gap-1.5">
                     <span>Status:</span>
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[11px] font-semibold text-white ${statusUpper === "COMPLETED"
-                        ? "bg-[#10b981]"
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[12px] font-semibold text-white ${statusUpper === "COMPLETED"
+                        ? "bg-primary"
                         : statusUpper === "PENDING"
-                          ? "bg-amber-500"
-                          : "bg-rose-500"
+                          ? "bg-warning"
+                          : "bg-destructive"
                         }`}
                     >
                       {purchase.status || "Completed"}
@@ -560,13 +560,13 @@ export const PurchaseDetailModal = ({
                   {/* <div className="flex items-center gap-1.5">
                     <span>Payment Status:</span>
                     <span
-                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[11px] font-medium ${isPaid
-                        ? "bg-emerald-50 text-emerald-700 border border-emerald-200 dark:bg-emerald-950/40 dark:text-emerald-400 dark:border-emerald-800"
-                        : "bg-amber-50 text-amber-700 border border-amber-200 dark:bg-amber-950/40 dark:text-amber-400 dark:border-amber-800"
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[12px] font-medium ${isPaid
+                        ? "bg-success/10 text-success border border-success/20"
+                        : "bg-warning/10 text-warning-text border border-warning/20"
                         }`}
                     >
                       <span
-                        className={`size-1.5 rounded-full inline-block ${isPaid ? "bg-emerald-500" : "bg-amber-500"
+                        className={`size-1.5 rounded-full inline-block ${isPaid ? "bg-success" : "bg-warning"
                           }`}
                       />
                       {purchase.paymentStatus || "Paid"}
@@ -578,14 +578,14 @@ export const PurchaseDetailModal = ({
 
             {/* 2. Order Summary Title */}
             <div>
-              <h3 className="text-sm font-bold text-slate-800 dark:text-slate-200 mb-3">
+              <h3 className="text-sm font-bold text-foreground mb-3">
                 Order Summary
               </h3>
 
               {/* Products Table */}
               <div className="overflow-x-auto">
                 <table className="w-full text-left text-xs">
-                  <thead className="bg-[#eef2f6] dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs">
+                  <thead className="bg-muted text-text-secondary font-semibold text-xs">
                     <tr>
                       <th className="py-2.5 px-3">Product</th>
                       <th className="py-2.5 px-3">Serial Number</th>
@@ -594,12 +594,12 @@ export const PurchaseDetailModal = ({
                       <th className="py-2.5 px-3 text-right">Total Cost($)</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                  <tbody className="divide-y divide-border">
                     {groupedItems.length === 0 ? (
                       <tr>
                         <td
                           colSpan={5}
-                          className="py-6 text-center text-slate-400 italic"
+                          className="py-6 text-center text-muted-foreground italic"
                         >
                           No products in this purchase.
                         </td>
@@ -608,14 +608,14 @@ export const PurchaseDetailModal = ({
                       groupedItems.map((item, idx) => (
                         <tr
                           key={idx}
-                          className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors align-top"
+                          className="hover:bg-muted/50 transition-colors align-top"
                         >
                           <td className="py-3 px-3">
-                            <div className="font-medium text-slate-800 dark:text-slate-100">
+                            <div className="font-medium text-foreground">
                               {item.productName || `Product #${item.productId}`}
                             </div>
                           </td>
-                          <td className="py-3 px-3 text-slate-600 dark:text-slate-300 font-mono text-xs">
+                          <td className="py-3 px-3 text-text-secondary tabular-nums text-xs">
                             {item.serials && item.serials.length > 0 ? (
                               <div className="space-y-0.5">
                                 {item.serials.map((sn, sIdx) => (
@@ -625,16 +625,16 @@ export const PurchaseDetailModal = ({
                                 ))}
                               </div>
                             ) : (
-                              <span className="text-slate-400 font-sans">-</span>
+                              <span className="text-muted-foreground font-sans">-</span>
                             )}
                           </td>
-                          <td className="py-3 px-3 text-right text-slate-600 dark:text-slate-300">
+                          <td className="py-3 px-3 text-right text-text-secondary">
                             {Number(item.costPrice || 0).toFixed(2)}
                           </td>
-                          <td className="py-3 px-3 text-center font-medium text-slate-700 dark:text-slate-200">
+                          <td className="py-3 px-3 text-center font-medium text-text-secondary">
                             {item.quantity}
                           </td>
-                          <td className="py-3 px-3 text-right font-medium text-slate-900 dark:text-white">
+                          <td className="py-3 px-3 text-right font-medium text-foreground">
                             {Number(item.subtotal || 0).toFixed(2)}
                           </td>
                         </tr>
@@ -647,36 +647,36 @@ export const PurchaseDetailModal = ({
 
             {/* 3. Totals Summary Table (Bottom Right) */}
             <div className="flex justify-end pt-2">
-              <div className="w-full sm:w-80 border border-slate-200 dark:border-slate-800 text-xs divide-y divide-slate-200 dark:divide-slate-800">
+              <div className="w-full sm:w-80 border border-border text-xs divide-y divide-border">
                 <div className="grid grid-cols-2 p-2.5">
-                  <span className="text-slate-600 dark:text-slate-400">
+                  <span className="text-text-secondary">
                     Discount
                   </span>
-                  <span className="text-right font-medium text-slate-800 dark:text-slate-200">
+                  <span className="text-right font-medium text-foreground">
                     {formatCurrency(purchase.discount || 0)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 p-2.5">
-                  <span className="text-slate-600 dark:text-slate-400">
+                  <span className="text-text-secondary">
                     Grand Total
                   </span>
-                  <span className="text-right font-bold text-slate-900 dark:text-white">
+                  <span className="text-right font-bold text-foreground">
                     {formatCurrency(purchase.grandTotal || 0)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 p-2.5">
-                  <span className="text-slate-600 dark:text-slate-400">
+                  <span className="text-text-secondary">
                     Paid
                   </span>
-                  <span className="text-right font-medium text-slate-800 dark:text-slate-200">
+                  <span className="text-right font-medium text-foreground">
                     {formatCurrency(purchase.paidAmount || 0)}
                   </span>
                 </div>
                 <div className="grid grid-cols-2 p-2.5">
-                  <span className="text-slate-600 dark:text-slate-400">
+                  <span className="text-text-secondary">
                     Due
                   </span>
-                  <span className="text-right font-medium text-slate-800 dark:text-slate-200">
+                  <span className="text-right font-medium text-foreground">
                     {formatCurrency(purchase.dueAmount || 0)}
                   </span>
                 </div>
@@ -684,12 +684,11 @@ export const PurchaseDetailModal = ({
             </div>
 
             {/* 4. Action Buttons (Cancel / Print / Submit) */}
-            <div className="flex items-center justify-end gap-3 pt-6 border-t border-slate-100 dark:border-slate-800">
+            <div className="flex items-center justify-end gap-3 pt-6 border-t border-border">
               <Button
                 type="button"
-                variant="ghost"
+                variant="outline"
                 onClick={() => onOpenChange(false)}
-                className="bg-[#1e293b] hover:bg-slate-800 text-white px-6 py-2 rounded-lg font-medium text-xs sm:text-sm h-9 cursor-pointer"
               >
                 Cancel
               </Button>
@@ -697,7 +696,6 @@ export const PurchaseDetailModal = ({
               <Button
                 type="button"
                 onClick={handlePrint}
-                className="bg-[#f59e0b] hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-medium text-xs sm:text-sm h-9 cursor-pointer"
               >
                 Print
               </Button>
@@ -706,7 +704,6 @@ export const PurchaseDetailModal = ({
                 <Button
                   type="button"
                   onClick={handleEditClick}
-                  className="bg-[#10b981] hover:bg-emerald-600 text-white px-6 py-2 rounded-lg font-medium text-xs sm:text-sm h-9 cursor-pointer"
                 >
                   Edit
                 </Button>

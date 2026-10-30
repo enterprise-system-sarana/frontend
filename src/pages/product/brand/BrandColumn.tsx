@@ -17,7 +17,7 @@ export const BrandColumns = ({ onEdit, onDelete, t }: BrandColumnsProps): Column
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>
     },
     {
         accessorKey: "imageUrl",
@@ -29,7 +29,7 @@ export const BrandColumns = ({ onEdit, onDelete, t }: BrandColumnsProps): Column
     {
         accessorKey: "createdAt",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />,
-        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>
+        cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
     },
     {
         accessorKey: "status",

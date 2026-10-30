@@ -16,22 +16,22 @@ export const GroupPermissionColumns = ({ onEdit, onDelete, canEdit, canDelete }:
     {
         accessorKey: "code",
         header: ({ column }) => <SortableHeader column={column} title="Code" />,
-        cell: ({ row }) => <span className="font-mono text-xs text-[#696cff] font-bold">{row.original.code}</span>,
+        cell: ({ row }) => <span className="tabular-nums text-xs text-primary font-bold">{row.original.code}</span>,
     },
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title="Name" />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f]">{row.original.name}</span>,
+        cell: ({ row }) => <span className="font-medium text-foreground">{row.original.name}</span>,
     },
     {
         accessorKey: "description",
         header: "Description",
-        cell: ({ row }) => <span className="truncate max-w-48 text-[#697a8d]">{row.original.description || "-"}</span>,
+        cell: ({ row }) => <span className="truncate max-w-48 text-muted-foreground">{row.original.description || "-"}</span>,
     },
     {
         accessorKey: "createdAt",
         header: ({ column }) => <SortableHeader column={column} title="Created Date" />,
-        cell: ({ row }) => <span className="text-xs text-[#566a7f]">{formatDate(row.original.createdAt)}</span>,
+        cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>,
     },
     {
         accessorKey: "Action",
@@ -39,7 +39,7 @@ export const GroupPermissionColumns = ({ onEdit, onDelete, canEdit, canDelete }:
         enableHiding: false,
         cell: ({ row }) => {
             if (!canEdit && !canDelete) {
-                return <span className="text-[#a1acb8] text-sm">-</span>;
+                return <span className="text-text-disabled text-sm">-</span>;
             }
             return (
                 <TableActions

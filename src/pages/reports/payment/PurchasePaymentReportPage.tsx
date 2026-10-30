@@ -1,3 +1,4 @@
+import { DatePicker, DateRangePicker, MonthPicker } from "@/components/ui/date-picker";
 import { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
@@ -23,6 +24,7 @@ import {
 import { PurchaseDetailModal } from "@/pages/purchases/purchase/PurchaseDetail";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import {
   Wallet,
   DollarSign,
@@ -274,88 +276,44 @@ export default function PurchasePaymentReportPage({ mode: initialMode = "all" }:
       </PageHeader>
 
       {/* KPI Cards Row */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        {/* Total Invoiced */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-primary/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_billed", "Total Billed by Vendors")}
-            </span>
-            <div className="size-9 rounded-lg bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 flex items-center justify-center">
-              <Receipt className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {formatCurrency(totalAmount)}
-            </span>
-            <span className="text-xs font-semibold text-muted-foreground">
-              {totalTransactions} {t("common.settlements", "payments")}
-            </span>
-          </div>
-        </div>
-
-        {/* Total Disbursed / Paid */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-emerald-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.total_disbursed", "Total Disbursed")}
-            </span>
-            <div className="size-9 rounded-lg bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 flex items-center justify-center">
-              <DollarSign className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className="text-2xl font-bold tracking-tight text-emerald-600 dark:text-emerald-400">
-              {formatCurrency(totalPaid)}
-            </span>
-            <span className="text-xs font-semibold text-emerald-600 dark:text-emerald-400">
-              {totalAmount > 0 ? `${((totalPaid / totalAmount) * 100).toFixed(1)}% paid` : "—"}
-            </span>
-          </div>
-        </div>
-
-        {/* Total Due / Accounts Payable */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-rose-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.accounts_payable", "Accounts Payable (Due)")}
-            </span>
-            <div className={`size-9 rounded-lg flex items-center justify-center ${
-              totalDue > 0 ? "bg-rose-500/10 text-rose-600 dark:text-rose-400" : "bg-muted text-muted-foreground"
-            }`}>
-              <AlertCircle className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2 flex items-baseline justify-between">
-            <span className={`text-2xl font-bold tracking-tight ${totalDue > 0 ? "text-rose-600 dark:text-rose-400" : "text-foreground"}`}>
-              {formatCurrency(totalDue)}
-            </span>
-            {totalDue > 0 && (
-              <span className="text-[11px] font-semibold text-rose-600 dark:text-rose-400 bg-rose-500/10 px-2 py-0.5 rounded-full">
-                Pending Payout
-              </span>
-            )}
-          </div>
-        </div>
-
-        {/* Total Payments Processed */}
-        <div className="p-4 rounded-xl border border-border/60 bg-card shadow-xs group hover:border-violet-500/40 transition-all">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("purchase.payment_records", "Payment Vouchers")}
-            </span>
-            <div className="size-9 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400 flex items-center justify-center">
-              <Wallet className="size-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <span className="text-2xl font-bold tracking-tight text-foreground">
-              {paymentRows.length.toLocaleString()}
-            </span>
-          </div>
-        </div>
-      </div>
+      <KpiGrid>
+        <KpiCard
+          featured
+          icon={Receipt}
+          title={t("purchase.total_billed", "Total Billed by Vendors")}
+          value={formatCurrency(totalAmount)}
+          caption={`${totalTransactions} ${t("common.settlements", "payments")}`}
+          splits={[
+            { label: t("purchase.total_disbursed", "Total Disbursed"), value: totalPaid, color: "#4ade80" },
+            { label: t("purchase.accounts_payable", "Accounts Payable (Due)"), value: totalDue, color: "#fb7185" },
+          ]}
+        />
+        <KpiCard
+          tone="green"
+          icon={DollarSign}
+          title={t("purchase.total_disbursed", "Total Disbursed")}
+          subtitle={t("report.total_disbursed_desc", "Paid out to suppliers")}
+          value={formatCurrency(totalPaid)}
+          caption={t("report.of_total_billed", "of total billed")}
+          percent={totalAmount > 0 ? (totalPaid / totalAmount) * 100 : 0}
+        />
+        <KpiCard
+          tone="red"
+          icon={AlertCircle}
+          title={t("purchase.accounts_payable", "Accounts Payable (Due)")}
+          subtitle={t("report.pending_payout", "Pending payout")}
+          value={formatCurrency(totalDue)}
+          caption={t("report.of_total_billed", "of total billed")}
+          percent={totalAmount > 0 ? (totalDue / totalAmount) * 100 : 0}
+        />
+        <KpiCard
+          tone="purple"
+          icon={Wallet}
+          title={t("purchase.payment_records", "Payment Vouchers")}
+          subtitle={t("report.payment_vouchers_desc", "Records on this page")}
+          value={paymentRows.length.toLocaleString()}
+        />
+      </KpiGrid>
 
       {/* Filter and Period Selection */}
       <div className="space-y-3">
@@ -384,48 +342,39 @@ export default function PurchasePaymentReportPage({ mode: initialMode = "all" }:
 
           <div className="flex items-center gap-2">
             {activeTab === "daily" && (
-              <input
-                type="date"
+              <DatePicker
                 value={periodValue}
-                onChange={(e) => {
-                  setPeriodValue(e.target.value);
-                  setStartDate(e.target.value);
-                  setEndDate(e.target.value);
+                required
+                className="w-[170px]"
+                onChange={(value) => {
+                  setPeriodValue(value);
+                  setStartDate(value);
+                  setEndDate(value);
                 }}
-                className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background shadow-xs"
               />
             )}
             {activeTab === "monthly" && (
-              <input
-                type="month"
+              <MonthPicker
                 value={periodValue}
-                onChange={(e) => {
-                  setPeriodValue(e.target.value);
-                  const p = getPeriod("monthly", e.target.value);
+                className="w-[170px]"
+                onChange={(value) => {
+                  setPeriodValue(value);
+                  const p = getPeriod("monthly", value);
                   setStartDate(p.startDate);
                   setEndDate(p.endDate);
                 }}
-                className="h-8 px-2.5 text-xs rounded-lg border border-border bg-background shadow-xs"
               />
             )}
             {activeTab === "all" && (
-              <div className="flex items-center gap-1.5 text-xs">
-                <input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
-                  placeholder="From"
-                />
-                <span className="text-muted-foreground">to</span>
-                <input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="h-8 px-2 text-xs rounded-lg border border-border bg-background shadow-xs"
-                  placeholder="To"
-                />
-              </div>
+              <DateRangePicker
+                startDate={startDate}
+                endDate={endDate}
+                align="end"
+                onChange={(start, end) => {
+                  setStartDate(start);
+                  setEndDate(end);
+                }}
+              />
             )}
             {(storeId !== "all" || supplierId !== "all" || bankId !== "all" || paymentStatus !== "all" || search || startDate || endDate) && (
               <button
@@ -452,7 +401,7 @@ export default function PurchasePaymentReportPage({ mode: initialMode = "all" }:
       </div>
 
       {/* Main Table Card */}
-      <div className="rounded-2xl border border-border/60 bg-card shadow-xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <DataTable
           columns={columns}
           data={searchedRows}

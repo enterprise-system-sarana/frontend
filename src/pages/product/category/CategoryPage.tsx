@@ -178,9 +178,9 @@ const CategoryPage = () => {
         />
 
         {/* Main Card with Toolbar & Table */}
-        <div className="rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+        <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
           {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
-          <div className="p-4 border-b border-border/60">
+          <div className="px-5 py-4 border-b border-border">
             <PageFilter
               search={search}
               onSearchChange={setSearch}

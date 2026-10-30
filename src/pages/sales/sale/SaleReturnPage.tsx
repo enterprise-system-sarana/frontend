@@ -1,7 +1,6 @@
 import { useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { DataTable } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -116,11 +115,7 @@ const SaleReturnPage = () => {
     if (!returningSale) return;
     returnSale({ id: returningSale.id, payload }, {
       onSuccess: () => {
-        toast.success(`Sale #${returningSale.reference} return processed successfully.`);
         setReturningSale(null);
-      },
-      onError: (error: any) => {
-        toast.error(error?.response?.data?.message || error?.message || "Failed to return sale.");
       },
     });
   };
@@ -148,7 +143,7 @@ const SaleReturnPage = () => {
         actions={<Button variant="outline" onClick={() => navigate(ROUTERS.SALE)} className="gap-2"><ArrowLeft className="h-4 w-4" />{t("sale.back_to_sales", "Back to Sales")}</Button>}
       />
 
-      <div className="sale-return-card rounded-2xl border border-border/60 bg-card shadow-2xs overflow-hidden">
+      <div className="sale-return-card rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         <div className="border-b border-border/60 p-4">
           <PageFilter
             search={search}

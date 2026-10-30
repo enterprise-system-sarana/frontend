@@ -14,6 +14,7 @@ import { useStore } from "@/hooks/inventory/useStore";
 import { useCategory } from "@/hooks/product/useCategory";
 import { PageFilter } from "@/utils/PageFilter";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
 import { StockItemReportColumns, StockMovementColumns } from "./StockReportColumn";
 import type { StockItemReportResponse, StockMovementItemResponse } from "@/types/reports/StockReport";
 import {
@@ -21,8 +22,6 @@ import {
   ArrowUpDown,
   Boxes,
   DollarSign,
-  PackageCheck,
-  PackageX,
   TrendingUp,
 } from "lucide-react";
 
@@ -395,100 +394,63 @@ const StockReportPage = () => {
       />
 
       {/* KPI Summary Cards */}
-      <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2 xl:grid-cols-4">
+      <KpiGrid>
         {/* Card 1: Total Stock Quantity */}
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t("report.total_stock_qty", "Total Stock Units")}
-            </span>
-            <div className="rounded-lg bg-primary/10 p-2 text-primary">
-              <Boxes className="size-4.5" />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-foreground">
-              {kpiSummary.totalQuantity.toLocaleString()}
-            </span>
-            <span className="text-xs text-muted-foreground">
-              across {kpiSummary.totalProducts} items
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-            <PackageCheck className="size-3.5" />
-            <span>{kpiSummary.inStockCount} in good standing</span>
-          </div>
-        </div>
+        <KpiCard
+          featured
+          icon={Boxes}
+          title={t("report.total_stock_qty", "Total Stock Units")}
+          value={kpiSummary.totalQuantity.toLocaleString()}
+          caption={`${t("report.across", "across")} ${kpiSummary.totalProducts} ${t("pos.items", "items")}`}
+          splits={[
+            { label: t("pos.in_stock", "In Stock"), value: kpiSummary.inStockCount, color: "#4ade80" },
+            { label: t("pos.low_stock", "Low Stock"), value: kpiSummary.lowStockCount, color: "#fbbf24" },
+            { label: t("pos.out_of_stock", "Out of Stock"), value: kpiSummary.outOfStockCount, color: "#fb7185" },
+          ]}
+        />
 
         {/* Card 2: Total Cost Valuation */}
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t("report.cost_valuation", "Total Cost Valuation")}
-            </span>
-            <div className="rounded-lg bg-blue-500/10 p-2 text-blue-600 dark:text-blue-400">
-              <DollarSign className="size-4.5" />
-            </div>
-          </div>
-          <div className="mt-2.5">
-            <span className="text-2xl font-bold text-foreground">
-              {formatCurrency(kpiSummary.totalCostValue)}
-            </span>
-          </div>
-          <p className="mt-2 text-xs text-muted-foreground">
-            Total invested capital in stock
-          </p>
-        </div>
+        <KpiCard
+          tone="blue"
+          icon={DollarSign}
+          title={t("report.cost_valuation", "Total Cost Valuation")}
+          subtitle={t("report.cost_valuation_desc", "Total invested capital in stock")}
+          value={formatCurrency(kpiSummary.totalCostValue)}
+        />
 
         {/* Card 3: Total Retail & Potential Profit */}
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t("report.retail_valuation", "Potential Retail Value")}
-            </span>
-            <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
-              <TrendingUp className="size-4.5" />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-2">
-            <span className="text-2xl font-bold text-foreground">
-              {formatCurrency(kpiSummary.totalSaleValue)}
-            </span>
-          </div>
-          <div className="mt-2 flex items-center gap-1.5 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
-            <span>+{formatCurrency(kpiSummary.potentialProfit)} profit</span>
-          </div>
-        </div>
+        <KpiCard
+          tone="green"
+          icon={TrendingUp}
+          title={t("report.retail_valuation", "Potential Retail Value")}
+          subtitle={t("report.retail_valuation_desc", "Stock valued at sale price")}
+          value={formatCurrency(kpiSummary.totalSaleValue)}
+          caption={`+${formatCurrency(kpiSummary.potentialProfit)} ${t("report.profit_margin", "profit margin")}`}
+          percent={
+            kpiSummary.totalSaleValue > 0
+              ? Math.max(0, (kpiSummary.potentialProfit / kpiSummary.totalSaleValue) * 100)
+              : 0
+          }
+        />
 
         {/* Card 4: Inventory Alerts */}
-        <div className="rounded-xl border border-border/70 bg-card p-4 shadow-2xs">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-              {t("report.inventory_alerts", "Stock Alerts")}
-            </span>
-            <div className="rounded-lg bg-amber-500/10 p-2 text-amber-600 dark:text-amber-400">
-              <AlertTriangle className="size-4.5" />
-            </div>
-          </div>
-          <div className="mt-2.5 flex items-baseline gap-3">
-            <span className="text-2xl font-bold text-amber-600 dark:text-amber-400">
-              {kpiSummary.lowStockCount}
-            </span>
-            <span className="text-xs text-muted-foreground">low stock</span>
-            <span className="text-2xl font-bold text-destructive ml-auto">
-              {kpiSummary.outOfStockCount}
-            </span>
-            <span className="text-xs text-muted-foreground">out</span>
-          </div>
-          <div className="mt-2 flex items-center gap-1 text-[11px] text-muted-foreground">
-            <PackageX className="size-3 text-destructive" />
-            <span>Items needing purchase or reorder</span>
-          </div>
-        </div>
-      </div>
+        <KpiCard
+          tone="amber"
+          icon={AlertTriangle}
+          title={t("report.inventory_alerts", "Stock Alerts")}
+          subtitle={t("report.inventory_alerts_desc", "Items needing purchase or reorder")}
+          value={(kpiSummary.lowStockCount + kpiSummary.outOfStockCount).toLocaleString()}
+          caption={`${kpiSummary.lowStockCount} ${t("report.low_stock_lower", "low stock")} · ${kpiSummary.outOfStockCount} ${t("report.out_lower", "out")}`}
+          percent={
+            Number(kpiSummary.totalProducts) > 0
+              ? ((kpiSummary.lowStockCount + kpiSummary.outOfStockCount) / Number(kpiSummary.totalProducts)) * 100
+              : 0
+          }
+        />
+      </KpiGrid>
 
       {/* Main Content Area */}
-      <div className="rounded-2xl border border-border/70 bg-card shadow-2xs overflow-hidden">
+      <div className="rounded-2xl border border-border bg-card shadow-card overflow-hidden">
         {/* Tab Switcher Header */}
         <div className="border-b border-border/70 bg-muted/20 px-4 pt-3 pb-0 flex items-center justify-between gap-4">
           <div className="flex items-center gap-2">
@@ -506,7 +468,7 @@ const StockReportPage = () => {
             >
               <Boxes className="size-4" />
               <span>{t("report.stock_items", "Stock Levels & Valuation")}</span>
-              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.2 text-[10px] font-mono">
+              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.2 text-[11px] tabular-nums">
                 {totalStockElements}
               </span>
             </button>
@@ -525,7 +487,7 @@ const StockReportPage = () => {
             >
               <ArrowUpDown className="size-4" />
               <span>{t("report.stock_movements", "Stock Movements & Audit")}</span>
-              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.2 text-[10px] font-mono">
+              <span className="ml-1 rounded-full bg-muted px-1.5 py-0.2 text-[11px] tabular-nums">
                 {totalMovementElements}
               </span>
             </button>

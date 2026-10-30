@@ -22,7 +22,7 @@ export const ExpenseColumns = ({ onEdit, onDelete, t }: ExpenseColumnsProps): Co
     {
         accessorKey: "reference",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.reference") : "Reference"} />,
-        cell: ({ row }) => <span className="font-semibold text-[#566a7f] font-mono text-xs">{row.original.reference || "-"}</span>
+        cell: ({ row }) => <span className="font-medium text-foreground tabular-nums text-xs">{row.original.reference || "-"}</span>
     },
     {
         accessorKey: "expenseTypeName",
@@ -45,17 +45,17 @@ export const ExpenseColumns = ({ onEdit, onDelete, t }: ExpenseColumnsProps): Co
     {
         accessorKey: "storeName",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store") : "Store"} />,
-        cell: ({ row }) => <span className="text-[#566a7f]">{row.original.storeName || "-"}</span>
+        cell: ({ row }) => <span className="text-text-secondary">{row.original.storeName || "-"}</span>
     },
     {
         accessorKey: "bankName",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank"} />,
-        cell: ({ row }) => <span className="text-[#566a7f]">{row.original.bankName || "-"}</span>
+        cell: ({ row }) => <span className="text-text-secondary">{row.original.bankName || "-"}</span>
     },
     {
         accessorKey: "createdAt",
         header: t ? t("common.date") : "Date",
-        cell: ({ row }) => <span className="text-[#566a7f] text-xs">{formatDate(row.original.createdAt)}</span>
+        cell: ({ row }) => <span className="text-text-secondary text-xs">{formatDate(row.original.createdAt)}</span>
     },
     {
         accessorKey: "status",

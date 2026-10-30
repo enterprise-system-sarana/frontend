@@ -114,7 +114,7 @@ export default function PrintBillModal({
             .text-right { text-align: right; }
             .text-center { text-align: center; }
             .font-bold { font-weight: bold; }
-            .font-mono { font-family: monospace; }
+            .tabular-nums { font-family: monospace; }
             .totals-row { display: flex; justify-content: space-between; padding: 3px 0; }
             .warranty-box { margin-top: 14px; padding: 10px; background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; text-align: center; font-size: 11px; }
             .thank-you { margin-top: 14px; padding: 10px; border: 1px dashed #cbd5e1; border-radius: 6px; text-align: center; font-size: 12px; }
@@ -137,17 +137,17 @@ export default function PrintBillModal({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md w-full p-0 overflow-hidden rounded-2xl bg-white dark:bg-slate-900 shadow-2xl border border-slate-200 dark:border-slate-800">
-        <DialogHeader className="px-5 py-3.5 border-b border-slate-200 dark:border-slate-800 flex flex-row items-center justify-between">
+      <DialogContent className="sm:max-w-md w-full p-0 overflow-hidden rounded-2xl bg-card shadow-2xl border border-border">
+        <DialogHeader className="px-5 py-3.5 border-b border-border flex flex-row items-center justify-between">
           <div className="flex items-center gap-2">
-            <div className="size-8 rounded-lg bg-teal-500/10 text-teal-600 dark:text-teal-400 flex items-center justify-center">
+            <div className="size-8 rounded-lg bg-success/10 text-success flex items-center justify-center">
               <Printer className="size-4" />
             </div>
             <div>
               <DialogTitle className="text-sm font-bold text-foreground">
                 Customer Bill Preview
               </DialogTitle>
-              <p className="text-[11px] text-muted-foreground font-mono">
+              <p className="text-[11px] text-muted-foreground tabular-nums">
                 #{billData.reference}
               </p>
             </div>
@@ -157,7 +157,7 @@ export default function PrintBillModal({
               type="button"
               size="sm"
               onClick={handlePrint}
-              className="h-8 gap-1.5 bg-teal-600 hover:bg-teal-700 text-white rounded-lg text-xs font-semibold px-3 cursor-pointer shadow-sm"
+              className="h-8 gap-1.5 bg-primary hover:bg-primary-hover text-primary-foreground rounded-lg text-xs font-semibold px-3 cursor-pointer shadow-sm"
             >
               <Printer className="size-3.5" />
               <span>Print Bill</span>
@@ -166,14 +166,14 @@ export default function PrintBillModal({
         </DialogHeader>
 
         {/* Printable Area Preview */}
-        <div className="max-h-[75vh] overflow-y-auto p-5 bg-slate-50 dark:bg-slate-950/40">
+        <div className="max-h-[75vh] overflow-y-auto p-5 bg-muted/50">
           <div
             ref={printRef}
-            className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-5 shadow-xs max-w-sm mx-auto text-slate-800 dark:text-slate-100 text-xs"
+            className="bg-card border border-border rounded-xl p-5 shadow-xs max-w-sm mx-auto text-foreground text-xs"
             style={{ fontFamily: "Arial, sans-serif" }}
           >
             {/* Store Header */}
-            <div className="text-center pb-4 border-b border-slate-200 dark:border-slate-800">
+            <div className="text-center pb-4 border-b border-border">
               <img
                 src={logoUrl}
                 alt="Store Logo"
@@ -185,50 +185,50 @@ export default function PrintBillModal({
                 }}
                 className="h-12 mx-auto mb-2 object-contain max-w-[160px]"
               />
-              <h2 className="text-sm font-bold tracking-wide text-slate-900 dark:text-white">
+              <h2 className="text-sm font-bold tracking-wide text-foreground">
                 {store?.name ?? "360° Phone Shop"}
               </h2>
               {(store?.address1 || store?.city) && (
-                <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
+                <p className="text-[11px] text-muted-foreground mt-0.5">
                   {[store?.address1, store?.city].filter(Boolean).join(", ")}
                 </p>
               )}
               {store?.phone && (
-                <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                <p className="text-[11px] text-muted-foreground">
                   Tel: {store.phone}
                 </p>
               )}
             </div>
 
             {/* Bill Meta Row */}
-            <div className="flex justify-between py-3 border-b border-slate-200 dark:border-slate-800 text-[11px]">
+            <div className="flex justify-between py-3 border-b border-border text-[11px]">
               <div className="space-y-0.5">
                 <p>
                   {language === "km" ? "កាលបរិច្ឆេទ: " : "Date: "}
-                  <span className="font-semibold text-amber-700 dark:text-amber-400">
+                  <span className="font-semibold text-warning-text">
                     {billData.date}
                   </span>
                 </p>
                 <p>
                   {language === "km" ? "អ្នកគិតប្រាក់: " : "Cashier: "}
-                  <span className="font-semibold text-amber-700 dark:text-amber-400">
+                  <span className="font-semibold text-warning-text">
                     {billData.cashierName || "Staff"}
                   </span>
                 </p>
                 <p>
                   {language === "km" ? "អតិថិជន: " : "Customer: "}
-                  <span className="font-semibold text-amber-700 dark:text-amber-400">
+                  <span className="font-semibold text-warning-text">
                     {billData.customerName || (language === "km" ? "អតិថិជនទូទៅ" : "Walk-In")}
                   </span>
                 </p>
                 {billData.customerPhone && (
-                  <p className="text-slate-500">Tel: {billData.customerPhone}</p>
+                  <p className="text-muted-foreground">Tel: {billData.customerPhone}</p>
                 )}
               </div>
               <div className="text-right space-y-0.5 shrink-0">
                 <p>
                   {language === "km" ? "លេខវិក្កយបត្រ: " : "Bill Ref: "}
-                  <span className="font-mono font-bold text-slate-900 dark:text-white">
+                  <span className="tabular-nums font-bold text-foreground">
                     #{billData.reference}
                   </span>
                 </p>
@@ -240,7 +240,7 @@ export default function PrintBillModal({
                 </p>
                 <p>
                   {language === "km" ? "ការធានា: " : "Warranty: "}
-                  <span className="font-semibold text-emerald-600 dark:text-emerald-400">
+                  <span className="font-semibold text-success">
                     {language === "km" ? "១៤ ថ្ងៃ" : "14 Days"}
                   </span>
                 </p>
@@ -250,7 +250,7 @@ export default function PrintBillModal({
             {/* Items Table */}
             <table className="w-full text-xs my-2.5" style={{ borderCollapse: "collapse" }}>
               <thead>
-                <tr className="border-b-2 border-slate-800 dark:border-slate-600">
+                <tr className="border-b-2 border-border">
                   <th className="text-left py-1.5 font-bold">{language === "km" ? "ឈ្មោះទំនិញ" : "Item Name"}</th>
                   <th className="text-right py-1.5 font-bold px-1">{language === "km" ? "ចំនួន" : "Qty"}</th>
                   <th className="text-right py-1.5 font-bold px-1">{language === "km" ? "តម្លៃ" : "Price"}</th>
@@ -259,29 +259,29 @@ export default function PrintBillModal({
               </thead>
               <tbody>
                 {billData.items.map((item, idx) => (
-                  <tr key={idx} className="border-b border-slate-100 dark:border-slate-800">
+                  <tr key={idx} className="border-b border-border">
                     <td className="py-1.5 pr-1">
-                      <div className="font-medium text-slate-900 dark:text-white">
+                      <div className="font-medium text-foreground">
                         {item.productName}
                       </div>
                       {item.serialNumbers && item.serialNumbers.length > 0 && (
-                        <div className="text-[10px] text-slate-400 font-mono">
+                        <div className="text-[10px] text-muted-foreground tabular-nums">
                           SN: {item.serialNumbers.join(", ")}
                         </div>
                       )}
                       {Number(item.itemDiscount || 0) > 0 && (
-                        <span className="block text-[10px] text-slate-400">
+                        <span className="block text-[10px] text-muted-foreground">
                           {language === "km" ? "ចុះ: " : "Disc: "}-{money(Number(item.itemDiscount))}
                         </span>
                       )}
                     </td>
-                    <td className="py-1.5 text-right px-1 tabular-nums font-medium text-slate-700 dark:text-slate-300">
+                    <td className="py-1.5 text-right px-1 tabular-nums font-medium text-text-secondary">
                       {item.quantity}
                     </td>
-                    <td className="py-1.5 text-right px-1 tabular-nums text-slate-700 dark:text-slate-300">
+                    <td className="py-1.5 text-right px-1 tabular-nums text-text-secondary">
                       {fmt(item.price)}
                     </td>
-                    <td className="py-1.5 text-right tabular-nums font-semibold text-slate-900 dark:text-white">
+                    <td className="py-1.5 text-right tabular-nums font-semibold text-foreground">
                       {fmt(
                         Number(item.subtotal) > 0
                           ? item.subtotal
@@ -298,30 +298,30 @@ export default function PrintBillModal({
             </table>
 
             {/* Totals */}
-            <div className="pt-2 border-t-2 border-slate-800 dark:border-slate-600 space-y-1 text-xs">
+            <div className="pt-2 border-t-2 border-border space-y-1 text-xs">
               <div className="flex justify-between">
-                <span className="text-slate-600 dark:text-slate-400">{language === "km" ? "សរុបបឋម:" : "Subtotal:"}</span>
+                <span className="text-text-secondary">{language === "km" ? "សរុបបឋម:" : "Subtotal:"}</span>
                 <span className="font-medium tabular-nums">{money(billData.subtotal)}</span>
               </div>
               {billData.discount > 0 && (
-                <div className="flex justify-between text-rose-600 dark:text-rose-400">
+                <div className="flex justify-between text-destructive">
                   <span>{language === "km" ? "បញ្ចុះតម្លៃ:" : "Discount:"}</span>
                   <span className="font-medium tabular-nums">-{money(billData.discount)}</span>
                 </div>
               )}
-              <div className="flex justify-between pt-1 border-t border-slate-200 dark:border-slate-800 font-bold text-sm text-slate-900 dark:text-white">
+              <div className="flex justify-between pt-1 border-t border-border font-bold text-sm text-foreground">
                 <span>{language === "km" ? "សរុបត្រូវបង់:" : "Total Due:"}</span>
-                <span className="tabular-nums font-mono">{money(billData.grandTotal)}</span>
+                <span className="tabular-nums">{money(billData.grandTotal)}</span>
               </div>
             </div>
 
             {/* 14-Day Warranty Guarantee Box */}
-            <div className="mt-3 p-2.5 bg-slate-50 dark:bg-slate-800/50 border border-slate-300 dark:border-slate-700 rounded-md text-center">
-              <div className="flex items-center justify-center gap-1 font-bold text-[11px] text-slate-800 dark:text-slate-200 uppercase tracking-wider">
-                <ShieldCheck className="size-3.5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+            <div className="mt-3 p-2.5 bg-muted/50 border border-border-strong rounded-md text-center">
+              <div className="flex items-center justify-center gap-1 font-bold text-[11px] text-foreground uppercase tracking-wider">
+                <ShieldCheck className="size-3.5 text-success shrink-0" />
                 <span>{language === "km" ? "ការធានារយៈពេល ១៤ ថ្ងៃ" : "14-Day Warranty Guarantee"}</span>
               </div>
-              <p className="text-[10px] text-slate-600 dark:text-slate-400 mt-0.5">
+              <p className="text-[10px] text-text-secondary mt-0.5">
                 {language === "km"
                   ? `មានសុពលភាពដល់ ${warrantyUntilDate}។ សូមរក្សាទុកវិក្កយបត្រសម្រាប់ការធានា។`
                   : `Valid until ${warrantyUntilDate}. Original bill required for claims.`}
@@ -329,11 +329,11 @@ export default function PrintBillModal({
             </div>
 
             {/* Thank You Footer */}
-            <div className="mt-3 border border-dashed border-slate-300 dark:border-slate-700 rounded-md py-2 text-center text-slate-600 dark:text-slate-400 text-[11px]">
-              <p className="font-semibold text-slate-800 dark:text-slate-200">
+            <div className="mt-3 border border-dashed border-border-strong rounded-md py-2 text-center text-text-secondary text-[11px]">
+              <p className="font-semibold text-foreground">
                 {language === "km" ? "សូមអរគុណសម្រាប់ការជាវទំនិញ!" : "Thank you for your purchase!"}
               </p>
-              <p className="text-[10px] text-slate-400 mt-0.5">
+              <p className="text-[10px] text-muted-foreground mt-0.5">
                 {language === "km" ? "វិក្កយបត្រអតិថិជន - សូមអញ្ជើញមកម្តងទៀត" : "Customer Bill - Please come again."}
               </p>
             </div>

@@ -186,7 +186,7 @@ export const ProductDetailModal = ({
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 {product?.code && (
-                  <span className="font-mono bg-muted/60 px-2 py-0.5 rounded text-foreground font-medium border border-border/40">
+                  <span className="tabular-nums bg-muted/60 px-2 py-0.5 rounded text-foreground font-medium border border-border/40">
                     {product.code}
                   </span>
                 )}
@@ -227,26 +227,26 @@ export const ProductDetailModal = ({
               {/* 4 Essential Metrics */}
               <div className="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 w-full">
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">{t("common.sale")}</span>
-                  <span className="text-base font-bold text-emerald-600 dark:text-emerald-400 tabular-nums">
+                  <span className="text-[12px] text-muted-foreground block font-medium">{t("common.sale")}</span>
+                  <span className="text-base font-bold text-success tabular-nums">
                     {formatPrice(product.salePrice)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">{t("common.cost")}</span>
+                  <span className="text-[12px] text-muted-foreground block font-medium">{t("common.cost")}</span>
                   <span className="text-base font-bold text-foreground tabular-nums">
                     {formatPrice(product.costPrice)}
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">{t("inventory.total_quantity")}</span>
+                  <span className="text-[12px] text-muted-foreground block font-medium">{t("inventory.total_quantity")}</span>
                   <span className="text-base font-bold text-foreground tabular-nums">
                     {totalQuantity} <span className="text-xs font-normal text-muted-foreground">{t("inventory.units")}</span>
                   </span>
                 </div>
                 <div>
-                  <span className="text-[11px] text-muted-foreground block font-medium">{t("inventory.available")}</span>
-                  <span className="inline-flex items-center text-xs font-bold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-md mt-0.5 border border-emerald-500/20">
+                  <span className="text-[12px] text-muted-foreground block font-medium">{t("inventory.available")}</span>
+                  <span className="inline-flex items-center text-xs font-bold text-success bg-success/10 px-2 py-0.5 rounded-md mt-0.5 border border-success/20">
                     {availableCount} {t("inventory.ready")}
                   </span>
                 </div>
@@ -271,8 +271,8 @@ export const ProductDetailModal = ({
                 </span>
               )}
               {product.reorderLevel != null && (
-                <span className="px-2.5 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-700 dark:text-amber-400">
-                  <span className="text-amber-600/70">{t("inventory.reorder")}:</span> <strong>{product.reorderLevel} {t("inventory.units")}</strong>
+                <span className="px-2.5 py-1 rounded-lg bg-warning/10 border border-warning/20 text-warning-text">
+                  <span className="text-warning-text">{t("inventory.reorder")}:</span> <strong>{product.reorderLevel} {t("inventory.units")}</strong>
                 </span>
               )}
               {product.createdAt && (
@@ -309,7 +309,7 @@ export const ProductDetailModal = ({
                     <Barcode className="h-4 w-4 text-primary" />
                     {t("nav.product_serials")}
                   </h4>
-                  <Badge variant="secondary" className="font-mono text-xs px-2 py-0">
+                  <Badge variant="secondary" className="tabular-nums text-xs px-2 py-0">
                     {filteredSerials.length} {t("common.of")} {allSerials.length}
                   </Badge>
                 </div>
@@ -331,7 +331,7 @@ export const ProductDetailModal = ({
                           key={st}
                           type="button"
                           onClick={() => setSerialStatusFilter(st)}
-                          className={`px-2 py-1 text-[11px] rounded-md font-medium transition cursor-pointer ${serialStatusFilter === st
+                          className={`px-2 py-1 text-[12px] rounded-md font-medium transition cursor-pointer ${serialStatusFilter === st
                               ? "bg-primary text-primary-foreground font-semibold"
                               : "bg-muted hover:bg-muted/80 text-muted-foreground"
                             }`}
@@ -369,7 +369,7 @@ export const ProductDetailModal = ({
                         {filteredSerials.length > 0 ? (
                           filteredSerials.map((s, idx) => (
                             <tr key={s.id ?? idx} className="hover:bg-muted/30 transition-colors group">
-                              <td className="py-2 px-3 text-center text-muted-foreground font-mono text-[11px]">
+                              <td className="py-2 px-3 text-center text-muted-foreground tabular-nums text-[12px]">
                                 {idx + 1}
                               </td>
                               <td className="py-2 px-3">
@@ -382,24 +382,24 @@ export const ProductDetailModal = ({
                                     title="Copy serial"
                                   >
                                     {copiedSerial === s.serialNumber ? (
-                                      <Check className="h-3 w-3 text-emerald-500" />
+                                      <Check className="h-3 w-3 text-success" />
                                     ) : (
                                       <Copy className="h-3 w-3" />
                                     )}
                                   </button>
                                 </div>
                               </td>
-                              <td className="py-2 px-3 font-mono text-muted-foreground text-[11px]">{s.barcode}</td>
+                              <td className="py-2 px-3 font-mono text-muted-foreground text-[12px]">{s.barcode}</td>
                               <td className="py-2 px-3 text-muted-foreground">{s.storeName}</td>
                               <td className="py-2 px-3 text-center font-bold">
-                                <span className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[11px]">
+                                <span className="inline-block px-2 py-0.5 rounded bg-primary/10 text-primary text-[12px]">
                                   {s.quantity}
                                 </span>
                               </td>
                               <td className="py-2 px-3 text-right text-muted-foreground tabular-nums">
                                 {formatPrice(s.costPrice)}
                               </td>
-                              <td className="py-2 px-3 text-right font-medium text-emerald-600 dark:text-emerald-400 tabular-nums">
+                              <td className="py-2 px-3 text-right font-medium text-success tabular-nums">
                                 {formatPrice(s.sellingPrice)}
                               </td>
                               <td className="py-2 px-3 text-center">
@@ -430,13 +430,13 @@ export const ProductDetailModal = ({
           <div className="flex items-center gap-2 text-xs text-muted-foreground w-full sm:w-auto">
             {product && (
               <>
-                <span className="font-mono font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/40">
+                <span className="tabular-nums font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/40">
                   {product.code}
                 </span>
                 <span>•</span>
                 <span>{totalQuantity} {t("inventory.units")} {t("common.total")}</span>
                 <span>•</span>
-                <span className="text-emerald-600 dark:text-emerald-400 font-semibold">
+                <span className="text-success font-semibold">
                   {availableCount} {t("inventory.available")}
                 </span>
               </>

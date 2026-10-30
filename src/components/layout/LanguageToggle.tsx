@@ -48,7 +48,7 @@ export function LanguageToggle({ className }: { className?: string } = {}) {
                 alt={item.label}
                 className="w-5 h-3.5 object-cover  shadow-xs border border-border/40 shrink-0"
               />
-              <span className={item.code === "km" ? "font-sans font-medium text-[13px]" : "font-sans"}>
+              <span className={item.code === "km" ? "font-sans font-medium text-[14px]" : "font-sans"}>
                 {item.label}
               </span>
             </div>

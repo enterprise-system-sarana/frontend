@@ -9,17 +9,17 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
       data-slot="input"
       className={cn(
         // Base
-        "flex h-11 w-full min-w-0 rounded-md",
-        "border border-border/70",
-        "bg-background",
-        "px-3.5 py-2",
+        "flex h-9 w-full min-w-0 rounded-lg",
+        "border border-input",
+        "bg-card shadow-2xs",
+        "px-3 py-2",
         "text-sm text-foreground",
 
         // Placeholder
-        "placeholder:text-muted-foreground/60",
+        "placeholder:text-text-disabled",
 
         // Smooth animation
-        "transition-all duration-200 ease-out",
+        "transition-[border-color,box-shadow] duration-150 ease-out",
 
         // Remove default browser outline
         "outline-none",
@@ -30,30 +30,27 @@ function Input({ className, type, ...props }: React.ComponentProps<"input">) {
         "file:text-foreground",
 
         // Hover
-        "hover:border-foreground/30 hover:bg-background",
+        "hover:border-primary/40",
 
-        // Focus — neutral ring, no blue, no shadow
-        "focus-visible:border-foreground/50",
-        "focus-visible:ring-2",
-        "focus-visible:ring-foreground/15",
+        // Focus — brand ring
+        "focus-visible:border-primary",
+        "focus-visible:ring-3",
+        "focus-visible:ring-primary/15",
 
         // Invalid
         "aria-invalid:border-destructive",
-        "aria-invalid:ring-2",
+        "aria-invalid:ring-3",
         "aria-invalid:ring-destructive/15",
 
         // Disabled
         "disabled:pointer-events-none",
         "disabled:cursor-not-allowed",
-        "disabled:bg-muted/50",
+        "disabled:bg-muted",
         "disabled:text-muted-foreground",
         "disabled:opacity-60",
 
         // Dark mode
-        "dark:bg-card/60",
-        "dark:border-border/60",
-        "dark:hover:bg-card/80",
-        "dark:focus-visible:border-foreground/60",
+        "dark:bg-card",
 
         // Responsive text
         "md:text-sm",
