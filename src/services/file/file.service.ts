@@ -2,6 +2,7 @@ import type { FileUploadResponse } from "@/types/File";
 import api from "../lib/axios";
 
 const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8081/api/v1";
+// const baseUrl = "http://localhost:8081/api/v1";
 
 export const fileService = {
     async uploadFile(file: File, bucketName: string = "default"): Promise<{ payload: FileUploadResponse }> {

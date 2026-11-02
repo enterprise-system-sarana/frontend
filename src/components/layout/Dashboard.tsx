@@ -29,15 +29,17 @@ import { useStock } from "@/hooks/inventory/useStock";
 import type { StockResponse } from "@/types/inventory/Stock";
 import ImageCell from "@/components/file/ImageCell";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { useUser } from "@/hooks/users/useUser";
 
 const DashboardLayout = () => {
   const { user, roles } = useAuth();
+  // const { dataUser: users } = useUser({ page: 1, size: 1000 })
+  // const {data: users} = useAuth.useGetAllUser({ page: 1, size: 1000 });
   const navigate = useNavigate();
   const handleLogout = useLogout();
   const location = useLocation();
   const { t, language } = useLanguage();
   const currentDateString = new Date().toLocaleDateString(language === "km" ? "km-KH" : "en-GB", { day: "2-digit", month: "short", year: "numeric" });
-  // Breadcrumb (Figma header: "Overview › Dashboard"), derived from the URL path.
   const toLabel = (segment: string) => segment.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
   const pathSegments = location.pathname.split("/").filter((segment) => segment && !/^\d+$/.test(segment));
   const breadcrumb = pathSegments.length === 0 || location.pathname === ROUTERS.DASHBOARD
@@ -67,9 +69,16 @@ const DashboardLayout = () => {
       };
     });
 
+  const userFullName = user
+    ? [user.firstName, user.lastName].filter(Boolean).join(" ") || user.username
+    : "Guest User";
+
+
+  console.log(user)
+
   const activeUser = user
     ? {
-      name: user.username,
+      name: userFullName,
       email: user.email,
       avatar: user.profileImage || "",
     }
@@ -78,6 +87,9 @@ const DashboardLayout = () => {
       email: "guest@example.com",
       avatar: "",
     };
+
+  console.log("activeUser.avatar", activeUser);
+  const imageUser = activeUser.avatar;
 
 
   return (
@@ -206,16 +218,16 @@ const DashboardLayout = () => {
                   <button type="button" className="reference-user-trigger">
                     <Avatar className="reference-user-avatar">
                       <ImageCell
-                        fileName={activeUser?.avatar}
+                        fileName={imageUser}
                         name={activeUser.name}
-                        bucketName="user"
+                        bucketName="users"
                         preview={false}
                         className="size-full rounded-full"
                         fallbackSrc="/default-user-avatar.png"
                       />
-                      <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
+                      {/* <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
                         <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
-                      </AvatarFallback>
+                      </AvatarFallback> */}
                     </Avatar>
                     <span className="reference-user-copy">
                       <strong className="reference-user-name">{activeUser.name}</strong>
@@ -233,9 +245,9 @@ const DashboardLayout = () => {
                     <div className="flex items-center gap-2.5">
                       <Avatar className="size-9 rounded-full ring-1 ring-border/60 shrink-0">
                         <ImageCell
-                          fileName={activeUser?.avatar}
+                          fileName={imageUser}
                           name={activeUser.name}
-                          bucketName="user"
+                          bucketName="users"
                           className="size-full rounded-full"
                           fallbackSrc="/default-user-avatar.png"
                         />

@@ -46,7 +46,7 @@ export const ProductDetailModal = ({
   const { t } = useLanguage();
 
   const [serialSearch, setSerialSearch] = useState("");
-  const [serialStatusFilter, setSerialStatusFilter] = useState("ALL");
+  const [serialStatusFilter, setSerialStatusFilter] = useState("AVAILABLE");
   const [copiedSerial, setCopiedSerial] = useState<string | null>(null);
 
   const validId = productId ?? initialProduct?.id ?? 0;
@@ -326,7 +326,7 @@ export const ProductDetailModal = ({
                       />
                     </div>
                     <div className="flex items-center gap-1">
-                      {["ALL", "AVAILABLE", "SOLD"].map((st) => (
+                      {["AVAILABLE", "SOLD"].map((st) => (
                         <button
                           key={st}
                           type="button"
@@ -336,7 +336,7 @@ export const ProductDetailModal = ({
                               : "bg-muted hover:bg-muted/80 text-muted-foreground"
                             }`}
                         >
-                          {st === "ALL" ? t("common.all") : st === "AVAILABLE" ? t("inventory.available") : st}
+                          {st === "AVAILABLE" ? t("inventory.available") : st}
                         </button>
                       ))}
                     </div>

@@ -5,12 +5,14 @@ type MutationHandlerProps = {
     queryClient: QueryClient;
     queryKey: readonly unknown[];
     additionalQueryKeys?: (readonly unknown[])[];
+    showToast?: boolean;
 };
 
 export const mutationHandler = ({
     queryClient,
     queryKey,
     additionalQueryKeys,
+    showToast = true,
 }: MutationHandlerProps) => ({
     onSuccess: (res: any) => {
         queryClient.invalidateQueries({ queryKey });
@@ -19,7 +21,10 @@ export const mutationHandler = ({
                 queryClient.invalidateQueries({ queryKey: key });
             });
         }
-        toast.success(res?.message || "Success");
+        if (showToast) {
+            toast.dismiss();
+            toast.success(res?.message || "Success");
+        }
     },
 
     onError: (error: any) => {
@@ -43,6 +48,7 @@ export const mutationHandler = ({
         } else if (error.message) {
             errorMsg = error.message;
         }
+        toast.dismiss();
         toast.error(errorMsg);
     },
 });

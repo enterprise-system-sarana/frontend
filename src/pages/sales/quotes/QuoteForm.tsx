@@ -29,7 +29,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { AlertCircle, ArrowLeft, Loader2, Package, Plus, Trash2 } from "lucide-react";
+import { AlertCircle, ArrowLeft, Loader2, Package, Plus, Trash2, PackageCheck } from "lucide-react";
+import { useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { salesService } from "@/services/sales/sales.service";
+import { PaymentService } from "@/services/sales/payment.service";
+import { quoteService } from "@/services/sales/quote.service";
+import { useSale } from "@/hooks/sales/useSale";
+import { useProductSerial } from "@/hooks/product/useProductSerial";
+import { useCashRegister } from "@/hooks/sales/useCashRegister";
+import { usePayment } from "@/hooks/sales/usePayment";
 import { cn } from "@/lib/utils";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -69,7 +78,8 @@ const summarizeZodErrors = (error: any): string[] => {
 };
 
 export const QuoteForm = () => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const isEditing = Boolean(id && !isNaN(Number(id)));
@@ -279,11 +289,11 @@ export const QuoteForm = () => {
 
     form.setFieldValue("items", normalized as any);
 
-    const itemsTotal = normalized.reduce(
+    const total = normalized.reduce(
       (sum, item) => sum + item.price * item.qty,
       0
     );
-    const itemsDiscount = normalized.reduce(
+    const disc = normalized.reduce(
       (sum, item) => sum + item.discount_item,
       0
     );
@@ -291,7 +301,7 @@ export const QuoteForm = () => {
 
     form.setFieldValue(
       "grandTotal",
-      Math.max(0, itemsTotal - itemsDiscount - overallDiscount)
+      Math.max(0, total - disc - overallDiscount)
     );
   }, [items]);
 
@@ -331,7 +341,7 @@ export const QuoteForm = () => {
   const currentQuoteDiscount = form.state.values.discount || 0;
   const currentPaidAmount = form.state.values.paidAmount || 0;
 
-  const { itemsTotal, itemsDiscount, grandTotal } = useMemo(() => {
+  const { itemsTotal, itemsDiscount, grandTotal, dueAmount } = useMemo(() => {
     const total = items.reduce(
       (sum, item) => sum + Number(item.price || 0) * Number(item.qty || 0),
       0
@@ -341,19 +351,153 @@ export const QuoteForm = () => {
       0
     );
     const gt = Math.max(0, total - disc - Number(currentQuoteDiscount || 0));
+    const due = Math.max(0, gt - Number(currentPaidAmount || 0));
     return {
       itemsTotal: total,
       itemsDiscount: disc,
       grandTotal: gt,
+      dueAmount: due,
     };
-  }, [items, currentQuoteDiscount]);
+  }, [items, currentQuoteDiscount, currentPaidAmount]);
 
   const showItemsError = itemsTouched && items.length === 0;
+
+  const handleGoodsArrived = async () => {
+    if (!quote?.id) return;
+    try {
+      toast.loading(t("quote.converting_to_sale", "Converting booking to sale..."));
+
+      const rawItems = items || [];
+      const saleItems = rawItems.map((it: any) => {
+        const pQty = Number(it.qty ?? it.quantity ?? 1);
+        const pPrice = Number(it.price ?? 0);
+        const pDiscount = Number(it.discount_item ?? it.discount ?? 0);
+        const pSubtotal = Number(it.subtotal ?? Math.max(0, pPrice * pQty - pDiscount));
+        return {
+          productId: Number(it.productId),
+          quantity: pQty,
+          price: pPrice,
+          itemDiscount: pDiscount,
+          subtotal: pSubtotal,
+          serialNumberIds: [],
+        };
+      });
+
+      if (saleItems.length === 0) {
+        toast.dismiss();
+        toast.error("Quote has no items to convert.");
+        return;
+      }
+
+      const subtotalCalc = saleItems.reduce((sum, it) => sum + it.subtotal, 0);
+      const discountVal = Number(form.state.values.discount) || 0;
+      const grandTotalCalc = Math.max(0, subtotalCalc - discountVal);
+      const depositPaid = Number(form.state.values.paidAmount) || 0;
+      const dueBal = Math.max(0, grandTotalCalc - depositPaid);
+      const isPaid = depositPaid >= grandTotalCalc;
+
+      const dateStr = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+      const rand = Math.floor(1000 + Math.random() * 9000);
+      const posRef = `POS-${dateStr}-${rand}`;
+
+      const salePayload: any = {
+        reference: posRef,
+        saleDate: new Date().toISOString().split("T")[0],
+        customerId: Number(form.state.values.customerId || 1),
+        storeId: 1,
+        discount: discountVal,
+        totalAmount: subtotalCalc,
+        grandTotal: grandTotalCalc,
+        paidAmount: depositPaid,
+        dueAmount: dueBal,
+        paymentOption: isPaid ? "PAID" : "DUE",
+        paymentStatus: isPaid ? "PAID" : (depositPaid > 0 ? "PARTIAL" : "PENDING"),
+        status: "PENDING",
+        noted: `Pre-order Booking #${quote.no || quote.reference}${form.state.values.noted ? ` - ${form.state.values.noted}` : ""}`,
+        items: saleItems,
+      };
+
+      const createdSaleRes: any = await salesService.create(salePayload);
+      const newSale =
+        createdSaleRes?.payload?.data ??
+        createdSaleRes?.data ??
+        createdSaleRes?.payload ??
+        createdSaleRes;
+
+      const newSaleId = Number(newSale?.id || 0);
+      if (!newSaleId) {
+        throw new Error("Failed to create sale from booking.");
+      }
+
+      if (depositPaid > 0) {
+        try {
+          await PaymentService.create({
+            saleId: newSaleId,
+            totalAmount: depositPaid,
+            amount: depositPaid,
+            paymentMethod: "CASH",
+            paymentNo: `DEP-${newSale.reference || newSaleId}`,
+            paymentDate: new Date().toISOString().split("T")[0],
+            status: isPaid ? "PAID" : "PARTIAL",
+          });
+        } catch (payErr) {
+          console.warn("Could not record initial deposit payment:", payErr);
+        }
+      }
+
+      try {
+        await quoteService.update(quote.id, {
+          reference: String(form.state.values.reference || quote.reference || ""),
+          no: String(form.state.values.no || quote.no || ""),
+          date: form.state.values.date ? new Date(form.state.values.date).toISOString() : new Date().toISOString(),
+          customerId: Number(form.state.values.customerId || 1),
+          discount: discountVal,
+          grandTotal: grandTotalCalc,
+          status: "COMPLETED",
+          paymentStatus: isPaid ? "PAID" : (depositPaid > 0 ? "PARTIAL" : "PENDING"),
+          paidAmount: depositPaid,
+          returnAmount: Number(form.state.values.returnAmount || 0),
+          noted: form.state.values.noted || "",
+          items: rawItems.map((it: any) => ({
+            productId: Number(it.productId),
+            qty: Number(it.qty ?? it.quantity ?? 1),
+            price: Number(it.price ?? 0),
+            discount_item: Number(it.discount_item ?? it.discount ?? 0),
+            subtotal: Number(it.subtotal ?? (Number(it.price ?? 0) * Number(it.qty ?? 1))),
+          })),
+        });
+      } catch (qErr) {
+        console.warn("Could not update quote status:", qErr);
+      }
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: useQuote.keys.all }),
+        queryClient.invalidateQueries({ queryKey: useSale.keys.all }),
+        queryClient.invalidateQueries({ queryKey: useProduct.keys.all }),
+        queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all }),
+        queryClient.invalidateQueries({ queryKey: useCashRegister.keys.all }),
+        queryClient.invalidateQueries({ queryKey: usePayment.paymentKey.all }),
+      ]);
+
+      toast.dismiss();
+      toast.success(
+        language === "km"
+          ? "ទំនិញមកដល់ហើយ! បានបង្កើតការលក់រួចរាល់ កំពុងចូលទៅកាន់ Sale Edit..."
+          : "Goods arrived! Sale created. Opening Sale Edit..."
+      );
+
+      navigate(ROUTERS.SALE_EDIT.replace(":id", String(newSaleId)));
+    } catch (error: any) {
+      toast.dismiss();
+      const msg = error?.response?.data?.message || error?.message || "Failed to convert quote to sale.";
+      toast.error(msg);
+    }
+  };
 
   return (
     <div className="py-2 pb-16">
       {/* Header */}
-      <div className="flex items-center justify-between pb-4 mb-6 border-b border-border/60">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-4 mb-6 border-b border-border/60 gap-4">
         <div className="flex items-center gap-3">
           <Button
             type="button"
@@ -376,6 +520,17 @@ export const QuoteForm = () => {
             </p>
           </div>
         </div>
+
+        {isEditing && (quote?.status || "").toUpperCase() !== "COMPLETED" && (
+          <Button
+            type="button"
+            onClick={handleGoodsArrived}
+            className="h-10 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-semibold text-sm gap-2 shadow-xs transition-colors cursor-pointer"
+          >
+            <PackageCheck className="h-4 w-4" />
+            <span>{language === "km" ? "ទំនិញមកដល់ (ចូល Sale Edit)" : "Goods Arrived (Open Sale Edit)"}</span>
+          </Button>
+        )}
       </div>
 
       <form
@@ -530,42 +685,37 @@ export const QuoteForm = () => {
                     const incompleteProduct = !item.productId;
 
                     return (
-                      <TableRow key={item.uid} className="hover:bg-muted/30">
+                      <TableRow key={item.uid}>
                         <TableCell>
                           <Select
                             value={item.productId ? String(item.productId) : ""}
-                            onValueChange={(value) =>
-                              selectProduct(item.uid, value)
-                            }
+                            onValueChange={(val) => selectProduct(item.uid, val)}
                           >
                             <SelectTrigger
                               className={cn(
                                 "w-full",
                                 incompleteProduct &&
                                   itemsTouched &&
-                                  "border-destructive ring-1 ring-destructive"
+                                  "border-destructive"
                               )}
                             >
-                              <SelectValue placeholder={t("quote.select_product", "Select product")} />
+                              <SelectValue
+                                placeholder={t("quote.select_product", "Select product")}
+                              />
                             </SelectTrigger>
                             <SelectContent>
                               {products.map((p: any) => {
-                                const displayName =
-                                  p.name ||
-                                  p.modelName ||
-                                  p.code ||
-                                  `Product #${p.id}`;
+                                const priceNum = Number(p.price || 0);
                                 return (
                                   <SelectItem key={p.id} value={String(p.id)}>
-                                    <div className="flex items-center gap-2">
-                                      <span className="font-medium">
-                                        {displayName}
+                                    <div className="flex flex-col">
+                                      <span className="font-medium text-foreground">
+                                        {p.name || p.modelName || `Product #${p.id}`}
                                       </span>
-                                      {p.code && (
-                                        <span className="text-xs text-muted-foreground tabular-nums">
-                                          ({p.code})
-                                        </span>
-                                      )}
+                                      <span className="text-xs text-muted-foreground">
+                                        {p.code ? `[${p.code}] ` : ""}
+                                        {formatCurrency(priceNum)}
+                                      </span>
                                     </div>
                                   </SelectItem>
                                 );
@@ -694,7 +844,7 @@ export const QuoteForm = () => {
             <FormTextField
               form={form}
               name="paidAmount"
-              label={`${t("quote.paid_amount", "Paid Amount")} ($)`}
+              label={`${t("quote.deposit", "Deposit / Paid Amount")} ($)`}
               placeholder="0.00"
               type="number"
             />
@@ -708,7 +858,7 @@ export const QuoteForm = () => {
           </div>
 
           <div className="p-5 mt-6 border rounded-xl bg-muted/40 border-border/60">
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-4 text-sm">
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-5 text-sm">
               <div>
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
                   {t("quote.items_subtotal", "Items Subtotal")}
@@ -721,24 +871,32 @@ export const QuoteForm = () => {
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
                   {t("quote.total_discounts", "Total Discounts")}
                 </span>
-                <div className="text-base font-semibold text-warning-text sm:mt-1">
+                <div className="text-base font-semibold text-amber-600 sm:mt-1">
                   {formatCurrency(itemsDiscount + Number(currentQuoteDiscount || 0))}
-                </div>
-              </div>
-              <div>
-                <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
-                  {t("quote.paid_amount", "Paid Amount")}
-                </span>
-                <div className="text-base font-semibold text-success sm:mt-1">
-                  {formatCurrency(Number(currentPaidAmount) || 0)}
                 </div>
               </div>
               <div>
                 <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
                   {t("common.grand_total", "Grand Total")}
                 </span>
-                <div className="text-lg font-bold text-primary sm:mt-1">
+                <div className="text-base font-bold text-primary sm:mt-1">
                   {formatCurrency(grandTotal)}
+                </div>
+              </div>
+              <div>
+                <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
+                  {t("quote.deposit", "Deposit Paid")}
+                </span>
+                <div className="text-base font-semibold text-emerald-600 sm:mt-1">
+                  {formatCurrency(Number(currentPaidAmount) || 0)}
+                </div>
+              </div>
+              <div>
+                <span className="text-xs uppercase text-muted-foreground font-semibold tracking-wider">
+                  {t("quote.due_amount", "Due Balance")}
+                </span>
+                <div className={cn("text-base font-bold sm:mt-1", dueAmount > 0 ? "text-rose-600" : "text-slate-600")}>
+                  {formatCurrency(dueAmount)}
                 </div>
               </div>
             </div>

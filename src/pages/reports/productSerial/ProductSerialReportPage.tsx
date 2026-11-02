@@ -94,8 +94,8 @@ const ProductSerialReportPage = () => {
         options: [
           { label: "AVAILABLE", value: "AVAILABLE" },
           { label: "SOLD", value: "SOLD" },
-          { label: "DAMAGED", value: "DAMAGED" },
-          { label: "RETURNED", value: "RETURNED" },
+
+
         ],
       },
     ],

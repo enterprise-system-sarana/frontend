@@ -719,14 +719,14 @@ export const HomePage = () => {
   return (
     <main className="space-y-4 reference-dashboard">
       {/* Page header — Figma "Good morning, Sophea" */}
-      <div className="flex flex-col gap-1.5 pb-1">
+      {/* <div className="flex flex-col gap-1.5 pb-1">
         <h1 className="reference-dashboard-title">
           {greeting}, <span>{user?.firstName || user?.username || ""}</span>
         </h1>
         <p className="text-sm leading-[22px] text-muted-foreground">
           {t("dashboard.subtitle", "Sales, stock, purchases and expenses across your shop at a glance.")}
         </p>
-      </div>
+      </div> */}
       {/* KPI row — Figma "KPI" cards */}
       <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
         <KpiCard

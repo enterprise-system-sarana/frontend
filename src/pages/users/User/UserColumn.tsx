@@ -52,7 +52,7 @@ export const UserColumns = ({
                             <ImageCell
                                 fileName={imageFile}
                                 name={fullName}
-                                bucketName="user"
+                                bucketName="users"
                                 className="h-10 w-10 rounded-lg shadow-sm shrink-0"
                             />
                         ) : (

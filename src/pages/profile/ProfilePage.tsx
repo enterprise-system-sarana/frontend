@@ -6,7 +6,6 @@ import { useUser } from "@/hooks/users/useUser";
 import { useStore } from "@/hooks/inventory/useStore";
 import { userService } from "@/services/users/user.service";
 import { AuthService } from "@/services/auth/auth.service";
-import { fileService } from "@/services/file/file.service";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { PageHeader } from "@/components/ui/page-header";
 import {
@@ -18,9 +17,10 @@ import {
 } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FileUpload } from "@/components/ui/FileUpload";
+import { ImageCell } from "@/components/file/ImageCell";
 import { toast } from "sonner";
 import {
   UserRound,
@@ -253,12 +253,8 @@ export default function ProfilePage() {
     form.username ||
     "User";
 
-  const currentProfileImage = form.profileImage
-    ? form.profileImage.startsWith("http") ||
-      form.profileImage.startsWith("blob:")
-      ? form.profileImage
-      : fileService.getPreviewUrl("user", form.profileImage)
-    : "/default-user-avatar.png";
+  const resolvedProfileImage =
+    form.profileImage || detailedUser?.profileImage || user?.profileImage || "";
 
   const storeId = user?.storeId ?? detailedUser?.storeId;
   const accountStatus = detailedUser?.isActive ?? "ACTIVE";
@@ -272,20 +268,23 @@ export default function ProfilePage() {
     <div className="mx-auto max-w-4xl space-y-5">
       <PageHeader
         title={t("profile.settings", "My Profile")}
-        // description="Manage your personal information and account security."
       />
 
       {/* Account summary header */}
       <Card className="rounded-none shadow-none">
         <CardContent className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center">
-          <Avatar className="size-16 rounded-full">
-            <AvatarImage
-              src={currentProfileImage}
-              alt={fullName}
-              className="object-cover"
+          <Avatar className="size-16 rounded-full ring-2 ring-primary/20 overflow-hidden shrink-0">
+            <ImageCell
+              fileName={resolvedProfileImage}
+              name={fullName}
+              bucketName="users"
+              preview={false}
+              className="size-full rounded-full"
+              imageClassName="size-full object-cover rounded-full"
+              fallbackSrc="/default-user-avatar.png"
             />
-            <AvatarFallback>
-              {fullName.slice(0, 2).toUpperCase()}
+            <AvatarFallback className="bg-primary/10 text-primary font-bold text-xs uppercase">
+              <img src="/default-user-avatar.png" alt="" className="size-full object-cover" />
             </AvatarFallback>
           </Avatar>
 
@@ -307,14 +306,34 @@ export default function ProfilePage() {
             </div>
           </div>
 
-          <div className="text-sm text-muted-foreground">
-            <div className="flex items-center gap-2">
-              <Store className="size-4" />
-              <span>
-                {storeId
-                  ? assignedStore?.name ?? `Store #${storeId}`
-                  : "All Stores / HQ"}
-              </span>
+          <div className="text-sm text-muted-foreground sm:ml-auto">
+            <div className="flex items-center gap-2.5 border px-3 py-1.5 rounded-xl bg-muted/30 border-border/60">
+              <div className="size-8 rounded-lg overflow-hidden bg-white/90 p-0.5 border border-border/60 shrink-0 flex items-center justify-center">
+                {assignedStore?.logo ? (
+                  <ImageCell
+                    fileName={assignedStore.logo}
+                    name={assignedStore.name || "Store"}
+                    bucketName="store"
+                    preview={false}
+                    className="size-full object-contain"
+                    fallbackSrc="/logo.png"
+                  />
+                ) : (
+                  <img
+                    src="/logo.png"
+                    alt={assignedStore?.name || "360 Phone Shop"}
+                    className="size-full object-contain"
+                  />
+                )}
+              </div>
+              <div className="min-w-0">
+                <span className="font-semibold text-foreground text-xs block truncate">
+                  {assignedStore?.name ?? (storeId ? `Store #${storeId}` : "360 Phone Shop")}
+                </span>
+                <span className="text-[10px] text-muted-foreground block">
+                  {storeId ? `ID: #${storeId}` : "All Stores / HQ"}
+                </span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -355,7 +374,7 @@ export default function ProfilePage() {
                 <div className="space-y-2">
                   <label className="text-sm font-medium">Profile Photo</label>
                   <FileUpload
-                    bucketName="user"
+                    bucketName="users"
                     value={form.profileImage}
                     onUploaded={(value) => setField("profileImage", value)}
                     onRemove={() => setField("profileImage", "")}

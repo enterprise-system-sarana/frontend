@@ -223,7 +223,7 @@ const RolePage = () => {
 
         {/* Main Card with Toolbar & Table */}
         <div className="role-table-card rounded-2xl border border-border bg-card shadow-card overflow-hidden">
-          <div className="role-table-heading"><div><h2>{t("role.title", "Role directory")}</h2><p>{t("role.choose_role", "Search roles, review access, and manage permissions.")}</p></div><span>{totalRoles} {t("common.total", "total")}</span></div>
+          {/* <div className="role-table-heading"><div><h2>{t("role.title", "Role directory")}</h2><p>{t("role.choose_role", "Search roles, review access, and manage permissions.")}</p></div><span>{totalRoles} {t("common.total", "total")}</span></div> */}
           {/* Toolbar row with Search, Filter+, Columns, Print, CSV */}
           <div className="px-5 py-4 border-b border-border">
             <PageFilter

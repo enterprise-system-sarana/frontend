@@ -36,7 +36,7 @@ export const UserSchema = z.object({
   profileImage: z.string().optional().nullable(),
   isActive: z.string().default(Status.ACTIVE),
   storeId: z.number().optional().nullable(),
-  roleCodes: z.array(z.string()).min(1, "At least one role is required"),
+  roleIds: z.array(z.number()).min(1, "At least one role is required"),
 });
 
 export interface UserFilter extends PageFilter {

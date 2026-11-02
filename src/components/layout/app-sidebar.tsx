@@ -24,6 +24,7 @@ import {
   RotateCcw,
   ChevronsLeft,
   LogOut,
+  Building,
 } from "lucide-react";
 
 import { NavMain } from "@/components/layout/nav-main";
@@ -44,6 +45,9 @@ import { PERMISSION } from "@/constants/Permission";
 import { usePermission } from "@/utils/UsePermission";
 
 import { ROUTERS } from "@/constants/Route";
+import { useAuth } from "@/store/useAuth";
+import { useStore } from "@/hooks/inventory/useStore";
+import { ImageCell } from "@/components/file/ImageCell";
 
 const data = {
   navMain: [
@@ -77,6 +81,12 @@ const data = {
           url: `${ROUTERS.PRODUCT}/create`,
           icon: PlusCircle,
           permission: PERMISSION.PRODUCT.CREATE,
+        },
+        {
+          title: "Stock",
+          url: ROUTERS.STOCK,
+          icon: Boxes,
+          permission: PERMISSION.STOCK.READ,
         },
       ],
     },
@@ -136,34 +146,10 @@ const data = {
           permission: PERMISSION.VARIANT_VALUE.READ,
         },
         {
-          title: "Bank",
-          url: ROUTERS.BANK,
-          icon: Wallet,
-          permission: PERMISSION.BANK.READ,
-        },
-        {
           title: "Store",
           url: ROUTERS.STORE,
           icon: StoreIcon,
           permission: PERMISSION.STORE.READ,
-        },
-        {
-          title: "Stock",
-          url: ROUTERS.STOCK,
-          icon: Boxes,
-          permission: PERMISSION.STOCK.READ,
-        },
-        {
-          title: "Role",
-          url: ROUTERS.ROLE,
-          icon: Shield,
-          permission: PERMISSION.ROLE.READ,
-        },
-        {
-          title: "Role Permissions",
-          url: ROUTERS.ROLE_PERMISSIONS,
-          icon: Shield,
-          permission: PERMISSION.PERMISSION.READ,
         },
       ],
     },
@@ -191,6 +177,12 @@ const data = {
           icon: CreditCard,
           permission: PERMISSION.PURCHASE.READ,
         },
+        {
+          title: "Suppliers",
+          url: ROUTERS.SUPPLIER,
+          icon: Users,
+          permission: PERMISSION.SUPPLIER.READ,
+        },
       ],
     },
     {
@@ -199,6 +191,12 @@ const data = {
       icon: BadgeDollarSign,
       badge: undefined as string | undefined,
       items: [
+        {
+          title: "Customers",
+          url: ROUTERS.CUSTOMER,
+          icon: Users,
+          permission: PERMISSION.CUSTOMER.READ,
+        },
         {
           title: "List Sales",
           url: ROUTERS.SALE,
@@ -229,18 +227,18 @@ const data = {
           icon: CreditCard,
           permission: PERMISSION.PAYMENT.READ,
         },
-        {
-          title: "Quote",
-          url: ROUTERS.QUOTE,
-          icon: FileText,
-          // permission: PERMISSION.QUOTE.READ,
-        },
-        {
-          title: "Create Quote",
-          url: ROUTERS.QUOTE_CREATE,
-          icon: PlusCircle,
-          // permission: PERMISSION.QUOTE.CREATE,
-        },
+        // {
+        //   title: "Quote",
+        //   url: ROUTERS.QUOTE,
+        //   icon: FileText,
+        //   // permission: PERMISSION.QUOTE.READ,
+        // },
+        // {
+        //   title: "Create Quote",
+        //   url: ROUTERS.QUOTE_CREATE,
+        //   icon: PlusCircle,
+        //   // permission: PERMISSION.QUOTE.CREATE,
+        // },
       ],
     },
     {
@@ -253,20 +251,64 @@ const data = {
           title: "Currency",
           url: ROUTERS.CURRENCY,
           icon: Coins,
-          // permission: PERMISSION.CURRENCY.READ,
+          permission: PERMISSION.CURRENCY.READ,
+        },
+        {
+          title: "Bank",
+          url: ROUTERS.BANK,
+          icon: Building,
+          permission: PERMISSION.BANK.READ,
         },
       ],
     },
     {
-      title: "Reports",
+      title: "People",
+      url: "#",
+      icon: Users,
+      badge: undefined as string | undefined,
+      items: [
+        {
+          title: "User",
+          url: ROUTERS.USER,
+          icon: Users,
+          permission: PERMISSION.USER.READ,
+        },
+        {
+          title: "Role",
+          url: ROUTERS.ROLE,
+          icon: Shield,
+          permission: PERMISSION.ROLE.READ,
+        },
+        {
+          title: "Role Permissions",
+          url: ROUTERS.ROLE_PERMISSIONS,
+          icon: Shield,
+          permission: PERMISSION.PERMISSION.READ,
+        },
+      ],
+    },
+    {
+      title: "Sale Reports",
       url: "#",
       icon: Receipt,
       badge: undefined as string | undefined,
       permission: PERMISSION.REPORT.READ,
       items: [
         {
+          title: "Sale",
+          url: ROUTERS.REPORT_SALES,
+          icon: Receipt,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
           title: "Daily Sales",
           url: ROUTERS.REPORT_DAILY_SALES,
+          icon: Receipt,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Weekly Sales",
+          url: ROUTERS.REPORT_WEEKLY_SALES,
           icon: Receipt,
           permission: PERMISSION.REPORT.READ,
         },
@@ -276,30 +318,22 @@ const data = {
           icon: Receipt,
           permission: PERMISSION.REPORT.READ,
         },
+
         {
-          title: "Sales Report",
-          url: ROUTERS.REPORT_SALES,
-          icon: Receipt,
-          permission: PERMISSION.REPORT.READ,
-        },
-        {
-          title: "Sales Item Reports",
+          title: "Sales Item ",
           url: ROUTERS.REPORT_SALES_ITEMS,
           icon: ShoppingCart,
           permission: PERMISSION.REPORT.READ,
         },
-        {
-          title: "Purchase Report",
-          url: ROUTERS.REPORT_PURCHASES,
-          icon: ShoppingBag,
-          permission: PERMISSION.REPORT.READ,
-        },
-        {
-          title: "Purchase Item Reports",
-          url: ROUTERS.REPORT_PURCHASE_ITEMS,
-          icon: Package,
-          permission: PERMISSION.REPORT.READ,
-        },
+      ],
+    },
+    {
+      title: "Payment Reports",
+      url: "#",
+      icon: CreditCard,
+      badge: undefined as string | undefined,
+      permission: PERMISSION.REPORT.READ,
+      items: [
         {
           title: "Sale Payments",
           url: ROUTERS.REPORT_SALE_PAYMENTS,
@@ -318,56 +352,60 @@ const data = {
           icon: Wallet,
           permission: PERMISSION.REPORT.READ,
         },
+        // {
+        //   title: "Profit & Loss",
+        //   url: ROUTERS.REPORT_PROFIT_LOSS,
+        //   icon: BadgeDollarSign,
+        //   permission: PERMISSION.REPORT.READ,
+        // },
+      ],
+    },
+    {
+      title: "Stock Reports",
+      url: "#",
+      icon: Boxes,
+      badge: undefined as string | undefined,
+      permission: PERMISSION.REPORT.READ,
+      items: [
         {
-          title: "Profit & Loss",
-          url: ROUTERS.REPORT_PROFIT_LOSS,
-          icon: BadgeDollarSign,
-          permission: PERMISSION.REPORT.READ,
-        },
-        {
-          title: "Product Serial Reports",
-          url: ROUTERS.REPORT_PRODUCT_SERIALS,
-          icon: Boxes,
-          permission: PERMISSION.REPORT.READ,
-        },
-        {
-          title: "Stock Reports",
+          title: "Stock ",
           url: ROUTERS.REPORT_STOCK,
           icon: Box,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
+          title: "Product Serial ",
+          url: ROUTERS.REPORT_PRODUCT_SERIALS,
+          icon: Boxes,
           permission: PERMISSION.REPORT.READ,
         },
       ],
     },
     {
-      title: "People",
+      title: "Purchase Reports",
       url: "#",
-      icon: Users,
+      icon: ShoppingBag,
       badge: undefined as string | undefined,
+      permission: PERMISSION.REPORT.READ,
       items: [
         {
-          title: "User",
-          url: ROUTERS.USER,
-          icon: Users,
-          permission: PERMISSION.USER.READ,
+          title: "Purchase",
+          url: ROUTERS.REPORT_PURCHASES,
+          icon: ShoppingBag,
+          permission: PERMISSION.REPORT.READ,
         },
         {
-          title: "Customers",
-          url: ROUTERS.CUSTOMER,
-          icon: Users,
-          permission: PERMISSION.CUSTOMER.READ,
-        },
-        {
-          title: "Suppliers",
-          url: ROUTERS.SUPPLIER,
-          icon: Users,
-          permission: PERMISSION.SUPPLIER.READ,
+          title: "Purchase Item ",
+          url: ROUTERS.REPORT_PURCHASE_ITEMS,
+          icon: Package,
+          permission: PERMISSION.REPORT.READ,
         },
       ],
     },
   ],
 };
 
-/** Sidebar section each top-level menu belongs to (Figma: OVERVIEW / STUDENTS / …). */
+/** Sidebar section each top-level menu belongs to (Figma: OVERVIEW / OPERATIONS / FINANCE / MANAGEMENT / REPORTS). */
 const SECTION_BY_TITLE: Record<string, { key: string; fallback: string }> = {
   Dashboard: { key: "nav.section_overview", fallback: "Overview" },
   POS: { key: "nav.section_overview", fallback: "Overview" },
@@ -378,7 +416,10 @@ const SECTION_BY_TITLE: Record<string, { key: string; fallback: string }> = {
   Finance: { key: "nav.section_finance", fallback: "Finance" },
   "Catalog Setup": { key: "nav.section_management", fallback: "Management" },
   People: { key: "nav.section_management", fallback: "Management" },
-  Reports: { key: "nav.section_reports", fallback: "Reports" },
+  "Sale Reports": { key: "nav.section_reports", fallback: "Reports" },
+  "Payment Reports": { key: "nav.section_reports", fallback: "Reports" },
+  "Stock Reports": { key: "nav.section_reports", fallback: "Reports" },
+  "Purchase Reports": { key: "nav.section_reports", fallback: "Reports" },
 };
 
 export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
@@ -386,6 +427,18 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
   const { t } = useLanguage();
   const { toggleSidebar } = useSidebar();
   const handleLogout = useLogout();
+  const { user } = useAuth();
+  const { data: storesData } = useStore.useGetAllStore({ page: 0, size: 50 });
+  const storeList = (storesData && storesData.payload && storesData.payload.data) || (storesData && storesData.data) || [];
+  const currentStore = React.useMemo(() => {
+    if (user && user.storeId && Array.isArray(storeList)) {
+      const found = storeList.find((s) => Number(s.id) === Number(user.storeId));
+      if (found) return found;
+    }
+    return storeList[0] || null;
+  }, [storeList, user]);
+  const storeName = (currentStore && currentStore.name) || "360 Phone Shop";
+  const storeLogo = currentStore && currentStore.logo;
 
   const filteredNavMain = data.navMain
     .map((group) => {
@@ -400,8 +453,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
     })
     .filter((group) => !group.items || group.items.length > 0)
     .sort((a, b) => {
-      const order = ["Dashboard", "POS", "Sales", "Products", "Purchases", "Expenses", "Finance", "Catalog Setup", "People", "Reports"];
-      return order.indexOf(a.title) - order.indexOf(b.title);
+      const order = [
+        "Dashboard",
+        "POS",
+        "Sales",
+        "Products",
+        "Purchases",
+        "Expenses",
+        "Finance",
+        "Catalog Setup",
+        "People",
+        "Sale Reports",
+        "Payment Reports",
+        "Stock Reports",
+        "Purchase Reports",
+      ];
+      const indexA = order.indexOf(a.title);
+      const indexB = order.indexOf(b.title);
+      const safeA = indexA === -1 ? 999 : indexA;
+      const safeB = indexB === -1 ? 999 : indexB;
+      return safeA - safeB;
     })
     .map((group, index, list) => {
       const section = SECTION_BY_TITLE[group.title];
@@ -418,15 +489,26 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       className="h-screen border-r-0 bg-sidebar shadow-none reference-sidebar"
     >
       <SidebarHeader className="reference-sidebar-header">
-        <span className="reference-brand-mark">
-          <img
-            className="reference-brand-logo"
-            src="/logo.png"
-            alt="360 Phone Shop"
-          />
+        <span className="reference-brand-mark flex items-center justify-center overflow-hidden">
+          {storeLogo ? (
+            <ImageCell
+              fileName={storeLogo}
+              name={storeName}
+              bucketName="store"
+              preview={false}
+              className="size-full rounded-md object-contain"
+              fallbackSrc="/logo.png"
+            />
+          ) : (
+            <img
+              className="reference-brand-logo"
+              src="/logo.png"
+              alt={storeName}
+            />
+          )}
         </span>
         <span className="reference-brand-wordmark">
-          <strong>360 Phone Shop</strong>
+          <strong className="truncate">{storeName}</strong>
         </span>
         <button
           type="button"

@@ -397,7 +397,7 @@ export default function CashRegisterPage() {
           <PageFilter
             search={search}
             onSearchChange={setSearch}
-            searchPlaceholder={isKm ? "ស្វែងរកតាមលេខកូដបញ្ជី ឬឈ្មោះបេឡាករ..." : "Search register or cashier..."}
+            searchPlaceholder={isKm ? "ស្វែងរកតាមលេខកូដបញ្ជី ឬឈ្មោះបេឡាករ..." : "Search register or   ..."}
             startDate={startDate}
             endDate={endDate}
             onStartDateChange={(val) => {

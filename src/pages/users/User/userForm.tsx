@@ -94,7 +94,7 @@ const FormUser = ({
 
     const roleOptions = roles.map((role) => ({
         label: role.name || role.code,
-        value: role.code,
+        value: role.id,
     }));
 
     const form = useForm({
@@ -107,7 +107,7 @@ const FormUser = ({
             profileImage: "",
             isActive: Status.ACTIVE,
             storeId: null,
-            roleCodes: [],
+            roleIds: [],
         } as UserRequest,
 
         validators: {
@@ -115,18 +115,18 @@ const FormUser = ({
         },
 
         onSubmit: async ({ value }) => {
-            // Keep default existing roleCodes if editing and none selected
-            const defaultRoles = (user as any)?.roleCodes ?? user?.roles ?? [];
-            const normalizedDefaultRoles = Array.isArray(defaultRoles)
-                ? defaultRoles
-                    .map((r: any) => (typeof r === "string" ? r : r.code || r.name))
-                    .filter(Boolean)
+            // Keep default existing roleIds if editing and none selected
+            const defaultRoleIds = (user as any)?.roleIds ?? user?.roles ?? [];
+            const normalizedDefaultRoleIds = Array.isArray(defaultRoleIds)
+                ? defaultRoleIds
+                    .map((r: any) => (typeof r === "number" ? r : r.id))
+                    .filter((id: any) => id != null)
                 : [];
 
-            const roleCodesToSubmit =
-                isEdit && (!value.roleCodes || value.roleCodes.length === 0)
-                    ? normalizedDefaultRoles
-                    : value.roleCodes;
+            const roleIdsToSubmit =
+                isEdit && (!value.roleIds || value.roleIds.length === 0)
+                    ? normalizedDefaultRoleIds
+                    : value.roleIds;
 
             // Password validation: required when creating
             if (!isEdit && (!value.password || value.password.trim().length < 6)) {
@@ -137,7 +137,7 @@ const FormUser = ({
             const { password, ...rest } = value;
             const payload: any = {
                 ...rest,
-                roleCodes: roleCodesToSubmit,
+                roleIds: roleIdsToSubmit,
                 storeId: value.storeId ? Number(value.storeId) : null,
             };
 
@@ -237,24 +237,26 @@ const FormUser = ({
                 user.storeId ?? null
             );
 
-            const rawRoles = (user as any).roleCodes ?? user.roles ?? [];
-            const mappedRoles = Array.isArray(rawRoles)
-                ? rawRoles
+            const rawRoleIds = (user as any).roleIds ?? user.roles ?? [];
+            const mappedRoleIds = Array.isArray(rawRoleIds)
+                ? rawRoleIds
                     .map((r: any) => {
+                        if (typeof r === "number") return r;
+                        if (r?.id != null) return r.id;
+                        // Try to match by name/code to find the role ID
                         const val = typeof r === "string" ? r : r.code || r.name;
                         const matchedOption = roleOptions.find(
                             (opt) =>
-                                opt.value.toLowerCase() === String(val).toLowerCase() ||
                                 opt.label.toLowerCase() === String(val).toLowerCase()
                         );
-                        return matchedOption ? matchedOption.value : val;
+                        return matchedOption ? matchedOption.value : null;
                     })
-                    .filter(Boolean)
+                    .filter((id: any) => id != null)
                 : [];
 
             form.setFieldValue(
-                "roleCodes",
-                mappedRoles
+                "roleIds",
+                mappedRoleIds
             );
         } else {
             form.reset();
@@ -388,7 +390,7 @@ const FormUser = ({
                                             onRemove={() => {
                                                 form.setFieldValue("profileImage", "");
                                             }}
-                                            defaultBucket="user"
+                                            defaultBucket="users"
                                         />
                                     )}
                                 </form.Subscribe>
@@ -411,12 +413,12 @@ const FormUser = ({
                         ) : roleOptions.length > 0 ? (
                             <form.Subscribe
                                 selector={(state) => [
-                                    state.values.roleCodes,
+                                    state.values.roleIds,
                                 ]}
                             >
                                 {([selectedRoles = []]) => {
                                     const selected =
-                                        selectedRoles as string[];
+                                        selectedRoles as number[];
 
                                     return (
                                         <div className="space-y-3">
@@ -455,7 +457,7 @@ const FormUser = ({
                                                                         isSelected
                                                                     ) {
                                                                         form.setFieldValue(
-                                                                            "roleCodes",
+                                                                            "roleIds",
                                                                             selected.filter(
                                                                                 (
                                                                                     item
@@ -466,7 +468,7 @@ const FormUser = ({
                                                                         );
                                                                     } else {
                                                                         form.setFieldValue(
-                                                                            "roleCodes",
+                                                                            "roleIds",
                                                                             [
                                                                                 ...selected,
                                                                                 role.value,

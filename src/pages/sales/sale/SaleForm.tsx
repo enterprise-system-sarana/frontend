@@ -79,6 +79,8 @@ import {
 } from "@/types/sales/Sale";
 
 import { useSale } from "@/hooks/sales/useSale";
+import { salesService } from "@/services/sales/sales.service";
+import { PaymentService } from "@/services/sales/payment.service";
 import { usePayment } from "@/hooks/sales/usePayment";
 import { useCustomer } from "@/hooks/sales/useCustomer";
 import { useStore } from "@/hooks/inventory/useStore";
@@ -305,10 +307,7 @@ export default function SaleForm() {
      MUTATIONS
   ------------------------------------------------------- */
 
-  const createSale = useSale.Create();
-  const updateSale = useSale.Update();
-  const completeSale = useSale.Complete();
-  const createPayment = usePayment.createPayment();
+
   const [registeredSaleId, setRegisteredSaleId] = useState<number | null>(null);
 
   /* -------------------------------------------------------
@@ -431,6 +430,34 @@ export default function SaleForm() {
       return 0;
     }
 
+    // Enforce Serial Numbers requirement in Sale
+    const missingSerialsIdx = currentValues.items.findIndex((it: any) => {
+      const prod =
+        productList.find((p: any) => Number(p.id) === Number(it.productId)) ||
+        (it as any).product;
+      const reqSerial = isProductSerialized(prod);
+      const selectedCount = (it.serialNumberIds || []).filter((sId: any) => Number(sId) > 0).length;
+      const qty = Number(it.quantity) || 1;
+      return reqSerial && selectedCount < qty;
+    });
+
+    if (missingSerialsIdx !== -1) {
+      const missingItem = currentValues.items[missingSerialsIdx];
+      const prod =
+        productList.find((p: any) => Number(p.id) === Number(missingItem.productId)) ||
+        (missingItem as any).product;
+      const reqQty = Number(missingItem.quantity) || 1;
+      const curCount = (missingItem.serialNumberIds || []).filter((sId: any) => Number(sId) > 0).length;
+
+      toast.error(
+        isKm
+          ? `តម្រូវឲ្យជ្រើសរើស Serial Number (IMEI) សម្រាប់ "${prod?.name || "ទំនិញ"}" ឲ្យបានគ្រប់ចំនួន ${reqQty} (បច្ចុប្បន្ន ${curCount}/${reqQty}) ជាមុនសិន!`
+          : `Serial numbers are required for "${prod?.name || "item"}" (${curCount}/${reqQty} selected) before completing the sale!`
+      );
+      setActiveSerialRowIndex(missingSerialsIdx);
+      return 0;
+    }
+
     const items = currentValues.items.map((item: any) => {
       const price = Number(item.price) || 0;
       const quantity = Number(item.quantity) || 1;
@@ -457,7 +484,9 @@ export default function SaleForm() {
 
     const finalPaidAmount =
       paymentOverride?.amount !== undefined
-        ? Number(paymentOverride.amount)
+        ? (isEditing && Number(currentValues.paidAmount) > 0 && Number(paymentOverride.amount) < grandTotalCalc
+            ? Number(currentValues.paidAmount) + Number(paymentOverride.amount)
+            : Number(paymentOverride.amount))
         : paymentOption === "PAID"
           ? (Number(currentValues.paidAmount) > 0 ? Number(currentValues.paidAmount) : grandTotalCalc)
           : (Number(currentValues.paidAmount) || 0);
@@ -498,15 +527,12 @@ export default function SaleForm() {
 
     let savedSaleId = isEditing && id ? Number(id) : (registeredSaleId || 0);
     if ((isEditing && id) || registeredSaleId) {
-      await updateSale.mutateAsync({
-        id: savedSaleId,
-        request: payload,
-      });
-      if (isEditing) {
+      await salesService.update(savedSaleId, payload);
+      if (isEditing && !paymentOverride) {
         navigate(ROUTERS.SALE);
       }
     } else {
-      const createdSale: any = await createSale.mutateAsync(payload);
+      const createdSale: any = await salesService.create(payload);
       const createdSaleData =
         createdSale?.payload?.data ??
         createdSale?.data ??
@@ -521,33 +547,27 @@ export default function SaleForm() {
       const multiPayments = (paymentOverride as any)?.payments || (paymentOverride as any)?.lines || (paymentOverride as any)?.paymentLines;
       if (Array.isArray(multiPayments) && multiPayments.length > 0) {
         // Multi-method split payment
-        try {
-          const splitPayload: PaymentRequest = {
-            ...paymentOverride,
-            saleId: savedSaleId,
-            purchaseId: null,
-            idempotencyKey:
-              (paymentOverride as any).idempotencyKey ||
-              `IDEM-SALE-${savedSaleId}-${Date.now()}`,
-            totalAmount: recordedPaidAmount,
-            amount: recordedPaidAmount,
-            lines: multiPayments,
-            paymentLines: multiPayments,
-            payments: multiPayments,
-          };
-          await createPayment.mutateAsync(splitPayload);
+        const splitPayload: PaymentRequest = {
+          ...paymentOverride,
+          saleId: savedSaleId,
+          purchaseId: null,
+          idempotencyKey:
+            (paymentOverride as any).idempotencyKey ||
+            `IDEM-SALE-${savedSaleId}-${Date.now()}`,
+          totalAmount: recordedPaidAmount,
+          amount: recordedPaidAmount,
+          lines: multiPayments,
+          paymentLines: multiPayments,
+          payments: multiPayments,
+        };
+        await PaymentService.create(splitPayload);
 
-          if (isPaidInFull) {
-            try {
-              await completeSale.mutateAsync(savedSaleId);
-            } catch (e) {
-              // already completed
-            }
+        if (isPaidInFull) {
+          try {
+            await salesService.complete(savedSaleId);
+          } catch (completeErr) {
+            console.warn("Sale complete notice (already completed):", completeErr);
           }
-          await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
-          await queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all });
-        } catch (payErr) {
-          console.warn("Split payment recording error:", payErr);
         }
       } else {
         // Single payment fallback
@@ -564,30 +584,33 @@ export default function SaleForm() {
           status: isPaidInFull ? "PAID" : "PARTIAL",
         };
 
-        try {
-          const paymentResponse: any = await createPayment.mutateAsync(
-            paymentRequest
-          );
-          const responseStatus = String(
-            paymentResponse?.status ??
-              paymentResponse?.payload?.status ??
-              paymentResponse?.data?.status ??
-              ""
-          ).toUpperCase();
-          const httpStatus = Number(responseStatus);
-          const paymentSucceeded =
-            !responseStatus ||
-            (httpStatus >= 200 && httpStatus < 300) ||
-            ["SUCCESS", "SUCCEEDED", "PAID", "COMPLETED"].includes(responseStatus);
+        await PaymentService.create(paymentRequest);
 
-          if (paymentSucceeded && isPaidInFull) {
-            await completeSale.mutateAsync(savedSaleId);
-            await queryClient.invalidateQueries({ queryKey: useProduct.keys.all });
+        if (isPaidInFull) {
+          try {
+            await salesService.complete(savedSaleId);
+          } catch (completeErr) {
+            console.warn("Sale complete notice (already completed):", completeErr);
           }
-        } catch (payErr) {
-          console.warn("Payment recording warning:", payErr);
         }
       }
+    }
+
+    await Promise.all([
+      queryClient.invalidateQueries({ queryKey: useSale.keys.all }),
+      queryClient.invalidateQueries({ queryKey: useProduct.keys.all }),
+      queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all }),
+      queryClient.invalidateQueries({ queryKey: useCashRegister.keys.all }),
+      queryClient.invalidateQueries({ queryKey: usePayment.paymentKey.all }),
+    ]);
+
+    toast.dismiss();
+    if (isEditing) {
+      toast.success(t("pos.sale_updated", "Sale updated successfully"));
+    } else if (isPaidInFull) {
+      toast.success(t("pos.sale_completed", "Sale completed successfully"));
+    } else {
+      toast.success(t("pos.sale_created", "Sale created successfully"));
     }
 
     if (!isEditing) {
@@ -598,7 +621,6 @@ export default function SaleForm() {
       form.setFieldValue("paidAmount", 0);
       form.setFieldValue("paymentOption", "PAID");
       setIsPaymentModalOpen(false);
-      await queryClient.invalidateQueries({ queryKey: useSale.keys.all });
     }
 
     return savedSaleId;
@@ -625,8 +647,26 @@ export default function SaleForm() {
     },
 
     onSubmit: async ({ value }) => {
-      form.setFieldValue("reference", value.reference || generateRef());
-      await submitSale();
+      try {
+        form.setFieldValue("reference", value.reference || generateRef());
+        await submitSale();
+      } catch (error: any) {
+        toast.dismiss();
+        let errorMsg = "Failed to save sale.";
+        if (error?.response?.data) {
+          const data = error.response.data;
+          if (typeof data === "string") {
+            errorMsg = data;
+          } else if (data.message) {
+            errorMsg = data.message;
+          } else if (typeof data === "object") {
+            errorMsg = Object.values(data).join(", ");
+          }
+        } else if (error?.message) {
+          errorMsg = error.message;
+        }
+        toast.error(errorMsg);
+      }
     },
   });
 
@@ -738,12 +778,44 @@ export default function SaleForm() {
             price,
             itemDiscount,
             subtotal: price * quantity - itemDiscount,
-            serialNumberIds: item.serialNumberIds ?? [],
+            serialNumberIds: (item.serialNumberIds ?? []).length > 0
+              ? item.serialNumberIds
+              : Array.isArray(item.serials)
+                ? item.serials.map((s: any) => typeof s === "object" ? s.id : s)
+                : Array.isArray(item.serialNumbers)
+                  ? item.serialNumbers.map((s: any) => typeof s === "object" ? s.id : s)
+                  : [],
+            product: item.product ?? null,
           };
         })
         : [],
     });
-  }, [saleDetail, form]);
+
+    // Auto-prompt serial selection if any serialized item has missing serials
+    const firstMissingIdx = (sale.items || []).findIndex((it: any) => {
+      const prod =
+        productList.find((p: any) => Number(p.id) === Number(it.productId ?? it.product?.id)) ||
+        it.product;
+      const reqSerial = isProductSerialized(prod);
+      const sIds = (it.serialNumberIds ?? []).length > 0
+        ? it.serialNumberIds
+        : Array.isArray(it.serials)
+          ? it.serials.map((s: any) => typeof s === "object" ? s.id : s)
+          : Array.isArray(it.serialNumbers)
+            ? it.serialNumbers.map((s: any) => typeof s === "object" ? s.id : s)
+            : [];
+      return reqSerial && sIds.length < (Number(it.quantity) || 1);
+    });
+
+    if (firstMissingIdx !== -1) {
+      setActiveSerialRowIndex(firstMissingIdx);
+      toast.info(
+        language === "km"
+          ? "សូមជ្រើសរើស ឬស្កេនលេខ Serial Number (IMEI) សម្រាប់ទំនិញដែលបានមកដល់!"
+          : "Please select or scan Serial Numbers (IMEI) for arrived items!"
+      );
+    }
+  }, [saleDetail, form, productList, language]);
 
   /* -------------------------------------------------------
      ADD PRODUCT TO CART
@@ -752,11 +824,12 @@ export default function SaleForm() {
   const handleAddProduct = (product: ProductResponse) => {
     const stock = getProductStock(product);
     if (stock <= 0) {
-      toast.warning(
+      toast.error(
         isKm
-          ? `ការព្រមាន៖ "${product.name}" គ្មានក្នុងស្តុកទេ!`
-          : `Warning: "${product.name}" is out of stock!`
+          ? `ទំនិញ "${product.name}" អស់ពីស្តុកហើយ មិនអាចលក់បានទេ!`
+          : `"${product.name}" is out of stock and cannot be added!`
       );
+      return;
     }
 
     const isSerialized = isProductSerialized(product);
@@ -771,11 +844,12 @@ export default function SaleForm() {
       const price = Number(existing.price) || Number(product.salePrice) || 0;
 
       if (stock > 0 && newQuantity > stock) {
-        toast.warning(
+        toast.error(
           isKm
             ? `ការព្រមាន៖ ចំនួនក្នុងកន្ត្រក (${newQuantity}) លើសពីស្តុកជាក់ស្តែង (${stock})!`
             : `Warning: Cart quantity (${newQuantity}) exceeds stock (${stock})!`
         );
+        return;
       }
 
       const updated = [...currentItems];
@@ -1300,7 +1374,7 @@ export default function SaleForm() {
                   <ImageCell
                     fileName={user?.profileImage || ""}
                     name={user?.username || ""}
-                    bucketName="user"
+                    bucketName="users"
                     preview={false}
                     className="size-full rounded-full"
                     fallbackSrc="/default-user-avatar.png"
@@ -1516,7 +1590,17 @@ export default function SaleForm() {
                       key={product.id}
                       role="button"
                       tabIndex={0}
-                      onClick={() => handleAddProduct(product)}
+                      onClick={() => {
+                        if (isOutOfStock) {
+                          toast.error(
+                            isKm
+                              ? `ទំនិញ "${product.name}" អស់ពីស្តុកហើយ!`
+                              : `"${product.name}" is out of stock!`
+                          );
+                          return;
+                        }
+                        handleAddProduct(product);
+                      }}
                       onKeyDown={(e) => {
                         if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
@@ -1647,7 +1731,13 @@ export default function SaleForm() {
 
               <Select
                 value={formValues.storeId ? String(formValues.storeId) : ""}
-                onValueChange={(value) => form.setFieldValue("storeId", Number(value))}
+                onValueChange={(value) => {
+                  const nextStoreId = Number(value);
+                  form.setFieldValue("storeId", nextStoreId);
+                  form.state.values.items.forEach((_: any, index: number) => {
+                    form.setFieldValue(`items[${index}].serialNumberIds`, []);
+                  });
+                }}
               >
                 <SelectTrigger className="h-10 text-[14px]" aria-label={t("pos.seller", "Seller")}>
                   <StoreIcon className="text-muted-foreground" />
@@ -1697,6 +1787,7 @@ export default function SaleForm() {
                       form={form}
                       index={idx}
                       products={productList}
+                      storeId={Number(formValues.storeId) || storeList[0]?.id || 0}
                       isOpenModal={activeSerialRowIndex === idx}
                       onCloseModal={() => setActiveSerialRowIndex(null)}
                       onRemove={() => {
@@ -1820,14 +1911,45 @@ export default function SaleForm() {
                       return;
                     }
 
-                    const missingSerialsItem = (formValues.items || []).find((it: any) => {
+                    const outOfStockItem = (formValues.items || []).find((it: any) => {
                       const prod = productList.find((p: any) => p.id === it.productId);
-                      const reqSerial = isProductSerialized(prod);
-                      return reqSerial && (it.serialNumberIds || []).length !== it.quantity;
+                      const stock = prod ? getProductStock(prod) : 0;
+                      return stock <= 0 || it.quantity > stock;
                     });
-                    if (missingSerialsItem) {
-                      const prod = productList.find((p: any) => p.id === missingSerialsItem.productId);
-                      toast.error(`Please select serial numbers for "${prod?.name || "serialized item"}" before payment.`);
+                    if (outOfStockItem) {
+                      const prod = productList.find((p: any) => p.id === outOfStockItem.productId);
+                      toast.error(
+                        isKm
+                          ? `ទំនិញ "${prod?.name || "Item"}" គ្មានក្នុងស្តុក ឬលើសចំនួនស្តុកដែលមាន!`
+                          : `Item "${prod?.name || "Item"}" is out of stock or exceeds available stock.`
+                      );
+                      return;
+                    }
+
+                    const missingSerialsIdx = (formValues.items || []).findIndex((it: any) => {
+                      const prod =
+                        productList.find((p: any) => Number(p.id) === Number(it.productId)) ||
+                        it.product;
+                      const reqSerial = isProductSerialized(prod);
+                      const selectedCount = (it.serialNumberIds || []).filter((sId: any) => Number(sId) > 0).length;
+                      const qty = Number(it.quantity) || 1;
+                      return reqSerial && selectedCount < qty;
+                    });
+
+                    if (missingSerialsIdx !== -1) {
+                      const missingItem = formValues.items[missingSerialsIdx];
+                      const prod =
+                        productList.find((p: any) => Number(p.id) === Number(missingItem.productId)) ||
+                        missingItem.product;
+                      const reqQty = Number(missingItem.quantity) || 1;
+                      const curCount = (missingItem.serialNumberIds || []).filter((sId: any) => Number(sId) > 0).length;
+
+                      toast.error(
+                        isKm
+                          ? `សូមជ្រើសរើសលេខ Serial Number (IMEI) សម្រាប់ "${prod?.name || "ទំនិញ"}" ឲ្យបានគ្រប់ចំនួន ${reqQty} (បច្ចុប្បន្ន ${curCount}/${reqQty}) ជាមុនសិន!`
+                          : `Please select all ${reqQty} serial numbers for "${prod?.name || "item"}" before payment (${curCount}/${reqQty} selected).`
+                      );
+                      setActiveSerialRowIndex(missingSerialsIdx);
                       return;
                     }
 
@@ -1860,7 +1982,8 @@ export default function SaleForm() {
         mode="sale"
         saleId={isEditing && id ? Number(id) : (registeredSaleId || undefined)}
         orderRef={formValues.reference}
-        amount={grandTotalCalc}
+        amount={isEditing ? Math.max(0, grandTotalCalc - (Number(formValues.paidAmount) || 0)) : grandTotalCalc}
+        totalBill={grandTotalCalc}
         banks={bankList}
         onPaymentSubmit={async (request) => {
           try {
@@ -1877,6 +2000,7 @@ export default function SaleForm() {
               (typeof error?.response?.data === "string" ? error.response.data : null) ||
               error?.message ||
               "Failed to save sale.";
+            toast.dismiss();
             toast.error(errorMsg);
             return false;
           }
@@ -2022,7 +2146,7 @@ export default function SaleForm() {
             <Input
               type="number"
               min="0"
-              step="0.01"
+              step="1"
               value={taxInputValue}
               onChange={(e) => setTaxInputValue(Number(e.target.value) || 0)}
               className="h-10 text-[15px] tabular-nums"
@@ -2080,6 +2204,7 @@ function PosItemRow({
   form,
   index,
   products,
+  storeId,
   onRemove,
   isOpenModal,
   onCloseModal,
@@ -2087,6 +2212,7 @@ function PosItemRow({
   form: any;
   index: number;
   products: ProductResponse[];
+  storeId: number;
   onRemove: () => void;
   isOpenModal: boolean;
   onCloseModal: () => void;
@@ -2135,8 +2261,9 @@ function PosItemRow({
   const { data: serialsResponse } = useProductSerial.useGetAllProductSerial(
     {
       productId: Number(productId),
+      storeId: Number(storeId) > 0 ? Number(storeId) : undefined,
       page: 0,
-      size: 100,
+      size: 200,
     },
     {
       enabled: hasSerial && Number(productId) > 0,
@@ -2149,7 +2276,9 @@ function PosItemRow({
     []
   ).filter(
     (serial: any) =>
-      Number(serial.quantity ?? 0) > 0 && serial.status !== "OUT_OF_STOCK"
+      Number(serial.quantity ?? 0) > 0 &&
+      serial.status !== "OUT_OF_STOCK" &&
+      serial.status !== "SOLD"
   );
 
   const filteredAvailableSerials = availableSerials.filter((s: any) => {
@@ -2225,20 +2354,37 @@ function PosItemRow({
               {selectedProduct?.name || `Product #${productId}`}
             </span>
             {hasSerial && (
-              <button
-                type="button"
-                onClick={() => setIsSerialModalOpen(true)}
-                className={cn(
-                  "inline-flex h-6 cursor-pointer items-center gap-1 rounded-full px-2 text-[12px] font-medium tabular-nums transition-opacity hover:opacity-85",
-                  serialsComplete ? statusToneClass.success : statusToneClass.warning
-                )}
-                title="Click to select serial numbers"
-              >
-                {serialsComplete ? <Check className="size-3" strokeWidth={3} /> : <Hash className="size-3" />}
-                <span>
-                  {serialNumberIds.length}/{quantity} serials
-                </span>
-              </button>
+              <div className="space-y-1">
+                <button
+                  type="button"
+                  onClick={() => setIsSerialModalOpen(true)}
+                  className={cn(
+                    "inline-flex h-6.5 cursor-pointer items-center gap-1.5 rounded-lg px-2 text-[12px] font-semibold tabular-nums transition-all shadow-2xs",
+                    serialsComplete
+                      ? "bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 dark:bg-emerald-950/40 dark:text-emerald-300 dark:border-emerald-800"
+                      : "bg-rose-50 text-rose-700 border border-rose-300 hover:bg-rose-100 animate-pulse dark:bg-rose-950/40 dark:text-rose-300 dark:border-rose-800"
+                  )}
+                  title={
+                    serialsComplete
+                      ? "Click to view or edit serial numbers"
+                      : "Serial numbers are required! Click to select"
+                  }
+                >
+                  {serialsComplete ? (
+                    <>
+                      <BadgeCheck className="size-3.5 text-emerald-600" />
+                      <span>{serialNumberIds.length}/{quantity} Serials</span>
+                    </>
+                  ) : (
+                    <>
+                      <AlertTriangle className="size-3.5 text-rose-600" />
+                      <span className="font-bold underline">
+                        {isKm ? `តម្រូវឲ្យជ្រើសរើស Serial (${serialNumberIds.length}/${quantity})` : `Serial Required (${serialNumberIds.length}/${quantity})`}
+                      </span>
+                    </>
+                  )}
+                </button>
+              </div>
             )}
           </div>
         </td>

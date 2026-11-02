@@ -310,16 +310,16 @@ export const SaleDetailModal = ({
                           className="hover:text-warning-text cursor-pointer ml-0.5 transition"
                           title="Copy Reference"
                         >
-                          {copied ? (
+                          {/* {copied ? (
                             <Check className="size-3 text-success" />
                           ) : (
                             <Copy className="size-3" />
-                          )}
+                          )} */}
                         </button>
                       </span>
 
                       {/* Sale status badge */}
-                      <span
+                      {/* <span
                         className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-semibold text-white dark:text-background ${
                           statusUpper === "COMPLETED"
                             ? "bg-success"
@@ -332,25 +332,7 @@ export const SaleDetailModal = ({
                       >
                         <span className="size-1.5 rounded-full bg-card inline-block animate-pulse" />
                         {sale.status || "Completed"}
-                      </span>
-
-                      {/* Payment status badge */}
-                      <span
-                        className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[12px] font-semibold ${
-                          isPaid
-                            ? "bg-success/10 text-success border border-success/20"
-                            : "bg-warning/10 text-warning-text border border-warning/20"
-                        }`}
-                      >
-                        <span
-                          className={`size-1.5 rounded-full ${
-                            isPaid ? "bg-success" : "bg-warning"
-                          }`}
-                        />
-                        {isPaid
-                          ? "Paid in Full"
-                          : `Due: ${formatCurrency(sale.dueAmount || 0)}`}
-                      </span>
+                      </span> */}
                     </div>
 
                     <p className="text-[12px] text-muted-foreground mt-0.5">
@@ -476,7 +458,7 @@ export const SaleDetailModal = ({
                           <span className="text-muted-foreground">Register:</span>
                           <span className="font-medium text-text-secondary">
                             {sale.cashRegisterNo
-                              ? `Reg #${sale.cashRegisterNo}`
+                              ? `${sale.cashRegisterNo}`
                               : "Standard POS"}
                           </span>
                         </div>
@@ -619,7 +601,7 @@ export const SaleDetailModal = ({
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
                   {/* Left: Notes & Metadata */}
                   <div className="space-y-4">
-                    {sale.noted ? (
+                    {/* {sale.noted ? (
                       <div className="p-4 rounded-xl bg-muted/50 border border-border">
                         <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground mb-2">
                           <FileText className="size-3.5 text-muted-foreground" />
@@ -634,10 +616,10 @@ export const SaleDetailModal = ({
                         <FileText className="size-4 text-text-disabled" />
                         <span>No additional notes recorded for this sale.</span>
                       </div>
-                    )}
+                    )} */}
 
                     {/* Quick stats badges */}
-                    <div className="flex items-center gap-3 text-xs">
+                    {/* <div className="flex items-center gap-3 text-xs">
                       <div className="px-3 py-2 rounded-lg bg-muted border border-border">
                         <span className="text-muted-foreground">Total Items: </span>
                         <span className="font-semibold text-foreground">
@@ -650,7 +632,7 @@ export const SaleDetailModal = ({
                           {items.reduce((acc, it) => acc + (Number(it.quantity) || 1), 0)}
                         </span>
                       </div>
-                    </div>
+                    </div> */}
                   </div>
 
                   {/* Right: Financial Totals Box */}

@@ -154,9 +154,9 @@ export const PermissionPage = () => {
             <PageHeader
                 title={t("nav.role_permissions", "Role Permissions")}
                 titleIcon={<span className="role-page-title-icon"><LockKeyhole className="h-5 w-5" /></span>}
-                description={selectedRole
-                    ? `Manage access for ${selectedRole.name} (${selectedRole.code}).`
-                    : t("role.choose_role", "Choose a role to review and assign access by module.")}
+                // description={selectedRole
+                //     ? `Manage access for ${selectedRole.name} (${selectedRole.code}).`
+                //     : t("role.choose_role", "Choose a role to review and assign access by module.")}
                 hideButton
                 actions={
                     <Button
@@ -202,7 +202,7 @@ export const PermissionPage = () => {
             </KpiGrid>
 
             <div className="role-permissions-card">
-              <div className="role-permissions-card-heading"><div><h2>{t("role.access_by_module", "Access by module")}</h2><p>{t("role.select_actions_desc", "Choose a role, then select the actions it can perform.")}</p></div><span>{moduleCount} {t("role.modules", "modules")}</span></div>
+              {/* <div className="role-permissions-card-heading"><div><h2>{t("role.access_by_module", "Access by module")}</h2><p>{t("role.select_actions_desc", "Choose a role, then select the actions it can perform.")}</p></div><span>{moduleCount} {t("role.modules", "modules")}</span></div> */}
               {/* Selection and Filter toolbar */}
               <div className="role-permissions-toolbar flex flex-col sm:flex-row gap-4">
                 {/* Role Selector */}
