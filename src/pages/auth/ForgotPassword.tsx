@@ -2,12 +2,10 @@ import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { AuthService } from "@/services/auth/auth.service";
 import {
-  KeyRound,
   ArrowLeft,
   CheckCircle2,
   Mail,
   AlertCircle,
-  Sparkles,
   RefreshCw,
   ArrowRight,
   ShieldCheck,
@@ -82,43 +80,63 @@ export default function ForgotPasswordPage() {
   };
 
   return (
-    <main className="relative flex min-h-svh items-center justify-center bg-background p-4 sm:p-6 md:p-10 overflow-hidden select-none">
+    <main
+      className="relative flex min-h-svh items-center justify-center overflow-hidden bg-cover bg-center p-4 sm:p-6 md:p-10"
+      style={{
+        backgroundImage: "url('/login-bg.jpg')",
+        backgroundColor: "#0b1329",
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[#0f172a]/30 backdrop-blur-[2px]" />
+
       {/* Top right language toggle */}
       <div className="absolute top-5 right-5 z-20 flex items-center gap-2">
-        <LanguageToggle />
-        <ThemeToggle />
+        <div className="flex items-center gap-1 rounded-xl border border-border/60 bg-card/90 p-1 shadow-md backdrop-blur-md">
+          <LanguageToggle />
+          <ThemeToggle />
+        </div>
       </div>
 
       <div className="relative z-10 w-full max-w-md">
         {/* Logo & Shop Header */}
         <div className="mb-6 text-center">
-          <div className="inline-block p-1 rounded-full bg-card shadow-md border border-border mb-3">
+          <div className="mb-3 inline-block rounded-full border border-border bg-card p-1 shadow-lg">
             <img
               src="/logo.png"
               alt="360° Phone Shop"
-              className="size-20 sm:size-24 rounded-full object-cover"
+              className="size-20 rounded-full object-cover sm:size-24"
             />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
+          <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-md">
             360° Phone Shop
           </h1>
-          <p className="mt-1 text-xs text-muted-foreground">
-            {t("auth.forgot.title") || "Reset your password"}
+          <p className="mt-1 text-xs text-white/80">
+            {t("auth.forgot.title", "Forgot password?")}
           </p>
         </div>
 
         {/* Card Container */}
-        <div className="rounded-2xl border border-border bg-card p-6 sm:p-8 shadow-sm">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-[0_20px_45px_-15px_rgba(15,23,42,0.35)] sm:p-8">
           {!isSubmitted ? (
             <div>
-
+              <div className="mb-5">
+                <h2 className="text-lg font-semibold text-foreground">
+                  {t("auth.forgot.title", "Reset your password")}
+                </h2>
+                <p className="mt-1 text-sm leading-5 text-muted-foreground">
+                  {t(
+                    "auth.forgot.subtitle",
+                    "Enter your email address or username and we'll send you instructions to reset your password."
+                  )}
+                </p>
+              </div>
 
               {/* Form */}
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-1.5">
                   <label
                     htmlFor="emailOrUsername"
-                    className="block text-xs font-semibold uppercase tracking-wider text-text-secondary"
+                    className="block text-xs font-semibold tracking-wide text-text-secondary"
                   >
                     {t("auth.login.username_or_email")}{" "}
                     <span className="text-destructive">*</span>
@@ -150,7 +168,7 @@ export default function ForgotPasswordPage() {
                 <Button
                   type="submit"
                   disabled={isLoading || !emailOrUsername.trim()}
-                  className="mt-2 flex h-12 w-full items-center justify-center gap-2 rounded-xl bg-primary font-semibold text-primary-foreground hover:bg-primary-hover transition-colors disabled:opacity-60 cursor-pointer"
+                  className="mt-2 flex h-12 w-full cursor-pointer items-center justify-center gap-2 rounded-xl bg-[linear-gradient(180deg,var(--primary-gradient-from)_0%,var(--primary)_100%)] font-semibold text-primary-foreground shadow-[0_4px_10px_-2px_color-mix(in_srgb,var(--primary)_35%,transparent)] transition-colors hover:bg-[linear-gradient(180deg,var(--primary)_0%,var(--primary-hover)_100%)] disabled:cursor-not-allowed disabled:opacity-60"
                 >
                   {isLoading ? (
                     <>

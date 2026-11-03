@@ -71,6 +71,10 @@ const router = createBrowserRouter([
     element: <ForgotPasswordPage />,
   },
   {
+    path: ROUTERS.RESET_PASSWORD,
+    element: <ChangePasswordPage />,
+  },
+  {
     path: ROUTERS.SALE_CREATE,
     element: (
       <PermissionRoute permission={PERMISSION.SALE.CREATE}>

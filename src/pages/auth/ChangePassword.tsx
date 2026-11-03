@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import { AuthService, type ChangePasswordRequest } from "@/services/auth/auth.service";
 import {
   Lock,
@@ -29,6 +30,10 @@ export default function ChangePasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const { t } = useLanguage();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const resetToken = new URLSearchParams(location.search).get("token");
+  const isPasswordReset = location.pathname === "/reset-password";
 
   // Password strength calculation
   const strength = useMemo(() => {
@@ -58,7 +63,11 @@ export default function ChangePasswordPage() {
   const hasMinLength = newPassword.length >= 8;
   const hasNumberOrSymbol = /[\d!@#$%^&*(),.?":{}|<>]/.test(newPassword);
   const passwordsMatch = newPassword.length > 0 && newPassword === confirmNewPassword;
-  const isValid = hasMinLength && passwordsMatch && currentPassword.trim().length > 0;
+  const isValid =
+    hasMinLength &&
+    passwordsMatch &&
+    (isPasswordReset || currentPassword.trim().length > 0) &&
+    (!isPasswordReset || Boolean(resetToken));
 
   const handleReset = () => {
     setCurrentPassword("");
@@ -73,8 +82,13 @@ export default function ChangePasswordPage() {
     setError(null);
     setSuccess(null);
 
-    if (!currentPassword) {
+    if (!isPasswordReset && !currentPassword) {
       setError(t("auth.change.err_current_required", "Please enter your current password."));
+      return;
+    }
+
+    if (isPasswordReset && !resetToken) {
+      setError("This password reset link is invalid or missing.");
       return;
     }
 
@@ -95,9 +109,15 @@ export default function ChangePasswordPage() {
 
     setIsLoading(true);
     try {
-      const payload: ChangePasswordRequest = { currentPassword, newPassword };
-      await AuthService.changePassword(payload);
-      setSuccess(t("auth.change.success_msg", "Your password has been changed successfully."));
+      if (isPasswordReset) {
+        await AuthService.resetPassword(resetToken!, newPassword);
+        setSuccess("Your password has been reset successfully. You can now sign in.");
+        window.setTimeout(() => navigate("/login"), 1800);
+      } else {
+        const payload: ChangePasswordRequest = { currentPassword, newPassword };
+        await AuthService.changePassword(payload);
+        setSuccess(t("auth.change.success_msg", "Your password has been changed successfully."));
+      }
       setCurrentPassword("");
       setNewPassword("");
       setConfirmNewPassword("");
@@ -106,7 +126,9 @@ export default function ChangePasswordPage() {
       setError(
         err?.response?.data?.message ||
           err?.message ||
-          t("auth.change.failed_msg", "Failed to change password. Please verify your current password.")
+          (isPasswordReset
+            ? "This reset link is invalid or expired. Please request a new password reset link."
+            : t("auth.change.failed_msg", "Failed to change password. Please verify your current password."))
       );
     } finally {
       setIsLoading(false);
@@ -114,29 +136,58 @@ export default function ChangePasswordPage() {
   };
 
   return (
-    <div className="mx-auto max-w-2xl py-4 sm:py-8 px-2 sm:px-4">
+    <main
+      className={`relative min-h-screen overflow-hidden px-4 py-8 sm:px-6 sm:py-12 ${
+        isPasswordReset ? "bg-cover bg-center" : "bg-background"
+      }`}
+      style={
+        isPasswordReset
+          ? {
+              backgroundImage: "url('/login-bg.jpg')",
+              backgroundColor: "#0b1329",
+            }
+          : undefined
+      }
+    >
+      {isPasswordReset && (
+        <div className="pointer-events-none absolute inset-0 bg-[#0f172a]/30 backdrop-blur-[2px]" />
+      )}
+
+      <div className={`relative z-10 mx-auto ${isPasswordReset ? "max-w-[500px]" : "max-w-2xl"}`}>
       {/* Page Title & Breadcrumb header */}
-      <div className="mb-6">
+      <div className={`mb-6 ${isPasswordReset ? "text-center" : ""}`}>
         <div className="flex items-center gap-2.5 mb-1">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+          <div className={`flex h-9 w-9 items-center justify-center rounded-xl ${
+            isPasswordReset ? "bg-primary-light/90 text-primary" : "bg-primary/10 text-primary"
+          }`}>
             <ShieldCheck className="h-5 w-5" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-foreground">
-            {t("auth.change.title")}
+          <h1 className={`text-2xl font-bold tracking-tight ${
+            isPasswordReset ? "text-white drop-shadow-md" : "text-foreground"
+          }`}>
+            {isPasswordReset ? "Reset password" : t("auth.change.title")}
           </h1>
         </div>
-        <p className="text-xs sm:text-sm text-muted-foreground ml-11">
-          {t("auth.change.subtitle")}
+        <p className={`text-xs sm:text-sm ml-11 ${
+          isPasswordReset ? "text-white/80" : "text-muted-foreground"
+        }`}>
+          {isPasswordReset
+            ? "Create a new password for your account."
+            : t("auth.change.subtitle")}
         </p>
       </div>
 
       {/* Main Form Card */}
-      <div className="overflow-hidden rounded-2xl border border-border/70 bg-card shadow-sm">
-        <div className="border-b border-border/60 bg-muted/20 px-6 py-4 flex items-center justify-between">
+      <div className={`overflow-hidden rounded-2xl border border-border/70 bg-card ${
+        isPasswordReset
+          ? "shadow-[0_20px_45px_-15px_rgba(15,23,42,0.35)]"
+          : "shadow-sm"
+      }`}>
+        <div className="flex items-center justify-between border-b border-border/60 bg-muted/20 px-6 py-4">
           <div className="flex items-center gap-2">
             <KeyRound className="size-4 text-primary" />
             <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              {t("auth.change.security_credentials")}
+              {isPasswordReset ? "New password" : t("auth.change.security_credentials")}
             </span>
           </div>
 
@@ -146,9 +197,9 @@ export default function ChangePasswordPage() {
           </span>
         </div>
 
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8 space-y-6">
-          {/* Current Password */}
-          <div className="space-y-1.5">
+        <form onSubmit={handleSubmit} className="space-y-6 p-6 sm:p-8">
+          {/* Current password is only required for authenticated password changes. */}
+          {!isPasswordReset && <div className="space-y-1.5">
             <label
               htmlFor="currentPassword"
               className="block text-xs font-semibold text-foreground"
@@ -166,18 +217,18 @@ export default function ChangePasswordPage() {
                 onChange={(e) => setCurrentPassword(e.target.value)}
                 disabled={isLoading}
                 autoComplete="current-password"
-                className="h-11 rounded-xl bg-background pl-10 pr-11 text-sm focus-visible:ring-1"
+                className="h-12 rounded-xl bg-background pl-10 pr-11 text-sm focus-visible:ring-2 focus-visible:ring-primary/20"
               />
               <button
                 type="button"
                 onClick={() => setShowCurrent((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label={showCurrent ? "Hide password" : "Show password"}
               >
                 {showCurrent ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
               </button>
             </div>
-          </div>
+          </div>}
 
           {/* New Password */}
           <div className="space-y-1.5">
@@ -198,12 +249,12 @@ export default function ChangePasswordPage() {
                 onChange={(e) => setNewPassword(e.target.value)}
                 disabled={isLoading}
                 autoComplete="new-password"
-                className="h-11 rounded-xl bg-background pl-10 pr-11 text-sm focus-visible:ring-1"
+                className="h-12 rounded-xl bg-background pl-10 pr-11 text-sm focus-visible:ring-2 focus-visible:ring-primary/20"
               />
               <button
                 type="button"
                 onClick={() => setShowNew((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label={showNew ? "Hide password" : "Show password"}
               >
                 {showNew ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -264,12 +315,12 @@ export default function ChangePasswordPage() {
                 onChange={(e) => setConfirmNewPassword(e.target.value)}
                 disabled={isLoading}
                 autoComplete="new-password"
-                className="h-11 rounded-xl bg-background pl-10 pr-11 text-sm focus-visible:ring-1"
+                className="h-12 rounded-xl bg-background pl-10 pr-11 text-sm focus-visible:ring-2 focus-visible:ring-primary/20"
               />
               <button
                 type="button"
                 onClick={() => setShowConfirm((prev) => !prev)}
-                className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors p-1"
+                className="absolute top-1/2 right-2 flex size-8 -translate-y-1/2 cursor-pointer items-center justify-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground"
                 aria-label={showConfirm ? "Hide password" : "Show password"}
               >
                 {showConfirm ? <EyeOff className="size-4" /> : <Eye className="size-4" />}
@@ -361,7 +412,7 @@ export default function ChangePasswordPage() {
               ) : (
                 <>
                   <ShieldCheck className="mr-1.5 size-4" />
-                  <span>{t("auth.change.button")}</span>
+                  <span>{isPasswordReset ? "Reset password" : t("auth.change.button")}</span>
                 </>
               )}
             </Button>
@@ -369,5 +420,6 @@ export default function ChangePasswordPage() {
         </form>
       </div>
     </div>
+    </main>
   );
 }

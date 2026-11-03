@@ -11,7 +11,6 @@ export interface LoginRequest {
 export interface RegisterRequest {
   firstName: string;
   lastName: string;
-  username: string;
   email: string;
   phone?: string;
   password: string;
@@ -42,7 +41,18 @@ export interface AuthResponse {
 
 export const AuthService = {
   login: async (credentials: LoginRequest) => {
-    const response = await api.post("/auth/login", credentials);
+    const response = await api.post(
+      "/auth/login",
+      JSON.stringify({
+        usernameOrEmail: credentials.usernameOrEmail,
+        password: credentials.password,
+      }),
+      {
+        headers: {
+          "Content-Type": "application/json",
+        },
+      },
+    );
     const data = response.data.payload || response.data;
     try {
       const { accessToken, refreshToken, ...user } = data;
@@ -85,6 +95,7 @@ export const AuthService = {
   },
 
   resetPassword: async (token: string, newPassword: string) => {
-    await api.post("/auth/reset-password", { token, newPassword });
+    const res = await api.post("/auth/reset-password", { token, newPassword });
+    return res.data;
   },
 };

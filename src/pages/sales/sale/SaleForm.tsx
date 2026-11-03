@@ -70,6 +70,17 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogMedia,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 
 import {
   SaleSchema,
@@ -86,6 +97,7 @@ import { useCustomer } from "@/hooks/sales/useCustomer";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useBank } from "@/hooks/finance/useBank";
 import { useProduct } from "@/hooks/product/useProduct";
+import { useModel } from "@/hooks/product/useModel";
 import { useProductSerial } from "@/hooks/product/useProductSerial";
 import { useCategory } from "@/hooks/product/useCategory";
 import { useAuth } from "@/store/useAuth";
@@ -244,13 +256,13 @@ export default function SaleForm() {
   const { user } = useAuth();
   const { t, language } = useLanguage();
   const isKm = language === "km";
+  const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
 
-  const handleLogout = async () => {
-    const confirmMsg = isKm
-      ? "តើអ្នកប្រាកដជាចង់ចាកចេញពីប្រព័ន្ធមែនទេ?"
-      : "Are you sure you want to log out?";
-    if (!window.confirm(confirmMsg)) return;
+  const handleLogout = () => {
+    setIsLogoutDialogOpen(true);
+  };
 
+  const confirmLogout = async () => {
     try {
       await AuthService.logout();
     } catch (e) {
@@ -284,8 +296,13 @@ export default function SaleForm() {
     page: 0,
     size: 1000,
   });
+  const { data: dataModel } = useModel.GetAllModel({
+    page: 0,
+    size: 1000,
+  });
 
   const listCategory = dataCategory?.payload?.data ?? [];
+  const listModel = dataModel?.payload?.data ?? [];
   const productList: ProductResponse[] = (products as any)?.payload?.data ?? [];
   const customerList: CustomerResponse[] = customers?.payload?.data ?? [];
   const storeList: StoreResponse[] = stores?.payload?.data ?? [];
@@ -316,6 +333,7 @@ export default function SaleForm() {
 
   const [productSearch, setProductSearch] = useState("");
   const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedModel, setSelectedModel] = useState("All");
   type StockFilterType = "ALL" | "IN_STOCK" | "OUT_OF_STOCK" | "LOW_STOCK";
   const [stockFilter, setStockFilter] = useState<StockFilterType>("ALL");
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
@@ -374,9 +392,6 @@ export default function SaleForm() {
   const [isRegisterDetailsOpen, setIsRegisterDetailsOpen] = useState(false);
   const [isTodaySaleOpen, setIsTodaySaleOpen] = useState(false);
   const [isDiscountPopoverOpen, setIsDiscountPopoverOpen] = useState(false);
-  const [orderTax, setOrderTax] = useState(0);
-  const [isOrderTaxOpen, setIsOrderTaxOpen] = useState(false);
-  const [taxInputValue, setTaxInputValue] = useState(0);
   const [isCloseRegisterOpen, setIsCloseRegisterOpen] = useState(false);
   const [cartBarcodeScan, setCartBarcodeScan] = useState("");
 
@@ -1023,6 +1038,10 @@ export default function SaleForm() {
         selectedCategory,
         listCategory
       );
+      const matchesModel =
+        selectedModel === "All" ||
+        String(product.modelId ?? product.model?.id ?? "").toLowerCase() === selectedModel.toLowerCase() ||
+        String(product.modelName ?? product.model?.name ?? "").toLowerCase() === selectedModel.toLowerCase();
 
       const stock = getProductStock(product);
       const reorder = Number(product.reorderLevel) || 3;
@@ -1036,9 +1055,9 @@ export default function SaleForm() {
         matchesStock = stock > 0 && stock <= reorder;
       }
 
-      return matchesSearch && matchesCategory && matchesStock;
+      return matchesSearch && matchesCategory && matchesModel && matchesStock;
     });
-  }, [productList, productSearch, selectedCategory, listCategory, stockFilter]);
+  }, [productList, productSearch, selectedCategory, selectedModel, listCategory, stockFilter]);
 
 
 
@@ -1058,6 +1077,35 @@ export default function SaleForm() {
     });
     return cats;
   }, [listCategory, productList, t]);
+
+  const modelsToDisplay = useMemo(() => {
+    const models = selectedCategory === "All"
+      ? listModel
+      : listModel.filter((model: any) =>
+          isProductMatchingCategory(model, selectedCategory, listCategory)
+        );
+
+    return [
+      { id: "All", name: t("pos.all_models", "All models"), count: productList.filter((product) =>
+          isProductMatchingCategory(product, selectedCategory, listCategory)
+        ).length },
+      ...models.map((model: any) => ({
+        id: String(model.id),
+        name: model.name,
+        count: productList.filter((product: any) =>
+          (String(product.modelId ?? "").toLowerCase() === String(model.id).toLowerCase() ||
+            String(product.modelName ?? "").toLowerCase() === String(model.name).toLowerCase()) &&
+          isProductMatchingCategory(product, selectedCategory, listCategory)
+        ).length,
+      })),
+    ];
+  }, [listModel, listCategory, productList, selectedCategory, t]);
+
+  useEffect(() => {
+    if (selectedModel !== "All" && !modelsToDisplay.some((model) => model.id === selectedModel)) {
+      setSelectedModel("All");
+    }
+  }, [modelsToDisplay, selectedModel]);
 
   const handleVoidCart = () => {
     form.setFieldValue("items", []);
@@ -1221,7 +1269,7 @@ export default function SaleForm() {
     0
   );
   const discountVal = Number(formValues.discount) || 0;
-  const grandTotalCalc = Math.max(subtotalCalc - discountVal + orderTax, 0);
+  const grandTotalCalc = Math.max(subtotalCalc - discountVal, 0);
 
   /* =========================================================
      RENDER
@@ -1229,7 +1277,7 @@ export default function SaleForm() {
 
   const activeStoreName = storeList.find((s) => s.id === Number(formValues.storeId))?.name;
   const hasCartItems = (formValues.items || []).length > 0;
-  const hasProductFilters = selectedCategory !== "All" || stockFilter !== "ALL";
+  const hasProductFilters = selectedCategory !== "All" || selectedModel !== "All" || stockFilter !== "ALL";
 
   const customerOptions: SearchSelectOption[] = [
     {
@@ -1497,6 +1545,7 @@ export default function SaleForm() {
                     type="button"
                     onClick={() => {
                       setSelectedCategory(cat.id);
+                      setSelectedModel("All");
                     }}
                     className={cn(
                       "inline-flex h-8 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-[14px] font-medium whitespace-nowrap transition-colors",
@@ -1508,6 +1557,29 @@ export default function SaleForm() {
                     <span>{cat.name}</span>
                     <span className={cn("text-[13px] tabular-nums", isSelected ? "text-primary-foreground/75" : "text-muted-foreground")}>
                       {cat.count}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+            <div className="no-scrollbar flex items-center gap-2 overflow-x-auto">
+              {modelsToDisplay.map((model) => {
+                const isSelected = selectedModel === model.id;
+                return (
+                  <button
+                    key={model.id}
+                    type="button"
+                    onClick={() => setSelectedModel(model.id)}
+                    className={cn(
+                      "inline-flex h-8 shrink-0 cursor-pointer items-center gap-2 rounded-full border px-3.5 text-[14px] font-medium whitespace-nowrap transition-colors",
+                      isSelected
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-card text-text-secondary hover:border-border-strong hover:text-foreground"
+                    )}
+                  >
+                    <span>{model.name}</span>
+                    <span className={cn("text-[13px] tabular-nums", isSelected ? "text-primary-foreground/75" : "text-muted-foreground")}>
+                      {model.count}
                     </span>
                   </button>
                 );
@@ -1549,6 +1621,7 @@ export default function SaleForm() {
                           onClick={() => {
                             setProductSearch("");
                             setSelectedCategory("All");
+                            setSelectedModel("All");
                             setStockFilter("ALL");
                           }}
                         >
@@ -1838,22 +1911,6 @@ export default function SaleForm() {
                   {discountVal > 0 ? `-${formatCurrency(discountVal)}` : formatCurrency(0)}
                 </dd>
               </div>
-              <div className="flex items-center justify-between gap-2">
-                <dt>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setTaxInputValue(orderTax);
-                      setIsOrderTaxOpen(true);
-                    }}
-                    className="inline-flex cursor-pointer items-center gap-1.5 font-medium text-primary underline-offset-4 hover:underline"
-                  >
-                    {t("pos.summary_tax", "Order Tax")}
-                    <Pencil className="size-3.5" />
-                  </button>
-                </dt>
-                <dd className="font-medium text-foreground tabular-nums">{formatCurrency(orderTax)}</dd>
-              </div>
             </dl>
 
             <div className="flex items-end justify-between gap-3 border-t border-dashed border-border pt-3">
@@ -2121,52 +2178,7 @@ export default function SaleForm() {
         </DialogContent>
       </Dialog>
 
-      {/* 11. Order Tax Dialog */}
-      <Dialog open={isOrderTaxOpen} onOpenChange={setIsOrderTaxOpen}>
-        <DialogContent className="sm:max-w-sm">
-          <DialogHeader>
-            <DialogTitle>{t("pos.order_tax_title", "Order Tax (%)")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-1.5">
-            <div className="flex items-center justify-between gap-2">
-              <label className="block text-[14px] font-medium text-foreground">
-                {language === "km" ? "ចំនួនពន្ធជាប្រាក់ ($)" : "Tax Amount in Dollars ($)"}
-              </label>
-              <button
-                type="button"
-                onClick={() => {
-                  const calculatedTax = Number((subtotalCalc * 0.1).toFixed(2));
-                  setTaxInputValue(calculatedTax);
-                }}
-                className="cursor-pointer text-[13px] font-medium text-primary underline-offset-4 hover:underline"
-              >
-                {language === "km" ? "ពន្ធរហ័ស 10%" : "Quick 10% Tax"}
-              </button>
-            </div>
-            <Input
-              type="number"
-              min="0"
-              step="1"
-              value={taxInputValue}
-              onChange={(e) => setTaxInputValue(Number(e.target.value) || 0)}
-              className="h-10 text-[15px] tabular-nums"
-            />
-          </div>
-          <DialogFooter>
-            <Button
-              type="button"
-              onClick={() => {
-                setOrderTax(taxInputValue);
-                setIsOrderTaxOpen(false);
-              }}
-            >
-              {language === "km" ? "អនុវត្តពន្ធ" : "Apply Tax"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* 12. Close & Open Register Modals */}
+      {/* 11. Close & Open Register Modals */}
       <CloseRegisterModal
         open={isCloseRegisterOpen}
         onOpenChange={setIsCloseRegisterOpen}
@@ -2181,6 +2193,35 @@ export default function SaleForm() {
         onOpenChange={setIsOpenRegisterOpen}
         defaultStoreId={storeList[0]?.id}
       />
+
+      <AlertDialog open={isLogoutDialogOpen} onOpenChange={setIsLogoutDialogOpen}>
+        <AlertDialogContent size="sm">
+          <AlertDialogHeader>
+            <AlertDialogMedia className="bg-destructive/10 text-destructive">
+              <LogOut className="size-5" />
+            </AlertDialogMedia>
+            <AlertDialogTitle>
+              {isKm ? "តើអ្នកប្រាកដជាចង់ចាកចេញមែនទេ?" : "Log out of your account?"}
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              {isKm
+                ? "អ្នកនឹងត្រូវបញ្ជូនទៅកាន់ទំព័រចូលប្រព័ន្ធ។"
+                : "You will be signed out and returned to the login page."}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>
+              {isKm ? "បោះបង់" : "Cancel"}
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmLogout}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {isKm ? "ចាកចេញ" : "Log out"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       {/* Hidden Submit Form */}
       <form

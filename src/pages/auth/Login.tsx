@@ -74,9 +74,17 @@ export default function LoginPage() {
     : ["Track sales, stock and purchases", "Manage every store in one place", "Instant profit, expense and payment reports"];
 
   return (
-    <main className="flex min-h-screen w-full bg-background">
+    <main
+      className="relative flex min-h-screen w-full overflow-hidden bg-cover bg-center"
+      style={{
+        backgroundImage: "url('/login-bg.jpg')",
+        backgroundColor: "#0b1329",
+      }}
+    >
+      <div className="pointer-events-none absolute inset-0 bg-[#0f172a]/30 backdrop-blur-[2px]" />
+
       {/* ================= LEFT BRAND PANEL (Figma: Web/Auth/Login) ================= */}
-      <aside className="relative hidden w-[32.5%] min-w-[360px] flex-col justify-between bg-sidebar px-[52px] pt-[52px] pb-12 text-white lg:flex">
+      <aside className="relative z-10 hidden w-[32.5%] min-w-[360px] flex-col justify-between bg-sidebar px-[52px] pt-[52px] pb-12 text-white lg:flex">
         <div>
           <div className="flex size-[136px] items-center justify-center rounded-2xl bg-white p-3 shadow-[0_1px_1.5px_rgba(11,44,82,0.06)]">
             <img
@@ -123,7 +131,7 @@ export default function LoginPage() {
       </aside>
 
       {/* ================= RIGHT FORM PANEL ================= */}
-      <section className="relative flex flex-1 items-center justify-center px-4 py-10">
+      <section className="relative z-10 flex flex-1 items-center justify-center px-4 py-10">
         <div className="absolute top-5 right-5 flex items-center gap-2">
           <LanguageToggle />
           <ThemeToggle />
@@ -138,7 +146,7 @@ export default function LoginPage() {
             <span className="text-base font-semibold text-foreground">360 Phone Shop</span>
           </div>
 
-          <h2 className="text-[28px] leading-9 font-bold tracking-[-0.015em] text-foreground">
+          <h2 className="text-[28px] text-center p-2 leading-9 font-bold tracking-[-0.015em] text-foreground">
             {isKm ? "ចូលប្រព័ន្ធ" : "Sign in"}
           </h2>
           <p className="mt-1 text-sm leading-[22px] text-muted-foreground">
@@ -229,10 +237,10 @@ export default function LoginPage() {
             </Button>
           </form>
 
-          <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
+          {/* <p className="mt-5 flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="size-4 shrink-0" strokeWidth={1.75} />
             {isKm ? "ចូលប្រើបានតែបុគ្គលិកដែលមានសិទ្ធិប៉ុណ្ណោះ។" : "Access limited to authorized staff."}
-          </p>
+          </p> */}
 
           <p className="mt-5 border-t border-border pt-5 text-center text-sm text-muted-foreground">
             {isKm ? "មិនទាន់មានគណនី? " : "Don't have an account? "}

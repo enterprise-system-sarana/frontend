@@ -10,14 +10,8 @@ docker compose up --build
 
 Open [http://localhost:8080](http://localhost:8080).
 
-The frontend API URL is embedded during the image build. Override it with an
-environment variable when needed:
-
-```bash
-VITE_API_URL=https://api.example.com/api/v1 docker compose up --build
-```
-
-You can also change the host port with `FRONTEND_PORT`:
+The frontend uses `http://localhost:8081/api/v1` for local development.
+You can change the host port with `FRONTEND_PORT`:
 
 ```bash
 FRONTEND_PORT=3000 docker compose up --build

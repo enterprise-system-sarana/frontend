@@ -729,9 +729,8 @@ export default function PurchaseForm() {
       .filter((item) =>
         [item.code, item.modelName, item.brandName, item.categoryName, item.name]
           .filter(Boolean)
-          .some((value) => value.toLowerCase().includes(search)),
-      )
-      .slice(0, 6);
+          .some((value) => String(value).toLowerCase().includes(search)),
+      );
   }, [productSearch, productList]);
 
   const addProduct = (product: ProductResponse) => {
