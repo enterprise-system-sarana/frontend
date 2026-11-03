@@ -11,6 +11,7 @@ import { useVariantType } from "@/hooks/product/useVariantType";
 import { Status } from "@/types/enum/status";
 import VariantTypeForm from "./VariantTypeForm";
 import { VariantTypeColumns } from "./VariantTypeColumn";
+import VariantTypeDetailModal from "./VariantTypeDetailModal";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
@@ -26,6 +27,7 @@ const VariantTypePage = () => {
 
     const [open, setOpen] = useState(false);
     const [variantType, setVariantType] = useState<VariantTypeResponse | null>(null);
+    const [detailVariantType, setDetailVariantType] = useState<VariantTypeResponse | null>(null);
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
     const [search, setSearch] = useState("");
@@ -98,6 +100,10 @@ const VariantTypePage = () => {
         setOpen(true);
     };
 
+    const handleView = (v: VariantTypeResponse) => {
+        setDetailVariantType(v);
+    };
+
     const handleDelete = (id: number) => {
         if (!canDelete) return;
         const selected = data?.payload?.data?.find(
@@ -125,11 +131,12 @@ const VariantTypePage = () => {
     const columns = useMemo(
         () =>
             VariantTypeColumns({
+                onView: handleView,
                 onEdit: handleEdit,
                 onDelete: handleDelete,
                 t,
             }),
-        [handleEdit, handleDelete, t]
+        [handleView, handleEdit, handleDelete, t]
     );
 
     const handleExportCsv = () => {
@@ -203,6 +210,13 @@ const VariantTypePage = () => {
             </div>
 
             <VariantTypeForm open={open} setOpen={setOpen} variantType={variantType} />
+            <VariantTypeDetailModal
+                open={Boolean(detailVariantType)}
+                onOpenChange={(isOpen) => {
+                    if (!isOpen) setDetailVariantType(null);
+                }}
+                variantType={detailVariantType}
+            />
 
             <ConfirmDelete
                 isOpen={openConfirmDelete}

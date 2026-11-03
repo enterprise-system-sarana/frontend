@@ -67,6 +67,8 @@ export const ProductPage = () => {
       ? Number(filterValues.brandId)
       : undefined,
     modelId: filterValues.modelId ? Number(filterValues.modelId) : undefined,
+    name: filterValues.name ? filterValues.name : undefined,
+    code: filterValues.code ? filterValues.code : undefined,
   });
 
   const { mutate: deleteProductMutate } = useProduct.useDeleteProduct();
@@ -182,6 +184,7 @@ export const ProductPage = () => {
   const productList: ProductResponse[] = data?.payload?.data || [];
 
   const searchedProducts = useSearch<ProductResponse>(productList, search, [
+    "name",
     "code",
     "modelId",
   ]);
@@ -206,6 +209,18 @@ export const ProductPage = () => {
       if (
         filterValues.modelId &&
         String(item.modelId) !== filterValues.modelId
+      ) {
+        return false;
+      }
+      if (
+        filterValues.name &&
+        !item.name?.toLowerCase().includes(filterValues.name.toLowerCase())
+      ) {
+        return false;
+      }
+      if (
+        filterValues.code &&
+        !item.code?.toLowerCase().includes(filterValues.code.toLowerCase())
       ) {
         return false;
       }

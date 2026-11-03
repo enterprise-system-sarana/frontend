@@ -748,21 +748,21 @@ export default function SaleInvoicePage() {
 
               {/* 5. Minimalist Totals Section - Evenly Aligned with KHR Currency */}
               <div className="ml-auto max-w-[270px] w-full pt-2 space-y-1.5 text-xs font-mono">
-                {totals.discount > 0 && (
+                {/* {totals.discount > 0 && ( */}
                   <div className="flex justify-between items-center text-slate-600">
                     <span>Discount</span>
                     <span className="tabular-nums font-medium text-emerald-600">
-                      -{money(totals.discount)}
+                      {money(totals.discount)}
                     </span>
                   </div>
-                )}
+                {/* // )} */}
 
-                <div className="flex justify-between items-center text-slate-600">
+                {/* <div className="flex justify-between items-center text-slate-600">
                   <span>Tax</span>
                   <span className="tabular-nums font-medium text-slate-800">
                     {totals.tax}%
                   </span>
-                </div>
+                </div> */}
 
                 <div className="flex justify-between items-center pt-1 border-t border-slate-300 font-bold text-slate-900">
                   <span className="uppercase tracking-wider">TOTAL (USD)</span>
@@ -780,7 +780,7 @@ export default function SaleInvoicePage() {
                 </div>
 
                 <div className="flex justify-between items-center text-slate-600 pt-1 text-[11px]">
-                  <span>Paid ({paymentMethod})</span>
+                  <span>Paid </span>
                   <span className="tabular-nums font-medium text-slate-800">
                     {money(totals.paid)}
                   </span>
@@ -795,14 +795,14 @@ export default function SaleInvoicePage() {
                   </div>
                 )}
 
-                {totals.due > 0 && (
+                {/* {totals.due > 0 && ( */}
                   <div className="flex justify-between items-center text-rose-600 font-bold text-[11px]">
                     <span>Amount Due</span>
                     <span className="tabular-nums">
                       {money(totals.due)}
                     </span>
                   </div>
-                )}
+                {/* )} */}
               </div>
             </div>
 

@@ -8,12 +8,14 @@ import { formatDate } from "@/utils/formatDate";
 import type { TranslationKey } from "@/i18n/locales/en";
 
 interface VariantTypeColumnsProps {
+    onView: (variantType: VariantTypeResponse) => void;
     onEdit: (variantType: VariantTypeResponse) => void;
     onDelete: (id: number) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const VariantTypeColumns = ({
+    onView,
     onEdit,
     onDelete,
     t,
@@ -41,11 +43,9 @@ export const VariantTypeColumns = ({
             if (values.length === 0) {
                 return <span className="text-muted-foreground text-xs italic">{t ? t("variant.no_values") : "No values"}</span>;
             }
-            const displayValues = values.slice(0, 4);
-            const remaining = values.length - displayValues.length;
             return (
                 <div className="flex flex-wrap items-center gap-1 max-w-[280px]">
-                    {displayValues.map((v) => (
+                    {values.map((v) => (
                         <span
                             key={v.id}
                             className="inline-flex items-center px-2 py-0.5 rounded-md text-[12px] font-medium bg-primary/10 text-primary border border-primary/20"
@@ -53,11 +53,6 @@ export const VariantTypeColumns = ({
                             {v.name}
                         </span>
                     ))}
-                    {remaining > 0 && (
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded-md text-[11px] font-semibold bg-muted text-muted-foreground border border-border">
-                            +{remaining} more
-                        </span>
-                    )}
                 </div>
             );
         },
@@ -79,7 +74,8 @@ export const VariantTypeColumns = ({
         cell: ({ row }) => {
             return (
                 <TableActions
-              onEdit={() => onEdit(row.original)}
+                  onView={() => onView(row.original)}
+                  onEdit={() => onEdit(row.original)}
               onDelete={() => onDelete(row.original.id)}
             />
             );

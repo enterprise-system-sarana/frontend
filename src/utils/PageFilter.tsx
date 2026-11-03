@@ -46,6 +46,7 @@ export interface PageToolbarProps {
   searchPlaceholder?: string;
   onSearchSubmit?: () => void;
   showSearch?: boolean;
+  searchClassName?: string;
 
   // Date range filters
   startDate?: string;
@@ -80,6 +81,7 @@ export function PageFilter({
   searchPlaceholder,
   onSearchSubmit,
   showSearch = true,
+  searchClassName,
   startDate,
   endDate,
   onStartDateChange,
@@ -115,7 +117,12 @@ export function PageFilter({
       <div className="flex flex-wrap items-center gap-2 flex-1 min-w-[200px]">
         {/* Search Input Box */}
         {showSearch && (
-          <div className="relative flex items-center min-w-[200px] max-w-[280px] w-full sm:w-auto">
+          <div
+            className={cn(
+              "relative flex items-center w-full sm:w-[320px] md:w-[360px] lg:w-[400px] shrink-0",
+              searchClassName,
+            )}
+          >
             <Search className="absolute left-3 size-4 text-muted-foreground pointer-events-none" />
             <input
               type="text"

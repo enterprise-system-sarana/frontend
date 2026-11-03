@@ -304,379 +304,396 @@ const ProductForm = () => {
             {/* Basic information */}
             <Card className="rounded-xl border border-border/70 shadow-2xs">
               <CardContent className="space-y-4 pt-4 sm:pt-5">
-              <FieldGroup>
-                {/* Product code */}
-                <div className="flex items-end gap-2">
-                  <div className="min-w-0 flex-1">
+                <FieldGroup>
+                  {/* Product code */}
+                  <div className="flex items-end gap-2">
+                    <div className="min-w-0 flex-1">
+                      <FormTextField
+                        form={form}
+                        name="code"
+                        label={t("product.code")}
+                        type="text"
+                        placeholder="e.g. PRD-001"
+                        required
+                      />
+                    </div>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="icon"
+                      className="shrink-0 h-11 w-11 rounded-md"
+                      title={t("product.generate_code")}
+                      onClick={() => {
+                        const timestamp = Date.now()
+                          .toString()
+                          .slice(-6);
+
+                        const random = Math.floor(
+                          1000 + Math.random() * 9000,
+                        );
+
+                        form.setFieldValue(
+                          "code",
+                          `${timestamp}${random}`,
+                        );
+                      }}
+                    >
+                      <Barcode className="h-4 w-4" />
+                    </Button>
+                  </div>
+
+                  {/* Product name */}
+                  <FormTextField
+                    form={form}
+                    name="name"
+                    label={t("common.name")}
+                    type="text"
+                    placeholder={t("product.name_placeholder")}
+                    required
+                  />
+
+                  {/* Model selection */}
+                  <form.Field name="modelId">
+                    {(field) => (
+                      <Field>
+                        <FieldLabel>
+                          {t("product.model")}
+                          <span className="text-destructive">*</span>
+                        </FieldLabel>
+
+                        <div className="flex items-center gap-2">
+                          <Select
+                            value={
+                              Number(field.state.value) > 0
+                                ? String(field.state.value)
+                                : ""
+                            }
+                            onValueChange={(value) => {
+                              const nextModelId = Number(value);
+
+                              field.handleChange(nextModelId);
+
+                              // Keep the form value numeric.
+                              form.setFieldValue(
+                                "modelId",
+                                nextModelId,
+                              );
+                            }}
+                            disabled={isLoadingModels}
+                          >
+                            <SelectTrigger className="w-full rounded-md">
+                              <SelectValue
+                                placeholder={
+                                  isLoadingModels
+                                    ? t("common.loading")
+                                    : t("product.select_model")
+                                }
+                              />
+                            </SelectTrigger>
+
+                            <SelectContent>
+                              {modelOptions.map((option) => (
+                                <SelectItem
+                                  key={option.value}
+                                  value={option.value}
+                                >
+                                  {option.label}
+                                </SelectItem>
+                              ))}
+
+                              {!isLoadingModels &&
+                                modelOptions.length === 0 && (
+                                  <div className="px-2 py-3 text-sm text-muted-foreground">
+                                    {t("product.no_models")}
+                                  </div>
+                                )}
+                            </SelectContent>
+                          </Select>
+
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="icon"
+                            className="shrink-0 h-11 w-11 rounded-md"
+                            title={t("product.add_model")}
+                            onClick={() =>
+                              setModelFormOpen(true)
+                            }
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+
+                        {field.state.meta.errors.length > 0 && (
+                          <p className="text-sm text-destructive">
+                            {field.state.meta.errors
+                              .map((error) =>
+                                typeof error === "string"
+                                  ? error
+                                  : error?.message,
+                              )
+                              .filter(Boolean)
+                              .join(", ")}
+                          </p>
+                        )}
+                      </Field>
+                    )}
+                  </form.Field>
+
+                  {/* Dynamic category and brand */}
+                  <form.Subscribe
+                    selector={(state) => state.values.modelId}
+                  >
+                    {(modelId) => {
+                      const selectedModel = models.find(
+                        (model) =>
+                          Number(model.id) === Number(modelId),
+                      );
+
+                      if (!selectedModel) return null;
+
+                      const categoryName =
+                        selectedModel.categoryName ??
+                        categories.find(
+                          (category) =>
+                            Number(category.id) ===
+                            Number(selectedModel.categoryId),
+                        )?.name ??
+                        "-";
+
+                      const brandName =
+                        selectedModel.brandName ??
+                        brands.find(
+                          (brand) =>
+                            Number(brand.id) ===
+                            Number(selectedModel.brandId),
+                        )?.name ??
+                        "-";
+
+                      return (
+                        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                          <Field>
+                            <FieldLabel>
+                              {t("product.category")}
+                            </FieldLabel>
+                            <Input
+                              value={categoryName}
+                              readOnly
+                              disabled
+                              className="rounded-md"
+                            />
+                          </Field>
+
+                          <Field>
+                            <FieldLabel>
+                              {t("product.brand")}
+                            </FieldLabel>
+                            <Input
+                              value={brandName}
+                              readOnly
+                              disabled
+                              className="rounded-md"
+                            />
+                          </Field>
+                        </div>
+                      );
+                    }}
+                  </form.Subscribe>
+
+                  {/* Prices */}
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                     <FormTextField
                       form={form}
-                      name="code"
-                      label={t("product.code")}
-                      type="text"
-                      placeholder="e.g. PRD-001"
+                      name="costPrice"
+                      label={t("product.cost_price")}
+                      type="number"
+                      placeholder="0"
+                      required
+                    />
+
+                    <FormTextField
+                      form={form}
+                      name="salePrice"
+                      label={t("product.sale_price")}
+                      type="number"
+                      placeholder="0"
                       required
                     />
                   </div>
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    <FormTextField
+                      form={form}
+                      name="reorderLevel"
+                      label={t("product.reorder_level")}
+                      type="number"
+                      placeholder="5"
+                      required
+                    />
 
-                  <Button
-                    type="button"
-                    variant="outline"
-                    size="icon"
-                    className="shrink-0 h-11 w-11 rounded-md"
-                    title={t("product.generate_code")}
-                    onClick={() => {
-                      const timestamp = Date.now()
-                        .toString()
-                        .slice(-6);
+                    {/* Serial Tracking Mode */}
+                    <FormSwitchField
+                      form={form}
+                      name="hasSerial"
+                      label={t("inventory.serial_number", "Serial Number")}
+                    />
+                  </div>
 
-                      const random = Math.floor(
-                        1000 + Math.random() * 9000,
-                      );
-
-                      form.setFieldValue(
-                        "code",
-                        `${timestamp}${random}`,
-                      );
-                    }}
+                  <form.Subscribe
+                    selector={(state) => state.values.imageUrl}
                   >
-                    <Barcode className="h-4 w-4" />
-                  </Button>
-                </div>
+                    {(imageUrl) => (
+                      <FileUpload
+                        label={t("product.image")}
+                        value={imageUrl || ""}
+                        onUploaded={(fileName) => {
+                          form.setFieldValue("imageUrl", fileName);
+                        }}
+                        onRemove={() => {
+                          form.setFieldValue("imageUrl", "");
+                        }}
+                        defaultBucket="product"
+                      />
+                    )}
+                  </form.Subscribe>
 
-                {/* Product name */}
-                <FormTextField
-                  form={form}
-                  name="name"
-                  label={t("common.name")}
-                  type="text"
-                  placeholder={t("product.name_placeholder")}
-                  required
-                />
+                  <FormTextareaField
+                    form={form}
+                    name="noted"
+                    label={t("product.noted")}
+                    placeholder={t("product.noted_placeholder")}
+                  />
 
-                {/* Model selection */}
-                <form.Field name="modelId">
-                  {(field) => (
-                    <Field>
-                      <FieldLabel>
-                        {t("product.model")}
-                        <span className="text-destructive">*</span>
-                      </FieldLabel>
+                </FieldGroup>
+              </CardContent>
+            </Card>
 
-                      <div className="flex items-center gap-2">
-                        <Select
-                          value={
-                            Number(field.state.value) > 0
-                              ? String(field.state.value)
-                              : ""
-                          }
-                          onValueChange={(value) => {
-                            const nextModelId = Number(value);
+            {/* Product variants */}
+            <Card className="rounded-xl border border-border/70 shadow-2xs">
+              <CardContent className="space-y-4 pt-4 sm:pt-5">
+                <h3 className="border-b border-border pb-3 text-base font-semibold">
+                  {t("product.variants")}
+                </h3>
 
-                            field.handleChange(nextModelId);
+                {variantTypes.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    {t("product.no_variants")}
+                  </p>
+                ) : (
+                  <form.Subscribe
+                    selector={(state) =>
+                      state.values.variantValueIds
+                    }
+                  >
+                    {(variantValueIds = []) => (
+                      <div className="space-y-5">
+                        {variantTypes.map(
+                          (variantType: VariantTypeResponse) => {
+                            const values =
+                              variantType.values ?? [];
 
-                            // Keep the form value numeric.
-                            form.setFieldValue(
-                              "modelId",
-                              nextModelId,
+                            const typeValueIds = values.map(
+                              (value) => Number(value.id),
                             );
-                          }}
-                          disabled={isLoadingModels}
-                        >
-                          <SelectTrigger className="w-full rounded-md">
-                            <SelectValue
-                              placeholder={
-                                isLoadingModels
-                                  ? t("common.loading")
-                                  : t("product.select_model")
-                              }
-                            />
-                          </SelectTrigger>
 
-                          <SelectContent>
-                            {modelOptions.map((option) => (
-                              <SelectItem
-                                key={option.value}
-                                value={option.value}
+                            const selectedValueId = (
+                              variantValueIds as number[]
+                            ).find((valueId) =>
+                              typeValueIds.includes(
+                                Number(valueId),
+                              ),
+                            );
+
+                            return (
+                              <div
+                                key={variantType.id}
+                                className="space-y-2"
                               >
-                                {option.label}
-                              </SelectItem>
-                            ))}
+                                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                                  {variantType.name}
+                                </p>
 
-                            {!isLoadingModels &&
-                              modelOptions.length === 0 && (
-                                <div className="px-2 py-3 text-sm text-muted-foreground">
-                                  {t("product.no_models")}
-                                </div>
-                              )}
-                          </SelectContent>
-                        </Select>
+                                <div className="flex flex-wrap gap-2">
+                                  {values.map(
+                                    (value: VariantValueItem) => {
+                                      const isSelected =
+                                        Number(selectedValueId) ===
+                                        Number(value.id);
 
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="icon"
-                          className="shrink-0 h-11 w-11 rounded-md"
-                          title={t("product.add_model")}
-                          onClick={() =>
-                            setModelFormOpen(true)
-                          }
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
-                      </div>
+                                      return (
+                                        <button
+                                          key={value.id}
+                                          type="button"
+                                          aria-pressed={isSelected}
+                                          onClick={() => {
+                                            const currentIds =
+                                              variantValueIds as number[];
 
-                      {field.state.meta.errors.length > 0 && (
-                        <p className="text-sm text-destructive">
-                          {field.state.meta.errors
-                            .map((error) =>
-                              typeof error === "string"
-                                ? error
-                                : error?.message,
-                            )
-                            .filter(Boolean)
-                            .join(", ")}
-                        </p>
-                      )}
-                    </Field>
-                  )}
-                </form.Field>
+                                            const otherTypeIds =
+                                              currentIds.filter(
+                                                (valueId) =>
+                                                  !typeValueIds.includes(
+                                                    Number(valueId),
+                                                  ),
+                                              );
 
-                {/* Dynamic category and brand */}
-                <form.Subscribe
-                  selector={(state) => state.values.modelId}
-                >
-                  {(modelId) => {
-                    const selectedModel = models.find(
-                      (model) =>
-                        Number(model.id) === Number(modelId),
-                    );
-
-                    if (!selectedModel) return null;
-
-                    const categoryName =
-                      selectedModel.categoryName ??
-                      categories.find(
-                        (category) =>
-                          Number(category.id) ===
-                          Number(selectedModel.categoryId),
-                      )?.name ??
-                      "-";
-
-                    const brandName =
-                      selectedModel.brandName ??
-                      brands.find(
-                        (brand) =>
-                          Number(brand.id) ===
-                          Number(selectedModel.brandId),
-                      )?.name ??
-                      "-";
-
-                    return (
-                      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                        <Field>
-                          <FieldLabel>
-                            {t("product.category")}
-                          </FieldLabel>
-                          <Input
-                            value={categoryName}
-                            readOnly
-                            disabled
-                            className="rounded-md"
-                          />
-                        </Field>
-
-                        <Field>
-                          <FieldLabel>
-                            {t("product.brand")}
-                          </FieldLabel>
-                          <Input
-                            value={brandName}
-                            readOnly
-                            disabled
-                            className="rounded-md"
-                          />
-                        </Field>
-                      </div>
-                    );
-                  }}
-                </form.Subscribe>
-
-                {/* Prices */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <FormTextField
-                    form={form}
-                    name="costPrice"
-                    label={t("product.cost_price")}
-                    type="number"
-                    placeholder="0"
-                    required
-                  />
-
-                  <FormTextField
-                    form={form}
-                    name="salePrice"
-                    label={t("product.sale_price")}
-                    type="number"
-                    placeholder="0"
-                    required
-                  />
-                </div>
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  <FormTextField
-                    form={form}
-                    name="reorderLevel"
-                    label={t("product.reorder_level")}
-                    type="number"
-                    placeholder="5"
-                    required
-                  />
-
-                  {/* Serial Tracking Mode */}
-                  <FormSwitchField
-                    form={form}
-                    name="hasSerial"
-                    label={t("inventory.serial_number", "Serial Number")}
-                  />
-                </div>
-
-
-
-                <FormTextareaField
-                  form={form}
-                  name="noted"
-                  label={t("product.noted")}
-                  placeholder={t("product.noted_placeholder")}
-                />
-              </FieldGroup>
-            </CardContent>
-          </Card>
-
-          {/* Product variants */}
-          <Card className="rounded-xl border border-border/70 shadow-2xs">
-            <CardContent className="space-y-4 pt-4 sm:pt-5">
-              <h3 className="border-b border-border pb-3 text-base font-semibold">
-                {t("product.variants")}
-              </h3>
-
-              {variantTypes.length === 0 ? (
-                <p className="text-sm text-muted-foreground">
-                  {t("product.no_variants")}
-                </p>
-              ) : (
-                <form.Subscribe
-                  selector={(state) =>
-                    state.values.variantValueIds
-                  }
-                >
-                  {(variantValueIds = []) => (
-                    <div className="space-y-5">
-                      {variantTypes.map(
-                        (variantType: VariantTypeResponse) => {
-                          const values =
-                            variantType.values ?? [];
-
-                          const typeValueIds = values.map(
-                            (value) => Number(value.id),
-                          );
-
-                          const selectedValueId = (
-                            variantValueIds as number[]
-                          ).find((valueId) =>
-                            typeValueIds.includes(
-                              Number(valueId),
-                            ),
-                          );
-
-                          return (
-                            <div
-                              key={variantType.id}
-                              className="space-y-2"
-                            >
-                              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                                {variantType.name}
-                              </p>
-
-                              <div className="flex flex-wrap gap-2">
-                                {values.map(
-                                  (value: VariantValueItem) => {
-                                    const isSelected =
-                                      Number(selectedValueId) ===
-                                      Number(value.id);
-
-                                    return (
-                                      <button
-                                        key={value.id}
-                                        type="button"
-                                        aria-pressed={isSelected}
-                                        onClick={() => {
-                                          const currentIds =
-                                            variantValueIds as number[];
-
-                                          const otherTypeIds =
-                                            currentIds.filter(
-                                              (valueId) =>
-                                                !typeValueIds.includes(
-                                                  Number(valueId),
-                                                ),
+                                            form.setFieldValue(
+                                              "variantValueIds",
+                                              isSelected
+                                                ? otherTypeIds
+                                                : [
+                                                  ...otherTypeIds,
+                                                  Number(value.id),
+                                                ],
                                             );
-
-                                          form.setFieldValue(
-                                            "variantValueIds",
-                                            isSelected
-                                              ? otherTypeIds
-                                              : [
-                                                ...otherTypeIds,
-                                                Number(value.id),
-                                              ],
-                                          );
-                                        }}
-                                        className={`border px-3 py-2 text-sm rounded-md transition-colors ${isSelected
-                                          ? "border-primary bg-primary text-primary-foreground"
-                                          : "border-border hover:bg-muted"
-                                          }`}
-                                      >
-                                        {value.name}
-                                      </button>
-                                    );
-                                  },
-                                )}
+                                          }}
+                                          className={`border px-3 py-2 text-sm rounded-md transition-colors ${isSelected
+                                            ? "border-primary bg-primary text-primary-foreground"
+                                            : "border-border hover:bg-muted"
+                                            }`}
+                                        >
+                                          {value.name}
+                                        </button>
+                                      );
+                                    },
+                                  )}
+                                </div>
                               </div>
-                            </div>
-                          );
-                        },
-                      )}
-                    </div>
+                            );
+                          },
+                        )}
+                      </div>
+                    )}
+                  </form.Subscribe>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* Image upload */}
+            {/* <Card className="rounded-xl border border-border/70 shadow-2xs">
+              <CardContent className="pt-6">
+                <form.Subscribe
+                  selector={(state) => state.values.imageUrl}
+                >
+                  {(imageUrl) => (
+                    <FileUpload
+                      label={t("product.image")}
+                      value={imageUrl || ""}
+                      onUploaded={(fileName) => {
+                        form.setFieldValue("imageUrl", fileName);
+                      }}
+                      onRemove={() => {
+                        form.setFieldValue("imageUrl", "");
+                      }}
+                      defaultBucket="product"
+                    />
                   )}
                 </form.Subscribe>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* Image upload */}
-          <Card className="rounded-xl border border-border/70 shadow-2xs">
-            <CardContent className="pt-6">
-              <form.Subscribe
-                selector={(state) => state.values.imageUrl}
-              >
-                {(imageUrl) => (
-                  <FileUpload
-                    label={t("product.image")}
-                    value={imageUrl || ""}
-                    onUploaded={(fileName) => {
-                      form.setFieldValue("imageUrl", fileName);
-                    }}
-                    onRemove={() => {
-                      form.setFieldValue("imageUrl", "");
-                    }}
-                    defaultBucket="product"
-                  />
-                )}
-              </form.Subscribe>
-            </CardContent>
-          </Card>
-        </div>
-      </form>
-    </div>
+              </CardContent>
+            </Card> */}
+          </div>
+        </form>
+      </div>
 
       {/* Create model dialog */}
       <ModelForm

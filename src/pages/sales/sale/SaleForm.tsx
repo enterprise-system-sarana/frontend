@@ -2258,7 +2258,8 @@ function PosItemRow({
   isOpenModal: boolean;
   onCloseModal: () => void;
 }) {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
+  const isKm = language === "km";
   const productId = useFormStore(
     form.store,
     (state: any) => state.values.items[index]?.productId
