@@ -3,7 +3,7 @@ import api from "../lib/axios";
 
 // const baseUrl = import.meta.env.VITE_API_URL || "http://169.58.63.127:3333/api/v1";
 // const baseUrl = import.meta.env.VITE_API_URL ;
-const baseUrl = "http://localhost:8081/api/v1";
+const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:8081/api/v1";
 export const fileService = {
     async uploadFile(file: File, bucketName: string = "default"): Promise<{ payload: FileUploadResponse }> {
         const formData = new FormData();
