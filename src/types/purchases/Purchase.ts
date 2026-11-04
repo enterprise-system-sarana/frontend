@@ -40,8 +40,6 @@ export interface PurchaseResponse extends BaseResponse {
   supplierName: string | null;
   storeId: number | null;
   storeName: string | null;
-  bankId: number | null;
-  bankName: string | null;
   total: number;
   discount: number;
   grandTotal: number;
@@ -58,7 +56,6 @@ export const PurchaseSchema = z.object({
   note: z.string().trim().optional(),
   supplierId: z.coerce.number().min(1, "Supplier is required"),
   storeId: z.coerce.number().min(1, "Store is required"),
-  bankId: z.coerce.number().min(1, "Bank is required"),
   discount: z.coerce
     .number()
     .min(0, "Discount must be greater than or equal to 0")

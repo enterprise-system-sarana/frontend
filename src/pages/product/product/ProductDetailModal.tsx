@@ -182,7 +182,7 @@ export const ProductDetailModal = ({
                 <DialogTitle className="text-xl font-bold tracking-tight text-foreground truncate">
                   {product?.name || product?.modelName || product?.code || "Product Details"}
                 </DialogTitle>
-                {product?.status && <StatusBadge status={product.status} />}
+                {/* {product?.status && <StatusBadge status={product.status} />} */}
               </div>
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 {product?.code && (
@@ -191,7 +191,7 @@ export const ProductDetailModal = ({
                   </span>
                 )}
                 {product?.categoryName && <span>• {product.categoryName}</span>}
-                {product?.id && <span>• ID #{product.id}</span>}
+                {/* {product?.id && <span>• ID #{product.id}</span>} */}
               </div>
             </div>
           </div>

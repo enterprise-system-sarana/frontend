@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useForm } from "@tanstack/react-form";
 import { toast } from "sonner";
 
@@ -33,6 +33,7 @@ import type { StoreResponse } from "@/types/inventory/Store";
 import type { RoleResponse } from "@/types/users/Role";
 import { Card, CardContent } from "@/components/ui/card";
 import FileUpload from "@/pages/FileUpload";
+import StoreForm from "@/pages/inventory/store/StoreForm";
 
 type FormUserProps = {
     open: boolean;
@@ -75,9 +76,13 @@ const FormUser = ({
 
     const isEdit = Boolean(user);
     const isPending = isCreating || isUpdating;
+    const [isStoreDialogOpen, setIsStoreDialogOpen] = useState(false);
 
     const stores: StoreResponse[] =
-        storeData?.payload?.data ?? [];
+        storeData?.payload?.data ??
+        storeData?.payload?.content ??
+        storeData?.data ??
+        [];
 
     const roles: RoleResponse[] = Array.isArray(
         rolesData?.payload?.data
@@ -135,7 +140,7 @@ const FormUser = ({
             }
 
             const { password, ...rest } = value;
-            const payload: any = {
+            const payload: UserRequest = {
                 ...rest,
                 roleIds: roleIdsToSubmit,
                 storeId: value.storeId ? Number(value.storeId) : null,
@@ -371,33 +376,11 @@ const FormUser = ({
                             }
                             type="password"
                             required={!isEdit}
-                            autoComplete={isEdit ? "new-password"   : "new-password"}
+                            autoComplete={isEdit ? "new-password" : "new-password"}
                         />
                     </section>
 
-                    {/* <Card className="rounded-2xl border-border/60 shadow-2xs"> */}
-                    <CardContent className="space-y-5">
-                        <FieldGroup>
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                <form.Subscribe selector={(state) => [state.values.profileImage]}>
-                                    {([profileImage]) => (
-                                        <FileUpload
-                                            label={t("user.profile_image")}
-                                            value={profileImage || ""}
-                                            onUploaded={(fileName) => {
-                                                form.setFieldValue("profileImage", fileName);
-                                            }}
-                                            onRemove={() => {
-                                                form.setFieldValue("profileImage", "");
-                                            }}
-                                            defaultBucket="users"
-                                        />
-                                    )}
-                                </form.Subscribe>
-                            </div>
 
-                        </FieldGroup>
-                    </CardContent>
 
                     {/* =========================
                         ACCESS CONTROL
@@ -429,10 +412,10 @@ const FormUser = ({
                                                         *
                                                     </span>
                                                 </label>
-
+{/* 
                                                 <span className="text-xs text-muted-foreground">
                                                     {selected.length} {t("user.selected")}
-                                                </span>
+                                                </span> */}
                                             </div>
 
                                             <div className="flex flex-wrap gap-2">
@@ -509,35 +492,51 @@ const FormUser = ({
 
 
                     <section className="space-y-4">
-                        {!isLoadingStores &&
-                            storeOptions.length > 0 && (
-                                <FormSelectField
-                                    form={form}
-                                    name="storeId"
-                                    label={t("user.store_branch")}
-                                    placeholder={t("user.select_store")}
-                                    options={storeOptions}
-                                />
-                            )}
-
-                        {/* <FormRadioGroupField
+                        <FormSelectField
                             form={form}
-                            name="isActive"
-                            label={t("common.status")}
-                            required
-                            options={[
-                                {
-                                    value: Status.ACTIVE,
-                                    label: t("common.active"),
-                                },
-                                {
-                                    value: Status.INACTIVE,
-                                    label: t("common.inactive"),
-                                },
-                            ]}
-                        /> */}
+                            name="storeId"
+                            label={t("user.store_branch")}
+                            placeholder={
+                                isLoadingStores
+                                    ? t("common.loading")
+                                    : t("user.select_store")
+                            }
+                            options={storeOptions}
+                            disabled={isLoadingStores || storeOptions.length === 0}
+                            onAdd={() => setIsStoreDialogOpen(true)}
+                        />
+
+                        {/* <Card className="rounded-2xl border-border/60 shadow-2xs"> */}
+                        <CardContent className="space-y-5">
+                            <FieldGroup>
+                                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                    <form.Subscribe selector={(state) => [state.values.profileImage]}>
+                                        {([profileImage]) => (
+                                            <FileUpload
+                                                label={t("user.profile_image")}
+                                                value={profileImage || ""}
+                                                onUploaded={(fileName) => {
+                                                    form.setFieldValue("profileImage", fileName);
+                                                }}
+                                                onRemove={() => {
+                                                    form.setFieldValue("profileImage", "");
+                                                }}
+                                                defaultBucket="users"
+                                            />
+                                        )}
+                                    </form.Subscribe>
+                                </div>
+
+                            </FieldGroup>
+                        </CardContent>
                     </section>
                 </form>
+
+                <StoreForm
+                    open={isStoreDialogOpen}
+                    setOpen={setIsStoreDialogOpen}
+                    onSuccess={(store) => form.setFieldValue("storeId", store.id)}
+                />
 
                 <DialogFooter className="gap-2">
                     <DialogClose asChild>

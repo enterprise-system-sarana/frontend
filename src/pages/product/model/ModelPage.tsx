@@ -59,14 +59,7 @@ const ModelPage = () => {
     // Dynamically build filter groups with options from brand and category APIs
     const filterGroups: FilterGroup[] = useMemo(() => {
         const groups: FilterGroup[] = [
-            {
-                key: "status",
-                label: t("common.status"),
-                options: [
-                    { label: t("common.active"), value: Status.ACTIVE },
-                    { label: t("common.inactive"), value: Status.INACTIVE },
-                ],
-            },
+            
         ];
 
         if (brandData?.payload?.data && brandData.payload.data.length > 0) {

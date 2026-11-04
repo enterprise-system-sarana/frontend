@@ -67,17 +67,7 @@ export const QuotePage = () => {
   // Filter groups for toolbar
   const filterGroups: FilterGroup[] = useMemo(
     () => [
-      {
-        key: "status",
-        label: t("common.status", "Status"),
-        options: [
-          { label: "Pending (Booking)", value: "PENDING" },
-          { label: "Approved", value: "APPROVED" },
-          { label: "Ordered", value: "ORDERED" },
-          { label: "Completed", value: "COMPLETED" },
-          { label: "Rejected", value: "REJECTED" },
-        ],
-      },
+      
       {
         key: "customerId",
         label: t("customer.name", "Customer"),

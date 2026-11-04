@@ -9,6 +9,7 @@ import { useSearch } from "@/utils/useSearch";
 import { PageFilter, type FilterGroup } from "@/utils/PageFilter";
 import { useStore } from "@/hooks/inventory/useStore";
 import { StoreColumns } from "./StoreColumn";
+import StoreForm from "./StoreForm";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { PageHeader } from "@/components/ui/page-header";
@@ -27,6 +28,7 @@ export const StorePage = () => {
   const canDelete = Can(PERMISSION.STORE.DELETE);
 
   const [store, setStore] = useState<StoreResponse | null>(null);
+  const [open, setOpen] = useState(false);
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
@@ -40,14 +42,7 @@ export const StorePage = () => {
   // Filter Groups for Filter +
   const filterGroups: FilterGroup[] = useMemo(
     () => [
-      {
-        key: "status",
-        label: t("common.status"),
-        options: [
-          { label: t("common.active"), value: Status.ACTIVE },
-          { label: t("common.inactive"), value: Status.INACTIVE },
-        ],
-      },
+      
     ],
     [t]
   );
@@ -92,7 +87,8 @@ export const StorePage = () => {
   }, [searchedStores, filterValues]);
 
   const handleEdit = (s: StoreResponse) => {
-    navigate(`${ROUTERS.STORE_EDIT.replace(':id', String(s.id))}`);
+    setStore(s);
+    setOpen(true);
   };
 
   const handleDelete = (id: number) => {
@@ -151,7 +147,8 @@ export const StorePage = () => {
           onCreate={
             canCreate
               ? () => {
-                  navigate(ROUTERS.STORE_CREATE);
+                  setStore(null);
+                  setOpen(true);
                 }
               : undefined
           }
@@ -199,6 +196,8 @@ export const StorePage = () => {
           </div>
         </div>
       </div>
+
+      <StoreForm open={open} setOpen={setOpen} store={store} />
 
       <ConfirmDelete
         isOpen={openConfirmDelete}

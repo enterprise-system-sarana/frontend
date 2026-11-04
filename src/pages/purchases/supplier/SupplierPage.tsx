@@ -39,14 +39,7 @@ export const SupplierPage = () => {
   // Filter Groups for Filter +
   const filterGroups: FilterGroup[] = useMemo(
     () => [
-      {
-        key: "status",
-        label: t("common.status"),
-        options: [
-          { label: t("common.active"), value: Status.ACTIVE },
-          { label: t("common.inactive"), value: Status.INACTIVE },
-        ],
-      },
+      
     ],
     [t]
   );

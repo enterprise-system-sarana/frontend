@@ -443,7 +443,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
     return {
       paymentNo,
-      totalAmount: Number(effectiveTotalBill.toFixed(2)),
+      totalAmount: Number((effectiveTotalBill > 0 ? effectiveTotalBill : totalReceivedUSD).toFixed(2)),
       receivedAmount: Number(totalReceivedUSD.toFixed(2)),
       returnAmount: Number(returnAmountUSD.toFixed(2)),
       dueAmount: Number(dueAmountUSD.toFixed(2)),

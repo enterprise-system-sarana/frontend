@@ -195,16 +195,7 @@ const PurchasePage = () => {
           value: String(store.id),
         })),
       },
-      {
-        key: "status",
-        placeholder: t("common.status"),
-        allLabel: t("common.all_status"),
-        options: [
-          { label: t("common.completed"), value: "COMPLETED" },
-          { label: t("common.cancelled"), value: "CANCELLED" },
-          { label: t("common.pending"), value: "PENDING" },
-        ],
-      },
+      
     ],
     [suppliers, stores, t],
   );

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import {
   RotateCcw,
   Wallet,
+  Check,
 } from "lucide-react";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { TableActions } from "@/components/ui/table-actions";
@@ -40,15 +41,6 @@ export const SaleColumns = ({
   canDelete,
   t,
 }: SaleColumnProps): ColumnDef<SaleResponse>[] => [
-    // {
-    //   accessorKey: "id",
-    //   header: ({ column }) => <SortableHeader column={column} title="ID" />,
-    //   cell: ({ row }) => (
-    //     <span className="font-medium text-foreground">
-    //       {safeText(row.original.id.toString())}
-    //     </span>
-    //   ),
-    // },
     {
       accessorKey: "customer",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("sale.customer") : "Customer"} />,
@@ -71,15 +63,6 @@ export const SaleColumns = ({
         </span>
       ),
     },
-    // {
-    //   accessorKey: "no",
-    //   header: ({ column }) => <SortableHeader column={column} title={t ? t("common.id") : "No"} />,
-    //   cell: ({ row }) => (
-    //     <span className="tabular-nums text-xs text-primary">
-    //       {row.index + 1}
-    //     </span>
-    //   ),
-    // },
     {
       accessorKey: "store",
       header: ({ column }) => <SortableHeader column={column} title={t ? t("inventory.store") : "Store"} />,
@@ -95,15 +78,6 @@ export const SaleColumns = ({
       cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>
     },
 
-    // {
-    //   accessorKey: "bank",
-    //   header: ({ column }) => <SortableHeader column={column} title="Bank" />,
-    //   cell: ({ row }) => (
-    //     <span className="font-medium text-foreground">
-    //       {safeText(row.original.bankName)}
-    //     </span>
-    //   ),
-    // },
     {
       accessorKey: "grandTotal",
       header: t ? t("common.total") : "Total",
@@ -125,11 +99,18 @@ export const SaleColumns = ({
     {
       accessorKey: "dueAmount",
       header: t ? t("common.due") : "Due",
-      cell: ({ row }) => (
-        <span className="text-destructive font-medium">
-          {formatCurrency(row.original.dueAmount)}
-        </span>
-      ),
+      cell: ({ row }) => {
+        const grandTotal = Number(row.original.grandTotal) || 0;
+        const paidAmount = Number(row.original.paidAmount) || 0;
+        const due = row.original.dueAmount !== undefined && row.original.dueAmount !== null
+          ? Number(row.original.dueAmount)
+          : Math.max(0, grandTotal - paidAmount);
+        return (
+          <span className="text-destructive font-medium">
+            {formatCurrency(due)}
+          </span>
+        );
+      },
     },
     {
       accessorKey: "paymentStatus",
@@ -165,6 +146,11 @@ export const SaleColumns = ({
         const currentStatus = row.original.status?.toUpperCase();
         const isPendingLike = currentStatus === "PENDING" || currentStatus === "ACT" || currentStatus === "ACTIVE";
         const isReturnable = currentStatus === "COMPLETED" || currentStatus === "PARTIAL_RETURNED";
+        const grandTotal = Number(row.original.grandTotal) || 0;
+        const paidAmount = Number(row.original.paidAmount) || 0;
+        const due = row.original.dueAmount !== undefined && row.original.dueAmount !== null
+          ? Number(row.original.dueAmount)
+          : Math.max(0, grandTotal - paidAmount);
 
         const hasActions =
           Boolean(onView) ||
@@ -185,7 +171,18 @@ export const SaleColumns = ({
               onEdit={canEdit && onEdit ? () => onEdit(row.original) : undefined}
               onDelete={canDelete && onDelete ? () => onDelete(row.original.id) : undefined}
             />
-            {onPayment && row.original.dueAmount > 0 && (
+            {onComplete && isPendingLike && (
+              <Button
+                variant="ghost"
+                size="icon"
+                title={t ? t("common.complete") : "Complete Sale"}
+                className="h-8 w-8 text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 rounded-lg"
+                onClick={() => onComplete(row.original.id)}
+              >
+                <Check className="h-4 w-4" />
+              </Button>
+            )}
+            {onPayment && due > 0 && (
               <Button
                 variant="ghost"
                 size="icon"

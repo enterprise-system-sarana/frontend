@@ -15,8 +15,8 @@ import {
 import { store } from "@/store/store";
 import { updateTokens, logout as logoutAction } from "@/store/authSlice";
 import { ROUTERS } from "@/constants/Route";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:8081/api/v1/";
+// import.meta.env.VITE_API_URL ||
+const API_URL =  "http://localhost:8081/api/v1";
 
 const api = axios.create({
   baseURL:  API_URL,

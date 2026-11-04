@@ -88,16 +88,7 @@ const ProductSerialReportPage = () => {
         label: t("product.name", "Product"),
         options: products.map((product: any) => ({ label: product.name, value: String(product.id) })),
       },
-      {
-        key: "status",
-        label: t("common.status", "Status"),
-        options: [
-          { label: "AVAILABLE", value: "AVAILABLE" },
-          { label: "SOLD", value: "SOLD" },
-
-
-        ],
-      },
+      
     ],
     [stores, products, t],
   );

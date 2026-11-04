@@ -55,7 +55,7 @@ import { useBank } from "@/hooks/finance/useBank";
 import { useProductSerial } from "@/hooks/product/useProductSerial";
 
 import FormSupplier from "@/pages/purchases/supplier/SupplierForm";
-import FormBank from "@/pages/finance/bank/BankForm";
+import StoreForm from "@/pages/inventory/store/StoreForm";
 import ExcelSerialModal from "./ExcelSerialModal";
 
 import { ROUTERS } from "@/constants/Route";
@@ -215,7 +215,7 @@ export default function PurchaseForm() {
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [serialError, setSerialError] = useState("");
   const [isSupplierDialogOpen, setIsSupplierDialogOpen] = useState(false);
-  const [bankFormOpen, setBankFormOpen] = useState(false);
+  const [isStoreDialogOpen, setIsStoreDialogOpen] = useState(false);
   const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const searchBoxRef = useRef<HTMLDivElement>(null);
@@ -229,7 +229,6 @@ export default function PurchaseForm() {
       note: "",
       supplierId: 1,
       storeId: 1,
-      bankId: 1,
       discount: 0,
       total: 0,
       grandTotal: 0,
@@ -324,7 +323,6 @@ export default function PurchaseForm() {
         ...value,
         supplierId: Number(value.supplierId),
         storeId: Number(value.storeId),
-        bankId: Number(value.bankId),
         discount,
         paidAmount,
         paymentStatus,
@@ -439,7 +437,6 @@ export default function PurchaseForm() {
       ...formValues,
       supplierId: Number(formValues.supplierId),
       storeId: Number(formValues.storeId),
-      bankId: Number(formValues.bankId),
       discount,
       paidAmount,
       paymentStatus,
@@ -529,7 +526,6 @@ export default function PurchaseForm() {
 
     const supplierId = purchase.supplierId ?? purchase.supplier?.id ?? 0;
     const storeId = purchase.storeId ?? purchase.store?.id ?? 1;
-    const bankId = purchase.bankId ?? purchase.bank?.id ?? 1;
 
     const formattedDate = purchase.purchaseDate
       ? String(purchase.purchaseDate).split("T")[0]
@@ -671,7 +667,6 @@ export default function PurchaseForm() {
       purchaseDate: formattedDate,
       supplierId,
       storeId,
-      bankId,
       discount: purchase.discount ?? 0,
       total: purchase.total ?? 0,
       grandTotal: purchase.grandTotal ?? 0,
@@ -685,7 +680,6 @@ export default function PurchaseForm() {
     form.setFieldValue("purchaseDate", formattedDate);
     form.setFieldValue("supplierId", supplierId);
     form.setFieldValue("storeId", storeId);
-    form.setFieldValue("bankId", bankId);
     form.setFieldValue("discount", purchase.discount ?? 0);
     form.setFieldValue("total", purchase.total ?? 0);
     form.setFieldValue("grandTotal", purchase.grandTotal ?? 0);
@@ -999,7 +993,7 @@ export default function PurchaseForm() {
                         label: store.name,
                       }))}
                       required
-                      onAdd={() => window.open(ROUTERS.STORE_CREATE, "_blank")}
+                      onAdd={() => setIsStoreDialogOpen(true)}
                     />
 
                     <div className="sm:col-span-2 lg:col-span-4">
@@ -1195,19 +1189,6 @@ export default function PurchaseForm() {
 
                 {/* Form fields */}
                 <div className="p-3.5 space-y-2.5 border-b border-border">
-                  <FormSelectField
-                    form={form}
-                    name="bankId"
-                    label={t("purchase.payment_bank")}
-                    placeholder={t("purchase.select_bank")}
-                    options={bankList.map((bank: any) => ({
-                      value: String(bank.id),
-                      label: bank.name,
-                    }))}
-                    required
-                    onAdd={() => setBankFormOpen(true)}
-                  />
-
                   <div className="grid grid-cols-2 gap-2">
                     <FormTextField
                       form={form}
@@ -1398,7 +1379,16 @@ export default function PurchaseForm() {
         }}
       />
 
-      <FormBank open={bankFormOpen} setOpen={setBankFormOpen} bank={null} />
+      <StoreForm
+        open={isStoreDialogOpen}
+        setOpen={setIsStoreDialogOpen}
+        onSuccess={(store) => {
+          if (store?.id) {
+            form.setFieldValue("storeId", store.id);
+          }
+        }}
+      />
+
     </div>
   );
 }

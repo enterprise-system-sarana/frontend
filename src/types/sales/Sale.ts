@@ -45,8 +45,6 @@ export interface SaleResponse extends BaseResponse {
   customerName: string | null;
   storeId: number | null;
   storeName: string | null;
-  bankId: number | null;
-  bankName: string | null;
   totalAmount: number;
   discount: number;
   grandTotal: number;
@@ -84,7 +82,6 @@ export const SaleSchema = z.object({
   saleDate: z.string().optional(),
   storeId: z.coerce.number().min(1, "Store is required"),
   customerId: z.coerce.number().optional().nullable(),
-  bankId: z.coerce.number().optional().nullable(),
   discount: z.coerce
     .number()
     .min(0, "Discount must be greater than or equal to 0")

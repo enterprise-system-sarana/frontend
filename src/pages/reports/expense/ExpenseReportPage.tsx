@@ -97,16 +97,7 @@ const ExpenseReportPage = () => {
         label: t("nav.expense_type", "Expense Type"),
         options: expenseTypes.map((expenseType: any) => ({ label: expenseType.name, value: String(expenseType.id) })),
       },
-      {
-        key: "status",
-        label: t("common.status", "Status"),
-        options: [
-          { label: "PENDING", value: "PENDING" },
-          { label: "APPROVED", value: "APPROVED" },
-          { label: "PAID", value: "PAID" },
-          { label: "REJECTED", value: "REJECTED" },
-        ],
-      },
+      
     ],
     [stores, banks, expenseTypes, t],
   );

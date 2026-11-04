@@ -47,7 +47,13 @@ const DashboardLayout = () => {
     : pathSegments.length === 1
       ? [t("nav.section_overview", "Overview"), toLabel(pathSegments[0])]
       : pathSegments.map(toLabel);
-  const userRole = roles[0] ? toLabel(roles[0].toLowerCase().replace(/^role_/, "")) : user?.email;
+  const displayRole = roles.find((role) => {
+    const normalizedRole = role.toUpperCase().replace(/^ROLE_/, "");
+    return normalizedRole === "SUPER_ADMIN";
+  }) ?? roles[0];
+  const userRole = displayRole
+    ? toLabel(displayRole.toLowerCase().replace(/^role_/, ""))
+    : user?.email;
 
   const { data: products } = useProduct.useGetAllProduct({ page: 1, size: 1000 });
   const { data: stocks, isError: isStocksError } = useStock.useGetAllStock({ page: 1, size: 1000 });

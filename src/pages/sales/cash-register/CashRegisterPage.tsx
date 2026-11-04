@@ -197,14 +197,7 @@ export default function CashRegisterPage() {
           value: String(s.id),
         })),
       },
-      {
-        key: "status",
-        label: isKm ? "ស្ថានភាព" : "Status",
-        options: [
-          { label: isKm ? "កំពុងបើក (OPEN)" : "OPEN", value: "OPEN" },
-          { label: isKm ? "បានបិទ (CLOSED)" : "CLOSED", value: "CLOSED" },
-        ],
-      },
+      
     ],
     [stores, isKm]
   );

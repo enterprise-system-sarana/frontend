@@ -250,14 +250,14 @@ const FormSupplier = ({
             </div>
 
             {/* Status */}
-            <div className="sm:col-span-2">
+            {/* <div className="sm:col-span-2">
               <FormRadioGroupField
                 form={form}
                 name="status"
                 label={t("common.status")}
                 options={statusOptions}
               />
-            </div>
+            </div> */}
           </FieldGroup>
         </form>
 

@@ -2,7 +2,7 @@ import { DataTable } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import { PERMISSION } from "@/constants/Permission";
 import { useSale } from "@/hooks/sales/useSale";
-import { useCustomer } from "@/hooks/sales/useCustomer"; // Verify export structure in useCustomer
+import { useCustomer } from "@/hooks/sales/useCustomer";
 import { useStore } from "@/hooks/inventory/useStore";
 import type { SaleResponse } from "@/types/sales/Sale";
 import { usePermission } from "@/utils/UsePermission";
@@ -82,7 +82,6 @@ const SalePage = () => {
     status: status,
   });
 
-
   const { mutate: deleteSaleMutate } = useSale.Delete();
   const { mutate: completeSaleMutate } = useSale.Complete();
   const { mutate: cancelSaleMutate } = useSale.Cancel();
@@ -116,17 +115,7 @@ const SalePage = () => {
           value: String(store.id),
         })),
       },
-      {
-        key: "status",
-        placeholder: t("common.status"),
-        allLabel: t("common.all_status"),
-        options: [
-          { label: t("common.pending"), value: "PENDING" },
-          { label: t("common.completed"), value: "COMPLETED" },
-          { label: t("common.cancelled"), value: "CANCELLED" },
-          { label: t("common.returned"), value: "RETURNED" },
-        ],
-      },
+      
     ],
     [customers, stores, t],
   );
@@ -317,6 +306,7 @@ const SalePage = () => {
         open={openDetailModal}
         onOpenChange={setOpenDetailModal}
         onEdit={handleEdit}
+        onPayment={handlePayment}
       />
 
       <PaymentForm
@@ -325,7 +315,20 @@ const SalePage = () => {
         payment={null}
         mode="sale"
         saleId={paymentSale?.id}
-        amount={paymentSale?.dueAmount}
+        amount={
+          paymentSale
+            ? paymentSale.dueAmount !== undefined && paymentSale.dueAmount !== null
+              ? paymentSale.dueAmount
+              : Math.max(0, (paymentSale.grandTotal || 0) - (paymentSale.paidAmount || 0))
+            : 0
+        }
+        totalBill={
+          paymentSale
+            ? paymentSale.dueAmount !== undefined && paymentSale.dueAmount !== null
+              ? paymentSale.dueAmount
+              : Math.max(0, (paymentSale.grandTotal || 0) - (paymentSale.paidAmount || 0))
+            : 0
+        }
       />
 
       {openReturnModal && (

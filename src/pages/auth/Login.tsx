@@ -42,7 +42,7 @@ export default function LoginPage() {
     setError(null);
 
     try {
-      await AuthService.login({
+      const authResponse = await AuthService.login({
         usernameOrEmail: username,
         password,
       });
@@ -54,7 +54,11 @@ export default function LoginPage() {
         localStorage.removeItem("usernameOrEmail");
       }
 
-      navigate(ROUTERS.DASHBOARD);
+      const isUserRole = authResponse?.roles?.some(
+        (role: string) => role.replace(/^ROLE_/, "").toUpperCase() === "USER"
+      );
+
+      navigate(isUserRole ? ROUTERS.SALE_CREATE : ROUTERS.DASHBOARD);
     } catch (err: any) {
       console.error("Login error:", err);
       setError(

@@ -216,16 +216,7 @@ export const PaymentPage = () => {
   // Dropdown filter configs for PageFilter
   const filterGroups = useMemo(
     () => [
-      {
-        key: "status",
-        label: t("common.status", "Status"),
-        options: [
-          { label: t("common.paid", "Paid"), value: "PAID" },
-          { label: t("common.partial", "Partial"), value: "PARTIAL" },
-          { label: t("common.pending", "Pending"), value: "PENDING" },
-          { label: t("payment.void", "Void"), value: "VOID" },
-        ],
-      },
+      
     ],
     [t]
   );

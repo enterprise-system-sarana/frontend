@@ -181,15 +181,7 @@ export default function PurchaseReportPage({ mode: initialMode = "all" }: { mode
           value: String(supplier.id),
         })),
       },
-      {
-        key: "status",
-        label: t("common.status", "Purchase Status"),
-        options: [
-          { label: "Received", value: "RECEIVED" },
-          { label: "Ordered", value: "ORDERED" },
-          { label: "Pending", value: "PENDING" },
-        ],
-      },
+      
       {
         key: "paymentStatus",
         label: t("purchase.payment_status", "Payment Status"),

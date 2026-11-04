@@ -224,14 +224,6 @@ export default function PurchaseInvoice() {
                       {purchase.storeName ?? "N/A"}
                     </span>
                   </div>
-                  {purchase.bankName && (
-                    <div>
-                      <span className="text-muted-foreground">Bank: </span>
-                      <span className="font-medium text-foreground">
-                        {purchase.bankName}
-                      </span>
-                    </div>
-                  )}
                   <div>
                     <span className="text-muted-foreground">Status: </span>
                     <span className="font-semibold text-foreground uppercase">

@@ -126,15 +126,7 @@ export default function PurchaseItemReportPage() {
         label: t("product.title", "Product"),
         options: products.map((p: any) => ({ label: p.name, value: String(p.id) })),
       },
-      {
-        key: "status",
-        label: t("common.status", "Purchase Status"),
-        options: [
-          { label: "Received", value: "RECEIVED" },
-          { label: "Ordered", value: "ORDERED" },
-          { label: "Pending", value: "PENDING" },
-        ],
-      },
+      
       {
         key: "paymentStatus",
         label: t("purchase.payment_status", "Payment Status"),
@@ -201,10 +193,10 @@ export default function PurchaseItemReportPage() {
     <div className="space-y-6">
       <PageHeader
         title={t("report.purchase_items_title", "Purchase Item Reports")}
-        description={t(
-          "report.purchase_items_desc",
-          "Line-item breakdown of all purchased goods, costs, product SKUs, and incoming delivery status."
-        )}
+        // description={t(
+        //   "report.purchase_items_desc",
+        //   "Line-item breakdown of all purchased goods, costs, product SKUs, and incoming delivery status."
+        // )}
       >
         <div className="flex items-center gap-2">
           <Link

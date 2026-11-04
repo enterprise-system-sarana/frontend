@@ -302,11 +302,7 @@ export default function TodaySaleModal({
 
       unpaid += Math.max(0, due);
 
-      if (sale.bankId || sale.bankName) {
-        bank += paid;
-      } else {
-        cash += paid;
-      }
+      cash += paid;
     });
 
     return { cash, bank, unpaid };
@@ -910,12 +906,6 @@ export default function TodaySaleModal({
                                 )}
                               </span>
 
-                              <span className="flex items-center gap-1">
-                                <CreditCard className="size-3" />
-                                {sale.bankId || sale.bankName
-                                  ? sale.bankName || "Bank / QR"
-                                  : "Cash"}
-                              </span>
                             </div>
                           </div>
 

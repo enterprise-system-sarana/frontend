@@ -257,15 +257,7 @@ export const PurchasePaymentPage = () => {
 
   const filterGroups = useMemo(
     () => [
-      {
-        key: "status",
-        label: "Status",
-        options: [
-          { label: "Paid", value: "PAID" },
-          { label: "Partial", value: "PARTIAL" },
-          { label: "Pending", value: "PENDING" },
-        ],
-      },
+      
     ],
     [],
   );

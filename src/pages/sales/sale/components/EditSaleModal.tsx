@@ -410,7 +410,6 @@ export default function EditSaleModal({
       saleDate,
       storeId: fullSale?.storeId || 1,
       customerId: customerId ? Number(customerId) : null,
-      bankId: fullSale?.bankId || null,
       discount: Number(discount) || 0,
       paidAmount: fullSale?.paidAmount || 0,
       noted: fullSale?.noted || null,

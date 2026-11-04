@@ -89,11 +89,7 @@ const SaleReturnPage = () => {
   const filterGroups = useMemo(() => [
     { key: "customerId", label: t("customer.name", "Customer"), options: customers.map((item) => ({ label: item.name, value: String(item.id) })) },
     { key: "storeId", label: t("store.name", "Store"), options: stores.map((item) => ({ label: item.name, value: String(item.id) })) },
-    { key: "status", label: t("common.status", "Status"), options: [
-      { label: "Completed", value: "COMPLETED" },
-      { label: t("sale.partial_returned", "Partial Returned"), value: "PARTIAL_RETURNED" },
-      { label: t("sale.returned", "Returned"), value: "RETURNED" },
-    ] },
+    
   ], [customers, stores, t]);
 
   const handleFilterChange = (key: string, value: string) => {
@@ -138,7 +134,7 @@ const SaleReturnPage = () => {
     <div className="sale-return-list space-y-4">
       <PageHeader
         title={t("sale.return_title", "Sales Return")}
-        description={t("sale.return_desc", "Returned sales are shown by default. Use Status to view completed or partially returned sales.")}
+        // description={t("sale.return_desc", "Returned sales are shown by default. Use Status to view completed or partially returned sales.")}
         hideButton
         actions={<Button variant="outline" onClick={() => navigate(ROUTERS.SALE)} className="gap-2"><ArrowLeft className="h-4 w-4" />{t("sale.back_to_sales", "Back to Sales")}</Button>}
       />

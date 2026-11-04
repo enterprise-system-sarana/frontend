@@ -332,7 +332,6 @@ export const PurchaseDetailModal = ({
               <div class="info-col-title">DETAILS</div>
               <div class="info-item"><strong>Date:</strong> ${purchase.purchaseDate ? formatDate(purchase.purchaseDate, "fullDate") : "-"}</div>
               <div class="info-item"><strong>Store:</strong> ${purchase.storeName || "N/A"}</div>
-              ${purchase.bankName ? `<div class="info-item"><strong>Bank:</strong> ${purchase.bankName}</div>` : ""}
               <div class="info-item"><strong>Status:</strong> ${purchase.status || "COMPLETED"}</div>
             </div>
           </div>
@@ -717,4 +716,3 @@ export const PurchaseDetailModal = ({
 };
 
 export default PurchaseDetailModal;
-

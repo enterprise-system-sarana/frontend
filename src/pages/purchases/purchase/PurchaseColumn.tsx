@@ -98,7 +98,6 @@ export const PurchaseColumns = ({
       header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank"} />,
       cell: ({ row }) => (
         <span className="font-medium text-foreground">
-          {safeText(row.original.bankName)}
         </span>
       ),
     },

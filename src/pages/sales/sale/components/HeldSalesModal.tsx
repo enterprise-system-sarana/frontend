@@ -40,7 +40,6 @@ export interface HeldSale {
   customerId: number | null;
   customerName: string;
   storeId: number;
-  bankId: number | null;
   discount: number;
   items: HeldSaleItem[];
   totalAmount: number;

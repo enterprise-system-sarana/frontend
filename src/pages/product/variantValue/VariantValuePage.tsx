@@ -43,14 +43,7 @@ const VariantValuePage = () => {
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(() => {
         const groups: FilterGroup[] = [
-            {
-                key: "status",
-                label: t("common.status"),
-                options: [
-                    { label: t("common.active"), value: Status.ACTIVE },
-                    { label: t("common.inactive"), value: Status.INACTIVE },
-                ],
-            },
+            
         ];
 
         if (

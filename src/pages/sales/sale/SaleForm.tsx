@@ -103,6 +103,7 @@ import { useCategory } from "@/hooks/product/useCategory";
 import { useAuth } from "@/store/useAuth";
 
 import FormCustomer from "@/pages/sales/customers/CustomerForm";
+import StoreForm from "@/pages/inventory/store/StoreForm";
 import PaymentForm from "@/pages/sales/payment/PaymentForm";
 import PrintBillModal, { type BillData, type BillItem } from "./components/PrintBillModal";
 import HeldSalesModal, { type HeldSale, type HeldSaleItem } from "./components/HeldSalesModal";
@@ -131,6 +132,14 @@ function formatCurrency(value: number) {
     style: "currency",
     currency: "USD",
   }).format(Number(value) || 0);
+}
+
+function formatRole(role: string) {
+  return role
+    .toLowerCase()
+    .replace(/^role_/, "")
+    .replace(/[-_]/g, " ")
+    .replace(/\b\w/g, (letter) => letter.toUpperCase());
 }
 
 /** Live date and time for the top bar. Ticks on the minute in its own component so the POS form doesn't re-render. */
@@ -254,6 +263,11 @@ export default function SaleForm() {
   const queryClient = useQueryClient();
   const dispatch = useDispatch();
   const { user } = useAuth();
+  const displayRole = user?.roles?.find((role) => {
+    const normalizedRole = role.toUpperCase().replace(/^ROLE_/, "");
+    return normalizedRole === "SUPER_ADMIN";
+  }) ?? user?.roles?.[0];
+  const userRole = displayRole ? formatRole(displayRole) : t("pos.cashier", "Cashier");
   const { t, language } = useLanguage();
   const isKm = language === "km";
   const [isLogoutDialogOpen, setIsLogoutDialogOpen] = useState(false);
@@ -337,6 +351,7 @@ export default function SaleForm() {
   type StockFilterType = "ALL" | "IN_STOCK" | "OUT_OF_STOCK" | "LOW_STOCK";
   const [stockFilter, setStockFilter] = useState<StockFilterType>("ALL");
   const [isCustomerDialogOpen, setIsCustomerDialogOpen] = useState(false);
+  const [isStoreDialogOpen, setIsStoreDialogOpen] = useState(false);
   const [activeSerialRowIndex, setActiveSerialRowIndex] = useState<number | null>(null);
 
 
@@ -528,11 +543,13 @@ export default function SaleForm() {
       noted: currentValues.noted?.trim() || null,
       customerId: finalCustomerId,
       storeId: Number(currentValues.storeId) || storeList[0]?.id || 1,
-      bankId: Number(currentValues.bankId) > 0 ? Number(currentValues.bankId) : null,
       discount: discountVal,
       totalAmount: subtotalCalc,
       grandTotal: grandTotalCalc,
       paidAmount: recordedPaidAmount,
+      cashAmount: (paymentOverride as any)?.lines?.find((l: any) => l.paymentMethod === "CASH")?.amount ?? (paymentOverride?.paymentMethod === "CASH" ? recordedPaidAmount : undefined),
+      bankAmount: (paymentOverride as any)?.lines?.find((l: any) => l.paymentMethod !== "CASH")?.amount ?? (paymentOverride?.paymentMethod !== "CASH" && paymentOverride?.paymentMethod ? recordedPaidAmount : undefined),
+      paymentMethod: paymentOverride?.paymentMethod || "CASH",
       dueAmount: recordedDueAmount,
       paymentOption: calculatedPaymentOption,
       paymentStatus: calculatedPaymentStatus,
@@ -553,7 +570,7 @@ export default function SaleForm() {
         createdSale?.data ??
         createdSale?.payload ??
         createdSale;
-      savedSaleId = Number(createdSaleData?.id || 0);
+      savedSaleId = Number(createdSaleData?.id ?? createdSale?.id ?? 0);
       setRegisteredSaleId(savedSaleId);
     }
 
@@ -578,11 +595,7 @@ export default function SaleForm() {
         await PaymentService.create(splitPayload);
 
         if (isPaidInFull) {
-          try {
-            await salesService.complete(savedSaleId);
-          } catch (completeErr) {
-            console.warn("Sale complete notice (already completed):", completeErr);
-          }
+          await salesService.complete(savedSaleId);
         }
       } else {
         // Single payment fallback
@@ -597,21 +610,26 @@ export default function SaleForm() {
           transactionNo: paymentOverride?.transactionNo || null,
           paymentDate: paymentOverride?.paymentDate || payload.saleDate,
           status: isPaidInFull ? "PAID" : "PARTIAL",
+          lines: [
+            {
+              paymentMethod: paymentOverride?.paymentMethod || "CASH",
+              amount: recordedPaidAmount,
+              bankId: paymentOverride?.bankId || null,
+              transactionNo: paymentOverride?.transactionNo || null,
+              currencyId: null,
+            },
+          ],
         };
 
         await PaymentService.create(paymentRequest);
 
         if (isPaidInFull) {
-          try {
-            await salesService.complete(savedSaleId);
-          } catch (completeErr) {
-            console.warn("Sale complete notice (already completed):", completeErr);
-          }
+          await salesService.complete(savedSaleId);
         }
       }
     }
 
-    await Promise.all([
+    void Promise.all([
       queryClient.invalidateQueries({ queryKey: useSale.keys.all }),
       queryClient.invalidateQueries({ queryKey: useProduct.keys.all }),
       queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all }),
@@ -648,7 +666,6 @@ export default function SaleForm() {
       noted: "",
       customerId: 1,
       storeId: storeList[0]?.id || 1,
-      bankId: 1,
       discount: 0,
       paidAmount: 0,
       paymentStatus: SalePaymentStatus.Pending,
@@ -696,12 +713,6 @@ export default function SaleForm() {
       form.setFieldValue("storeId", storeList[0].id);
     }
   }, [storeList, formValues.storeId, form]);
-
-  useEffect(() => {
-    if (bankList.length > 0 && !formValues.bankId) {
-      form.setFieldValue("bankId", bankList[0].id);
-    }
-  }, [bankList, formValues.bankId, form]);
 
   useEffect(() => {
     if (customerList.length > 0 && !formValues.customerId) {
@@ -775,7 +786,6 @@ export default function SaleForm() {
       saleDate: sale.saleDate ?? new Date().toISOString().split("T")[0],
       customerId: sale.customerId ?? sale.customer?.id  ?? 0,
       storeId: sale.storeId ?? sale.store?.id ?? 1,
-      bankId: sale.bankId ?? sale.bank?.id ?? 1,
       discount: sale.discount ?? 0,
       paidAmount: sale.paidAmount ?? 0,
       paymentStatus: sale.paymentStatus ?? SalePaymentStatus.Pending,
@@ -1162,7 +1172,6 @@ export default function SaleForm() {
       customerId: currentValues.customerId ? Number(currentValues.customerId) : null,
       customerName,
       storeId: Number(currentValues.storeId) || storeList[0]?.id || 1,
-      bankId: currentValues.bankId ? Number(currentValues.bankId) : null,
       discount: discountVal,
       items: itemsSummary,
       totalAmount: totalCalc,
@@ -1189,7 +1198,6 @@ export default function SaleForm() {
     form.setFieldValue("reference", sale.reference);
     if (sale.customerId) form.setFieldValue("customerId", sale.customerId);
     if (sale.storeId) form.setFieldValue("storeId", sale.storeId);
-    if (sale.bankId) form.setFieldValue("bankId", sale.bankId);
     if (sale.note) form.setFieldValue("noted", sale.note);
 
     const updated = heldSales.filter((h) => h.id !== sale.id);
@@ -1430,7 +1438,7 @@ export default function SaleForm() {
                 </Avatar>
                 <span className="reference-user-copy">
                   <strong className="reference-user-name">{user?.username}</strong>
-                  <small className="reference-user-role">{t("pos.cashier", "Cashier")}</small>
+                  <small className="reference-user-role">{userRole}</small>
                 </span>
                 <ChevronDown className="reference-user-chevron" />
               </button>
@@ -1802,28 +1810,41 @@ export default function SaleForm() {
                 </Button>
               </div>
 
-              <Select
-                value={formValues.storeId ? String(formValues.storeId) : ""}
-                onValueChange={(value) => {
-                  const nextStoreId = Number(value);
-                  form.setFieldValue("storeId", nextStoreId);
-                  form.state.values.items.forEach((_: any, index: number) => {
-                    form.setFieldValue(`items[${index}].serialNumberIds`, []);
-                  });
-                }}
-              >
-                <SelectTrigger className="h-10 text-[14px]" aria-label={t("pos.seller", "Seller")}>
-                  <StoreIcon className="text-muted-foreground" />
-                  <SelectValue placeholder={`${t("pos.seller", "Seller")} (${storeList[0]?.name || "Default"})`} />
-                </SelectTrigger>
-                <SelectContent>
-                  {storeList.map((s) => (
-                    <SelectItem key={s.id} value={String(s.id)}>
-                      {s.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <div className="flex min-w-0 gap-2">
+                <Select
+                  value={formValues.storeId ? String(formValues.storeId) : ""}
+                  onValueChange={(value) => {
+                    const nextStoreId = Number(value);
+                    form.setFieldValue("storeId", nextStoreId);
+                    form.state.values.items.forEach((_: any, index: number) => {
+                      form.setFieldValue(`items[${index}].serialNumberIds`, []);
+                    });
+                  }}
+                >
+                  <SelectTrigger className="h-10 flex-1 text-[14px]" aria-label={t("pos.seller", "Seller")}>
+                    <StoreIcon className="text-muted-foreground" />
+                    <SelectValue placeholder={`${t("pos.seller", "Seller")} (${storeList[0]?.name || "Default"})`} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {storeList.map((s) => (
+                      <SelectItem key={s.id} value={String(s.id)}>
+                        {s.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setIsStoreDialogOpen(true)}
+                  className="size-10"
+                  title="Add Store"
+                  aria-label="Add Store"
+                >
+                  <UserPlus />
+                </Button>
+              </div>
             </div>
 
             <div className="relative">
@@ -2074,6 +2095,12 @@ export default function SaleForm() {
             form.setFieldValue("customerId", res.payload.id);
           }
         }}
+      />
+
+      <StoreForm
+        open={isStoreDialogOpen}
+        setOpen={setIsStoreDialogOpen}
+        onSuccess={(store) => form.setFieldValue("storeId", store.id)}
       />
 
       {/* 6. Print Bill Modal */}

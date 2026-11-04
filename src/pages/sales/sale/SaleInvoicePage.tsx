@@ -415,7 +415,7 @@ export default function SaleInvoicePage() {
   const paymentMethod =
     sale?.paymentMethod ??
     sale?.paymentType ??
-    (sale?.bankName ? `Bank (${sale.bankName})` : "Cash");
+    "Cash";
 
   const paymentStatus = (sale?.paymentStatus || "PAID").toUpperCase();
 
