@@ -21,6 +21,12 @@ export interface ForgotPasswordRequest {
   emailOrUsername: string;
 }
 
+export interface ResetPasswordByPhoneRequest {
+  usernameOrEmail: string;
+  phone: string;
+  newPassword: string;
+}
+
 export interface ChangePasswordRequest {
   currentPassword: string;
   newPassword: string;
@@ -86,6 +92,11 @@ export const AuthService = {
 
   forgotPassword: async (data: ForgotPasswordRequest) => {
     const res = await api.post("/auth/forgot-password", data);
+    return res.data;
+  },
+
+  resetPasswordByPhone: async (data: ResetPasswordByPhoneRequest) => {
+    const res = await api.post("/auth/reset-password-by-phone", data);
     return res.data;
   },
 

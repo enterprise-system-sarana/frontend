@@ -592,10 +592,14 @@ export default function SaleForm() {
           paymentLines: multiPayments,
           payments: multiPayments,
         };
-        await PaymentService.create(splitPayload);
+        try {
+          await PaymentService.create(splitPayload);
+        } catch (paymentErr) {
+          console.error("Payment creation error:", paymentErr);
+        }
 
         if (isPaidInFull) {
-          await salesService.complete(savedSaleId);
+          try { await salesService.complete(savedSaleId); } catch {}
         }
       } else {
         // Single payment fallback
@@ -621,11 +625,23 @@ export default function SaleForm() {
           ],
         };
 
-        await PaymentService.create(paymentRequest);
+        try {
+          await PaymentService.create(paymentRequest);
+        } catch (paymentErr) {
+          console.error("Payment creation error:", paymentErr);
+        }
 
         if (isPaidInFull) {
-          await salesService.complete(savedSaleId);
+          try { await salesService.complete(savedSaleId); } catch {}
         }
+      }
+    }
+
+    if (savedSaleId > 0 && isPaidInFull) {
+      try {
+        await salesService.complete(savedSaleId);
+      } catch (completeErr) {
+        console.warn("Sale complete call (sale may already be completed):", completeErr);
       }
     }
 
@@ -635,6 +651,8 @@ export default function SaleForm() {
       queryClient.invalidateQueries({ queryKey: useProductSerial.keys.all }),
       queryClient.invalidateQueries({ queryKey: useCashRegister.keys.all }),
       queryClient.invalidateQueries({ queryKey: usePayment.paymentKey.all }),
+      queryClient.invalidateQueries({ queryKey: ["product"] }),
+      queryClient.invalidateQueries({ queryKey: ["product-serial"] }),
     ]);
 
     toast.dismiss();

@@ -588,7 +588,7 @@ export default function EditSaleModal({
                       <th className="px-3 py-3 text-center w-[10%]">Stock</th>
                       <th className="px-3 py-3 text-center w-[11%]">QTY</th>
                       <th className="px-3 py-3 text-center w-[11%]">Discount($)</th>
-                      <th className="px-3 py-3 text-center w-[9%]">Tax %</th>
+                      {/* <th className="px-3 py-3 text-center w-[9%]">Tax %</th> */}
                       <th className="px-3 py-3 text-center w-[11%]">Subtotal ($)</th>
                       <th className="px-2 py-3 text-center w-[4%]"></th>
                     </tr>
@@ -734,7 +734,7 @@ export default function EditSaleModal({
                           </td>
 
                           {/* Tax % */}
-                          <td className="px-3 py-3 text-center align-top">
+                          {/* <td className="px-3 py-3 text-center align-top">
                             <Input
                               type="number"
                               min={0}
@@ -750,7 +750,7 @@ export default function EditSaleModal({
                               }
                               className="h-8 w-16 text-center border-border/80 mx-auto"
                             />
-                          </td>
+                          </td> */}
 
                           {/* Subtotal */}
                           <td className="px-3 py-3 text-center font-semibold text-foreground align-top pt-4">
@@ -781,12 +781,12 @@ export default function EditSaleModal({
               <div className="flex justify-end">
                 <div className="w-full sm:w-96 overflow-hidden rounded-md border border-border/80 text-sm">
                   <div className="grid grid-cols-2 border-b border-border/60">
-                    <div className="border-r border-border/60 px-4 py-2.5 text-muted-foreground font-medium">
+                    {/* <div className="border-r border-border/60 px-4 py-2.5 text-muted-foreground font-medium">
                       Order Tax
-                    </div>
-                    <div className="px-4 py-2.5 text-right font-semibold text-foreground">
+                    </div> */}
+                    {/* <div className="px-4 py-2.5 text-right font-semibold text-foreground">
                       {formatCurrency(Number(orderTax) || 0)}
-                    </div>
+                    </div> */}
                   </div>
                   <div className="grid grid-cols-2 border-b border-border/60">
                     <div className="border-r border-border/60 px-4 py-2.5 text-muted-foreground font-medium">
@@ -796,14 +796,14 @@ export default function EditSaleModal({
                       {formatCurrency(Number(discount) || 0)}
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 border-b border-border/60">
+                  {/* <div className="grid grid-cols-2 border-b border-border/60">
                     <div className="border-r border-border/60 px-4 py-2.5 text-muted-foreground font-medium">
                       Shipping
                     </div>
                     <div className="px-4 py-2.5 text-right font-semibold text-foreground">
                       {formatCurrency(Number(shipping) || 0)}
                     </div>
-                  </div>
+                  </div> */}
                   <div className="grid grid-cols-2 bg-muted/20">
                     <div className="border-r border-border/60 px-4 py-3 font-bold text-foreground">
                       Grand Total
@@ -816,69 +816,7 @@ export default function EditSaleModal({
               </div>
 
               {/* Row 5: Order Tax, Discount, Shipping, Status Inputs */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 pt-1">
-                {/* Order Tax */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Order Tax <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.5}
-                    value={orderTax}
-                    onChange={(e) => setOrderTax(Number(e.target.value) || 0)}
-                    className="h-10 border-border/80 bg-background text-sm"
-                  />
-                </div>
-
-                {/* Discount */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Discount <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.5}
-                    value={discount}
-                    onChange={(e) => setDiscount(Number(e.target.value) || 0)}
-                    className="h-10 border-border/80 bg-background text-sm"
-                  />
-                </div>
-
-                {/* Shipping */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Shipping <span className="text-destructive">*</span>
-                  </label>
-                  <Input
-                    type="number"
-                    min={0}
-                    step={0.5}
-                    value={shipping}
-                    onChange={(e) => setShipping(Number(e.target.value) || 0)}
-                    className="h-10 border-border/80 bg-background text-sm"
-                  />
-                </div>
-
-                {/* Status */}
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-foreground">
-                    Status <span className="text-destructive">*</span>
-                  </label>
-                  <Select value={status} onValueChange={setStatus}>
-                    <SelectTrigger className="h-10 border-border/80 bg-background text-sm">
-                      <SelectValue placeholder="Select" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="COMPLETED">Completed</SelectItem>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                      <SelectItem value="CANCELLED">Cancelled</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
+             
             </div>
           )}
 

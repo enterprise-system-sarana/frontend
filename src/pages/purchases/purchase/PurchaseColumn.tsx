@@ -93,14 +93,14 @@ export const PurchaseColumns = ({
         </span>
       ),
     },
-    {
-      accessorKey: "Bank",
-      header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank"} />,
-      cell: ({ row }) => (
-        <span className="font-medium text-foreground">
-        </span>
-      ),
-    },
+    // {
+    //   accessorKey: "Bank",
+    //   header: ({ column }) => <SortableHeader column={column} title={t ? t("finance.bank") : "Bank"} />,
+    //   cell: ({ row }) => (
+    //     <span className="font-medium text-foreground">
+    //     </span>
+    //   ),
+    // },
 
     {
       accessorKey: "grandTotal",

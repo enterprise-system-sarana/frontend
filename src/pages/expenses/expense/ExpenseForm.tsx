@@ -212,13 +212,13 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                         />
 
                         {/* Status */}
-                        <FormRadioGroupField
+                        {/* <FormRadioGroupField
                             form={form}
                             name="status"
                             label={t("common.status")}
                             required={true}
                             options={statusOptions}
-                        />
+                        /> */}
                     </FieldGroup>
                 </form>
                 <DialogFooter className="pt-2">

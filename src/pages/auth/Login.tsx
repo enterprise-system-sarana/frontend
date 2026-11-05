@@ -153,10 +153,7 @@ export default function LoginPage() {
           <h2 className="text-[28px] text-center p-2 leading-9 font-bold tracking-[-0.015em] text-foreground">
             {isKm ? "ចូលប្រព័ន្ធ" : "Sign in"}
           </h2>
-          <p className="mt-1 text-sm leading-[22px] text-muted-foreground">
-            {isKm ? "ប្រើគណនី 360 Phone Shop របស់អ្នក។" : "Use your 360 Phone Shop account."}
-          </p>
-
+      
           <form onSubmit={handleSubmit} className="mt-6 space-y-5">
             <div className="space-y-1.5">
               <Label htmlFor="usernameOrEmail">
