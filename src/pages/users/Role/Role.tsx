@@ -68,7 +68,7 @@ const RolePage = () => {
   const handleFilterChange = (key: string, value: string) => {
     setFilterValues((prev) => {
       const next = { ...prev };
-      if (!value) {
+      if (!value || value === "all") {
         delete next[key];
       } else {
         next[key] = value;

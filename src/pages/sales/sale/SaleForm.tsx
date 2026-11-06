@@ -1792,7 +1792,7 @@ export default function SaleForm() {
         {/* ===================================================
             RIGHT PANEL: CURRENT ORDER & CHECKOUT
         =================================================== */}
-        <aside className="flex w-full min-w-0 shrink-0 flex-col border-l border-border bg-card lg:w-[40%] xl:w-[36%]">
+        <aside className="flex w-full min-w-0 shrink-0 flex-col border-l border-border bg-card md:w-[46%] lg:w-[40%] xl:w-[36%]">
           {/* Order header: customer, store, scanner */}
           <div className="shrink-0 space-y-3 border-b border-border px-4 py-3.5">
             <div className="flex items-center gap-2">

@@ -155,7 +155,7 @@ export function KpiCard({
 /** Responsive row for KpiCards — same spacing and breakpoints on every page. */
 export function KpiGrid({ children, className }: { children: ReactNode; className?: string }) {
   return (
-    <div className={cn("grid gap-4 sm:grid-cols-2 xl:grid-cols-[repeat(auto-fit,minmax(240px,1fr))]", className)}>
+    <div className={cn("grid gap-4 sm:grid-cols-2 lg:grid-cols-4", className)}>
       {children}
     </div>
   );

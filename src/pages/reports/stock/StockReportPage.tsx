@@ -64,9 +64,9 @@ const StockReportPage = () => {
       page,
       size,
       search: search.trim() || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
-      categoryId: categoryId !== "all" ? Number(categoryId) : undefined,
-      stockStatus: stockStatus !== "all" ? stockStatus : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
+      categoryId: categoryId && categoryId !== "all" && Number(categoryId) > 0 ? Number(categoryId) : undefined,
+      stockStatus: stockStatus && stockStatus !== "all" ? stockStatus : undefined,
     }),
     [page, size, search, storeId, categoryId, stockStatus]
   );
@@ -77,8 +77,8 @@ const StockReportPage = () => {
       page,
       size,
       search: search.trim() || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
-      transactionType: transactionType !== "all" ? transactionType : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
+      transactionType: transactionType && transactionType !== "all" ? transactionType : undefined,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
     }),
@@ -230,13 +230,22 @@ const StockReportPage = () => {
   }, [stores, categories, activeTab, t]);
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
+    const nextVal = !value || value === "all" ? "all" : value;
+    setFilterValues((prev) => {
+      const next = { ...prev };
+      if (!value || value === "all") {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
     setPage(1);
 
-    if (key === "storeId") setStoreId(value);
-    if (key === "categoryId") setCategoryId(value);
-    if (key === "stockStatus") setStockStatus(value);
-    if (key === "transactionType") setTransactionType(value);
+    if (key === "storeId") setStoreId(nextVal);
+    if (key === "categoryId") setCategoryId(nextVal);
+    if (key === "stockStatus") setStockStatus(nextVal);
+    if (key === "transactionType") setTransactionType(nextVal);
   };
 
   const handleResetFilters = () => {

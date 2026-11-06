@@ -117,10 +117,10 @@ const ReportPage = ({ mode = "all" }: { mode?: SalesReportMode }) => {
       size,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
-      customerId: customerId !== "all" ? Number(customerId) : undefined,
-      saleStatus: saleStatus !== "all" ? saleStatus : undefined,
-      paymentStatus: paymentStatus !== "all" ? paymentStatus : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
+      customerId: customerId && customerId !== "all" && Number(customerId) > 0 ? Number(customerId) : undefined,
+      saleStatus: saleStatus && saleStatus !== "all" ? saleStatus : undefined,
+      paymentStatus: paymentStatus && paymentStatus !== "all" ? paymentStatus : undefined,
     }),
     [page, size, startDate, endDate, storeId, customerId, saleStatus, paymentStatus],
   );
@@ -134,7 +134,7 @@ const ReportPage = ({ mode = "all" }: { mode?: SalesReportMode }) => {
     () => ({
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
       page: 1,
       size: 1000,
     }),
@@ -199,10 +199,10 @@ const ReportPage = ({ mode = "all" }: { mode?: SalesReportMode }) => {
 
   const filteredRows = useMemo(() => {
     return searchFilteredRows.filter((row: any) => {
-      if (storeId !== "all" && String(row.storeId) !== storeId) return false;
-      if (customerId !== "all" && String(row.customerId) !== customerId) return false;
-      if (saleStatus !== "all" && row.status !== saleStatus) return false;
-      if (paymentStatus !== "all" && row.paymentStatus !== paymentStatus) return false;
+      if (storeId && storeId !== "all" && String(row.storeId) !== String(storeId)) return false;
+      if (customerId && customerId !== "all" && String(row.customerId) !== String(customerId)) return false;
+      if (saleStatus && saleStatus !== "all" && row.status !== saleStatus) return false;
+      if (paymentStatus && paymentStatus !== "all" && row.paymentStatus !== paymentStatus) return false;
       return true;
     });
   }, [searchFilteredRows, storeId, customerId, saleStatus, paymentStatus]);
@@ -210,11 +210,21 @@ const ReportPage = ({ mode = "all" }: { mode?: SalesReportMode }) => {
   const columns = useMemo(() => SalesReportColumns({ t }), [t]);
 
   const handleSearchFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
-    if (key === "storeId") setStoreId(value || "all");
-    if (key === "customerId") setCustomerId(value || "all");
-    if (key === "saleStatus") setSaleStatus(value || "all");
-    if (key === "paymentStatus") setPaymentStatus(value || "all");
+    const nextVal = !value || value === "all" ? "all" : value;
+    setFilterValues((prev) => {
+      const next = { ...prev };
+      if (!value || value === "all") {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
+    setPage(1);
+    if (key === "storeId") setStoreId(nextVal);
+    if (key === "customerId") setCustomerId(nextVal);
+    if (key === "saleStatus") setSaleStatus(nextVal);
+    if (key === "paymentStatus") setPaymentStatus(nextVal);
   };
 
   const handlePeriodChange = (value: string) => {

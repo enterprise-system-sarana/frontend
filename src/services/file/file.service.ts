@@ -1,9 +1,15 @@
 import type { FileUploadResponse } from "@/types/File";
 import api from "../lib/axios";
 
-// const baseUrl = import.meta.env.VITE_API_URL || "http://169.58.63.127:3333/api/v1";
-const baseUrl = "http://localhost:8081/api/v1";
-// const baseUrl = import.meta.env.VITE_API_URL || "http://169.58.63.127:3333/api/v1";
+const getBaseUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) return import.meta.env.VITE_API_URL;
+  if (typeof window !== "undefined" && window.location.hostname && window.location.hostname !== "localhost") {
+    return `http://${window.location.hostname}:3333/api/v1`;
+  }
+  return "http://localhost:8081/api/v1";
+};
+
+const baseUrl = getBaseUrl();
 
 export const fileService = {
     async uploadFile(file: File, bucketName: string = "default"): Promise<{ payload: FileUploadResponse }> {

@@ -1,4 +1,4 @@
-﻿import type { PageFilter } from '@/types/pagination';
+import type { PageFilter } from '@/types/pagination';
 
 export interface PurchaseReportFilter extends PageFilter {
   startDate?: string;
@@ -25,8 +25,6 @@ export interface PurchaseItemDetail {
   storeName?: string;
   supplierId?: number;
   supplierName?: string;
-  bankId?: number;
-  bankName?: string;
   totalItemsCount?: number;
   totalQuantity?: number;
 }

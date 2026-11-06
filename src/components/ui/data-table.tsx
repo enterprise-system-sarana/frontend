@@ -233,7 +233,7 @@ export function DataTable<TData, TValue>({
       )}
 
       {/* Table */}
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
         <Table className="w-full">
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup) => (

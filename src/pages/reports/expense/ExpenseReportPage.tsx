@@ -59,10 +59,10 @@ const ExpenseReportPage = () => {
       size,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
-      bankId: bankId !== "all" ? Number(bankId) : undefined,
-      expenseTypeId: expenseTypeId !== "all" ? Number(expenseTypeId) : undefined,
-      status: status !== "all" ? status : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
+      bankId: bankId && bankId !== "all" && Number(bankId) > 0 ? Number(bankId) : undefined,
+      expenseTypeId: expenseTypeId && expenseTypeId !== "all" && Number(expenseTypeId) > 0 ? Number(expenseTypeId) : undefined,
+      status: status && status !== "all" ? status : undefined,
     }),
     [page, size, startDate, endDate, storeId, bankId, expenseTypeId, status],
   );
@@ -113,10 +113,10 @@ const ExpenseReportPage = () => {
 
   const filteredRows = useMemo(() => {
     return searchFilteredRows.filter((row: any) => {
-      if (storeId !== "all" && String(row.storeId) !== storeId) return false;
-      if (bankId !== "all" && String(row.bankId) !== bankId) return false;
-      if (expenseTypeId !== "all" && String(row.expenseTypeId) !== expenseTypeId) return false;
-      if (status !== "all" && row.status !== status) return false;
+      if (storeId && storeId !== "all" && String(row.storeId) !== String(storeId)) return false;
+      if (bankId && bankId !== "all" && String(row.bankId) !== String(bankId)) return false;
+      if (expenseTypeId && expenseTypeId !== "all" && String(row.expenseTypeId) !== String(expenseTypeId)) return false;
+      if (status && status !== "all" && row.status !== status) return false;
       return true;
     });
   }, [searchFilteredRows, storeId, bankId, expenseTypeId, status]);
@@ -129,11 +129,21 @@ const ExpenseReportPage = () => {
   const columns = useMemo(() => ExpenseReportColumns({ t }), [t]);
 
   const handleSearchFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
-    if (key === "storeId") setStoreId(value || "all");
-    if (key === "bankId") setBankId(value || "all");
-    if (key === "expenseTypeId") setExpenseTypeId(value || "all");
-    if (key === "status") setStatus(value || "all");
+    const nextVal = !value || value === "all" ? "all" : value;
+    setFilterValues((prev) => {
+      const next = { ...prev };
+      if (!value || value === "all") {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
+    setPage(1);
+    if (key === "storeId") setStoreId(nextVal);
+    if (key === "bankId") setBankId(nextVal);
+    if (key === "expenseTypeId") setExpenseTypeId(nextVal);
+    if (key === "status") setStatus(nextVal);
   };
 
   const handleExportExcel = () => {

@@ -210,11 +210,12 @@ const PurchasePage = () => {
   );
 
   const handleDropdownChange = (key: string, value: string) => {
-    const actualValue = value === "all" ? undefined : (value as Status);
+    const isAll = !value || value === "all";
+    const actualValue = isAll ? undefined : (value as Status);
     if (key === "supplierId") {
-      setSupplierId(value === "all" ? "" : value);
+      setSupplierId(isAll ? "" : value);
     } else if (key === "storeId") {
-      setStoreId(value === "all" ? "" : value);
+      setStoreId(isAll ? "" : value);
     } else if (key === "status") {
       setStatus(actualValue);
     }

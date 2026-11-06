@@ -127,9 +127,9 @@ export default function BankReportPage({ mode: initialMode = "all" }: { mode?: R
     const f: BankReportFilter = { page, size: pageSize };
     if (startDate) f.startDate = startDate;
     if (endDate) f.endDate = endDate;
-    if (selectedBankId !== "all") f.bankId = Number(selectedBankId);
-    if (selectedTxType !== "all") f.transactionType = selectedTxType;
-    if (selectedFlowType !== "all") f.flowType = selectedFlowType;
+    if (selectedBankId && selectedBankId !== "all" && Number(selectedBankId) > 0) f.bankId = Number(selectedBankId);
+    if (selectedTxType && selectedTxType !== "all") f.transactionType = selectedTxType;
+    if (selectedFlowType && selectedFlowType !== "all") f.flowType = selectedFlowType;
     if (search.trim()) f.search = search.trim();
     return f;
   }, [startDate, endDate, selectedBankId, selectedTxType, selectedFlowType, search, page, pageSize]);
@@ -250,9 +250,10 @@ export default function BankReportPage({ mode: initialMode = "all" }: { mode?: R
   );
 
   const handleFilterChange = (key: string, value: string) => {
-    if (key === "bankId") setSelectedBankId(value);
-    if (key === "flowType") setSelectedFlowType(value);
-    if (key === "transactionType") setSelectedTxType(value);
+    const nextVal = !value || value === "all" ? "all" : value;
+    if (key === "bankId") setSelectedBankId(nextVal);
+    if (key === "flowType") setSelectedFlowType(nextVal);
+    if (key === "transactionType") setSelectedTxType(nextVal);
     setPage(1);
   };
 

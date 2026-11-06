@@ -119,7 +119,7 @@ export function PageFilter({
         {showSearch && (
           <div
             className={cn(
-              "relative flex items-center w-full sm:w-[320px] md:w-[360px] lg:w-[400px] shrink-0",
+              "relative flex items-center w-full sm:w-[240px] md:w-[260px] lg:w-[320px] xl:w-[380px] shrink-0",
               searchClassName,
             )}
           >
@@ -170,10 +170,12 @@ export function PageFilter({
         {/* Direct Filter Dropdowns (e.g. [Customer ⌄] [Status ⌄]) */}
         {filterGroups.map((group) => {
           // A page may list its own "All" option; PageFilter always renders one, so skip it here.
-          const allValue = group.options.find((opt) => opt.value === "all" || opt.value === "")?.value ?? "";
+          const allOption = group.options.find((opt) => opt.value === "all" || opt.value === "");
+          const allValue = allOption?.value ?? "all";
           const options = group.options.filter((opt) => opt.value !== "all" && opt.value !== "");
-          const currentValue = filterValues[group.key] || "";
-          const isSelected = !!currentValue && currentValue !== "all" && currentValue !== "";
+          const rawValue = filterValues[group.key];
+          const isSelected = !!rawValue && rawValue !== "all" && rawValue !== "";
+          const currentValue = isSelected ? String(rawValue) : allValue;
           const selectedOption = options.find(
             (opt) => String(opt.value) === String(currentValue),
           );
@@ -189,7 +191,7 @@ export function PageFilter({
                       "border-primary/30 bg-primary-light/60 text-primary hover:bg-primary-light/80",
                   )}
                 >
-                  <span className="truncate max-w-[160px]">
+                  <span className="truncate max-w-[120px] sm:max-w-[140px] md:max-w-[160px] lg:max-w-[180px]">
                     {group.label}:{" "}
                     <span className={isSelected ? "font-semibold" : "text-foreground"}>
                       {isSelected ? selectedOption?.label || currentValue : t("common.all")}
@@ -209,8 +211,11 @@ export function PageFilter({
                 </DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuRadioGroup
-                  value={currentValue || allValue}
-                  onValueChange={(val) => onFilterChange?.(group.key, val)}
+                  value={currentValue}
+                  onValueChange={(val) => {
+                    const normalized = val === allValue || val === "" || val === "all" ? (allOption?.value ?? "all") : val;
+                    onFilterChange?.(group.key, normalized);
+                  }}
                 >
                   <DropdownMenuRadioItem value={allValue} className="text-[14px] cursor-pointer font-medium">
                     {t("common.all")} {group.label}
@@ -293,7 +298,7 @@ export function PageFilter({
             title={t("common.print")}
           >
             <Printer className="size-4 text-muted-foreground" />
-            <span className="hidden sm:inline">{t("common.print")}</span>
+            <span className="hidden md:inline">{t("common.print")}</span>
           </Button>
         )}
 
@@ -308,7 +313,7 @@ export function PageFilter({
             title={t("common.download_pdf")}
           >
             <Download className="size-4 text-muted-foreground" />
-            <span className="hidden sm:inline">PDF</span>
+            <span className="hidden md:inline">PDF</span>
           </Button>
         )}
 
@@ -323,7 +328,7 @@ export function PageFilter({
             title={t("common.export_csv")}
           >
             <FileSpreadsheet className="size-4 text-muted-foreground" />
-            <span className="hidden sm:inline">CSV</span>
+            <span className="hidden md:inline">CSV</span>
           </Button>
         )}
       </div>

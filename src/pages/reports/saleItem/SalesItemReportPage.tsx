@@ -65,10 +65,10 @@ const SalesItemReportPage = () => {
       size,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
-      productId: productId !== "all" ? Number(productId) : undefined,
-      saleStatus: saleStatus !== "all" ? saleStatus : undefined,
-      paymentStatus: paymentStatus !== "all" ? paymentStatus : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
+      productId: productId && productId !== "all" && Number(productId) > 0 ? Number(productId) : undefined,
+      saleStatus: saleStatus && saleStatus !== "all" ? saleStatus : undefined,
+      paymentStatus: paymentStatus && paymentStatus !== "all" ? paymentStatus : undefined,
     }),
     [
       page,
@@ -233,11 +233,11 @@ const SalesItemReportPage = () => {
 
   const filteredRows = useMemo(() => {
     return searchFilteredRows.filter((row: any) => {
-      if (storeId !== "all" && String(row.storeId) !== storeId) return false;
-      if (productId !== "all" && String(row.productId) !== productId)
+      if (storeId && storeId !== "all" && String(row.storeId) !== String(storeId)) return false;
+      if (productId && productId !== "all" && String(row.productId) !== String(productId))
         return false;
-      if (saleStatus !== "all" && row.status !== saleStatus) return false;
-      if (paymentStatus !== "all" && row.paymentStatus !== paymentStatus)
+      if (saleStatus && saleStatus !== "all" && row.status !== saleStatus) return false;
+      if (paymentStatus && paymentStatus !== "all" && row.paymentStatus !== paymentStatus)
         return false;
       return true;
     });
@@ -246,11 +246,21 @@ const SalesItemReportPage = () => {
   const columns = useMemo(() => SalesItemReportColumns({ t }), [t]);
 
   const handleSearchFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
-    if (key === "storeId") setStoreId(value || "all");
-    if (key === "productId") setProductId(value || "all");
-    if (key === "saleStatus") setSaleStatus(value || "all");
-    if (key === "paymentStatus") setPaymentStatus(value || "all");
+    const nextVal = !value || value === "all" ? "all" : value;
+    setFilterValues((prev) => {
+      const next = { ...prev };
+      if (!value || value === "all") {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
+    setPage(1);
+    if (key === "storeId") setStoreId(nextVal);
+    if (key === "productId") setProductId(nextVal);
+    if (key === "saleStatus") setSaleStatus(nextVal);
+    if (key === "paymentStatus") setPaymentStatus(nextVal);
   };
 
   const handleExportExcel = () => {

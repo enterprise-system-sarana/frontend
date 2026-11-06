@@ -56,9 +56,9 @@ const ProductSerialReportPage = () => {
       size,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
-      productId: productId !== "all" ? Number(productId) : undefined,
-      status: status !== "all" ? status : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
+      productId: productId && productId !== "all" && Number(productId) > 0 ? Number(productId) : undefined,
+      status: status && status !== "all" ? status : undefined,
       barcode: barcode.trim() || undefined,
     }),
     [page, size, startDate, endDate, storeId, productId, status, barcode],
@@ -102,9 +102,9 @@ const ProductSerialReportPage = () => {
 
   const filteredRows = useMemo(() => {
     return searchFilteredRows.filter((row: any) => {
-      if (storeId !== "all" && String(row.storeId) !== storeId) return false;
-      if (productId !== "all" && String(row.productId) !== productId) return false;
-      if (status !== "all" && row.status !== status) return false;
+      if (storeId && storeId !== "all" && String(row.storeId) !== String(storeId)) return false;
+      if (productId && productId !== "all" && String(row.productId) !== String(productId)) return false;
+      if (status && status !== "all" && row.status !== status) return false;
       if (barcode && !String(row.barcode ?? "").toLowerCase().includes(barcode.toLowerCase())) return false;
       return true;
     });
@@ -118,10 +118,21 @@ const ProductSerialReportPage = () => {
   const columns = useMemo(() => ProductSerialReportColumns({ t }), [t]);
 
   const handleSearchFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
-    if (key === "storeId") setStoreId(value || "all");
-    if (key === "productId") setProductId(value || "all");
-    if (key === "status") setStatus(value || "all");
+    const nextVal = !value || value === "all" ? "all" : value;
+    setFilterValues((prev) => {
+      const next = { ...prev };
+      if (!value || value === "all") {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
+    setPage(1);
+
+    if (key === "storeId") setStoreId(nextVal);
+    if (key === "productId") setProductId(nextVal);
+    if (key === "status") setStatus(nextVal);
   };
 
   const handleExportExcel = () => {

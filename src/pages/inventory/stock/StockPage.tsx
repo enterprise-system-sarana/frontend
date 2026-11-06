@@ -45,12 +45,30 @@ export const StockPage = () => {
         modelName: false,
     });
 
-    const storeId = filterValues.storeId ? Number(filterValues.storeId) : undefined;
-    const categoryId = filterValues.categoryId ? Number(filterValues.categoryId) : undefined;
-    const brandId = filterValues.brandId ? Number(filterValues.brandId) : undefined;
-    const modelId = filterValues.modelId ? Number(filterValues.modelId) : undefined;
-    const productId = filterValues.productId ? Number(filterValues.productId) : undefined;
-    const stockStatus = filterValues.stockStatus || undefined;
+    const storeId =
+        filterValues.storeId && filterValues.storeId !== "all" && Number(filterValues.storeId) > 0
+            ? Number(filterValues.storeId)
+            : undefined;
+    const categoryId =
+        filterValues.categoryId && filterValues.categoryId !== "all" && Number(filterValues.categoryId) > 0
+            ? Number(filterValues.categoryId)
+            : undefined;
+    const brandId =
+        filterValues.brandId && filterValues.brandId !== "all" && Number(filterValues.brandId) > 0
+            ? Number(filterValues.brandId)
+            : undefined;
+    const modelId =
+        filterValues.modelId && filterValues.modelId !== "all" && Number(filterValues.modelId) > 0
+            ? Number(filterValues.modelId)
+            : undefined;
+    const productId =
+        filterValues.productId && filterValues.productId !== "all" && Number(filterValues.productId) > 0
+            ? Number(filterValues.productId)
+            : undefined;
+    const stockStatus =
+        filterValues.stockStatus && filterValues.stockStatus !== "all"
+            ? filterValues.stockStatus
+            : undefined;
 
     // Fetch stocks with store, product, model, brand, category, status, and search filters
     const { data, isError, isLoading } = useStock.useGetAllStock({
@@ -183,7 +201,7 @@ export const StockPage = () => {
         setPage(1);
         setFilterValues((prev) => {
             const next = { ...prev };
-            if (!value) {
+            if (!value || value === "all") {
                 delete next[key];
             } else {
                 next[key] = value;

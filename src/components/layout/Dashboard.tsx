@@ -99,7 +99,7 @@ const DashboardLayout = () => {
 
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={typeof window !== "undefined" ? window.innerWidth >= 1200 : true}>
       <AppSidebar />
       <SidebarInset className="bg-background overflow-hidden flex flex-col h-screen reference-layout">
         <div className="sticky top-0 z-20 w-full bg-background">
@@ -315,7 +315,7 @@ const DashboardLayout = () => {
             location.pathname.includes("/product/edit") ||
             location.pathname === ROUTERS.HOME;
           return (
-            <div className={`flex-1 overflow-auto bg-background ${isNoPaddingPage ? "p-0" : "px-4 pt-5 pb-8 sm:px-6"}`}>
+            <div className={`flex-1 overflow-auto bg-background ${isNoPaddingPage ? "p-0" : "px-3.5 pt-4 pb-8 sm:px-6 sm:pt-5 lg:px-8 xl:px-10"}`}>
               <Outlet />
             </div>
           );

@@ -143,10 +143,10 @@ export default function PurchaseReportPage({ mode: initialMode = "all" }: { mode
       size,
       startDate: startDate || undefined,
       endDate: endDate || undefined,
-      storeId: storeId !== "all" ? Number(storeId) : undefined,
-      supplierId: supplierId !== "all" ? Number(supplierId) : undefined,
-      status: status !== "all" ? status : undefined,
-      paymentStatus: paymentStatus !== "all" ? paymentStatus : undefined,
+      storeId: storeId && storeId !== "all" && Number(storeId) > 0 ? Number(storeId) : undefined,
+      supplierId: supplierId && supplierId !== "all" && Number(supplierId) > 0 ? Number(supplierId) : undefined,
+      status: status && status !== "all" ? status : undefined,
+      paymentStatus: paymentStatus && paymentStatus !== "all" ? paymentStatus : undefined,
     }),
     [page, size, startDate, endDate, storeId, supplierId, status, paymentStatus],
   );
@@ -196,12 +196,21 @@ export default function PurchaseReportPage({ mode: initialMode = "all" }: { mode
   );
 
   const handleFilterChange = (key: string, value: string) => {
-    setFilterValues((prev) => ({ ...prev, [key]: value }));
+    const nextVal = !value || value === "all" ? "all" : value;
+    setFilterValues((prev) => {
+      const next = { ...prev };
+      if (!value || value === "all") {
+        delete next[key];
+      } else {
+        next[key] = value;
+      }
+      return next;
+    });
     setPage(1);
-    if (key === "storeId") setStoreId(value);
-    if (key === "supplierId") setSupplierId(value);
-    if (key === "status") setStatus(value);
-    if (key === "paymentStatus") setPaymentStatus(value);
+    if (key === "storeId") setStoreId(nextVal);
+    if (key === "supplierId") setSupplierId(nextVal);
+    if (key === "status") setStatus(nextVal);
+    if (key === "paymentStatus") setPaymentStatus(nextVal);
   };
 
   const handleResetFilters = () => {

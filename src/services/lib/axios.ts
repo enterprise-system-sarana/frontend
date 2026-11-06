@@ -10,14 +10,24 @@ import {
   setAccessToken,
   setRefreshToken,
   clearAuth,
+  isTokenExpired,
 } from "@/utils/Auth";
 
 import { store } from "@/store/store";
 import { updateTokens, logout as logoutAction } from "@/store/authSlice";
 import { ROUTERS } from "@/constants/Route";
-// import.meta.env.VITE_API_URL ||
-// const API_URL =   import.meta.env.VITE_API_URL ||"http://169.58.63.127:3333/api/v1";
-const API_URL =   "http://localhost:8081/api/v1";
+
+const getApiUrl = (): string => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL;
+  }
+  if (typeof window !== "undefined" && window.location.hostname && window.location.hostname !== "localhost") {
+    return `http://${window.location.hostname}:3333/api/v1`;
+  }
+  return "http://localhost:8081/api/v1";
+};
+
+const API_URL = getApiUrl();
 
 const api = axios.create({
   baseURL:  API_URL,
@@ -33,6 +43,15 @@ type RetryRequestConfig = InternalAxiosRequestConfig & {
 api.interceptors.request.use(
   (config) => {
     const accessToken = getAccessToken();
+    const refreshToken = getRefreshToken();
+
+    // If access token is expired and no refresh token exists, session is dead -> log out
+    if ((!accessToken || isTokenExpired(accessToken)) && !refreshToken) {
+      if (!isAuthRequest(config.url)) {
+        logout();
+        return Promise.reject(new Error("Session expired"));
+      }
+    }
 
     if (accessToken) {
       // Mutating properties directly prevents wiping out default configs like Content-Type
@@ -84,7 +103,9 @@ const isAuthRequest = (url?: string) => {
 const logout = () => {
   clearAuth();
   store.dispatch(logoutAction());
-  window.location.href = ROUTERS.LOGIN;
+  if (typeof window !== "undefined" && window.location.pathname !== ROUTERS.LOGIN) {
+    window.location.href = ROUTERS.LOGIN;
+  }
 };
 
 // Response Interceptor: Handle Token Expiration & Refresh
@@ -94,10 +115,16 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const originalRequest = error.config as RetryRequestConfig | undefined;
 
-    // Reject if no original config, non-401 error, auth endpoints, or already retried
+    const status = error.response?.status;
+    const token = getAccessToken();
+    const isTokenExp = !token || isTokenExpired(token);
+    // Treat 401, or 403 when access token is missing/expired, as authentication failure
+    const isAuthFailure = status === 401 || (status === 403 && isTokenExp);
+
+    // Reject if no original config, non-auth error, auth endpoints, or already retried
     if (
       !originalRequest ||
-      error.response?.status !== 401 ||
+      !isAuthFailure ||
       isAuthRequest(originalRequest.url) ||
       originalRequest._retry
     ) {
@@ -135,8 +162,9 @@ api.interceptors.response.use(
       console.log("Access token expired. Refreshing token...");
 
       // Using isolated vanilla axios instance to avoid infinite loop interceptor triggers
+      const refreshUrl = `${api.defaults.baseURL || API_URL}/auth/refresh`;
       const response = await axios.post(
-        `${API_URL}/auth/refresh`,
+        refreshUrl,
         { refreshToken },
         {
           timeout: 10000,

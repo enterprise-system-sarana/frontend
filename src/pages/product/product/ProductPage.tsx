@@ -44,7 +44,7 @@ export const ProductPage = () => {
   const [viewingProduct, setViewingProduct] =
     useState<ProductResponse | null>(null);
   const [openDetailModal, setOpenDetailModal] = useState(false);
-  const [page, setPage] = useState(0);
+  const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
   const [search, setSearch] = useState("");
   const [filterValues, setFilterValues] = useState<Record<string, string>>({});
@@ -59,14 +59,28 @@ export const ProductPage = () => {
   const { data, isError, isLoading } = useProduct.useGetAllProduct({
     page,
     size,
-    status: filterValues.status as Status,
-    categoryId: filterValues.categoryId
-      ? Number(filterValues.categoryId)
-      : undefined,
-    brandId: filterValues.brandId
-      ? Number(filterValues.brandId)
-      : undefined,
-    modelId: filterValues.modelId ? Number(filterValues.modelId) : undefined,
+    status:
+      filterValues.status && filterValues.status !== "all"
+        ? (filterValues.status as Status)
+        : undefined,
+    categoryId:
+      filterValues.categoryId &&
+      filterValues.categoryId !== "all" &&
+      Number(filterValues.categoryId) > 0
+        ? Number(filterValues.categoryId)
+        : undefined,
+    brandId:
+      filterValues.brandId &&
+      filterValues.brandId !== "all" &&
+      Number(filterValues.brandId) > 0
+        ? Number(filterValues.brandId)
+        : undefined,
+    modelId:
+      filterValues.modelId &&
+      filterValues.modelId !== "all" &&
+      Number(filterValues.modelId) > 0
+        ? Number(filterValues.modelId)
+        : undefined,
     name: filterValues.name ? filterValues.name : undefined,
     code: filterValues.code ? filterValues.code : undefined,
   });
@@ -149,9 +163,10 @@ export const ProductPage = () => {
   };
 
   const handleFilterChange = (key: string, value: string) => {
+    setPage(1);
     setFilterValues((prev) => {
       const next = { ...prev };
-      if (!value) {
+      if (!value || value === "all") {
         delete next[key];
       } else {
         next[key] = value;
