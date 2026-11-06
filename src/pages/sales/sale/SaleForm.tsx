@@ -603,12 +603,16 @@ export default function SaleForm() {
         }
       } else {
         // Single payment fallback
+        const defaultBankId = bankList.length > 0 ? bankList[0].id : null;
+        const isBankMethod = paymentOverride?.paymentMethod && paymentOverride?.paymentMethod !== "CASH";
+        const resolvedBankId = isBankMethod ? (paymentOverride?.bankId || defaultBankId) : null;
+
         const paymentRequest: PaymentRequest = {
           totalAmount: recordedPaidAmount,
           paymentNo:
             paymentOverride?.paymentNo || `PAY-${payload.reference}-${Date.now()}`,
           paymentMethod: paymentOverride?.paymentMethod || "CASH",
-          bankId: paymentOverride?.bankId || null,
+          bankId: resolvedBankId,
           saleId: savedSaleId,
           amount: recordedPaidAmount,
           transactionNo: paymentOverride?.transactionNo || null,
@@ -618,7 +622,7 @@ export default function SaleForm() {
             {
               paymentMethod: paymentOverride?.paymentMethod || "CASH",
               amount: recordedPaidAmount,
-              bankId: paymentOverride?.bankId || null,
+              bankId: resolvedBankId,
               transactionNo: paymentOverride?.transactionNo || null,
               currencyId: null,
             },

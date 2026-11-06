@@ -687,6 +687,12 @@ export const en = {
   "report.inventory_alerts": "Stock Alerts",
   "report.search_stock_placeholder": "Search product name, code, store...",
   "report.search_movement_placeholder": "Search movements, notes, products...",
+  "report.bank_tracking": "Bank Tracking & Balance Report",
+  "nav.bank_tracking": "Bank Tracking",
+  "finance.total_inflow": "Total Inflow (Received)",
+  "finance.total_outflow": "Total Outflow (Paid)",
+  "finance.net_flow": "Net Cash Flow",
+  "finance.total_bank_balance": "Total Bank Balance",
 
   // Profile Extended
   "profile.settings": "Profile Settings",

@@ -166,18 +166,18 @@
 :root {
 
    /* PRIMARY — action/primary */
-   --primary: #0B4A82;
-   --primary-hover: #093D6C;
-   --primary-light: #DBEBFA;
+   --primary: #002B8F;
+   --primary-hover: #00247D;
+   --primary-light: #E8EEFA;
    --primary-foreground: #FFFFFF;
-   --primary-gradient-from: #1D67A9;
+   --primary-gradient-from: #1344B3;
 
    /* BRAND SURFACES — white text on these in both modes */
-   --brand-panel: #093D6C;
+   --brand-panel: #00206B;
    --brand-hue-shift: 0deg;
-   --featured-from: #13568F;
-   --featured-via: #0B4A82;
-   --featured-to: #083A66;
+   --featured-from: #0038B8;
+   --featured-via: #002B8F;
+   --featured-to: #001F6B;
 
    /* BACKGROUND — background/app, background/surface */
    --background: #F3F6FB;
@@ -196,7 +196,7 @@
 
    /* SECONDARY — action/secondary (white w/ brand text) */
    --secondary: #EEF3F9;
-   --secondary-foreground: #0B4A82;
+   --secondary-foreground: #002B8F;
 
    /* MUTED — background/muted */
    --muted: #F0F4F8;
@@ -204,13 +204,13 @@
 
    /* ACCENT */
    --accent: #EEF4FB;
-   --accent-foreground: #0B4A82;
+   --accent-foreground: #002B8F;
 
    /* STATUS */
    --success: #15803D;
    --warning: #F5A300;
    --warning-text: #9A5B00;
-   --info: #1D67A9;
+   --info: #002B8F;
    --orange: #DE6713;
 
    --destructive: #C10517;
@@ -227,9 +227,9 @@
    /* BORDER / INPUT — border/default, border/strong */
    --border: #E2E9F2;
    --border-strong: #CED8E4;
-   --border-subtle: rgb(11 74 130 / 0.07);
+   --border-subtle: rgb(0 43 143 / 0.07);
    --input: #CED8E4;
-   --ring: #0B4A82;
+   --ring: #002B8F;
 
    /* TEXT — text/heading, text/body, text/muted, text/disabled */
    --text-primary: #0F172A;
@@ -242,14 +242,14 @@
    --sage: #15803D;
 
    /* CHARTS */
-   --chart-1: #0B4A82;
-   --chart-2: #1D67A9;
+   --chart-1: #002B8F;
+   --chart-2: #1344B3;
    --chart-3: #0A6E89;
    --chart-4: #F5A300;
    --chart-5: #6847E8;
 
    /* DASHBOARD SERIES — colour-blind checked as a set */
-   --chart-sales: #0B4A82;
+   --chart-sales: #002B8F;
    --chart-cost: #E08A00;
    --chart-profit: #0D9488;
    --chart-expense: #E5484D;
@@ -258,14 +258,14 @@
    --radius: 0.625rem;
 
    /* ELEVATION */
-   --elevation-2xs: 0 1px 1px 0 rgb(11 44 82 / 0.04);
-   --elevation-xs: 0 1px 2px 0 rgb(11 44 82 / 0.04);
-   --elevation-card: 0 1px 2px 0 rgb(11 44 82 / 0.04), 0 1px 3px 0 rgb(11 44 82 / 0.03);
-   --elevation-kpi: 0 8px 24px 0 rgb(28 59 115 / 0.06);
-   --elevation-popover: 0 10px 15px -3px rgb(30 60 110 / 0.10), 0 1px 2px 0 rgb(30 60 110 / 0.05);
+   --elevation-2xs: 0 1px 1px 0 rgb(0 43 143 / 0.04);
+   --elevation-xs: 0 1px 2px 0 rgb(0 43 143 / 0.04);
+   --elevation-card: 0 1px 2px 0 rgb(0 43 143 / 0.04), 0 1px 3px 0 rgb(0 43 143 / 0.03);
+   --elevation-kpi: 0 8px 24px 0 rgb(0 43 143 / 0.06);
+   --elevation-popover: 0 10px 15px -3px rgb(0 43 143 / 0.10), 0 1px 2px 0 rgb(0 43 143 / 0.05);
 
    /* SIDEBAR — navy brand rail */
-   --sidebar: #0B4A82;
+   --sidebar: #002B8F;
    --sidebar-foreground: #FFFFFF;
 
    --sidebar-primary: rgb(255 255 255 / 0.14);
@@ -275,7 +275,7 @@
    --sidebar-accent-foreground: #FFFFFF;
 
    --sidebar-border: rgb(255 255 255 / 0.18);
-   --sidebar-ring: #DBEBFA;
+   --sidebar-ring: #E8EEFA;
 }
 
 
@@ -292,10 +292,10 @@
 @media screen {
 .dark {
 
-   --primary: #5AA2E6;
-   --primary-hover: #7AB5EC;
-   --primary-light: #12304F;
-   --primary-foreground: #06182B;
+   --primary: #4D88FF;
+   --primary-hover: #73A2FF;
+   --primary-light: #0D224D;
+   --primary-foreground: #020C1F;
 
    --background: #0A1220;
    --foreground: #E6EDF6;
@@ -310,18 +310,18 @@
    --popover-foreground: #E6EDF6;
 
    --secondary: #16233A;
-   --secondary-foreground: #A8CDF2;
+   --secondary-foreground: #99BFFF;
 
    --muted: #16233A;
    --muted-foreground: #9AA8B8;
 
    --accent: #16233A;
-   --accent-foreground: #A8CDF2;
+   --accent-foreground: #99BFFF;
 
    --success: #34C26E;
    --warning: #F5B83D;
    --warning-text: #F5B83D;
-   --info: #5AA2E6;
+   --info: #4D88FF;
    --orange: #F08A3E;
 
    --destructive: #F0525F;
@@ -338,7 +338,7 @@
    --border-strong: #2B3B55;
    --border-subtle: rgb(255 255 255 / 0.07);
    --input: #2B3B55;
-   --ring: #5AA2E6;
+   --ring: #4D88FF;
 
    --text-primary: #E6EDF6;
    --text-secondary: #C3CEDB;

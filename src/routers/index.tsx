@@ -44,6 +44,7 @@ import {
   PurchaseItemReportPage,
   SalePaymentReportPage,
   PurchasePaymentReportPage,
+  BankReportPage,
   StockReportPage,
   NotFoundPage,
   QuotePage,
@@ -377,6 +378,10 @@ const router = createBrowserRouter([
           {
             path: ROUTERS.REPORT_PURCHASE_PAYMENTS,
             element: <PurchasePaymentReportPage />,
+          },
+          {
+            path: ROUTERS.REPORT_BANKS,
+            element: <BankReportPage />,
           },
           {
             path: ROUTERS.FILE_UPLOAD,

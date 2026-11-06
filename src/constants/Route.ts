@@ -50,6 +50,7 @@ export const ROUTERS = {
   REPORT_PURCHASE_ITEMS: "/report/purchase-items",
   REPORT_SALE_PAYMENTS: "/report/sale-payments",
   REPORT_PURCHASE_PAYMENTS: "/report/purchase-payments",
+  REPORT_BANKS: "/report/bank-tracking",
   REPORT_EXPENSES: "/report/expenses",
   REPORT_PROFIT_LOSS: "/report/profit-loss",
   REPORT_PRODUCT_SERIALS: "/report/product-serials",

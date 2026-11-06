@@ -76,6 +76,7 @@ export { default as PurchaseReportPage } from "@/pages/reports/purchase/Purchase
 export { default as PurchaseItemReportPage } from "@/pages/reports/purchase/PurchaseItemReportPage";
 export { default as SalePaymentReportPage } from "@/pages/reports/payment/SalePaymentReportPage";
 export { default as PurchasePaymentReportPage } from "@/pages/reports/payment/PurchasePaymentReportPage";
+export { default as BankReportPage } from "@/pages/reports/bank/BankReportPage";
 export { default as StockReportPage } from "@/pages/reports/stock/StockReportPage";
 
 // File Upload Testing

@@ -689,6 +689,12 @@ export const km: Record<TranslationKey, string> = {
   "report.inventory_alerts": "ការជូនដំណឹងស្តុក",
   "report.search_stock_placeholder": "ស្វែងរកឈ្មោះទំនិញ កូដ សាខា...",
   "report.search_movement_placeholder": "ស្វែងរកចលនា កំណត់សម្គាល់ ទំនិញ...",
+  "report.bank_tracking": "របាយការណ៍តាមដានចរន្តធនាគារ និងសមតុល្យ",
+  "nav.bank_tracking": "តាមដានធនាគារ",
+  "finance.total_inflow": "ចំណូលសរុបចូលធនាគារ (Inflow)",
+  "finance.total_outflow": "ចំណាយសរុបចេញពីធនាគារ (Outflow)",
+  "finance.net_flow": "លំហូរសាច់ប្រាក់សុទ្ធ (Net Flow)",
+  "finance.total_bank_balance": "សមតុល្យសរុបក្នុងធនាគារ",
 
   // Profile Extended
   "profile.settings": "ការកំណត់គណនី",

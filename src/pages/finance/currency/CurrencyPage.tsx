@@ -127,6 +127,7 @@ export const CurrencyPage = () => {
             </div>
 
             <FormCurrency
+                key={currency ? `edit-${currency.id}` : "create"}
                 open={open}
                 setOpen={setOpen}
                 currency={currency}

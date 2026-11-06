@@ -9,6 +9,9 @@ import type {
   PurchaseReportFilter,
 } from "@/types/reports/PurchaseReport";
 import type {
+  BankReportFilter,
+} from "@/types/reports/BankReport";
+import type {
   PaymentReportFilter,
 } from "@/types/reports/PaymentReport";
 import type {
@@ -41,6 +44,11 @@ export const useReport = {
       [...useReport.keys.all, "purchase-payments", filter ?? {}] as const,
     purchasePaymentsPaged: (filter?: PaymentReportFilter, page?: { page?: number; size?: number }) =>
       [...useReport.keys.all, "purchase-payments-paged", filter ?? {}, page ?? { page: 1, size: 10 }] as const,
+
+    bankSummary: (filter?: BankReportFilter) =>
+      [...useReport.keys.all, "banks-summary", filter ?? {}] as const,
+    bankPaged: (filter?: BankReportFilter, page?: { page?: number; size?: number }) =>
+      [...useReport.keys.all, "banks-paged", filter ?? {}, page ?? { page: 1, size: 10 }] as const,
 
     stocks: (filter?: StockReportFilter) =>
       [...useReport.keys.all, "stocks", filter ?? {}] as const,
@@ -170,6 +178,24 @@ export const useReport = {
     useQuery({
       queryKey: useReport.keys.stockMovements(filter, page),
       queryFn: () => reportService.getStockMovements(filter, page),
+      retry: 1,
+    }),
+
+  // Bank Tracking Reports
+  useBankReportSummary: (filter?: BankReportFilter) =>
+    useQuery({
+      queryKey: useReport.keys.bankSummary(filter),
+      queryFn: () => reportService.getBankReportSummary(filter),
+      retry: 1,
+    }),
+
+  useBankReportPaged: (
+    filter?: BankReportFilter,
+    page?: { page?: number; size?: number },
+  ) =>
+    useQuery({
+      queryKey: useReport.keys.bankPaged(filter, page),
+      queryFn: () => reportService.getBankReportPaged(filter, page),
       retry: 1,
     }),
 };

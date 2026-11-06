@@ -14,6 +14,11 @@ import type {
   PurchaseReportResponse,
 } from '@/types/reports/PurchaseReport';
 import type {
+  BankReportFilter,
+  BankReportResponse,
+  BankReportSummaryResponse,
+} from '@/types/reports/BankReport';
+import type {
   PaymentReportFilter,
   PurchasePaymentReportResponse,
   PurchasePaymentSummaryResponse,
@@ -211,6 +216,31 @@ export const reportService = {
       })
       .then((res) => res.data);
   },
+
+  // Bank Reports
+  getBankReportSummary: (filter?: BankReportFilter) =>
+    api.get('/reports/banks', { params: filter }).then((res) => res.data) as Promise<{
+      payload?: BankReportSummaryResponse;
+    }>,
+
+  getBankReportPaged: (
+    filter?: BankReportFilter,
+    page?: { page?: number; size?: number },
+  ) => {
+    const rawPage = page?.page ?? filter?.page ?? 1;
+    const pageZero = rawPage > 0 ? rawPage - 1 : 0;
+    return api
+      .get('/reports/banks/paged', {
+        params: {
+          ...filter,
+          page: pageZero,
+          size: page?.size ?? filter?.size ?? 10,
+        },
+      })
+      .then((res) => res.data) as Promise<{
+        payload?: { content?: BankReportResponse[]; totalElements?: number; totalPages?: number; data?: BankReportResponse[] };
+      }>;
+  },
 };
 
 export const salesReportService = {
@@ -285,4 +315,14 @@ export const salesReportService = {
     reportService.getPurchasePaymentReport(filter) as Promise<{
       payload?: PurchasePaymentSummaryResponse;
     }>,
+
+  // Bank Reports
+  getBankReportSummary: (filter?: BankReportFilter) =>
+    reportService.getBankReportSummary(filter),
+
+  getBankReportPaged: (
+    filter?: BankReportFilter,
+    page?: { page?: number; size?: number },
+  ) =>
+    reportService.getBankReportPaged(filter, page),
 };

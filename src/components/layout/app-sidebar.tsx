@@ -347,6 +347,12 @@ const data = {
           permission: PERMISSION.REPORT.READ,
         },
         {
+          title: "Bank Tracking",
+          url: ROUTERS.REPORT_BANKS,
+          icon: Building,
+          permission: PERMISSION.REPORT.READ,
+        },
+        {
           title: "Expense Reports",
           url: ROUTERS.REPORT_EXPENSES,
           icon: Wallet,

@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils";
 
 /** Soft avatar palettes from the Figma tables (100 fill / 700 text). */
 const palettes = [
-  "bg-[#dbebfa] text-[#0b4a82] dark:bg-sky-500/15 dark:text-sky-300",
+  "bg-[#e8eefa] text-[#002b8f] dark:bg-sky-500/15 dark:text-sky-300",
   "bg-[#d3f2de] text-[#166534] dark:bg-emerald-500/15 dark:text-emerald-300",
   "bg-[#fdecc0] text-[#9a5b00] dark:bg-amber-500/15 dark:text-amber-300",
   "bg-[#e5f6fa] text-[#0a6e89] dark:bg-cyan-500/15 dark:text-cyan-300",

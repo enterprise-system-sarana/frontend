@@ -78,9 +78,18 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
 
     useEffect(() => {
         if (open) {
-            form.reset();
+            if (currency) {
+                form.setFieldValue("code", currency.code || "");
+                form.setFieldValue("name", currency.name || "");
+                form.setFieldValue("operation", currency.operation || "");
+                form.setFieldValue("rate", currency.rate ?? 1.0);
+                form.setFieldValue("symbol", currency.symbol || "");
+                // form.setFieldValue("status", (currency.status as Status) || Status.ACTIVE);
+            } else {
+                form.reset();
+            }
         }
-    }, [currency, open, form]);
+    }, [currency, open]);
 
     // Code generator: cycles through popular currency presets or generates a random 3-letter code
     const handleGenerateCode = () => {
@@ -125,10 +134,7 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
         form.setFieldValue("operation", preset.operation);
     };
 
-    const statusOptions = [
-        { value: Status.ACTIVE, label: t("common.active", "Active") },
-        { value: Status.INACTIVE, label: t("common.inactive", "Inactive") },
-    ];
+    
 
     return (
         <Dialog open={open} onOpenChange={setOpen}>
@@ -259,7 +265,7 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
                         />
 
                         {/* Status Radio Selector */}
-
+                      
                     </FieldGroup>
 
                     {/* Live Currency Conversion Preview */}

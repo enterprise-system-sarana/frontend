@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 
 /** Colour sets from the Figma KPI cards (icon tile gradient, gauge colour, corner tint). */
 const tones = {
-  blue: { soft: "bg-primary-light text-primary", tile: "from-[#3980c4] to-[#0b4a82]", glow: "rgba(11,74,130,0.28)", gauge: "stroke-primary", text: "text-primary", tint: "11,74,130" },
+  blue: { soft: "bg-primary-light text-primary", tile: "from-[#1344b3] to-[#002b8f]", glow: "rgba(0,43,143,0.28)", gauge: "stroke-primary", text: "text-primary", tint: "0,43,143" },
   green: { soft: "bg-[#d3f2de] text-[#166534] dark:bg-emerald-500/15 dark:text-emerald-300", tile: "from-[#299452] to-[#14803d]", glow: "rgba(20,128,61,0.28)", gauge: "stroke-[#15803d] dark:stroke-emerald-300", text: "text-[#15803d] dark:text-emerald-300", tint: "20,128,61" },
   amber: { soft: "bg-[#fdecc0] text-[#9a5b00] dark:bg-amber-500/15 dark:text-amber-300", tile: "from-[#f7b733] to-[#d98c00]", glow: "rgba(217,140,0,0.28)", gauge: "stroke-[#f5a300] dark:stroke-amber-300", text: "text-[#9a5b00] dark:text-amber-300", tint: "245,163,0" },
   red: { soft: "bg-[#fee1de] text-[#9b0512] dark:bg-red-500/15 dark:text-red-300", tile: "from-[#e0384a] to-[#c10517]", glow: "rgba(193,5,23,0.28)", gauge: "stroke-[#c10517] dark:stroke-red-300", text: "text-[#c10517] dark:text-red-300", tint: "193,5,23" },

@@ -377,9 +377,13 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       prev.map((l) => {
         if (l.id === id) {
           const updated = { ...l, [field]: value };
-          if (field === "paymentMethod" && value === "CASH") {
-            updated.bankId = null;
-            updated.transactionNo = "";
+          if (field === "paymentMethod") {
+            if (value === "CASH") {
+              updated.bankId = null;
+              updated.transactionNo = "";
+            } else if (!updated.bankId && banks.length > 0) {
+              updated.bankId = banks[0].id;
+            }
           }
           return updated;
         }
@@ -429,13 +433,18 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
 
   // Build Backend Payload
   const buildPayload = (): PaymentRequest => {
-    const linePayloads = lines.map((l) => ({
-      currencyId: l.currencyId || null,
-      paymentMethod: l.paymentMethod || "CASH",
-      amount: Number(l.amount) || 0,
-      bankId: l.bankId || null,
-      transactionNo: l.transactionNo?.trim() || null,
-    }));
+    const defaultBankId = banks.length > 0 ? banks[0].id : null;
+    const linePayloads = lines.map((l) => {
+      const isBank = l.paymentMethod !== "CASH";
+      const resolvedBankId = isBank ? (l.bankId || defaultBankId) : null;
+      return {
+        currencyId: l.currencyId || null,
+        paymentMethod: l.paymentMethod || "CASH",
+        amount: Number(l.amount) || 0,
+        bankId: resolvedBankId,
+        transactionNo: l.transactionNo?.trim() || null,
+      };
+    });
 
     const paymentPrefix = mode === "purchase" ? "PPAY" : "SPAY";
     const refId = (mode === "purchase" ? purchaseId : saleId) || Date.now();
@@ -460,7 +469,7 @@ export const PaymentForm: React.FC<PaymentFormProps> = ({
       payments: linePayloads,
       amount: Number(effectiveTotalBill.toFixed(2)),
       paymentMethod: linePayloads[0]?.paymentMethod || "CASH",
-      bankId: linePayloads[0]?.bankId || null,
+      bankId: linePayloads[0]?.bankId || (linePayloads[0]?.paymentMethod !== "CASH" ? defaultBankId : null),
       transactionNo: linePayloads[0]?.transactionNo || null,
       idempotencyKey: `IDEM-${mode.toUpperCase()}-${refId}-${Date.now()}`,
     };

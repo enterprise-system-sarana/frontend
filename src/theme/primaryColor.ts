@@ -1,10 +1,10 @@
 export type PrimaryColorSlot = "default" | "custom";
 
-export const DEFAULT_PRIMARY_COLOR = "#0b4a82";
+export const DEFAULT_PRIMARY_COLOR = "#002b8f";
 // Starting custom colour: logo coral (#f37957) darkened until white text on it reads at 4.5:1.
 export const INITIAL_CUSTOM_COLOR = "#c8502a";
 
-const NAVY_HUE = 208;
+const NAVY_HUE = 222;
 const WHITE = "#ffffff";
 
 type Hsl = { h: number; s: number; l: number };
@@ -102,7 +102,7 @@ export const buildPrimaryColorCss = (hex: string): string | null => {
   const light = {
     "--primary": primary,
     "--primary-hover": shiftLightness(primary, -0.05),
-    "--primary-light": tint("#dbebfa"),
+    "--primary-light": tint("#e8eefa"),
     "--primary-foreground": pickForeground(primary, "#0f172a"),
     "--primary-gradient-from": shiftLightness(primary, 0.08),
     "--background": tint("#f3f6fb"),
@@ -121,7 +121,7 @@ export const buildPrimaryColorCss = (hex: string): string | null => {
     "--chart-2": shiftLightness(primary, 0.08),
     "--chart-sales": primary,
     "--sidebar": brandSurface,
-    "--sidebar-ring": tint("#dbebfa"),
+    "--sidebar-ring": tint("#e8eefa"),
     "--brand-panel": shiftLightness(brandSurface, -0.05),
     "--brand-hue-shift": `${Math.round(h - NAVY_HUE)}deg`,
     "--featured-from": shiftLightness(brandSurface, 0.05),

@@ -11,6 +11,8 @@ import { useSale } from "./useSale";
 import { useCashRegister } from "./useCashRegister";
 import { useProduct } from "../product/useProduct";
 import { useProductSerial } from "../product/useProductSerial";
+import { useBank } from "../finance/useBank";
+import { usePurchase } from "../purchases/usePurchase";
 
 export const usePayment = {
   paymentKey: {
@@ -69,6 +71,8 @@ export const usePayment = {
         queryKey: usePayment.paymentKey.all,
         additionalQueryKeys: [
           useSale.keys.all,
+          usePurchase.keys.all,
+          useBank.bankkey.all,
           useCashRegister.keys.all,
           useProduct.keys.all,
           useProductSerial.keys.all,
@@ -87,6 +91,8 @@ export const usePayment = {
         queryKey: usePayment.paymentKey.all,
         additionalQueryKeys: [
           useSale.keys.all,
+          usePurchase.keys.all,
+          useBank.bankkey.all,
           useCashRegister.keys.all,
           useProduct.keys.all,
           useProductSerial.keys.all,
