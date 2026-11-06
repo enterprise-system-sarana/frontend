@@ -22,7 +22,45 @@ export const StockColumns = (props?: StockColumnsProps): ColumnDef<StockResponse
                     <span className="font-semibold text-foreground text-sm">
                         {row.original.productName || "-"}
                     </span>
+                    {(row.original.categoryName || row.original.brandName || (row.original.modelName && row.original.modelName !== row.original.productName)) && (
+                        <span className="text-xs text-muted-foreground">
+                            {[
+                                row.original.categoryName,
+                                row.original.brandName,
+                                row.original.modelName !== row.original.productName ? row.original.modelName : null,
+                            ]
+                                .filter(Boolean)
+                                .join(" • ")}
+                        </span>
+                    )}
                 </div>
+            ),
+        },
+        {
+            accessorKey: "categoryName",
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("product.category") : "Category"} />,
+            cell: ({ row }) => (
+                <span className="font-medium text-foreground text-sm">
+                    {row.original.categoryName || "-"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "brandName",
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("product.brand") : "Brand"} />,
+            cell: ({ row }) => (
+                <span className="font-medium text-foreground text-sm">
+                    {row.original.brandName || "-"}
+                </span>
+            ),
+        },
+        {
+            accessorKey: "modelName",
+            header: ({ column }) => <SortableHeader column={column} title={t ? t("product.model") : "Model"} />,
+            cell: ({ row }) => (
+                <span className="font-medium text-foreground text-sm">
+                    {row.original.modelName || "-"}
+                </span>
             ),
         },
         {

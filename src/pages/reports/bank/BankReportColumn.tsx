@@ -75,7 +75,7 @@ export const BankReportColumns = ({
     ),
     cell: ({ row }) => (
       <span className="text-xs font-mono font-medium text-foreground bg-muted/60 px-2 py-0.5 rounded border border-border/60">
-        {row.original.transactionReference || `#TX-${row.original.transactionId}`}
+        {row.original.transactionReference || `TX-${row.original.transactionId}`}
       </span>
     ),
   },
@@ -121,7 +121,7 @@ export const BankReportColumns = ({
         return (
           <div className="flex items-center gap-1.5 text-xs text-foreground font-medium">
             <ShoppingCart className="size-3.5 text-primary" />
-            <span>Sale #{saleNo || saleReference}</span>
+            <span>Sale {saleNo || saleReference}</span>
           </div>
         );
       }

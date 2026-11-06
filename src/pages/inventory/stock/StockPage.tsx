@@ -10,10 +10,18 @@ import {
 import { QueryBoundary } from "@/components/ui/query-boundary";
 import type { StockResponse } from "@/types/inventory/Stock";
 import type { StoreResponse } from "@/types/inventory/Store";
+import type { CategoryResponse } from "@/types/product/Category";
+import type { BrandResponse } from "@/types/product/Brand";
+import type { ModelResponse } from "@/types/product/Model";
+import type { ProductResponse } from "@/types/product/Product";
 import { useSearch } from "@/utils/useSearch";
 import { PageFilter, type FilterGroup } from "@/utils/PageFilter";
 import { useStock } from "@/hooks/inventory/useStock";
 import { useStore } from "@/hooks/inventory/useStore";
+import { useCategory } from "@/hooks/product/useCategory";
+import { useBrand } from "@/hooks/product/useBrand";
+import { useModel } from "@/hooks/product/useModel";
+import { useProduct } from "@/hooks/product/useProduct";
 import { StockColumns } from "./StockColumn";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
@@ -31,22 +39,34 @@ export const StockPage = () => {
     const [size, setSize] = useState(10);
     const [search, setSearch] = useState("");
     const [filterValues, setFilterValues] = useState<Record<string, string>>({});
-    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
+    const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({
+        categoryName: false,
+        brandName: false,
+        modelName: false,
+    });
 
     const storeId = filterValues.storeId ? Number(filterValues.storeId) : undefined;
+    const categoryId = filterValues.categoryId ? Number(filterValues.categoryId) : undefined;
+    const brandId = filterValues.brandId ? Number(filterValues.brandId) : undefined;
+    const modelId = filterValues.modelId ? Number(filterValues.modelId) : undefined;
     const productId = filterValues.productId ? Number(filterValues.productId) : undefined;
+    const stockStatus = filterValues.stockStatus || undefined;
 
-    // Fetch stocks with storeId and productId filters
+    // Fetch stocks with store, product, model, brand, category, status, and search filters
     const { data, isError, isLoading } = useStock.useGetAllStock({
         page,
         size,
         storeId,
         productId,
+        modelId,
+        brandId,
+        categoryId,
+        status: stockStatus,
+        search: search.trim() || undefined,
     });
 
     // Fetch stores list for store filter options
     const { data: storeData } = useStore.useGetAllStore({ page: 1, size: 100 });
-
     const storeList = storeData?.payload?.data;
     const storeOptions = useMemo(() => {
         if (!storeList) return [];
@@ -56,21 +76,60 @@ export const StockPage = () => {
         }));
     }, [storeList]);
 
-    // Derive unique product options from stock records
-    const stockList = data?.payload?.data;
-    const productOptions = useMemo(() => {
-        if (!stockList) return [];
-        const map = new Map<number, string>();
-        stockList.forEach((s: StockResponse) => {
-            if (s.productId && s.productName) {
-                map.set(s.productId, s.productName);
-            }
-        });
-        return Array.from(map.entries()).map(([id, name]) => ({
-            label: name,
-            value: String(id),
+    // Fetch categories list for category filter options
+    const { data: categoryData } = useCategory.useGetAllCategory({ page: 1, size: 100 });
+    const categoryList = categoryData?.payload?.data;
+    const categoryOptions = useMemo(() => {
+        if (!categoryList) return [];
+        return categoryList.map((c: CategoryResponse) => ({
+            label: c.name,
+            value: String(c.id),
         }));
-    }, [stockList]);
+    }, [categoryList]);
+
+    // Fetch brands list for brand filter options
+    const { data: brandData } = useBrand.useGetAllBrand({ page: 1, size: 100 });
+    const brandList = brandData?.payload?.data;
+    const brandOptions = useMemo(() => {
+        if (!brandList) return [];
+        return brandList.map((b: BrandResponse) => ({
+            label: b.name,
+            value: String(b.id),
+        }));
+    }, [brandList]);
+
+    // Fetch models list (filtered by selected category & brand)
+    const { data: modelData } = useModel.GetAllModel({
+        page: 1,
+        size: 100,
+        categoryId,
+        brandId,
+    });
+    const modelList = modelData?.payload?.data;
+    const modelOptions = useMemo(() => {
+        if (!modelList) return [];
+        return modelList.map((m: ModelResponse) => ({
+            label: m.name,
+            value: String(m.id),
+        }));
+    }, [modelList]);
+
+    // Fetch products list (filtered by selected category, brand, and model)
+    const { data: productData } = useProduct.useGetAllProduct({
+        page: 1,
+        size: 200,
+        categoryId,
+        brandId,
+        modelId,
+    });
+    const productList = productData?.payload?.data;
+    const productOptions = useMemo(() => {
+        if (!productList) return [];
+        return productList.map((p: ProductResponse) => ({
+            label: p.name || p.modelName || p.code,
+            value: String(p.id),
+        }));
+    }, [productList]);
 
     // Filter Groups for Filter + Toolbar
     const filterGroups: FilterGroup[] = useMemo(
@@ -79,6 +138,21 @@ export const StockPage = () => {
                 key: "storeId",
                 label: t("inventory.store"),
                 options: storeOptions,
+            },
+            {
+                key: "categoryId",
+                label: t("product.category"),
+                options: categoryOptions,
+            },
+            {
+                key: "brandId",
+                label: t("product.brand"),
+                options: brandOptions,
+            },
+            {
+                key: "modelId",
+                label: t("product.model"),
+                options: modelOptions,
             },
             {
                 key: "productId",
@@ -95,7 +169,7 @@ export const StockPage = () => {
                 ],
             },
         ],
-        [storeOptions, productOptions, t]
+        [storeOptions, categoryOptions, brandOptions, modelOptions, productOptions, t]
     );
 
     const handleColumnToggle = (columnId: string) => {
@@ -114,6 +188,15 @@ export const StockPage = () => {
             } else {
                 next[key] = value;
             }
+
+            // Cascading resets
+            if (key === "categoryId" || key === "brandId") {
+                delete next["modelId"];
+                delete next["productId"];
+            } else if (key === "modelId") {
+                delete next["productId"];
+            }
+
             return next;
         });
     };
@@ -124,10 +207,12 @@ export const StockPage = () => {
         setPage(1);
     };
 
+    const stockList = data?.payload?.data;
+
     const searchedStocks = useSearch<StockResponse>(
         stockList,
         search,
-        ["productName", "storeName"]
+        ["productName", "storeName", "modelName", "brandName", "categoryName"]
     );
 
     const filteredStocks = useMemo(() => {
@@ -136,6 +221,15 @@ export const StockPage = () => {
                 return false;
             }
             if (productId && item.productId !== productId) {
+                return false;
+            }
+            if (modelId && item.modelId && item.modelId !== modelId) {
+                return false;
+            }
+            if (brandId && item.brandId && item.brandId !== brandId) {
+                return false;
+            }
+            if (categoryId && item.categoryId && item.categoryId !== categoryId) {
                 return false;
             }
             if (filterValues.stockStatus) {
@@ -154,7 +248,7 @@ export const StockPage = () => {
             }
             return true;
         });
-    }, [searchedStocks, filterValues, storeId, productId]);
+    }, [searchedStocks, filterValues, storeId, productId, modelId, brandId, categoryId]);
 
     const columns = useMemo(() => StockColumns({ t }), [t]);
 
