@@ -21,6 +21,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const CategoryPage = () => {
   const { t } = useLanguage();
@@ -42,14 +43,26 @@ const CategoryPage = () => {
   const { data, isError, isLoading } = useCategory.useGetAllCategory({
     page,
     size,
+    status:
+      filterValues.status && filterValues.status !== "all"
+        ? (filterValues.status as Status)
+        : undefined,
   });
 
   const { mutate: deleteCategoryMutate } = useCategory.useDeleteCategory();
+  const { mutate: updateCategoryMutate } = useCategory.useUpdateCategory();
 
   // Filter Groups for Filter +
   const filterGroups: FilterGroup[] = useMemo(
     () => [
-      
+      {
+        key: "status",
+        label: t("common.status", "Status"),
+        options: [
+          { label: t("common.active", "Active"), value: Status.ACTIVE },
+          { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+        ],
+      },
     ],
     [t],
   );
@@ -127,14 +140,37 @@ const CategoryPage = () => {
     }
   };
 
+  const handleRestore = useCallback(
+    (c: CategoryResponse) => {
+      updateCategoryMutate(
+        {
+          id: c.id,
+          req: {
+            code: c.code,
+            name: c.name,
+            imageUrl: c.imageUrl,
+            status: Status.ACTIVE,
+          },
+        },
+        {
+          onSuccess: () => {
+            toast.success(t("common.save", "Saved successfully"));
+          },
+        },
+      );
+    },
+    [updateCategoryMutate, t],
+  );
+
   const columns = useMemo(
     () =>
       CategoryColumns({
         onEdit: handleEdit,
         onDelete: handleDelete,
+        onRestore: handleRestore,
         t,
       }),
-    [handleEdit, handleDelete, t],
+    [handleEdit, handleDelete, handleRestore, t],
   );
 
   const handleExportCsv = () => {

@@ -18,6 +18,7 @@ import { useExpenseType } from "@/hooks/expense/useExpenseType";
 import { useStore } from "@/hooks/inventory/useStore";
 import { useBank } from "@/hooks/finance/useBank";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { Sparkles } from "lucide-react";
 
 type ExpenseFormProps = {
     open: boolean;
@@ -114,6 +115,15 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
         },
     });
 
+    const generateAutoReference = () => {
+        const now = new Date();
+        const year = now.getFullYear();
+        const month = String(now.getMonth() + 1).padStart(2, "0");
+        const day = String(now.getDate()).padStart(2, "0");
+        const random = String(Math.floor(1000 + Math.random() * 9000));
+        return `EXP-${year}${month}${day}-${random}`;
+    };
+
     useEffect(() => {
         if (open) {
             if (expense) {
@@ -127,6 +137,7 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                 form.setFieldValue("status", expense.status || Status.ACTIVE);
             } else {
                 form.reset();
+                form.setFieldValue("reference", generateAutoReference());
             }
         }
     }, [expense, open]);
@@ -157,13 +168,29 @@ const FormExpense = ({ open, setOpen, expense }: ExpenseFormProps) => {
                     <FieldGroup>
                         {/* Reference & Amount */}
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                            <FormTextField
-                                form={form}
-                                name="reference"
-                                label={t("common.reference")}
-                                placeholder="e.g. EXP-2026-001"
-                                type="text"
-                            />
+                            <div className="flex items-end gap-2">
+                                <div className="min-w-0 flex-1">
+                                    <FormTextField
+                                        form={form}
+                                        name="reference"
+                                        label={t("common.reference")}
+                                        placeholder="e.g. EXP-2026-001"
+                                        type="text"
+                                    />
+                                </div>
+                                {!isEditing && (
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        size="icon"
+                                        className="shrink-0 h-11 w-11 rounded-md border-border/70 hover:border-primary/50 hover:bg-primary/5 hover:text-primary transition-all cursor-pointer"
+                                        title={t("common.generate_code", "Generate Reference")}
+                                        onClick={() => form.setFieldValue("reference", generateAutoReference())}
+                                    >
+                                        <Sparkles className="size-4 text-primary" />
+                                    </Button>
+                                )}
+                            </div>
                             <FormTextField
                                 form={form}
                                 name="amount"

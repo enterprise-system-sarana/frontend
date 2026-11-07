@@ -18,7 +18,7 @@ import {
   type SupplierResponse,
 } from "@/types/purchases/Supplier";
 import { useSupplier } from "@/hooks/purchases/useSupplier";
-import { Status } from "@/types/enum/status";
+import { StatusOptions, Status } from "@/types/enum/status";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { RefreshCw } from "lucide-react";
 
@@ -250,14 +250,14 @@ const FormSupplier = ({
             </div>
 
             {/* Status */}
-            {/* <div className="sm:col-span-2">
+            <div className="sm:col-span-2">
               <FormRadioGroupField
                 form={form}
                 name="status"
                 label={t("common.status")}
-                options={statusOptions}
+                options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
               />
-            </div> */}
+            </div>
           </FieldGroup>
         </form>
 

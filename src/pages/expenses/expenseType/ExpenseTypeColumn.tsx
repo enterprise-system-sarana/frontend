@@ -10,10 +10,11 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface ExpenseTypeColumnsProps {
     onEdit: (expenseType: ExpenseTypeResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (expenseType: ExpenseTypeResponse) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
-export const ExpenseTypeColumns = ({ onEdit, onDelete, t }: ExpenseTypeColumnsProps): ColumnDef<ExpenseTypeResponse>[] => [
+export const ExpenseTypeColumns = ({ onEdit, onDelete, onRestore, t }: ExpenseTypeColumnsProps): ColumnDef<ExpenseTypeResponse>[] => [
 
     {
         accessorKey: "code",
@@ -45,11 +46,14 @@ export const ExpenseTypeColumns = ({ onEdit, onDelete, t }: ExpenseTypeColumnsPr
         header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
-              onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
-            />
+                    onEdit={() => onEdit(row.original)}
+                    onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
+                    t={t}
+                />
             );
         },
     }

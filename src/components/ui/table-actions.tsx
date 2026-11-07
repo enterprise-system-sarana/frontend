@@ -1,7 +1,7 @@
 import type { ComponentType } from "react";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
-import { Eye, PencilLine, Trash2 } from "lucide-react";
+import { Eye, PencilLine, RotateCcw, Trash2 } from "lucide-react";
 import type { TranslationKey } from "@/i18n/locales/en";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { cn } from "@/lib/utils";
@@ -10,6 +10,7 @@ interface TableActionsProps {
   onView?: () => void;
   onEdit?: () => void;
   onDelete?: () => void;
+  onRestore?: () => void;
   t?: (key: TranslationKey, fallback?: string) => string;
 }
 
@@ -50,14 +51,23 @@ export function TableActions({
   onView,
   onEdit,
   onDelete,
+  onRestore,
   t: propT,
 }: TableActionsProps) {
   const { t: contextT } = useLanguage();
   const t = propT || contextT;
-  if (!onView && !onEdit && !onDelete) return null;
+  if (!onView && !onEdit && !onDelete && !onRestore) return null;
 
   return (
     <div className="flex items-center gap-0.5">
+      {onRestore && (
+        <ActionButton
+          label={t("common.restore" as TranslationKey, "Restore to Active")}
+          icon={RotateCcw}
+          onClick={onRestore}
+          className="hover:bg-emerald-500/10 text-emerald-600 hover:text-emerald-700 dark:text-emerald-400"
+        />
+      )}
       {onView && (
         <ActionButton
           label={t("common.view" as TranslationKey, "View Details")}

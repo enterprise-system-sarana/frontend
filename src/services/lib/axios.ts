@@ -21,7 +21,11 @@ const getApiUrl = (): string => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL;
   }
-  if (typeof window !== "undefined" && window.location.hostname && window.location.hostname !== "localhost") {
+  if (
+    typeof window !== "undefined" &&
+    window.location.hostname &&
+    window.location.hostname !== "localhost"
+  ) {
     return `http://${window.location.hostname}:3333/api/v1`;
   }
   return "http://localhost:8081/api/v1";
@@ -30,7 +34,7 @@ const getApiUrl = (): string => {
 const API_URL = getApiUrl();
 
 const api = axios.create({
-  baseURL:  API_URL,
+  baseURL: API_URL,
   timeout: 10000,
   headers: { "Content-Type": "application/json" },
 });
@@ -39,152 +43,75 @@ type RetryRequestConfig = InternalAxiosRequestConfig & {
   _retry?: boolean;
 };
 
-// Request Interceptor: Attach Access Token safely using direct property mutation
-api.interceptors.request.use(
-  (config) => {
-    const accessToken = getAccessToken();
-    const refreshToken = getRefreshToken();
-
-    // If access token is expired and no refresh token exists, session is dead -> log out
-    if ((!accessToken || isTokenExpired(accessToken)) && !refreshToken) {
-      if (!isAuthRequest(config.url)) {
-        logout();
-        return Promise.reject(new Error("Session expired"));
-      }
-    }
-
-    if (accessToken) {
-      // Mutating properties directly prevents wiping out default configs like Content-Type
-      config.headers.Authorization = `Bearer ${accessToken}`;
-    }
-
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
-
-let isRefreshing = false;
-
-let failedQueue: Array<{
-  resolve: (token: string) => void;
-  reject: (error: unknown) => void;
-}> = [];
-
-const processQueue = (
-  error: unknown,
-  token: string | null = null
-) => {
-  failedQueue.forEach(({ resolve, reject }) => {
-    if (error) {
-      reject(error);
-      return;
-    }
-
-    if (token) {
-      resolve(token);
-    } else {
-      reject(new Error("Token refresh produced no token"));
-    }
-  });
-
-  failedQueue = [];
+const setAuthHeader = (headers: any, token: string) => {
+  if (!headers) return;
+  if (typeof headers.set === "function") {
+    headers.set("Authorization", `Bearer ${token}`);
+  } else {
+    headers.Authorization = `Bearer ${token}`;
+  }
 };
 
 const isAuthRequest = (url?: string) => {
   if (!url) return false;
-
   return (
     url.includes("/auth/login") ||
     url.includes("/auth/refresh") ||
-    url.includes("/auth/logout")
+    url.includes("/auth/logout") ||
+    url.includes("/auth/send-otp-code") ||
+    url.includes("/auth/verify-otp-code") ||
+    url.includes("/auth/forgot-password")
   );
 };
 
 const logout = () => {
   clearAuth();
   store.dispatch(logoutAction());
-  if (typeof window !== "undefined" && window.location.pathname !== ROUTERS.LOGIN) {
+  if (
+    typeof window !== "undefined" &&
+    window.location.pathname !== ROUTERS.LOGIN
+  ) {
     window.location.href = ROUTERS.LOGIN;
   }
 };
 
-// Response Interceptor: Handle Token Expiration & Refresh
-api.interceptors.response.use(
-  (response) => response,
+// Singleton promise for token refresh to avoid concurrent rotation issues
+let refreshPromise: Promise<string> | null = null;
 
-  async (error: AxiosError) => {
-    const originalRequest = error.config as RetryRequestConfig | undefined;
+export const refreshAccessToken = async (): Promise<string> => {
+  if (refreshPromise) {
+    return refreshPromise;
+  }
 
-    const status = error.response?.status;
-    const token = getAccessToken();
-    const isTokenExp = !token || isTokenExpired(token);
-    // Treat 401, or 403 when access token is missing/expired, as authentication failure
-    const isAuthFailure = status === 401 || (status === 403 && isTokenExp);
-
-    // Reject if no original config, non-auth error, auth endpoints, or already retried
-    if (
-      !originalRequest ||
-      !isAuthFailure ||
-      isAuthRequest(originalRequest.url) ||
-      originalRequest._retry
-    ) {
-      return Promise.reject(error);
-    }
-
-    // If another request is currently refreshing the token, queue this request
-    if (isRefreshing) {
-      try {
-        const newAccessToken = await new Promise<string>((resolve, reject) => {
-          failedQueue.push({ resolve, reject });
-        });
-
-        // Set token property directly safely
-        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-        return api(originalRequest);
-      } catch (queueError) {
-        isRefreshing = false;
-        return Promise.reject(queueError);
-      }
-    }
-
-    originalRequest._retry = true;
-    isRefreshing = true;
-
+  refreshPromise = (async () => {
     const refreshToken = getRefreshToken();
-
     if (!refreshToken) {
-      isRefreshing = false;
       logout();
-      return Promise.reject(error);
+      throw new Error("No refresh token available");
     }
 
     try {
-      console.log("Access token expired. Refreshing token...");
-
-      // Using isolated vanilla axios instance to avoid infinite loop interceptor triggers
       const refreshUrl = `${api.defaults.baseURL || API_URL}/auth/refresh`;
       const response = await axios.post(
         refreshUrl,
         { refreshToken },
         {
           timeout: 10000,
-          headers: {
-            "Content-Type": "application/json",
-          },
+          headers: { "Content-Type": "application/json" },
         }
       );
 
-      // Extract token across multiple common API response structures (.payload used in Spring)
-      console.log("[Token Refresh] Raw response.data:", response.data); // ← debug: remove after fix confirmed
-      const resData = response.data?.payload || response.data?.data || response.data;
-      const newAccessToken = resData?.accessToken || resData?.token || resData?.access_token;
-      const newRefreshToken = resData?.refreshToken || resData?.refresh_token;
+      const resData =
+        response.data?.payload || response.data?.data || response.data;
+      const newAccessToken =
+        resData?.accessToken || resData?.token || resData?.access_token;
+      const newRefreshToken =
+        resData?.refreshToken || resData?.refresh_token;
 
       if (!newAccessToken) {
-        throw new Error("New access token is missing from refresh response");
+        throw new Error("New access token missing from refresh response");
       }
 
-      // Update both localStorage and Redux store to keep them in sync
       setAccessToken(newAccessToken);
       if (newRefreshToken) {
         setRefreshToken(newRefreshToken);
@@ -197,22 +124,83 @@ api.interceptors.response.use(
         })
       );
 
-      console.log("Access token refreshed successfully.");
-
-      processQueue(null, newAccessToken);
-
-      // Safely assign header property directly
-      originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
-
-      return api(originalRequest);
-    } catch (refreshError) {
-      console.error("Refresh token failed:", refreshError);
-      processQueue(refreshError, null);
+      return newAccessToken;
+    } catch (error) {
       logout();
-      return Promise.reject(refreshError);
+      throw error;
     } finally {
-      isRefreshing = false;
+      refreshPromise = null;
     }
+  })();
+
+  return refreshPromise;
+};
+
+// Request Interceptor: Proactively refresh token before dispatching request if expired
+api.interceptors.request.use(
+  async (config) => {
+    if (isAuthRequest(config.url)) {
+      return config;
+    }
+
+    let token = getAccessToken();
+    const refreshToken = getRefreshToken();
+
+    // If access token is missing or expired, refresh proactively before firing request
+    if (!token || isTokenExpired(token)) {
+      if (refreshToken) {
+        try {
+          token = await refreshAccessToken();
+        } catch (err) {
+          return Promise.reject(err);
+        }
+      } else {
+        logout();
+        return Promise.reject(new Error("Session expired"));
+      }
+    }
+
+    if (token) {
+      setAuthHeader(config.headers, token);
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// Response Interceptor: Fallback for unexpected 401 or clock drift
+api.interceptors.response.use(
+  (response) => response,
+  async (error: AxiosError) => {
+    const originalRequest = error.config as RetryRequestConfig | undefined;
+    const status = error.response?.status;
+
+    if (
+      !originalRequest ||
+      isAuthRequest(originalRequest.url) ||
+      originalRequest._retry
+    ) {
+      return Promise.reject(error);
+    }
+
+    // 401 Unauthorized or 403 Forbidden with expired token
+    const token = getAccessToken();
+    const isTokenExp = !token || isTokenExpired(token);
+    const isAuthFailure = status === 401 || (status === 403 && isTokenExp);
+
+    if (isAuthFailure) {
+      originalRequest._retry = true;
+      try {
+        const newAccessToken = await refreshAccessToken();
+        setAuthHeader(originalRequest.headers, newAccessToken);
+        return api(originalRequest);
+      } catch (refreshErr) {
+        return Promise.reject(refreshErr);
+      }
+    }
+
+    return Promise.reject(error);
   }
 );
 

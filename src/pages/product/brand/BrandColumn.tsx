@@ -10,10 +10,11 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface BrandColumnsProps {
     onEdit: (brand: BrandResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (brand: BrandResponse) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
-export const BrandColumns = ({ onEdit, onDelete, t }: BrandColumnsProps): ColumnDef<BrandResponse>[] => [
+export const BrandColumns = ({ onEdit, onDelete, onRestore, t }: BrandColumnsProps): ColumnDef<BrandResponse>[] => [
     {
         accessorKey: "name",
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.name") : "Name"} />,
@@ -41,10 +42,12 @@ export const BrandColumns = ({ onEdit, onDelete, t }: BrandColumnsProps): Column
         header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
                     onEdit={() => onEdit(row.original)}
                     onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
                     t={t}
                 />
             );

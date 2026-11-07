@@ -30,7 +30,8 @@ export const useRole = {
     UpdateRole: () => {
         const queryClient = useQueryClient();
         return useMutation({
-            mutationFn: ({ id, req }: { id: number; req: RoleRequest }) => roleService.update(id, req),
+            mutationFn: ({ id, req, request }: { id: number; req?: RoleRequest; request?: RoleRequest }) =>
+                roleService.update(id, (req || request)!),
             ...mutationHandler({
                 queryClient,
                 queryKey: useRole.roleKeys.all

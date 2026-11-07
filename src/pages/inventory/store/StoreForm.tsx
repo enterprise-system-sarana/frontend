@@ -396,15 +396,15 @@ export default function StoreForm({
                 </form.Subscribe>
               </div>
 
-              {/* <div className="pt-2">
+              <div className="pt-2">
                 <FormRadioGroupField
                   form={form}
                   name="status"
                   label={t("common.status")}
                   required
-                  options={StatusOptions}
+                  options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
                 />
-              </div> */}
+              </div>
             </section>
           </div>
         </form>

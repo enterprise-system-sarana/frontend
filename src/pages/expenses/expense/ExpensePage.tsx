@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -16,6 +16,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const ExpensePage = () => {
     const { t } = useLanguage();
@@ -43,12 +44,20 @@ const ExpensePage = () => {
     });
 
     const { mutate: deleteExpenseMutate } = useExpense.useDeleteExpense();
+    const { mutate: updateExpenseMutate } = useExpense.useUpdateExpense();
     const { data: expenseTypeData } = useExpenseType.useGetAllExpenseType({ page: 1, size: 100 });
 
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(() => {
         const groups: FilterGroup[] = [
-            
+            {
+                key: "status",
+                label: t("common.status", "Status"),
+                options: [
+                    { label: t("common.active", "Active"), value: Status.ACTIVE },
+                    { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+                ],
+            },
         ];
 
         const expenseTypes = expenseTypeData?.payload?.data || [];
@@ -141,14 +150,40 @@ const ExpensePage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (exp: ExpenseResponse) => {
+            updateExpenseMutate(
+                {
+                    id: exp.id,
+                    req: {
+                        amount: exp.amount,
+                        expenseTypeId: exp.expenseTypeId ?? 0,
+                        storeId: exp.storeId ?? 0,
+                        bankId: exp.bankId ?? 0,
+                        reference: exp.reference ?? "",
+                        note: exp.note ?? "",
+                        status: Status.ACTIVE,
+                    } as any,
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateExpenseMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             ExpenseColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                onRestore: handleRestore,
                 t,
             }),
-        [t]
+        [handleEdit, handleDelete, handleRestore, t],
     );
 
     const handleExportCsv = () => {

@@ -10,6 +10,7 @@ import { KeyRound } from "lucide-react";
 interface RoleColumnsProps {
   onEdit: (role: RoleResponse) => void;
   onDelete: (id: number) => void;
+  onRestore?: (role: RoleResponse) => void;
   onViewPermissions?: (role: RoleResponse) => void;
   canEdit?: boolean;
   canDelete?: boolean;
@@ -19,6 +20,7 @@ interface RoleColumnsProps {
 export const RoleColumns = ({
   onEdit,
   onDelete,
+  onRestore,
   onViewPermissions,
   canEdit = true,
   canDelete = true,
@@ -107,14 +109,21 @@ export const RoleColumns = ({
     header: t ? t("common.action") : "Action",
     enableHiding: false,
     cell: ({ row }) => {
-      if (!canEdit && !canDelete && !onViewPermissions) {
+      if (!canEdit && !canDelete && !onViewPermissions && !onRestore) {
         return <span className="text-text-disabled text-sm">-</span>;
       }
+      const isInactive =
+        row.original.status === "INA" ||
+        row.original.status === "INACTIVE" ||
+        row.original.status === "DEL" ||
+        row.original.status === "DELETE" ||
+        row.original.status === "DELETED";
       return (
         <TableActions
           onView={onViewPermissions ? () => onViewPermissions(row.original) : undefined}
           onEdit={canEdit ? () => onEdit(row.original) : undefined}
           onDelete={canDelete ? () => onDelete(row.original.id) : undefined}
+          onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
           t={t}
         />
       );

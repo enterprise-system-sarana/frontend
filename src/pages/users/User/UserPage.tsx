@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import type { UserResponse } from "@/types/users/Users";
-import { useUser, useDeleteUser } from "@/hooks/users/useUser";
+import { useUser, useDeleteUser, useUpdateUser } from "@/hooks/users/useUser";
 import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { UserColumns } from "./UserColumn";
 import { PageHeader } from "@/components/ui/page-header";
@@ -36,15 +36,19 @@ const UserPage = () => {
 
     const { data, isError, isLoading } = useUser({ page, size });
     const { mutate: deleteUserMutate } = useDeleteUser();
+    const { mutate: updateUserMutate } = useUpdateUser();
 
-    console.log("user page", data?.payload?.data)
-    
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(() => [
-        
+        {
+            key: "status",
+            label: t("common.status", "Status"),
+            options: [
+                { label: t("common.active", "Active"), value: Status.ACTIVE },
+                { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+            ],
+        },
     ], [t]);
-
-    console.log("user page ", filterGroups)
     const handleColumnToggle = (columnId: string) => {
         setColumnVisibility((prev) => ({
             ...prev,
@@ -120,16 +124,42 @@ const UserPage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (u: UserResponse) => {
+            updateUserMutate(
+                {
+                    id: u.id,
+                    request: {
+                        firstName: u.firstName,
+                        lastName: u.lastName,
+                        email: u.email,
+                        phone: u.phone,
+                        roleId: u.roles?.[0]?.id ?? 0,
+                        storeId: u.store?.id ?? 0,
+                        isActive: Status.ACTIVE,
+                    } as any,
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateUserMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             UserColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                onRestore: handleRestore,
                 canEdit: canUpdate,
                 canDelete: canDelete,
                 t,
             }),
-        [canUpdate, canDelete, t]
+        [handleEdit, handleDelete, handleRestore, canUpdate, canDelete, t]
     );
 
     const handleExportCsv = () => {

@@ -11,6 +11,7 @@ import { ImageCell } from "@/components/file/ImageCell";
 interface UserColumnsProps {
     onEdit: (user: UserResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (user: UserResponse) => void;
     canEdit?: boolean;
     canDelete?: boolean;
     t?: (key: TranslationKey, fallback?: string) => string;
@@ -19,6 +20,7 @@ interface UserColumnsProps {
 export const UserColumns = ({
     onEdit,
     onDelete,
+    onRestore,
     canEdit = true,
     canDelete = true,
     t,
@@ -148,10 +150,12 @@ export const UserColumns = ({
                 if (!canEdit && !canDelete) {
                     return <span className="text-text-disabled text-sm">-</span>;
                 }
+                const isInactive = row.original.isActive === "INA" || row.original.isActive === "INACTIVE";
                 return (
                     <TableActions
                         onEdit={() => onEdit(row.original)}
                         onDelete={() => onDelete(row.original.id)}
+                        onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
                         t={t}
                     />
                 );

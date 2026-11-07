@@ -10,6 +10,7 @@ import type { TranslationKey } from "@/i18n/locales/en";
 export interface StoreColumnProps {
   onEdit: (store: StoreResponse) => void;
   onDelete: (id: number) => void;
+  onRestore?: (store: StoreResponse) => void;
   canEdit?: boolean;
   canDelete?: boolean;
   t?: (key: TranslationKey, fallback?: string) => string;
@@ -18,6 +19,7 @@ export interface StoreColumnProps {
 export const StoreColumns = ({
   onEdit,
   onDelete,
+  onRestore,
   canEdit = true,
   canDelete = true,
   t,
@@ -125,11 +127,14 @@ export const StoreColumns = ({
       if (!canEdit && !canDelete) {
         return <span className="text-muted-foreground text-sm">-</span>;
       }
+      const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
       return (
         <TableActions
-              onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
-            />
+          onEdit={() => onEdit(row.original)}
+          onDelete={() => onDelete(row.original.id)}
+          onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
+          t={t}
+        />
       );
     },
   },

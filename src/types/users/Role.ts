@@ -16,10 +16,14 @@ export const RoleSchema = z.object({
   code: z.string().min(1, "Role code is required"),
   name: z.string().min(1, "Role name is required"),
   description: z.string().optional().nullable(),
+  status: z.string().optional(),
+  permissionIds: z.array(z.number()).optional(),
 });
 
 export interface RoleFilter extends PageFilter {
   name?: string;
+  code?: string;
+  status?: string;
 }
 
 export type RoleRequest = z.infer<typeof RoleSchema>;

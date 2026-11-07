@@ -19,7 +19,7 @@ import type {
   VariantTypeResponse,
   VariantValueItem,
 } from "@/types/product/VariantType";
-import { Status } from "@/types/enum/status";
+import { StatusOptions, Status } from "@/types/enum/status";
 
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -562,6 +562,14 @@ const ProductForm = () => {
                     name="noted"
                     label={t("product.noted")}
                     placeholder={t("product.noted_placeholder")}
+                  />
+
+                  <FormRadioGroupField
+                    form={form}
+                    name="status"
+                    label={t("common.status", "Status")}
+                    required
+                    options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
                   />
 
                 </FieldGroup>

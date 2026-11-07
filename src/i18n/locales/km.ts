@@ -18,6 +18,7 @@ export const km: Record<TranslationKey, string> = {
   "common.status": "ស្ថានភាព",
   "common.active": "សកម្ម",
   "common.inactive": "អសកម្ម",
+  "common.restore": "ស្តារឡើងវិញ",
   "common.deleted": "បានលុប",
   "common.completed": "បានបញ្ចប់",
   "common.pending": "រង់ចាំ",

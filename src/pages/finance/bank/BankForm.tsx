@@ -135,15 +135,15 @@ const FormBank = ({ open, setOpen, bank }: FormBankProps) => {
                                 required
                             />
                         </div>
-                        {/* <div className="sm:col-span-2">
+                        <div className="sm:col-span-2">
                             <FormRadioGroupField
                                 form={form}
                                 name="status"
                                 label={t("common.status")}
                                 required
-                                options={statusOptions}
+                                options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
                             />
-                        </div> */}
+                        </div>
                     </FieldGroup>
                 </form>
                 <DialogFooter>

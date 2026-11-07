@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Eye, Lock, Clock, Store, ArrowUpRight, ArrowDownRight, RotateCcw } from "lucide-react";
 import { formatDate } from "@/utils/formatDate";
+import { ImageCell } from "@/components/file/ImageCell";
 
 interface CashRegisterColumnProps {
   onView?: (register: CashRegisterResponse) => void;
@@ -68,11 +69,12 @@ export const CashRegisterColumns = ({
         return (
           <div className="flex items-center gap-2">
             {reg.userProfileImage ? (
-              <img
-                src={reg.userProfileImage}
-                alt={reg.userName}
-                className="size-7 rounded-full object-cover border border-border"
-              />
+               <ImageCell
+                                fileName={reg.userProfileImage}
+                                name={reg.userName || "N/A"}
+                                bucketName="users"
+                                className="h-10 w-10 rounded-lg shadow-sm shrink-0"
+                            />
             ) : (
               <div className="size-7 rounded-full bg-linear-to-tr from-primary/10 to-primary/10 text-white flex items-center justify-center font-bold text-[12px] shadow-2xs">
                 {initial}

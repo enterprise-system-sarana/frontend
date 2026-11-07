@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import {
     DataTable,
@@ -21,6 +21,7 @@ import FormBank from "./BankForm";
 import { BankColumns } from "./BankColumn";
 import { Status } from "@/types/enum/status";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 export const BankPage = () => {
     const { t } = useLanguage();
@@ -42,14 +43,26 @@ export const BankPage = () => {
     const { data, isError, isLoading } = useBank.useGetAllBank({
         page,
         size,
+        status:
+            filterValues.status && filterValues.status !== "all"
+                ? (filterValues.status as Status)
+                : undefined,
     });
 
     const { mutate: deleteBankMutate } = useBank.useDeleteBank();
+    const { mutate: updateBankMutate } = useBank.useUpdateBank();
 
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(
         () => [
-            
+            {
+                key: "status",
+                label: t("common.status", "Status"),
+                options: [
+                    { label: t("common.active", "Active"), value: Status.ACTIVE },
+                    { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+                ],
+            },
         ],
         [t]
     );
@@ -123,16 +136,39 @@ export const BankPage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (b: BankResponse) => {
+            updateBankMutate(
+                {
+                    id: b.id,
+                    req: {
+                        name: b.name,
+                        accountName: b.accountName,
+                        accountNumber: b.accountNumber,
+                        openingBalance: b.openingBalance ?? 0,
+                        currentBalance: b.currentBalance ?? 0,
+                        status: Status.ACTIVE,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateBankMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             BankColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
-                canEdit: canUpdate,
-                canDelete: canDelete,
+                onRestore: handleRestore,
                 t,
             }),
-        [canUpdate, canDelete, t]
+        [handleEdit, handleDelete, handleRestore, t],
     );
 
     const handleExportCsv = () => {

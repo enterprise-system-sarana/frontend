@@ -10,10 +10,11 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface VariantValueColumnsProps {
     onEdit: (variantValue: VariantValueResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (variantValue: VariantValueResponse) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
-export const VariantValueColumns = ({ onEdit, onDelete, t }: VariantValueColumnsProps): ColumnDef<VariantValueResponse>[] => [
+export const VariantValueColumns = ({ onEdit, onDelete, onRestore, t }: VariantValueColumnsProps): ColumnDef<VariantValueResponse>[] => [
 
     {
         accessorKey: "name",
@@ -45,11 +46,14 @@ export const VariantValueColumns = ({ onEdit, onDelete, t }: VariantValueColumns
         header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
-              onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
-            />
+                    onEdit={() => onEdit(row.original)}
+                    onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
+                    t={t}
+                />
             );
         },
     },

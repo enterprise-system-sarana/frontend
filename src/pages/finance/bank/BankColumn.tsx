@@ -9,12 +9,14 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface BankColumnsProps {
     onEdit: (bank: BankResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (bank: BankResponse) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const BankColumns = ({
     onEdit,
     onDelete,
+    onRestore,
     t,
 }: BankColumnsProps): ColumnDef<BankResponse>[] => [
 
@@ -58,11 +60,14 @@ export const BankColumns = ({
             header: t ? t("common.action") : "Action",
             enableHiding: false,
             cell: ({ row }) => {
+                const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
                 return (
                     <TableActions
-              onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
-            />
+                        onEdit={() => onEdit(row.original)}
+                        onDelete={() => onDelete(row.original.id)}
+                        onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
+                        t={t}
+                    />
                 );
             },
         },

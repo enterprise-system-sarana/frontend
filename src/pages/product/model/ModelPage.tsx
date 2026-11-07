@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -19,6 +19,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const ModelPage = () => {
     const { t } = useLanguage();
@@ -42,6 +43,10 @@ const ModelPage = () => {
     const { data, isError, isLoading } = useModel.GetAllModel({
         page,
         size,
+        status:
+            filterValues.status && filterValues.status !== "all"
+                ? (filterValues.status as Status)
+                : undefined,
     });
 
     const { data: brandData } = useBrand.useGetAllBrand({
@@ -55,11 +60,19 @@ const ModelPage = () => {
     });
 
     const { mutate: deleteModelMutate } = useModel.DeleteModel();
+    const { mutate: updateModelMutate } = useModel.UpdateModel();
 
     // Dynamically build filter groups with options from brand and category APIs
     const filterGroups: FilterGroup[] = useMemo(() => {
         const groups: FilterGroup[] = [
-            
+            {
+                key: "status",
+                label: t("common.status", "Status"),
+                options: [
+                    { label: t("common.active", "Active"), value: Status.ACTIVE },
+                    { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+                ],
+            },
         ];
 
         if (brandData?.payload?.data && brandData.payload.data.length > 0) {
@@ -165,14 +178,37 @@ const ModelPage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (m: ModelResponse) => {
+            updateModelMutate(
+                {
+                    id: m.id,
+                    req: {
+                        name: m.name,
+                        brandId: m.brandId ?? 0,
+                        categoryId: m.categoryId ?? 0,
+                        status: Status.ACTIVE,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateModelMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             ModelColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                onRestore: handleRestore,
                 t,
             }),
-        [t]
+        [handleEdit, handleDelete, handleRestore, t],
     );
 
     // Export handlers

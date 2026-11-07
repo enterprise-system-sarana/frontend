@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -17,6 +17,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const VariantValuePage = () => {
     const { t } = useLanguage();
@@ -36,14 +37,29 @@ const VariantValuePage = () => {
     const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
 
     // Queries
-    const { data, isError, isLoading } = useVariantValue.useGetAllVariantValue({ page, size });
+    const { data, isError, isLoading } = useVariantValue.useGetAllVariantValue({
+        page,
+        size,
+        status:
+            filterValues.status && filterValues.status !== "all"
+                ? (filterValues.status as Status)
+                : undefined,
+    });
     const { mutate: deleteVariantValueMutate } = useVariantValue.useDeleteVariantValue();
+    const { mutate: updateVariantValueMutate } = useVariantValue.useUpdateVariantValue();
     const { data: variantTypeData } = useVariantType.useGetAllVariantType({ page: 1, size: 100 });
 
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(() => {
         const groups: FilterGroup[] = [
-            
+            {
+                key: "status",
+                label: t("common.status", "Status"),
+                options: [
+                    { label: t("common.active", "Active"), value: Status.ACTIVE },
+                    { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+                ],
+            },
         ];
 
         if (
@@ -134,14 +150,37 @@ const VariantValuePage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (vv: VariantValueResponse) => {
+            updateVariantValueMutate(
+                {
+                    id: vv.id,
+                    req: {
+                        name: vv.name,
+                        code: vv.code,
+                        variantTypeId: vv.variantTypeId ?? 0,
+                        status: Status.ACTIVE,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateVariantValueMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             VariantValueColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                onRestore: handleRestore,
                 t,
             }),
-        [handleEdit, handleDelete, t]
+        [handleEdit, handleDelete, handleRestore, t]
     );
 
     const handleExportCsv = () => {

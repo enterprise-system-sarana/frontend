@@ -1,4 +1,4 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { VisibilityState } from "@tanstack/react-table";
 import {
@@ -18,6 +18,7 @@ import { useProduct } from "@/hooks/product/useProduct";
 import { Status } from "@/types/enum/status";
 import { ProductColumns } from "./ProductColumn";
 import { ProductDetailModal } from "./ProductDetailModal";
+import { toast } from "sonner";
 import { ROUTERS } from "@/constants/Route";
 import { useModel } from "@/hooks/product/useModel";
 import type { ModelResponse } from "@/types/product/Model";
@@ -86,6 +87,7 @@ export const ProductPage = () => {
   });
 
   const { mutate: deleteProductMutate } = useProduct.useDeleteProduct();
+  const { mutate: updateProductMutate } = useProduct.useUpdateProduct();
 
   // Fetch categories & brands for filter dropdowns
   const { data: categoryData } = useCategory.useGetAllCategory({
@@ -113,7 +115,14 @@ export const ProductPage = () => {
   // Filter Groups
   const filterGroups: FilterGroup[] = useMemo(() => {
     const groups: FilterGroup[] = [
-      
+      {
+        key: "status",
+        label: t("common.status", "Status"),
+        options: [
+          { label: t("common.active", "Active"), value: Status.ACTIVE },
+          { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+        ],
+      },
     ];
 
     // Category filter
@@ -240,24 +249,30 @@ export const ProductPage = () => {
     navigate(ROUTERS.PRODUCT_CREATE);
   };
 
-  const handleView = (product: ProductResponse) => {
+  const handleView = useCallback((product: ProductResponse) => {
     setViewingProduct(product);
     setOpenDetailModal(true);
-  };
+  }, []);
 
-  const handleEdit = (product: ProductResponse) => {
-    if (!canUpdate) return;
-    navigate(ROUTERS.PRODUCT_EDIT.replace(":id", String(product.id)));
-  };
+  const handleEdit = useCallback(
+    (product: ProductResponse) => {
+      if (!canUpdate) return;
+      navigate(ROUTERS.PRODUCT_EDIT.replace(":id", String(product.id)));
+    },
+    [canUpdate, navigate],
+  );
 
-  const handleDelete = (id: number) => {
-    if (!canDelete) return;
-    const selected = productList.find((p) => p.id === id);
-    if (selected) {
-      setSelectedProduct(selected);
-      setOpenConfirmDelete(true);
-    }
-  };
+  const handleDelete = useCallback(
+    (id: number) => {
+      if (!canDelete) return;
+      const selected = productList.find((p) => p.id === id);
+      if (selected) {
+        setSelectedProduct(selected);
+        setOpenConfirmDelete(true);
+      }
+    },
+    [canDelete, productList],
+  );
 
   const confirmDelete = () => {
     if (selectedProduct?.id) {
@@ -273,15 +288,44 @@ export const ProductPage = () => {
     }
   };
 
+  const handleRestore = useCallback(
+    (product: ProductResponse) => {
+      updateProductMutate(
+        {
+          id: product.id,
+          req: {
+            code: product.code,
+            name: product.name,
+            costPrice: product.costPrice,
+            salePrice: product.salePrice,
+            modelId: product.modelId,
+            imageUrl: product.imageUrl,
+            noted: product.noted,
+            reorderLevel: product.reorderLevel,
+            hasSerial: product.hasSerial,
+            status: Status.ACTIVE,
+          } as any,
+        },
+        {
+          onSuccess: () => {
+            toast.success(t("common.save", "Saved successfully"));
+          },
+        },
+      );
+    },
+    [updateProductMutate, t],
+  );
+
   const columns = useMemo(
     () =>
       ProductColumns({
         onView: handleView,
         onEdit: handleEdit,
         onDelete: handleDelete,
+        onRestore: handleRestore,
         t,
       }),
-    [productList, t],
+    [handleView, handleEdit, handleDelete, handleRestore, t],
   );
 
   const handleExportCsv = () => {

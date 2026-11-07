@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useCallback } from "react";
 import type { CurrencyResponse } from "@/types/finance/Currency";
 import { useCurrency } from "@/hooks/finance/useCurrency";
 import { DataTable } from "@/components/ui/data-table";
@@ -10,9 +10,11 @@ import { PageHeader } from "@/components/ui/page-header";
 import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { useSearch } from "@/utils/useSearch";
-import { PageFilter } from "@/utils/PageFilter";
+import { PageFilter, type FilterGroup } from "@/utils/PageFilter";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { Status } from "@/types/enum/status";
+import { toast } from "sonner";
 
 export const CurrencyPage = () => {
     const { t } = useLanguage();
@@ -27,10 +29,45 @@ export const CurrencyPage = () => {
     const [page, setPage] = useState(1);
     const [size, setSize] = useState(10);
     const [search, setSearch] = useState("");
+    const [filterValues, setFilterValues] = useState<Record<string, string>>({});
     const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
 
-    const { data, isError, isLoading } = useCurrency.GetAllCurrency({ page, size });
+    const { data, isError, isLoading } = useCurrency.GetAllCurrency({
+        page,
+        size,
+        status:
+            filterValues.status && filterValues.status !== "all"
+                ? (filterValues.status as Status)
+                : undefined,
+    });
     const { mutate: deleteCurrencyMutate } = useCurrency.DeleteCurrency();
+    const { mutate: updateCurrencyMutate } = useCurrency.UpdateCurrency();
+
+    const filterGroups: FilterGroup[] = useMemo(
+        () => [
+            {
+                key: "status",
+                label: t("common.status", "Status"),
+                options: [
+                    { label: t("common.active", "Active"), value: Status.ACTIVE },
+                    { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+                ],
+            },
+        ],
+        [t]
+    );
+
+    const handleFilterChange = (key: string, value: string) => {
+        setFilterValues((prev) => {
+            const next = { ...prev };
+            if (!value || value === "all") {
+                delete next[key];
+            } else {
+                next[key] = value;
+            }
+            return next;
+        });
+    };
 
     const currencyList: CurrencyResponse[] = useMemo(() => {
         const payload = data?.payload;
@@ -67,6 +104,30 @@ export const CurrencyPage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (c: CurrencyResponse) => {
+            updateCurrencyMutate(
+                {
+                    id: c.id,
+                    req: {
+                        code: c.code,
+                        name: c.name,
+                        operation: c.operation || "",
+                        rate: c.rate ?? 1.0,
+                        symbol: c.symbol || "",
+                        status: Status.ACTIVE,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateCurrencyMutate, t],
+    );
+
     const totalElements =
         data?.payload?.pagination?.totalElements ||
         data?.payload?.totalElements ||
@@ -97,7 +158,13 @@ export const CurrencyPage = () => {
                             search={search}
                             onSearchChange={setSearch}
                             searchPlaceholder={t("common.search")}
-                            onReset={() => setSearch("")}
+                            filterGroups={filterGroups}
+                            filterValues={filterValues}
+                            onFilterChange={handleFilterChange}
+                            onReset={() => {
+                                setSearch("");
+                                setFilterValues({});
+                            }}
                         />
                     </div>
 
@@ -107,6 +174,7 @@ export const CurrencyPage = () => {
                                 columns={CurrencyColumns({
                                     onEdit: handleEdit,
                                     onDelete: handleDelete,
+                                    onRestore: handleRestore,
                                     canEdit: canUpdate,
                                     canDelete: canDelete,
                                     t,

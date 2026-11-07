@@ -10,14 +10,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import FormTextField from "@/components/ui/FormTextField";
+import FormTextField, { FormRadioGroupField } from "@/components/ui/FormTextField";
 import {
   CustomerSchema,
   type CustomerRequest,
   type CustomerResponse,
 } from "@/types/sales/Customer";
 import { useCustomer } from "@/hooks/sales/useCustomer";
-import { Status } from "@/types/enum/status";
+import { StatusOptions, Status } from "@/types/enum/status";
 import { RefreshCw } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 
@@ -200,6 +200,17 @@ const FormCustomer = ({
                 placeholder="Optional customer notes..."
                 type="text"
                 autoComplete="off"
+              />
+            </div>
+
+            {/* Status */}
+            <div className="sm:col-span-2">
+              <FormRadioGroupField
+                form={form}
+                name="status"
+                label={t("common.status", "Status")}
+                required
+                options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
               />
             </div>
           </FieldGroup>

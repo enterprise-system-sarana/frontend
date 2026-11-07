@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import type { VisibilityState } from "@tanstack/react-table";
 import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
@@ -17,6 +17,7 @@ import { Status } from "@/types/enum/status";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { ROUTERS } from "@/constants/Route";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 export const StorePage = () => {
   const { t } = useLanguage();
@@ -36,13 +37,28 @@ export const StorePage = () => {
   const [columnVisibility, setColumnVisibility] = useState<VisibilityState>({});
   const [openConfirmDelete, setOpenConfirmDelete] = useState(false);
 
-  const { data, isError, isLoading } = useStore.useGetAllStore({ page, size });
+  const { data, isError, isLoading } = useStore.useGetAllStore({
+    page,
+    size,
+    status:
+      filterValues.status && filterValues.status !== "all"
+        ? (filterValues.status as Status)
+        : undefined,
+  });
   const { mutate: deleteStoreMutate } = useStore.useDeleteStore();
+  const { mutate: updateStoreMutate } = useStore.useUpdateStore();
 
   // Filter Groups for Filter +
   const filterGroups: FilterGroup[] = useMemo(
     () => [
-      
+      {
+        key: "status",
+        label: t("common.status", "Status"),
+        options: [
+          { label: t("common.active", "Active"), value: Status.ACTIVE },
+          { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+        ],
+      },
     ],
     [t]
   );
@@ -109,16 +125,43 @@ export const StorePage = () => {
     }
   };
 
+  const handleRestore = useCallback(
+    (s: StoreResponse) => {
+      updateStoreMutate(
+        {
+          id: s.id,
+          req: {
+            name: s.name,
+            code: s.code,
+            logo: s.logo ?? "",
+            email: s.email ?? "",
+            phone: s.phone ?? "",
+            address1: s.address1 ?? "",
+            city: s.city ?? "",
+            status: Status.ACTIVE,
+          } as any,
+        },
+        {
+          onSuccess: () => {
+            toast.success(t("common.save", "Saved successfully"));
+          },
+        },
+      );
+    },
+    [updateStoreMutate, t],
+  );
+
   const columns = useMemo(
     () =>
       StoreColumns({
         onEdit: handleEdit,
         onDelete: handleDelete,
+        onRestore: handleRestore,
         canEdit: canUpdate,
         canDelete: canDelete,
         t,
       }),
-    [canUpdate, canDelete, t]
+    [canUpdate, canDelete, handleRestore, t]
   );
 
   const handleExportCsv = () => {

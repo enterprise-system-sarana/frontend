@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import type { VisibilityState } from "@tanstack/react-table";
 import {
@@ -26,6 +26,7 @@ import { AccessDenied } from "@/components/ui/access-denied";
 import { KeyRound, ShieldCheck, UsersRound } from "lucide-react";
 import { useLanguage } from "@/i18n/LanguageContext";
 import { KpiCard, KpiGrid } from "@/components/ui/kpi-card";
+import { toast } from "sonner";
 
 
 const RolePage = () => {
@@ -49,14 +50,29 @@ const RolePage = () => {
   const { data, isError, isLoading } = useRole.GetAllRole({
     page,
     size,
+    status:
+      filterValues.status && filterValues.status !== "all"
+        ? filterValues.status
+        : undefined,
   });
 
   const { mutate: deleteRoleMutate } = useRole.DeleteRole();
+  const { mutate: updateRoleMutate } = useRole.UpdateRole();
 
   // Filter Groups for Filter +
-  const filterGroups: FilterGroup[] = useMemo(() => [
-    
-  ], [t]);
+  const filterGroups: FilterGroup[] = useMemo(
+    () => [
+      {
+        key: "status",
+        label: t("common.status", "Status"),
+        options: [
+          { label: t("common.active", "Active"), value: Status.ACTIVE },
+          { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+        ],
+      },
+    ],
+    [t],
+  );
 
   const handleColumnToggle = (columnId: string) => {
     setColumnVisibility((prev) => ({
@@ -97,22 +113,28 @@ const RolePage = () => {
     });
   }, [searchRole, filterValues]);
 
-  const handleEdit = (r: RoleResponse) => {
-    if (!canUpdate) return;
-    setRole(r);
-    setOpen(true);
-  };
+  const handleEdit = useCallback(
+    (r: RoleResponse) => {
+      if (!canUpdate) return;
+      setRole(r);
+      setOpen(true);
+    },
+    [canUpdate],
+  );
 
-  const handleDelete = (id: number) => {
-    if (!canDelete) return;
-    const selected = data?.payload?.data?.find(
-      (u: RoleResponse) => u.id === id,
-    );
-    if (selected) {
-      setRole(selected);
-      setOpenConfirmDelete(true);
-    }
-  };
+  const handleDelete = useCallback(
+    (id: number) => {
+      if (!canDelete) return;
+      const selected = data?.payload?.data?.find(
+        (u: RoleResponse) => u.id === id,
+      );
+      if (selected) {
+        setRole(selected);
+        setOpenConfirmDelete(true);
+      }
+    },
+    [canDelete, data],
+  );
 
   const confirmDelete = () => {
     if (role?.id) {
@@ -127,21 +149,49 @@ const RolePage = () => {
     }
   };
 
-  const handleViewPermissions = (r: RoleResponse) => {
-    navigate(`${ROUTERS.ROLE_PERMISSIONS}?roleId=${r.id}`);
-  };
+  const handleViewPermissions = useCallback(
+    (r: RoleResponse) => {
+      navigate(`${ROUTERS.ROLE_PERMISSIONS}?roleId=${r.id}`);
+    },
+    [navigate],
+  );
+
+  const handleRestore = useCallback(
+    (r: RoleResponse) => {
+      const cleanCode = r.code.replace(/^ROLE_/, "");
+      updateRoleMutate(
+        {
+          id: r.id,
+          req: {
+            code: cleanCode,
+            name: r.name,
+            description: r.description,
+            status: Status.ACTIVE,
+            permissionIds: r.permissionIds || [],
+          },
+        },
+        {
+          onSuccess: () => {
+            toast.success(t("common.save", "Saved successfully"));
+          },
+        },
+      );
+    },
+    [updateRoleMutate, t],
+  );
 
   const columns = useMemo(
     () =>
       RoleColumns({
         onEdit: handleEdit,
         onDelete: handleDelete,
+        onRestore: handleRestore,
         onViewPermissions: handleViewPermissions,
         canEdit: canUpdate,
         canDelete,
         t,
       }),
-    [handleEdit, handleDelete, handleViewPermissions, canUpdate, canDelete, t]
+    [handleEdit, handleDelete, handleRestore, handleViewPermissions, canUpdate, canDelete, t]
   );
 
   const pageRoles: RoleResponse[] = data?.payload?.data || [];

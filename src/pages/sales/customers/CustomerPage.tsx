@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import {
     DataTable,
@@ -21,6 +21,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 export const CustomerPage = () => {
     const { t } = useLanguage();
@@ -42,14 +43,26 @@ export const CustomerPage = () => {
     const { data, isError, isLoading } = useCustomer.useGetAllCustomer({
         page,
         size,
+        status:
+            filterValues.status && filterValues.status !== "all"
+                ? (filterValues.status as Status)
+                : undefined,
     });
 
     const { mutate: deleteCustomerMutate } = useCustomer.useDeleteCustomer();
+    const { mutate: updateCustomerMutate } = useCustomer.useUpdateCustomer();
 
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(
         () => [
-            
+            {
+                key: "status",
+                label: t("common.status", "Status"),
+                options: [
+                    { label: t("common.active", "Active"), value: Status.ACTIVE },
+                    { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+                ],
+            },
         ],
         [t]
     );
@@ -123,14 +136,39 @@ export const CustomerPage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (c: CustomerResponse) => {
+            updateCustomerMutate(
+                {
+                    id: c.id,
+                    req: {
+                        name: c.name,
+                        code: c.code,
+                        email: c.email ?? "",
+                        phone: c.phone ?? "",
+                        note: c.note ?? "",
+                        status: Status.ACTIVE,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateCustomerMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             CustomerColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                onRestore: handleRestore,
                 t,
             }),
-        [t]
+        [handleEdit, handleDelete, handleRestore, t],
     );
 
     const handleExportCsv = () => {

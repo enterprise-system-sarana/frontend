@@ -16,6 +16,7 @@ export const en = {
   "common.status": "Status",
   "common.active": "Active",
   "common.inactive": "Inactive",
+  "common.restore": "Restore",
   "common.deleted": "Deleted",
   "common.completed": "Completed",
   "common.pending": "Pending",

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import { DataTable, exportTableToCsv, exportTableToPdf, printTable, getColumnsForVisibility } from "@/components/ui/data-table";
 import { QueryBoundary } from "@/components/ui/query-boundary";
@@ -16,6 +16,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const VariantTypePage = () => {
     const { t } = useLanguage();
@@ -38,14 +39,27 @@ const VariantTypePage = () => {
     const { data, isError, isLoading } = useVariantType.useGetAllVariantType({
         page,
         size,
+        status:
+            filterValues.status && filterValues.status !== "all"
+                ? (filterValues.status as Status)
+                : undefined,
     });
 
     const { mutate: deleteVariantTypeMutate } =
         useVariantType.useDeleteVariantType();
+    const { mutate: updateVariantTypeMutate } =
+        useVariantType.useUpdateVariantType();
 
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(() => [
-        
+        {
+            key: "status",
+            label: t("common.status", "Status"),
+            options: [
+                { label: t("common.active", "Active"), value: Status.ACTIVE },
+                { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+            ],
+        },
     ], [t]);
 
     const handleColumnToggle = (columnId: string) => {
@@ -121,15 +135,37 @@ const VariantTypePage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (vt: VariantTypeResponse) => {
+            updateVariantTypeMutate(
+                {
+                    id: vt.id,
+                    req: {
+                        name: vt.name,
+                        code: vt.code,
+                        status: Status.ACTIVE,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateVariantTypeMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             VariantTypeColumns({
                 onView: handleView,
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                onRestore: handleRestore,
                 t,
             }),
-        [handleView, handleEdit, handleDelete, t]
+        [handleView, handleEdit, handleDelete, handleRestore, t]
     );
 
     const handleExportCsv = () => {

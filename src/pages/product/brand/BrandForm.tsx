@@ -97,6 +97,14 @@ const FormBrand = ({ open, setOpen, brand }: FormBrandProps) => {
                             }}
                             defaultBucket="brand"
                         />
+
+                        <FormRadioGroupField
+                            form={form}
+                            name="status"
+                            label={t("common.status", "Status")}
+                            required
+                            options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
+                        />
                     </FieldGroup>
                 </form>
                 <DialogFooter>

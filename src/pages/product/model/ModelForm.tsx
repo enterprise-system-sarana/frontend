@@ -130,6 +130,14 @@ const ModelForm = ({ open, setOpen, model, onCreated }: FormModelProps) => {
                                 options={categoryOptions}
                                 onAdd={() => setCategoryFormOpen(true)}
                             />
+
+                            <FormRadioGroupField
+                                form={form}
+                                name="status"
+                                label={t("common.status", "Status")}
+                                required
+                                options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
+                            />
                         </FieldGroup>
                     </form>
                     <DialogFooter>

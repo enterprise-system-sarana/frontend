@@ -9,12 +9,13 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface CurrencyColumnsProps {
     onEdit: (currency: CurrencyResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (currency: CurrencyResponse) => void;
     canEdit: boolean;
     canDelete: boolean;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
-export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete, t }: CurrencyColumnsProps): ColumnDef<CurrencyResponse>[] => [
+export const CurrencyColumns = ({ onEdit, onDelete, onRestore, canEdit, canDelete, t }: CurrencyColumnsProps): ColumnDef<CurrencyResponse>[] => [
 
     {
         accessorKey: "code",
@@ -41,11 +42,11 @@ export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete, t }: Cur
         header: ({ column }) => <SortableHeader column={column} title={t ? t("common.created_date") : "Created Date"} />,
         cell: ({ row }) => <span className="text-xs text-text-secondary">{formatDate(row.original.createdAt)}</span>,
     },
-    // {
-    //     accessorKey: "status",
-    //     header: t ? t("common.status") : "Status",
-    //     cell: ({ row }) => <StatusBadge status={row.original.status} />,
-    // },
+    {
+        accessorKey: "status",
+        header: t ? t("common.status") : "Status",
+        cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
     {
         accessorKey: "Action",
         header: t ? t("common.action") : "Action",
@@ -54,10 +55,13 @@ export const CurrencyColumns = ({ onEdit, onDelete, canEdit, canDelete, t }: Cur
             if (!canEdit && !canDelete) {
                 return <span className="text-text-disabled text-sm">-</span>;
             }
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
                     onEdit={() => onEdit(row.original)}
                     onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
+                    t={t}
                 />
             );
         },

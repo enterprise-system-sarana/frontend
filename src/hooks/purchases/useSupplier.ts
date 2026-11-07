@@ -32,8 +32,8 @@ export const useSupplier = {
   useUpdateSupplier: () => {
     const queryClient = useQueryClient();
     return useMutation({
-      mutationFn: ({ id, request }: { id: number; request: SupplierRequest }) =>
-        supplierService.update(id, request),
+      mutationFn: ({ id, request, req }: { id: number; request?: SupplierRequest; req?: SupplierRequest }) =>
+        supplierService.update(id, (request || req)!),
       ...mutationHandler({
         queryClient,
         queryKey: useSupplier.keys.all,

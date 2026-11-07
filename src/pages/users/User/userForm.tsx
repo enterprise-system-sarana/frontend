@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/dialog";
 
 import FormTextField, {
+    FormRadioGroupField,
     FormSelectField,
 } from "@/components/ui/FormTextField";
 
@@ -28,7 +29,7 @@ import type {
     UserRequest,
 } from "@/types/users/Users";
 
-import { Status } from "@/types/enum/status";
+import { Status, StatusOptions } from "@/types/enum/status";
 import type { StoreResponse } from "@/types/inventory/Store";
 import type { RoleResponse } from "@/types/users/Role";
 import { Card, CardContent } from "@/components/ui/card";
@@ -490,6 +491,16 @@ const FormUser = ({
                     </section>
 
 
+
+                    <section className="space-y-4">
+                        <FormRadioGroupField
+                            form={form}
+                            name="isActive"
+                            label={t("common.status")}
+                            required
+                            options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
+                        />
+                    </section>
 
                     <section className="space-y-4">
                         <FormSelectField

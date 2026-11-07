@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import type { VisibilityState } from "@tanstack/react-table";
 import type { BrandResponse } from "@/types/product/Brand";
 import { useBrand } from "@/hooks/product/useBrand";
@@ -15,6 +15,7 @@ import { usePermission } from "@/utils/UsePermission";
 import { PERMISSION } from "@/constants/Permission";
 import { AccessDenied } from "@/components/ui/access-denied";
 import { useLanguage } from "@/i18n/LanguageContext";
+import { toast } from "sonner";
 
 const BrandPage = () => {
     const { t } = useLanguage();
@@ -36,14 +37,26 @@ const BrandPage = () => {
     const { data, isError, isLoading } = useBrand.useGetAllBrand({
         page,
         size,
+        status:
+            filterValues.status && filterValues.status !== "all"
+                ? (filterValues.status as Status)
+                : undefined,
     });
 
     const { mutate: deleteBrandMutate } = useBrand.useDeleteBrand();
+    const { mutate: updateBrandMutate } = useBrand.useUpdateBrand();
 
     // Filter Groups for Filter +
     const filterGroups: FilterGroup[] = useMemo(
         () => [
-            
+            {
+                key: "status",
+                label: t("common.status", "Status"),
+                options: [
+                    { label: t("common.active", "Active"), value: Status.ACTIVE },
+                    { label: t("common.inactive", "Inactive"), value: Status.INACTIVE },
+                ],
+            },
         ],
         [t]
     );
@@ -118,14 +131,36 @@ const BrandPage = () => {
         }
     };
 
+    const handleRestore = useCallback(
+        (b: BrandResponse) => {
+            updateBrandMutate(
+                {
+                    id: b.id,
+                    req: {
+                        name: b.name,
+                        imageUrl: b.imageUrl,
+                        status: Status.ACTIVE,
+                    },
+                },
+                {
+                    onSuccess: () => {
+                        toast.success(t("common.save", "Saved successfully"));
+                    },
+                },
+            );
+        },
+        [updateBrandMutate, t],
+    );
+
     const columns = useMemo(
         () =>
             BrandColumns({
                 onEdit: handleEdit,
                 onDelete: handleDelete,
+                onRestore: handleRestore,
                 t,
             }),
-        [t]
+        [handleEdit, handleDelete, handleRestore, t],
     );
 
     const handleExportCsv = () => {

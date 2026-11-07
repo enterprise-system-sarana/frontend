@@ -90,6 +90,14 @@ const VariantTypeForm = ({ open, setOpen, variantType }: FormVariantTypeProps) =
                             placeholder={t("common.name")}
                             type="text"
                         />
+
+                        <FormRadioGroupField
+                            form={form}
+                            name="status"
+                            label={t("common.status", "Status")}
+                            required
+                            options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
+                        />
                     </FieldGroup>
                 </form>
                 <DialogFooter>

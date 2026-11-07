@@ -10,12 +10,14 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface CategoryColumnsProps {
     onEdit: (category: CategoryResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (category: CategoryResponse) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const CategoryColumns = ({
     onEdit,
     onDelete,
+    onRestore,
     t,
 }: CategoryColumnsProps): ColumnDef<CategoryResponse>[] => [
     {
@@ -50,10 +52,12 @@ export const CategoryColumns = ({
         header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
                     onEdit={() => onEdit(row.original)}
                     onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
                     t={t}
                 />
             );

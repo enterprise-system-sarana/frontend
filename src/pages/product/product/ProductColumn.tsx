@@ -11,6 +11,7 @@ interface ProductColumnsProps {
   onView?: (product: ProductResponse) => void;
   onEdit: (product: ProductResponse) => void;
   onDelete: (id: number) => void;
+  onRestore?: (product: ProductResponse) => void;
   t?: (key: TranslationKey, fallback?: string) => string;
 }
 
@@ -18,6 +19,7 @@ export const ProductColumns = ({
   onView,
   onEdit,
   onDelete,
+  onRestore,
   t,
 }: ProductColumnsProps): ColumnDef<ProductResponse>[] => [
     {
@@ -256,35 +258,30 @@ export const ProductColumns = ({
     //     );
     //   },
     // },
-    // {
-    //   accessorKey: "status",
-    //   header: t ? t("common.status") : "Status",
-    //   cell: ({ row }) => <StatusBadge status={row.original.status} />,
-    // },
-    // {
-    //   accessorKey: "createdAt",
-    //   header: ({ column }) => (
-    //     <SortableHeader
-    //       column={column}
-    //       title={"Date"}
-    //     />
-    //   ),
-    //   cell: ({ row }) => (
-    //     <span className="text-xs text-muted-foreground whitespace-nowrap">
-    //       {formatDate(row.original.createdAt)}
-    //     </span>
-    //   ),
-    // },
+    {
+      accessorKey: "status",
+      header: t ? t("common.status") : "Status",
+      cell: ({ row }) => <StatusBadge status={row.original.status} />,
+    },
     {
       id: "actions",
       header: t ? t("common.action") : "Action",
       enableHiding: false,
       cell: ({ row }) => {
+        const isInactive =
+          row.original.status === "INA" ||
+          row.original.status === "INACTIVE" ||
+          row.original.status === "DEL" ||
+          row.original.status === "DELETE" ||
+          row.original.status === "DELETED";
         return (
           <TableActions
             onView={onView ? () => onView(row.original) : undefined}
             onEdit={() => onEdit(row.original)}
             onDelete={() => onDelete(row.original.id)}
+            onRestore={
+              isInactive && onRestore ? () => onRestore(row.original) : undefined
+            }
             t={t}
           />
         );

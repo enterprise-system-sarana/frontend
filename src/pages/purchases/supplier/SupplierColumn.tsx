@@ -9,6 +9,7 @@ import type { TranslationKey } from "@/i18n/locales/en";
 export interface SupplierColumnProps {
   onEdit: (supplier: SupplierResponse) => void;
   onDelete: (id: number) => void;
+  onRestore?: (supplier: SupplierResponse) => void;
   canEdit?: boolean;
   canDelete?: boolean;
   t?: (key: TranslationKey, fallback?: string) => string;
@@ -17,6 +18,7 @@ export interface SupplierColumnProps {
 export const SupplierColumns = ({
   onEdit,
   onDelete,
+  onRestore,
   canEdit = true,
   canDelete = true,
   t,
@@ -110,10 +112,17 @@ export const SupplierColumns = ({
       if (!canEdit && !canDelete) {
         return <span className="text-muted-foreground text-sm">-</span>;
       }
+      const isInactive =
+        row.original.status === "INA" ||
+        row.original.status === "INACTIVE" ||
+        row.original.status === "DEL" ||
+        row.original.status === "DELETE" ||
+        row.original.status === "DELETED";
       return (
         <TableActions
           onEdit={() => onEdit(row.original)}
           onDelete={() => onDelete(row.original.id)}
+          onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
           t={t}
         />
       );

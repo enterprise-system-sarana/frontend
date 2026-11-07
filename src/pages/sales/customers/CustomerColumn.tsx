@@ -9,6 +9,7 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface CustomerColumnsProps {
     onEdit: (customer: CustomerResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (customer: CustomerResponse) => void;
     canEdit?: boolean;
     canDelete?: boolean;
     t?: (key: TranslationKey, fallback?: string) => string;
@@ -17,6 +18,7 @@ interface CustomerColumnsProps {
 export const CustomerColumns = ({
     onEdit,
     onDelete,
+    onRestore,
     canEdit = true,
     canDelete = true,
     t,
@@ -64,10 +66,12 @@ export const CustomerColumns = ({
             if (!canEdit && !canDelete) {
                 return <span className="text-text-disabled text-sm">-</span>;
             }
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
                     onEdit={() => onEdit(row.original)}
                     onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
                     t={t}
                 />
             );

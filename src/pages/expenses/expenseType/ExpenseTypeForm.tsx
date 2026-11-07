@@ -118,13 +118,13 @@ const FormExpenseType = ({
               label={t("common.description")}
               placeholder="description..."
             />
-            {/* <FormRadioGroupField
+            <FormRadioGroupField
               form={form}
               name="status"
               label={t("common.status")}
               required={true}
-              options={statusOptions}
-            /> */}
+              options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
+            />
           </FieldGroup>
         </form>
         <DialogFooter>

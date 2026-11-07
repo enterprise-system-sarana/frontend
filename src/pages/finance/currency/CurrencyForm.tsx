@@ -13,7 +13,7 @@ import {
 import { useEffect } from "react";
 import { CurrencySchema } from "@/types/finance/Currency";
 import type { CurrencyResponse, CurrencyRequest } from "@/types/finance/Currency";
-import { Status } from "@/types/enum/status";
+import { Status, StatusOptions } from "@/types/enum/status";
 import FormTextField, { FormRadioGroupField } from "@/components/ui/FormTextField";
 import { useCurrency } from "@/hooks/finance/useCurrency";
 import { useLanguage } from "@/i18n/LanguageContext";
@@ -84,7 +84,7 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
                 form.setFieldValue("operation", currency.operation || "");
                 form.setFieldValue("rate", currency.rate ?? 1.0);
                 form.setFieldValue("symbol", currency.symbol || "");
-                // form.setFieldValue("status", (currency.status as Status) || Status.ACTIVE);
+                form.setFieldValue("status", (currency.status as Status) || Status.ACTIVE);
             } else {
                 form.reset();
             }
@@ -265,6 +265,15 @@ const FormCurrency = ({ open, setOpen, currency }: FormCurrencyProps) => {
                         />
 
                         {/* Status Radio Selector */}
+                        <div className="pt-2">
+                            <FormRadioGroupField
+                                form={form}
+                                name="status"
+                                label={t("common.status")}
+                                required
+                                options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
+                            />
+                        </div>
                       
                     </FieldGroup>
 

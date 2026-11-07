@@ -11,6 +11,7 @@ interface VariantTypeColumnsProps {
     onView: (variantType: VariantTypeResponse) => void;
     onEdit: (variantType: VariantTypeResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (variantType: VariantTypeResponse) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
@@ -18,6 +19,7 @@ export const VariantTypeColumns = ({
     onView,
     onEdit,
     onDelete,
+    onRestore,
     t,
 }: VariantTypeColumnsProps): ColumnDef<VariantTypeResponse>[] => [
 
@@ -72,12 +74,15 @@ export const VariantTypeColumns = ({
         header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
-                  onView={() => onView(row.original)}
-                  onEdit={() => onEdit(row.original)}
-              onDelete={() => onDelete(row.original.id)}
-            />
+                    onView={() => onView(row.original)}
+                    onEdit={() => onEdit(row.original)}
+                    onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
+                    t={t}
+                />
             );
         },
     },

@@ -9,12 +9,14 @@ import type { TranslationKey } from "@/i18n/locales/en";
 interface ModelColumnsProps {
     onEdit: (model: ModelResponse) => void;
     onDelete: (id: number) => void;
+    onRestore?: (model: ModelResponse) => void;
     t?: (key: TranslationKey, fallback?: string) => string;
 }
 
 export const ModelColumns = ({
     onEdit,
     onDelete,
+    onRestore,
     t,
 }: ModelColumnsProps): ColumnDef<ModelResponse>[] => [
     {
@@ -47,10 +49,12 @@ export const ModelColumns = ({
         header: t ? t("common.action") : "Action",
         enableHiding: false,
         cell: ({ row }) => {
+            const isInactive = row.original.status === "INA" || row.original.status === "INACTIVE";
             return (
                 <TableActions
                     onEdit={() => onEdit(row.original)}
                     onDelete={() => onDelete(row.original.id)}
+                    onRestore={isInactive && onRestore ? () => onRestore(row.original) : undefined}
                     t={t}
                 />
             );

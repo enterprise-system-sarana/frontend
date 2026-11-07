@@ -118,6 +118,14 @@ const VariantValueForm = ({ open, setOpen, variantValue }: FormVariantValueProps
                             options={variantTypeOptions}
                             onAdd={() => setvaraintTypeFormOpen(true)}
                         />
+
+                        <FormRadioGroupField
+                            form={form}
+                            name="status"
+                            label={t("common.status", "Status")}
+                            required
+                            options={StatusOptions.filter((o) => o.value !== Status.DELETE)}
+                        />
                         {/* VariatType form  */}
                         <VariantTypeForm
                             open={varaintTypeFormOpen}

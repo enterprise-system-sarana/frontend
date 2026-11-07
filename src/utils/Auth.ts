@@ -60,7 +60,8 @@ export const isTokenExpired = (token: string): boolean => {
     );
     const { exp } = JSON.parse(jsonPayload);
     if (!exp) return false;
-    return Date.now() >= exp * 1000;
+    // Consider expired 10 seconds before actual exp to prevent in-flight expiration
+    return Date.now() >= exp * 1000 - 10000;
   } catch (e) {
     return true;
   }
